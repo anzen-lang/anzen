@@ -1,0 +1,12 @@
+<nav class="main-nav">
+    {% if page.url != "/" %}
+        <a href="{{ site.baseurl }}"> <span class="arrow">←</span> Home </a>
+    {% endif %}
+
+    {% if page.url != "/about/" %}
+        <a href="{{ site.baseurl }}about">About </a>
+    {% endif %}
+
+    <a href="{{ site.baseurl }}tutorial">Swift Tutorial </a>
+    <!-- <a class="cta" href="{{ site.baseurl }}feed.xml">Subscribe</a> -->
+</nav>
