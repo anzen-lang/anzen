@@ -787,32 +787,3 @@ rainer.species = (number: 001, name: "Bulbasaur")
 sparky.level = sparky.level + 1
 # error: cannot assign to property: 'sparky' is a constant
 ```
-
-Note that if the instance is wrapped into an optional types,
-its properties can be accessed via *optional chaining*:
-
-```swift
-var rainer: Pokemon? = Pokemon(species: (number: 134, name: "Vaporeon"), level: 58)
-rainer?.level
-// $R0: Int? = 58
-```
-
-Notice that the return value of an optional chaining is an optional type,
-wrapping the requested property.
-The reason is that if the first optional is `nil`,
-the result of the expression will also be `nil`,
-but typed as an optional of the expected value:
-
-```swift
-rainer = nil
-rainer?.level
-// $R0: Int? = nil
-```
-
-Optional chaining also allows to safely assign the property of an instance wrapped in an optional.
-If the value is present, its property will be set, otherwise nothing will happen.
-
-```swift
-rainer?.level = 87
-// $R0: ()? = nil
-```
