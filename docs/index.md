@@ -1,3 +1,8 @@
+<div style="text-align: center; margin-bottom: 20px;">
+  <h1 style="font-size: 90px;">安</h1>
+  <h2 style="font-size: 50px; font-style: normal ;">Anzen</h2>
+</div>
+
 Anzen is a programming language that aims at bridging the gap between
 modern programming and software verification.
 It is primarily inspired by
