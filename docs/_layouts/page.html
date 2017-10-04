@@ -1,0 +1,34 @@
+---
+layout: default
+archive: true
+---
+
+<article class="post">
+  <header>
+    <h1 class="text-left">{{ page.title }}</h1>
+  </header>
+  <section id="post-body">
+    {{content}}
+  </section>
+</article>
+<footer id="post-meta" class="clearfix">
+  <a href="http://twitter.com/{{ site.authorTwitter }}">
+    <img class="avatar" src="{{ site.baseurl }}assets/images/avatar.png">
+    <div>
+      <span class="dark">{{ site.author }}</span>
+      <span>{{ site.description }}</span>
+    </div>
+  </a>
+
+  <section id="sharing">
+    {% include share.html %}
+  </section>
+</footer>
+
+<!-- Disqus comments -->
+{% if site.disqus %}
+<div class="archive readmore">
+  <h3>Comments</h3>
+  {% include disqus.html %}
+</div>
+{% endif %}

@@ -1,7 +1,10 @@
-# Anzen
-
 Anzen is a programming language that aims at bridging the gap between
 modern programming and software verification.
+It is primarily inspired by
+[Swift](https://swift.org),
+[Rust](https://www.rust-lang.org/en-US/) and
+[Python](https://www.python.org).
+But it also burrows ideas and concepts from many other languages that would be too long to list.
 
 Anzen is simple and intuitive
 
@@ -39,76 +42,76 @@ let x = f(-9)
 # 'f(-9)' does not respect the contract 'a > 0'
 ```
 
-<!--
-```anzen
-let connection = Connection(to "anzen-lang.org", on_port 80)
-let x = [
-  connection: "anzen-lang.org",
-]
-# TypeError: Cannot create type 'HashMap<Key = Connection, Value = String>',
-# 'Connection' is not 'Hashable'
-```
--->
+## Mulitple paradigms
 
-## A neat memory model
+Because no programming paradigm is better than all other in any situation,
+Anzen supports several.
+To give just a few examples:
 
-There are two ways of allocating memory in a program:
-on the program stack or on the heap.
-The former usually leads to better performances,
-because it lets topologically close variables to live in topographically close memory locations.
-Heap allocation can't benefit from the same advantage,
-because it requires actual memory locations to dereferenced before it is accessed.
-Besides stack allocation makes it easier to deallocate memory:
-whenever the stacked is popped, its associated memory is freed.
-That's why, Anzen memory is primarily based on the stack:
+* like C, it supports imperative style,
+  where statements mutate variables to change the program's state:
 
-```anzen
-scope {
-  # The variable `x` is allocated on the stack
-  let x = 42
-}
-# The variable `x` no longer exists and its memory has been deallocated
-```
+  ```anzen
+  let x: @mut = [9, 1, 4]
+  sort(collection &- x)
+  print(x)
+  ```
 
-Anzen also supports references:
+* like Haskell, it supports functional style,
+  that treats computation as the evaluation of functions:
 
-```anzen
-let x = 42
-let y &- x
-print(y)
-# Prints "42"
-```
+  ```anzen
+  print(sorted([9, 1, 4]))
+  ```
 
-But remember, since Anzen focuses on stack allocation,
-one should worry about the lifetime of her variables:
+* like Java, it supports object-oriented programming,
+  that lets related data and operations be encapsulated in objects:
 
-```anzen
-let x
-scope {
-  let y = 42
-  x &- y
-  # error: main.anzen:4:5
-  # cannot assign reference: 'y' is deallocated before 'x'
-}
-print(x)
-```
+  ```anzen
+  let x = [9, 1, 4]
+  print(x.sorted())
+  ```
 
-To solve the above problem, one should either make a copy of the variable `y`.
-But if that's too expensive, one can also *move* the value of `y`:
+## Powerful support for verification
 
-```anzen
-let x
-scope {
-  let y = (0 .. 10_000).map(functon(i) { return i })
-  x <- y
-}
-print(x)
-# Prints "[0, 1, ..., 10000]"
-```
+Anezn also strongly emphasis on code correctness and safety.
+As such it comes with many static and dynamic verification features.
+To give just a few examples:
 
-The move operator `<-` *steals* the value associated with the variable `y`
-and gives it to the variable `x`,
-so as to avoid an unnecessary copy.
+* like Swift, it comes with a strong static type inference system,
+  that lets stray variables or invalid applications be detected:
 
-> If you are familiar with C++,
-> Anzen's move operator `<-` corresponds to C++'s `std::move`.
+  ```anzen
+  let x = 0
+  print(x + "Hello")
+  # error: main.anzen:2:9
+  # no candidate to call '+' with arguments '(_: Int, _: String)'
+  ```
+
+* like Rust, it keeps track of variable lifetimes,
+  so that dangling references can be detected:
+
+  ```anzen
+  let x
+  scope {
+    let y = 42
+    x &- y
+    # error: main.anzen:4:5
+    # cannot assign reference: 'y' is deallocated before 'x'
+  }
+  ```
+
+* like Eiffel, it supports contracts,
+  that can be used to ensure preconditions, invariants and postconditions:
+
+  ```
+  function f(_ a: Int) -> Int
+    where a > 0
+    {
+      return a * 2
+    }
+
+  let x = f(-9)
+  # error: main.anzen:7:9
+  # 'f(-9)' does not respect the contract 'a > 0'
+  ```
