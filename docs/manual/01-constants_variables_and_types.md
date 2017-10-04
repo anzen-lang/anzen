@@ -4,8 +4,6 @@ title: Constants, Variables and Types
 permalink: /manual/chapter-1/
 ---
 
-# Constant and Variables
-
 Anzen distinguishes
 [variables](https://en.wikipedia.org/wiki/Variable_(computer_science)) and
 [constants](https://en.wikipedia.org/wiki/Constant_(computer_programming)).

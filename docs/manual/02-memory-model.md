@@ -1,4 +1,8 @@
-# A neat memory model
+---
+layout: page
+title: Memory Model
+permalink: /manual/chapter-2/
+---
 
 There are two ways of allocating memory in a program:
 on the program stack or on the heap.

@@ -1,11 +1,8 @@
 ---
 layout: page
-title: Introduction to Swift programming
+title: Introduction to Anzen programming
 permalink: /manual/
 ---
-
-
-# Introduction
 
 Anzen is a programming language that aims at bridging the gap between
 modern programming and software verification.
