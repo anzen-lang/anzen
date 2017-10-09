@@ -9,7 +9,7 @@ It is primarily inspired by
 [Swift](https://swift.org),
 [Rust](https://www.rust-lang.org/en-US/) and
 [Python](https://www.python.org).
-But it also burrows ideas and concepts from many other languages that would be too long to list.
+But it also borrows ideas and concepts from many other languages that would be too long to list.
 
 Anzen is simple and intuitive
 
