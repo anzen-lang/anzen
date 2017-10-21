@@ -1,20 +1,29 @@
 import Parsey
 
 public enum Operator: CustomStringConvertible {
-    case add, sub, mul, div
-    case cpy, ref, mov
+    case not
+    case mul , div , mod
+    case add , sub
+    case lt  , le  , gt  , ge
+    case eq  , ne
+    case and
+    case or
+    case cpy , ref , mov
 
     public var description: String {
-        switch self {
-        case .add: return "+"
-        case .sub: return "-"
-        case .mul: return "*"
-        case .div: return "/"
-        case .cpy: return "="
-        case .ref: return "&-"
-        case .mov: return "<-"
-        }
+        return Operator.repr[self]!
     }
+
+    public static var repr: [Operator: String] = [
+        .not : "not",
+        .mul : "*"  , .div : "/"  , .mod : "%"  ,
+        .add : "+"  , .sub : "-"  ,
+        .lt  : "<"  , .le  : "<=" , .gt  : ">"  , .ge:  ">=" ,
+        .eq  : "==" , .ne  : "!=" ,
+        .and : "and",
+        .or  : "or" ,
+        .cpy : "="  , .ref : "&-" , .mov : "<-" ,
+    ]
 }
 
 public protocol NodeVisitor {
@@ -146,6 +155,54 @@ public class TypeAnnot: Node {
     }
 }
 
+public class BinExpr: Node {
+
+    public init(left: Node, op: Operator, right: Node, location: SourceRange? = nil) {
+        self.left     = left
+        self.op       = op
+        self.right    = right
+        self.location = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let left     : Node
+    public let op       : Operator
+    public let right    : Node
+    public var type     : Type? = nil
+    public let location : SourceRange?
+
+    public var description: String {
+        return "(\(self.left) \(self.op) \(self.right))"
+    }
+
+}
+
+public class UnExpr: Node {
+
+    public init(op: Operator, operand: Node, location: SourceRange? = nil) {
+        self.op       = op
+        self.operand  = operand
+        self.location = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let op       : Operator
+    public let operand  : Node
+    public var type     : Type? = nil
+    public let location : SourceRange?
+
+    public var description: String {
+        return "(\(self.op) \(self.operand))"
+    }
+
+}
+
 public class CallExpr: Node {
 
     public init(callee: Node, arguments: [Node], location: SourceRange? = nil) {
@@ -167,6 +224,7 @@ public class CallExpr: Node {
         let args = self.arguments.map({ String(describing: $0) }).joined(separator: ", ")
         return "\(self.callee)(\(args))"
     }
+
 }
 
 public class CallArg: Node {
@@ -201,6 +259,55 @@ public class CallArg: Node {
             return "\(op) \(self.value)"
         }
         return String(describing: self.value)
+    }
+
+}
+
+public class SubscriptExpr: Node {
+
+    public init(callee: Node, arguments: [Node], location: SourceRange? = nil) {
+        self.callee    = callee
+        self.arguments = arguments
+        self.location  = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let callee   : Node
+    public let arguments: [Node]
+    public var type     : Type? = nil
+    public let location : SourceRange?
+
+    public var description: String {
+        let args = self.arguments.map({ String(describing: $0) }).joined(separator: ", ")
+        return "\(self.callee)[\(args)]"
+    }
+}
+
+public class SelectExpr: Node {
+
+    public init(owner: Node? = nil, member: Node, location: SourceRange? = nil) {
+        self.owner    = owner
+        self.member   = member
+        self.location = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let owner   : Node?
+    public let member  : Node
+    public var type    : Type? = nil
+    public let location: SourceRange?
+
+    public var description: String {
+        if let owner = self.owner {
+            return "\(owner).\(self.member)"
+        }
+        return ".\(self.member)"
     }
 
 }

@@ -1,6 +1,12 @@
 import os.log
 import Parsey
 
+enum Trailer {
+    case callArgs([Node])
+    case subscriptArgs([Node])
+    case selectMember(Node)
+}
+
 public struct Grammar {
 
     // MARK: Module (entry point of the grammar)
@@ -8,7 +14,8 @@ public struct Grammar {
     public static let module = newlines.* ~~> stmt.* <~~ Lexer.end
         ^^^ { (val, loc) in Module(statements: val, location: loc) }
 
-    static let stmt = propDecl <~~ newlines
+    // static let stmt = propDecl <~~ newlines
+    static let stmt = expr <~~ newlines
 
     // MARK: Operators
 
@@ -17,21 +24,82 @@ public struct Grammar {
         | Lexer.regex    ("&-") ^^ { _ in Operator.ref }
         | Lexer.regex    ("<-") ^^ { _ in Operator.mov }
 
+    static let notOp = Lexer.regex    ("not").amid(whitespaces.?) ^^ { _ in Operator.not }
+    static let mulOp = Lexer.character("*")  .amid(whitespaces.?) ^^ { _ in Operator.mul }
+    static let divOp = Lexer.character("/")  .amid(whitespaces.?) ^^ { _ in Operator.div }
+    static let modOp = Lexer.character("%")  .amid(whitespaces.?) ^^ { _ in Operator.mod }
+    static let addOp = Lexer.character("+")  .amid(whitespaces.?) ^^ { _ in Operator.add }
+    static let subOp = Lexer.character("-")  .amid(whitespaces.?) ^^ { _ in Operator.sub }
+    static let ltOp  = Lexer.character("<")  .amid(whitespaces.?) ^^ { _ in Operator.lt  }
+    static let leOp  = Lexer.regex    ("<=") .amid(whitespaces.?) ^^ { _ in Operator.le  }
+    static let gtOp  = Lexer.character(">")  .amid(whitespaces.?) ^^ { _ in Operator.lt  }
+    static let geOp  = Lexer.regex    (">=") .amid(whitespaces.?) ^^ { _ in Operator.le  }
+    static let eqOp  = Lexer.regex    ("==") .amid(whitespaces.?) ^^ { _ in Operator.eq  }
+    static let neOp  = Lexer.regex    ("!=") .amid(whitespaces.?) ^^ { _ in Operator.ne  }
+    static let andOp = Lexer.regex    ("and").amid(whitespaces.?) ^^ { _ in Operator.and }
+    static let orOp  = Lexer.regex    ("or") .amid(whitespaces.?) ^^ { _ in Operator.or  }
+
+    static func infixOp(_ parser: Parser<Operator>) -> Parser<(Node, Node, SourceRange) -> Node> {
+        return parser ^^ { op -> (Node, Node, SourceRange) -> Node in
+            return { (left: Node, right: Node, loc: SourceRange) in
+                BinExpr(left: left, op: op, right: right, location: loc)
+            }
+        }
+    }
+
     // MARK: Literals
 
+    static let literal = intLiteral
+
     static let intLiteral = Lexer.signedInteger
-        ^^^ { (val, loc) in IntLiteral(value: Int(val)!, location: loc) }
+        ^^^ { (val, loc) in IntLiteral(value: Int(val)!, location: loc) as Node }
 
     // MARK: Expressions
 
-    public static let callExpr: Parser<Node> =
-        atom.suffixed(by: "(" ~~> callArgs <~~ ")")
+    static let expr = orExpr
 
-    static let callArgs =
-        (callArg.many(separatedBy: comma) <~~ comma.?).?
-        ^^^ { (args, loc) in
-            return { CallExpr(callee: $0, arguments: args ?? [], location: loc) as Node }
+    static let orExpr   = andExpr .infixedLeft(by: infixOp(orOp))
+    static let andExpr  = eqExpr  .infixedLeft(by: infixOp(andOp))
+    static let eqExpr   = cmpExpr .infixedLeft(by: infixOp(eqOp  | neOp))
+    static let cmpExpr  = addExpr .infixedLeft(by: infixOp(ltOp  | leOp  | gtOp  | geOp))
+    static let addExpr  = mulExpr .infixedLeft(by: infixOp(addOp | subOp))
+    static let mulExpr  = termExpr.infixedLeft(by: infixOp(mulOp | divOp | modOp))
+    static let termExpr = prefixExpr | atomExpr
+
+    static let prefixExpr: Parser<Node> = (notOp | addOp | subOp) ~~ atomExpr
+        ^^^ { (val, loc) in
+            let (op, operand) = val
+            return UnExpr(op: op, operand: operand, location: loc)
         }
+
+    static let atomExpr: Parser<Node> = atom ~~ trailer.*
+        ^^^ { (val, loc) in
+            let (atom, trailers) = val
+
+            // Trailers are the expression "suffixes" that get parsed after an atom expression.
+            // They may represent a list of call/subscript arguments or the member expressions.
+            // Trailers are left-associative, i.e. `f(x)[y].z` is parsed `((f(x))[y]).z`.
+            return trailers.reduce(atom) { result, trailer in
+                switch trailer {
+                case let .callArgs(args):
+                    return CallExpr(callee: result, arguments: args, location: loc)
+                case let .subscriptArgs(args):
+                    return SubscriptExpr(callee: result, arguments: args, location: loc)
+                case let .selectMember(member):
+                    return SelectExpr(owner: result, member: member, location: loc)
+                }
+            }
+        }
+
+    static let atom: Parser<Node> = ident | literal | "(" ~~> expr <~~ ")"
+
+    static let trailer =
+          "(" ~~> (callArg.many(separatedBy: comma) <~~ comma.?).? <~~ ")"
+          ^^ { val in Trailer.callArgs(val ?? []) }
+        | "[" ~~> callArg.many(separatedBy: comma) <~~ comma.? <~~ "]"
+          ^^ { val in Trailer.subscriptArgs(val) }
+        | "." ~~> ident
+          ^^ { val in Trailer.selectMember(val) }
 
     static let callArg: Parser<CallArg> =
         (name.? ~~ bindingOp.amid(whitespaces.?)).? ~~ expr
@@ -45,14 +113,7 @@ public struct Grammar {
         }
 
     static let ident = name
-        ^^^ { (val, loc) in Ident(name: val, location: loc) }
-
-    static let atom: Parser<Node> =
-          ident      ^^ { $0 as Node }
-        | intLiteral ^^ { $0 as Node }
-        | "(" ~~> expr <~~ ")"
-
-    static let expr = callExpr | atom
+        ^^^ { (val, loc) in Ident(name: val, location: loc) as Node }
 
     // MARK: Declarations
 
