@@ -1,0 +1,706 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		12DC5F2A1F9A7D9E00309621 /* AST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F281F9A7C3300309621 /* AST.swift */; };
+		12DC5F2D1F9A88A400309621 /* Type.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F2C1F9A88A400309621 /* Type.swift */; };
+		OBJ_100 /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_24 /* Array.swift */; };
+		OBJ_101 /* Associable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_25 /* Associable.swift */; };
+		OBJ_102 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_26 /* Collection.swift */; };
+		OBJ_103 /* Function.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_27 /* Function.swift */; };
+		OBJ_104 /* Mappable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_28 /* Mappable.swift */; };
+		OBJ_105 /* Numeric.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_29 /* Numeric.swift */; };
+		OBJ_106 /* Operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_30 /* Operators.swift */; };
+		OBJ_107 /* Optional.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_31 /* Optional.swift */; };
+		OBJ_108 /* Reducible.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_32 /* Reducible.swift */; };
+		OBJ_109 /* Sequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_33 /* Sequence.swift */; };
+		OBJ_110 /* Set.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_34 /* Set.swift */; };
+		OBJ_63 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* main.swift */; };
+		OBJ_65 /* AnzenLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenLib::Product" /* AnzenLib.framework */; };
+		OBJ_66 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
+		OBJ_67 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
+		OBJ_78 /* AnzenLib.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* AnzenLib.swift */; };
+		OBJ_80 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
+		OBJ_81 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
+		OBJ_88 /* Combinators.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_17 /* Combinators.swift */; };
+		OBJ_89 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_18 /* Error.swift */; };
+		OBJ_90 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_19 /* Lexer.swift */; };
+		OBJ_91 /* Location.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_20 /* Location.swift */; };
+		OBJ_92 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_21 /* Parser.swift */; };
+		OBJ_94 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		12DC5F221F9A7B2000309621 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "anzen::AnzenLib";
+			remoteInfo = AnzenLib;
+		};
+		12DC5F231F9A7B2000309621 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "Parsey::Parsey";
+			remoteInfo = Parsey;
+		};
+		12DC5F241F9A7B2000309621 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "Funky::Funky";
+			remoteInfo = Funky;
+		};
+		12DC5F251F9A7B2000309621 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "Funky::Funky";
+			remoteInfo = Funky;
+		};
+		12DC5F261F9A7B2000309621 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "Parsey::Parsey";
+			remoteInfo = Parsey;
+		};
+		12DC5F271F9A7B2000309621 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "Funky::Funky";
+			remoteInfo = Funky;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		12DC5F281F9A7C3300309621 /* AST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AST.swift; sourceTree = "<group>"; };
+		12DC5F2B1F9A7E0E00309621 /* InputSamples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = InputSamples; sourceTree = "<group>"; };
+		12DC5F2C1F9A88A400309621 /* Type.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Type.swift; sourceTree = "<group>"; };
+		"Funky::Funky::Product" /* Funky.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Funky.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		OBJ_11 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		OBJ_13 /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = SOURCE_ROOT; };
+		OBJ_16 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/4rch0dia/Documents/workspace/anzen/.build/checkouts/Parsey.git--5956736748209023752/Package.swift"; sourceTree = "<group>"; };
+		OBJ_17 /* Combinators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Combinators.swift; sourceTree = "<group>"; };
+		OBJ_18 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
+		OBJ_19 /* Lexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lexer.swift; sourceTree = "<group>"; };
+		OBJ_20 /* Location.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Location.swift; sourceTree = "<group>"; };
+		OBJ_21 /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
+		OBJ_23 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/4rch0dia/Documents/workspace/anzen/.build/checkouts/Funky-5714955810262541138/Package.swift"; sourceTree = "<group>"; };
+		OBJ_24 /* Array.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
+		OBJ_25 /* Associable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Associable.swift; sourceTree = "<group>"; };
+		OBJ_26 /* Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collection.swift; sourceTree = "<group>"; };
+		OBJ_27 /* Function.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Function.swift; sourceTree = "<group>"; };
+		OBJ_28 /* Mappable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mappable.swift; sourceTree = "<group>"; };
+		OBJ_29 /* Numeric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Numeric.swift; sourceTree = "<group>"; };
+		OBJ_30 /* Operators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operators.swift; sourceTree = "<group>"; };
+		OBJ_31 /* Optional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Optional.swift; sourceTree = "<group>"; };
+		OBJ_32 /* Reducible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reducible.swift; sourceTree = "<group>"; };
+		OBJ_33 /* Sequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sequence.swift; sourceTree = "<group>"; };
+		OBJ_34 /* Set.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Set.swift; sourceTree = "<group>"; };
+		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		OBJ_9 /* AnzenLib.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnzenLib.swift; sourceTree = "<group>"; };
+		"Parsey::Parsey::Product" /* Parsey.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Parsey.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		"anzen::AnzenLib::Product" /* AnzenLib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = AnzenLib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		"anzen::anzenc::Product" /* anzenc */ = {isa = PBXFileReference; lastKnownFileType = text; path = anzenc; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		OBJ_111 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_64 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_65 /* AnzenLib.framework in Frameworks */,
+				OBJ_66 /* Parsey.framework in Frameworks */,
+				OBJ_67 /* Funky.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_79 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_80 /* Parsey.framework in Frameworks */,
+				OBJ_81 /* Funky.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_93 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_94 /* Funky.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		OBJ_10 /* anzenc */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_11 /* main.swift */,
+			);
+			name = anzenc;
+			path = Sources/anzenc;
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_12 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Tests;
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_14 /* Dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_15 /* Parsey 2.0.0 */,
+				OBJ_22 /* Funky 2.0.1 */,
+			);
+			name = Dependencies;
+			sourceTree = "<group>";
+		};
+		OBJ_15 /* Parsey 2.0.0 */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_16 /* Package.swift */,
+				OBJ_17 /* Combinators.swift */,
+				OBJ_18 /* Error.swift */,
+				OBJ_19 /* Lexer.swift */,
+				OBJ_20 /* Location.swift */,
+				OBJ_21 /* Parser.swift */,
+			);
+			name = "Parsey 2.0.0";
+			path = ".build/checkouts/Parsey.git--5956736748209023752/Sources";
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_22 /* Funky 2.0.1 */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_23 /* Package.swift */,
+				OBJ_24 /* Array.swift */,
+				OBJ_25 /* Associable.swift */,
+				OBJ_26 /* Collection.swift */,
+				OBJ_27 /* Function.swift */,
+				OBJ_28 /* Mappable.swift */,
+				OBJ_29 /* Numeric.swift */,
+				OBJ_30 /* Operators.swift */,
+				OBJ_31 /* Optional.swift */,
+				OBJ_32 /* Reducible.swift */,
+				OBJ_33 /* Sequence.swift */,
+				OBJ_34 /* Set.swift */,
+			);
+			name = "Funky 2.0.1";
+			path = ".build/checkouts/Funky-5714955810262541138/Sources";
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_35 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				"anzen::anzenc::Product" /* anzenc */,
+				"anzen::AnzenLib::Product" /* AnzenLib.framework */,
+				"Parsey::Parsey::Product" /* Parsey.framework */,
+				"Funky::Funky::Product" /* Funky.framework */,
+			);
+			name = Products;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		OBJ_5 /*  */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_6 /* Package.swift */,
+				OBJ_7 /* Sources */,
+				OBJ_12 /* Tests */,
+				12DC5F2B1F9A7E0E00309621 /* InputSamples */,
+				OBJ_13 /* docs */,
+				OBJ_14 /* Dependencies */,
+				OBJ_35 /* Products */,
+			);
+			name = "";
+			sourceTree = "<group>";
+		};
+		OBJ_7 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_8 /* AnzenLib */,
+				OBJ_10 /* anzenc */,
+			);
+			name = Sources;
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_8 /* AnzenLib */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_9 /* AnzenLib.swift */,
+				12DC5F281F9A7C3300309621 /* AST.swift */,
+				12DC5F2C1F9A88A400309621 /* Type.swift */,
+			);
+			name = AnzenLib;
+			path = Sources/AnzenLib;
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		"Funky::Funky" /* Funky */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_96 /* Build configuration list for PBXNativeTarget "Funky" */;
+			buildPhases = (
+				OBJ_99 /* Sources */,
+				OBJ_111 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Funky;
+			productName = Funky;
+			productReference = "Funky::Funky::Product" /* Funky.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		"Parsey::Parsey" /* Parsey */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_84 /* Build configuration list for PBXNativeTarget "Parsey" */;
+			buildPhases = (
+				OBJ_87 /* Sources */,
+				OBJ_93 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				OBJ_95 /* PBXTargetDependency */,
+			);
+			name = Parsey;
+			productName = Parsey;
+			productReference = "Parsey::Parsey::Product" /* Parsey.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		"anzen::AnzenLib" /* AnzenLib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_74 /* Build configuration list for PBXNativeTarget "AnzenLib" */;
+			buildPhases = (
+				OBJ_77 /* Sources */,
+				OBJ_79 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				OBJ_82 /* PBXTargetDependency */,
+				OBJ_83 /* PBXTargetDependency */,
+			);
+			name = AnzenLib;
+			productName = AnzenLib;
+			productReference = "anzen::AnzenLib::Product" /* AnzenLib.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		"anzen::anzenc" /* anzenc */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_59 /* Build configuration list for PBXNativeTarget "anzenc" */;
+			buildPhases = (
+				OBJ_62 /* Sources */,
+				OBJ_64 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				OBJ_68 /* PBXTargetDependency */,
+				OBJ_70 /* PBXTargetDependency */,
+				OBJ_72 /* PBXTargetDependency */,
+			);
+			name = anzenc;
+			productName = anzenc;
+			productReference = "anzen::anzenc::Product" /* anzenc */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		OBJ_1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 9999;
+			};
+			buildConfigurationList = OBJ_2 /* Build configuration list for PBXProject "anzen" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = OBJ_5 /*  */;
+			productRefGroup = OBJ_35 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				"anzen::anzenc" /* anzenc */,
+				"anzen::AnzenLib" /* AnzenLib */,
+				"Parsey::Parsey" /* Parsey */,
+				"Funky::Funky" /* Funky */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		OBJ_62 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_63 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_77 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0;
+			files = (
+				12DC5F2A1F9A7D9E00309621 /* AST.swift in Sources */,
+				OBJ_78 /* AnzenLib.swift in Sources */,
+				12DC5F2D1F9A88A400309621 /* Type.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_87 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_88 /* Combinators.swift in Sources */,
+				OBJ_89 /* Error.swift in Sources */,
+				OBJ_90 /* Lexer.swift in Sources */,
+				OBJ_91 /* Location.swift in Sources */,
+				OBJ_92 /* Parser.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_99 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_100 /* Array.swift in Sources */,
+				OBJ_101 /* Associable.swift in Sources */,
+				OBJ_102 /* Collection.swift in Sources */,
+				OBJ_103 /* Function.swift in Sources */,
+				OBJ_104 /* Mappable.swift in Sources */,
+				OBJ_105 /* Numeric.swift in Sources */,
+				OBJ_106 /* Operators.swift in Sources */,
+				OBJ_107 /* Optional.swift in Sources */,
+				OBJ_108 /* Reducible.swift in Sources */,
+				OBJ_109 /* Sequence.swift in Sources */,
+				OBJ_110 /* Set.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		OBJ_68 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "anzen::AnzenLib" /* AnzenLib */;
+			targetProxy = 12DC5F221F9A7B2000309621 /* PBXContainerItemProxy */;
+		};
+		OBJ_70 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Parsey::Parsey" /* Parsey */;
+			targetProxy = 12DC5F261F9A7B2000309621 /* PBXContainerItemProxy */;
+		};
+		OBJ_72 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Funky::Funky" /* Funky */;
+			targetProxy = 12DC5F271F9A7B2000309621 /* PBXContainerItemProxy */;
+		};
+		OBJ_82 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Parsey::Parsey" /* Parsey */;
+			targetProxy = 12DC5F231F9A7B2000309621 /* PBXContainerItemProxy */;
+		};
+		OBJ_83 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Funky::Funky" /* Funky */;
+			targetProxy = 12DC5F251F9A7B2000309621 /* PBXContainerItemProxy */;
+		};
+		OBJ_95 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Funky::Funky" /* Funky */;
+			targetProxy = 12DC5F241F9A7B2000309621 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		OBJ_3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				ENABLE_NS_ASSERTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_SWIFT_FLAGS = "-DXcode";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = SWIFT_PACKAGE;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				USE_HEADERMAP = NO;
+			};
+			name = Debug;
+		};
+		OBJ_4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_OPTIMIZATION_LEVEL = s;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				OTHER_SWIFT_FLAGS = "-DXcode";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = "macosx iphoneos iphonesimulator appletvos appletvsimulator watchos watchsimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = SWIFT_PACKAGE;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				USE_HEADERMAP = NO;
+			};
+			name = Release;
+		};
+		OBJ_60 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/anzenc_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
+				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = anzenc;
+			};
+			name = Debug;
+		};
+		OBJ_61 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/anzenc_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
+				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = anzenc;
+			};
+			name = Release;
+		};
+		OBJ_75 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/AnzenLib_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = AnzenLib;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = AnzenLib;
+			};
+			name = Debug;
+		};
+		OBJ_76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/AnzenLib_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = AnzenLib;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = AnzenLib;
+			};
+			name = Release;
+		};
+		OBJ_85 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/Parsey_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = Parsey;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+				TARGET_NAME = Parsey;
+			};
+			name = Debug;
+		};
+		OBJ_86 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/Parsey_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = Parsey;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+				TARGET_NAME = Parsey;
+			};
+			name = Release;
+		};
+		OBJ_97 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/Funky_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = Funky;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+				TARGET_NAME = Funky;
+			};
+			name = Debug;
+		};
+		OBJ_98 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/Funky_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = Funky;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 3.0;
+				TARGET_NAME = Funky;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		OBJ_2 /* Build configuration list for PBXProject "anzen" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_3 /* Debug */,
+				OBJ_4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		OBJ_59 /* Build configuration list for PBXNativeTarget "anzenc" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_60 /* Debug */,
+				OBJ_61 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		OBJ_74 /* Build configuration list for PBXNativeTarget "AnzenLib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_75 /* Debug */,
+				OBJ_76 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		OBJ_84 /* Build configuration list for PBXNativeTarget "Parsey" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_85 /* Debug */,
+				OBJ_86 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		OBJ_96 /* Build configuration list for PBXNativeTarget "Funky" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_97 /* Debug */,
+				OBJ_98 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = OBJ_1 /* Project object */;
+}

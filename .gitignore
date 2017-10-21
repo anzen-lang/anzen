@@ -1,2 +1,8 @@
 # macOS
 .DS_Store
+
+# Swift PM and Xcode
+/.build
+/Packages
+/Package.resolved
+xcuserdata/
