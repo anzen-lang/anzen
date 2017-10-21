@@ -49,10 +49,16 @@ public struct Grammar {
 
     // MARK: Literals
 
-    static let literal = intLiteral
+    static let literal = intLiteral | boolLiteral | strLiteral
 
     static let intLiteral = Lexer.signedInteger
-        ^^^ { (val, loc) in IntLiteral(value: Int(val)!, location: loc) as Node }
+        ^^^ { (val, loc) in Literal(value: Int(val)!, location: loc) as Node }
+
+    static let boolLiteral = (Lexer.regex("true") | Lexer.regex("false"))
+        ^^^ { (val, loc) in Literal(value: val == "true", location: loc) as Node }
+
+    static let strLiteral = Lexer.regex("\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\"")
+        ^^^ { (val, loc) in Literal(value: val, location: loc) as Node }
 
     // MARK: Expressions
 

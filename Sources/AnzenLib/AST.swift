@@ -333,9 +333,9 @@ public class Ident: Node {
 
 }
 
-public class IntLiteral: Node {
+public class Literal<T>: Node {
 
-    public init(value: Int, location: SourceRange? = nil) {
+    public init(value: T, location: SourceRange? = nil) {
         self.value    = value
         self.location = location
     }
@@ -344,7 +344,7 @@ public class IntLiteral: Node {
         visitor.visit(node: self)
     }
 
-    public let value   : Int
+    public let value   : T
     public var type    : Type? = nil
     public let location: SourceRange?
 
