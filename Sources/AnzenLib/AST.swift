@@ -94,19 +94,19 @@ public class Block: Node {
 public class FunDecl: Node {
 
     public init(
-        name         : String,
-        placeholders : [String] = [],
-        parameters   : [Node],
-        codomainAnnot: Node? = nil,
-        body         : Node,
-        location     : SourceRange? = nil)
+        name        : String,
+        placeholders: [String] = [],
+        parameters  : [Node],
+        codomain    : Node? = nil,
+        body        : Node,
+        location    : SourceRange? = nil)
     {
-        self.name          = name
-        self.placeholders  = placeholders
-        self.parameters    = parameters
-        self.codomainAnnot = codomainAnnot
-        self.body          = body
-        self.location      = location
+        self.name         = name
+        self.placeholders = placeholders
+        self.parameters   = parameters
+        self.codomain     = codomain
+        self.body         = body
+        self.location     = location
     }
 
     public func accept(_ visitor: inout NodeVisitor) {
@@ -116,20 +116,20 @@ public class FunDecl: Node {
     public let name         : String
     public let placeholders : [String]
     public let parameters   : [Node]
-    public let codomainAnnot: Node?
+    public let codomain     : Node?
     public let body         : Node
     public var type         : Type? = nil
     public let location     : SourceRange?
 
     public var description: String {
-        var result = self.name
+        var result = "function \(self.name)"
         if !self.placeholders.isEmpty {
             result += "<" + self.placeholders.joined(separator: ", ") + ">"
         }
         result += "("
         result += self.parameters.map({ String(describing: $0) }).joined(separator: ", ")
         result += ")"
-        if let annotation = self.codomainAnnot {
+        if let annotation = self.codomain {
             result += " -> \(annotation)"
         }
         return result + " \(self.body)"
@@ -212,6 +212,39 @@ public class PropDecl: Node {
 
 }
 
+public class StructDecl: Node {
+
+    public init(
+        name        : String,
+        placeholders: [String] = [],
+        body        : Node,
+        location    : SourceRange? = nil)
+    {
+        self.name         = name
+        self.placeholders = placeholders
+        self.body         = body
+        self.location     = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let name        : String
+    public let placeholders: [String]
+    public let body        : Node
+    public var type        : Type? = nil
+    public let location    : SourceRange?
+
+    public var description: String {
+        var result = "struct \(self.name)"
+        if !self.placeholders.isEmpty {
+            result += "<" + self.placeholders.joined(separator: ", ") + ">"
+        }
+        return result + " \(self.body)"
+    }
+}
+
 public class TypeAnnot: Node {
 
     public init(
@@ -240,6 +273,137 @@ public class TypeAnnot: Node {
         }
         return String(describing: self.qualifiers)
     }
+
+}
+
+public class FunSign: Node {
+
+    public init(parameters: [Node], codomain: Node, location: SourceRange? = nil) {
+        self.parameters = parameters
+        self.codomain   = codomain
+        self.location   = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let parameters : [Node]
+    public let codomain   : Node
+    public var type       : Type? = nil
+    public let location   : SourceRange?
+
+    public var description: String {
+        let parameters = self.parameters.map({ String(describing: $0) }).joined(separator: ", ")
+        return "(\(parameters)) -> \(self.codomain)"
+    }
+
+}
+
+public class ParamSign: Node {
+
+    public init(label: String?, typeAnnotation: Node, location: SourceRange? = nil) {
+        self.label          = label
+        self.typeAnnotation = typeAnnotation
+        self.location       = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let label         : String?
+    public let typeAnnotation: Node
+    public var type          : Type? = nil
+    public let location      : SourceRange?
+
+    public var description: String {
+        let labelText = self.label ?? "_"
+        return "\(labelText) \(self.typeAnnotation)"
+    }
+
+}
+
+public class BindingStmt: Node {
+
+    public init(lvalue: Node, op: Operator, rvalue: Node, location: SourceRange? = nil) {
+        self.lvalue   = lvalue
+        self.op       = op
+        self.rvalue   = rvalue
+        self.location = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let lvalue  : Node
+    public let op      : Operator
+    public let rvalue  : Node
+    public var type    : Type? = nil
+    public let location: SourceRange?
+
+    public var description: String {
+        return "\(lvalue) \(op) \(rvalue)"
+    }
+
+}
+
+public class ReturnStmt: Node {
+
+    public init(value: Node? = nil, location: SourceRange? = nil) {
+        self.value     = value
+        self.location = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let value   : Node?
+    public var type    : Type? = nil
+    public let location: SourceRange?
+
+    public var description: String {
+        return self.value != nil
+            ? "return \(self.value!)"
+            : "return"
+    }
+
+}
+
+public class IfExpr: Node {
+
+    public init(
+        condition: Node,
+        thenBlock: Node,
+        elseBlock: Node? = nil,
+        location : SourceRange? = nil)
+    {
+        self.condition = condition
+        self.thenBlock = thenBlock
+        self.elseBlock = elseBlock
+        self.location  = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let condition: Node
+    public let thenBlock: Node
+    public let elseBlock: Node?
+    public var type     : Type? = nil
+    public let location : SourceRange?
+
+    public var description: String {
+        var result = "if \(self.condition) \(self.thenBlock)"
+        if let elseBlock = self.elseBlock {
+            result += " else \(elseBlock)"
+        }
+        return result
+    }
+
 }
 
 public class BinExpr: Node {

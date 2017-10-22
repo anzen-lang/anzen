@@ -11,23 +11,31 @@ public struct Grammar {
 
     // MARK: Module (entry point of the grammar)
 
-    public static let module = newlines.? ~~> stmt.* <~~ Lexer.end
+    public static let module =
+        newlines.? ~~> stmt.* <~~ Lexer.end
         ^^^ { (val, loc) in Module(statements: val, location: loc) }
 
-    static let block = "{" ~~> newlines.? ~~> stmt.* <~~ "}"
+    static let block: Parser<Node> =
+        "{" ~~> newlines.? ~~> stmt.* <~~ "}"
         ^^^ { (val, loc) in Block(statements: val, location: loc) }
 
-    static let stmt  = ws.? ~~> stmt_ <~~ (newlines.skipped() | Lexer.character(";").skipped())
-    static let stmt_ = propDecl
-                     | funDecl
-                     | expr
+    static let stmt : Parser<Node> =
+        ws.? ~~> stmt_ <~~ (newlines.skipped() | Lexer.character(";").skipped())
+    static let stmt_: Parser<Node> =
+          block
+        | propDecl
+        | funDecl
+        | structDecl
+        | bindingStmt
+        | returnStmt
+        | expr
 
     // MARK: Operators
 
     static let bindingOp =
-          Lexer.character("=" ) ^^ { _ in Operator.cpy }
-        | Lexer.regex    ("&-") ^^ { _ in Operator.ref }
-        | Lexer.regex    ("<-") ^^ { _ in Operator.mov }
+          Lexer.character("=" ).amid(ws.?) ^^ { _ in Operator.cpy }
+        | Lexer.regex    ("&-").amid(ws.?) ^^ { _ in Operator.ref }
+        | Lexer.regex    ("<-").amid(ws.?) ^^ { _ in Operator.mov }
 
     static let notOp = Lexer.regex    ("not").amid(ws.?) ^^ { _ in Operator.not }
     static let mulOp = Lexer.character("*")  .amid(ws.?) ^^ { _ in Operator.mul }
@@ -56,13 +64,16 @@ public struct Grammar {
 
     static let literal = intLiteral | boolLiteral | strLiteral
 
-    static let intLiteral = Lexer.signedInteger
+    static let intLiteral =
+        Lexer.signedInteger
         ^^^ { (val, loc) in Literal(value: Int(val)!, location: loc) as Node }
 
-    static let boolLiteral = (Lexer.regex("true") | Lexer.regex("false"))
+    static let boolLiteral =
+        (Lexer.regex("true") | Lexer.regex("false"))
         ^^^ { (val, loc) in Literal(value: val == "true", location: loc) as Node }
 
-    static let strLiteral = Lexer.regex("\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\"")
+    static let strLiteral =
+        Lexer.regex("\"[^\"\\\\]*(\\\\.[^\"\\\\]*)*\"")
         ^^^ { (val, loc) in Literal(value: val, location: loc) as Node }
 
     // MARK: Expressions
@@ -76,13 +87,15 @@ public struct Grammar {
     static let mulExpr  = termExpr.infixedLeft(by: infixOp(mulOp | divOp | modOp))
     static let termExpr = prefixExpr | atomExpr
 
-    static let prefixExpr: Parser<Node> = (notOp | addOp | subOp) ~~ atomExpr
+    static let prefixExpr: Parser<Node> =
+        (notOp | addOp | subOp) ~~ atomExpr
         ^^^ { (val, loc) in
             let (op, operand) = val
             return UnExpr(op: op, operand: operand, location: loc)
         }
 
-    static let atomExpr: Parser<Node> = atom ~~ trailer.*
+    static let atomExpr: Parser<Node> =
+        atom ~~ trailer.*
         ^^^ { (val, loc) in
             let (atom, trailers) = val
 
@@ -101,7 +114,7 @@ public struct Grammar {
             }
         }
 
-    static let atom: Parser<Node> = literal | ident | "(" ~~> expr <~~ ")"
+    static let atom: Parser<Node> = ifExpr | literal | ident | "(" ~~> expr <~~ ")"
 
     static let trailer =
           "(" ~~> (callArg.many(separatedBy: comma) <~~ comma.?).? <~~ ")"
@@ -111,8 +124,21 @@ public struct Grammar {
         | "." ~~> ident
           ^^ { val in Trailer.selectMember(val) }
 
-    static let callArg: Parser<CallArg> =
-        (name.? ~~ bindingOp.amid(ws.?)).? ~~ expr
+    static let ifExpr: Parser<Node> =
+        "if" ~~> ws ~~> expr ~~ block.amid(ws.?) ~~ elseExpr.?
+        ^^^ { (val, loc) in
+            return IfExpr(
+                condition: val.0.0,
+                thenBlock: val.0.1,
+                elseBlock: val.1,
+                location: loc)
+        }
+
+    static let elseExpr: Parser<Node> =
+        "else" ~~> ws ~~> (block | ifExpr)
+
+    static let callArg: Parser<Node> =
+        (name.? ~~ bindingOp).? ~~ expr
         ^^^ { (val, loc) in
             let (binding, expr) = val
             return CallArg(
@@ -122,8 +148,9 @@ public struct Grammar {
                 location : loc)
         }
 
-    static let ident = name
-        ^^^ { (val, loc) in Ident(name: val, location: loc) as Node }
+    static let ident: Parser<Node> =
+        name
+        ^^^ { (val, loc) in Ident(name: val, location: loc) }
 
     // MARK: Declarations
 
@@ -135,14 +162,13 @@ public struct Grammar {
         (Lexer.regex("->").amid(ws.?) ~~> typeAnnot).amid(ws.?).? ~~
         block
         ^^^ { (val, loc) in
-            let (signature, body) = val
             return FunDecl(
-                name         : signature.0.0.0,
-                placeholders : signature.0.0.1 ?? [],
-                parameters   : signature.0.1 ?? [],
-                codomainAnnot: signature.1,
-                body         : body,
-                location     : loc)
+                name        : val.0.0.0.0,
+                placeholders: val.0.0.0.1 ?? [],
+                parameters  : val.0.0.1 ?? [],
+                codomain    : val.0.1,
+                body        : val.1,
+                location    : loc)
         }
 
     /// "<" name ("," name)* [","] ">"
@@ -153,7 +179,7 @@ public struct Grammar {
     static let paramDecls = "(" ~~> (paramDecl.many(separatedBy: comma) <~~ comma.?).? <~~ ")"
 
     /// name [name] ":" type_annot
-    static let paramDecl: Parser<ParamDecl> =
+    static let paramDecl: Parser<Node> =
         name ~~ name.amid(ws.?).? ~~
         (Lexer.character(":").amid(ws.?) ~~> typeAnnot)
         ^^^ { (val, loc) in
@@ -169,7 +195,7 @@ public struct Grammar {
     static let propDecl: Parser<Node> =
         "let" ~~> ws ~~> name ~~
         (Lexer.character(":").amid(ws.?) ~~> typeAnnot).? ~~
-        (bindingOp.amid(ws.?) ~~ expr).?
+        (bindingOp ~~ expr).?
         ^^^ { (val, loc) in
             let (name, annot) = val.0
             let binding = val.1 != nil
@@ -183,16 +209,29 @@ public struct Grammar {
                 location      : loc)
         }
 
-    // MARK: Type annotations
-
-    static let typeAnnot: Parser<TypeAnnot> = qualTypeAnnot | unqualTypeAnnot
-
-    static let unqualTypeAnnot: Parser<TypeAnnot> = ident
+    /// "struct" name [placeholders] block
+    static let structDecl: Parser<Node> =
+        "struct" ~~> name.amid(ws.?) ~~
+        placeholders.amid(ws.?).? ~~
+        block
         ^^^ { (val, loc) in
-            return TypeAnnot(qualifiers: [], signature: val, location: loc)
+            return StructDecl(
+                name        : val.0.0,
+                placeholders: val.0.1 ?? [],
+                body        : val.1,
+                location    : loc)
         }
 
-    static let qualTypeAnnot: Parser<TypeAnnot> =
+    // MARK: Type annotations
+
+    static let typeAnnot = qualTypeAnnot | unqualTypeAnnot
+
+    static let unqualTypeAnnot: Parser<Node> =
+        typeSign
+        ^^^ { (val, loc) in TypeAnnot(qualifiers: [], signature: val, location: loc) }
+
+
+    static let qualTypeAnnot: Parser<Node> =
         typeQualifier.many(separatedBy: ws) <~~ ws ~~ ident.?
         ^^^ { (val, loc) in
             var qualifiers: TypeQualifier = []
@@ -216,6 +255,36 @@ public struct Grammar {
                 print("warning: unexpected qualifier: '\(val)'")
                 return []
             }
+        }
+
+    static let typeSign: Parser<Node> =
+        ident | funSign | "(" ~~> funSign <~~ ")"
+
+    static let funSign: Parser<Node> =
+        "(" ~~> (paramSign.many(separatedBy: comma) <~~ comma.?).? <~~ ")" ~~
+        (Lexer.regex("->").amid(ws.?) ~~> typeAnnot)
+        ^^^ { (val, loc) in
+            return FunSign(parameters: val.0 ?? [], codomain: val.1, location: loc)
+        }
+
+    static let paramSign: Parser<Node> =
+        name.? ~~ (Lexer.character(":").amid(ws.?) ~~> typeAnnot)
+        ^^^ { (val, loc) in
+            return ParamSign(label: val.0, typeAnnotation: val.1, location: loc)
+        }
+
+    // MARK: Statements
+
+    static let bindingStmt: Parser<Node> =
+        expr ~~ bindingOp ~~ expr
+        ^^^ { (val, loc) in
+            return BindingStmt(lvalue: val.0.0, op: val.0.1, rvalue: val.1, location: loc)
+        }
+
+    static let returnStmt: Parser<Node> =
+        "return" ~~> expr.amid(ws.?).?
+        ^^^ { (val, loc) in
+            return ReturnStmt(value: val, location: loc)
         }
 
     // MARK: Other terminal symbols
