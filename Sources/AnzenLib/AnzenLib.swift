@@ -11,11 +11,16 @@ public struct Grammar {
 
     // MARK: Module (entry point of the grammar)
 
-    public static let module = newlines.* ~~> stmt.* <~~ Lexer.end
+    public static let module = newlines.? ~~> stmt.* <~~ Lexer.end
         ^^^ { (val, loc) in Module(statements: val, location: loc) }
 
-    // static let stmt = propDecl <~~ newlines
-    static let stmt = expr <~~ newlines
+    static let block = "{" ~~> newlines.? ~~> stmt.* <~~ "}"
+        ^^^ { (val, loc) in Block(statements: val, location: loc) }
+
+    static let stmt  = ws.? ~~> stmt_ <~~ (newlines.skipped() | Lexer.character(";").skipped())
+    static let stmt_ = propDecl
+                     | funDecl
+                     | expr
 
     // MARK: Operators
 
@@ -24,20 +29,20 @@ public struct Grammar {
         | Lexer.regex    ("&-") ^^ { _ in Operator.ref }
         | Lexer.regex    ("<-") ^^ { _ in Operator.mov }
 
-    static let notOp = Lexer.regex    ("not").amid(whitespaces.?) ^^ { _ in Operator.not }
-    static let mulOp = Lexer.character("*")  .amid(whitespaces.?) ^^ { _ in Operator.mul }
-    static let divOp = Lexer.character("/")  .amid(whitespaces.?) ^^ { _ in Operator.div }
-    static let modOp = Lexer.character("%")  .amid(whitespaces.?) ^^ { _ in Operator.mod }
-    static let addOp = Lexer.character("+")  .amid(whitespaces.?) ^^ { _ in Operator.add }
-    static let subOp = Lexer.character("-")  .amid(whitespaces.?) ^^ { _ in Operator.sub }
-    static let ltOp  = Lexer.character("<")  .amid(whitespaces.?) ^^ { _ in Operator.lt  }
-    static let leOp  = Lexer.regex    ("<=") .amid(whitespaces.?) ^^ { _ in Operator.le  }
-    static let gtOp  = Lexer.character(">")  .amid(whitespaces.?) ^^ { _ in Operator.lt  }
-    static let geOp  = Lexer.regex    (">=") .amid(whitespaces.?) ^^ { _ in Operator.le  }
-    static let eqOp  = Lexer.regex    ("==") .amid(whitespaces.?) ^^ { _ in Operator.eq  }
-    static let neOp  = Lexer.regex    ("!=") .amid(whitespaces.?) ^^ { _ in Operator.ne  }
-    static let andOp = Lexer.regex    ("and").amid(whitespaces.?) ^^ { _ in Operator.and }
-    static let orOp  = Lexer.regex    ("or") .amid(whitespaces.?) ^^ { _ in Operator.or  }
+    static let notOp = Lexer.regex    ("not").amid(ws.?) ^^ { _ in Operator.not }
+    static let mulOp = Lexer.character("*")  .amid(ws.?) ^^ { _ in Operator.mul }
+    static let divOp = Lexer.character("/")  .amid(ws.?) ^^ { _ in Operator.div }
+    static let modOp = Lexer.character("%")  .amid(ws.?) ^^ { _ in Operator.mod }
+    static let addOp = Lexer.character("+")  .amid(ws.?) ^^ { _ in Operator.add }
+    static let subOp = Lexer.character("-")  .amid(ws.?) ^^ { _ in Operator.sub }
+    static let ltOp  = Lexer.character("<")  .amid(ws.?) ^^ { _ in Operator.lt  }
+    static let leOp  = Lexer.regex    ("<=") .amid(ws.?) ^^ { _ in Operator.le  }
+    static let gtOp  = Lexer.character(">")  .amid(ws.?) ^^ { _ in Operator.lt  }
+    static let geOp  = Lexer.regex    (">=") .amid(ws.?) ^^ { _ in Operator.le  }
+    static let eqOp  = Lexer.regex    ("==") .amid(ws.?) ^^ { _ in Operator.eq  }
+    static let neOp  = Lexer.regex    ("!=") .amid(ws.?) ^^ { _ in Operator.ne  }
+    static let andOp = Lexer.regex    ("and").amid(ws.?) ^^ { _ in Operator.and }
+    static let orOp  = Lexer.regex    ("or") .amid(ws.?) ^^ { _ in Operator.or  }
 
     static func infixOp(_ parser: Parser<Operator>) -> Parser<(Node, Node, SourceRange) -> Node> {
         return parser ^^ { op -> (Node, Node, SourceRange) -> Node in
@@ -62,8 +67,7 @@ public struct Grammar {
 
     // MARK: Expressions
 
-    static let expr = orExpr
-
+    static let expr     = orExpr
     static let orExpr   = andExpr .infixedLeft(by: infixOp(orOp))
     static let andExpr  = eqExpr  .infixedLeft(by: infixOp(andOp))
     static let eqExpr   = cmpExpr .infixedLeft(by: infixOp(eqOp  | neOp))
@@ -97,7 +101,7 @@ public struct Grammar {
             }
         }
 
-    static let atom: Parser<Node> = ident | literal | "(" ~~> expr <~~ ")"
+    static let atom: Parser<Node> = literal | ident | "(" ~~> expr <~~ ")"
 
     static let trailer =
           "(" ~~> (callArg.many(separatedBy: comma) <~~ comma.?).? <~~ ")"
@@ -108,7 +112,7 @@ public struct Grammar {
           ^^ { val in Trailer.selectMember(val) }
 
     static let callArg: Parser<CallArg> =
-        (name.? ~~ bindingOp.amid(whitespaces.?)).? ~~ expr
+        (name.? ~~ bindingOp.amid(ws.?)).? ~~ expr
         ^^^ { (val, loc) in
             let (binding, expr) = val
             return CallArg(
@@ -123,10 +127,49 @@ public struct Grammar {
 
     // MARK: Declarations
 
-    static let propDecl: Parser<PropDecl> =
-        "let" ~~> whitespaces ~~> name ~~
-        (Lexer.character(":").amid(whitespaces.?) ~~> typeAnnot).? ~~
-        (bindingOp.amid(whitespaces.?) ~~ expr).?
+    /// "function" name [placeholders] "(" [param_decls] ")" ["->" type_annot] block
+    static let funDecl: Parser<Node> =
+        "function" ~~> ws ~~> name ~~
+        placeholders.amid(ws.?).? ~~
+        paramDecls.amid(ws.?) ~~
+        (Lexer.regex("->").amid(ws.?) ~~> typeAnnot).amid(ws.?).? ~~
+        block
+        ^^^ { (val, loc) in
+            let (signature, body) = val
+            return FunDecl(
+                name         : signature.0.0.0,
+                placeholders : signature.0.0.1 ?? [],
+                parameters   : signature.0.1 ?? [],
+                codomainAnnot: signature.1,
+                body         : body,
+                location     : loc)
+        }
+
+    /// "<" name ("," name)* [","] ">"
+    static let placeholders =
+        "<" ~~> name.many(separatedBy: comma) <~~ comma.? <~~ ">"
+
+    /// "(" [param_decl ("," param_decl)* [","]] ")"
+    static let paramDecls = "(" ~~> (paramDecl.many(separatedBy: comma) <~~ comma.?).? <~~ ")"
+
+    /// name [name] ":" type_annot
+    static let paramDecl: Parser<ParamDecl> =
+        name ~~ name.amid(ws.?).? ~~
+        (Lexer.character(":").amid(ws.?) ~~> typeAnnot)
+        ^^^ { (val, loc) in
+            let (interface, annot) = val
+            let (label    , name ) = interface
+            return ParamDecl(
+                label         : label != "_" ? label : nil,
+                name          : name ?? label,
+                typeAnnotation: annot)
+        }
+
+    /// "let" name [":" type_annot] [assign_op expr]
+    static let propDecl: Parser<Node> =
+        "let" ~~> ws ~~> name ~~
+        (Lexer.character(":").amid(ws.?) ~~> typeAnnot).? ~~
+        (bindingOp.amid(ws.?) ~~ expr).?
         ^^^ { (val, loc) in
             let (name, annot) = val.0
             let binding = val.1 != nil
@@ -150,7 +193,7 @@ public struct Grammar {
         }
 
     static let qualTypeAnnot: Parser<TypeAnnot> =
-        typeQualifier.many(separatedBy: whitespaces) <~~ whitespaces ~~ ident.?
+        typeQualifier.many(separatedBy: ws) <~~ ws ~~ ident.?
         ^^^ { (val, loc) in
             var qualifiers: TypeQualifier = []
             for q in val.0 {
@@ -177,10 +220,10 @@ public struct Grammar {
 
     // MARK: Other terminal symbols
 
-    static let comment      = Lexer.regex("\\#[^\\n]*")
-    static let newlines     = (Lexer.newLine | comment).+
-    static let whitespaces  = Lexer.whitespaces
-    static let name         = Lexer.regex("[a-zA-Z_]\\w*")
-    static let comma        = Lexer.character(",").amid(whitespaces.?)
+    static let comment  = Lexer.regex("\\#[^\\n]*")
+    static let newlines = (Lexer.newLine | comment).+
+    static let ws       = Lexer.whitespaces
+    static let name     = Lexer.regex("[a-zA-Z_]\\w*")
+    static let comma    = Lexer.character(",").amid(ws.?)
 
 }

@@ -91,6 +91,90 @@ public class Block: Node {
 
 }
 
+public class FunDecl: Node {
+
+    public init(
+        name         : String,
+        placeholders : [String] = [],
+        parameters   : [Node],
+        codomainAnnot: Node? = nil,
+        body         : Node,
+        location     : SourceRange? = nil)
+    {
+        self.name          = name
+        self.placeholders  = placeholders
+        self.parameters    = parameters
+        self.codomainAnnot = codomainAnnot
+        self.body          = body
+        self.location      = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let name         : String
+    public let placeholders : [String]
+    public let parameters   : [Node]
+    public let codomainAnnot: Node?
+    public let body         : Node
+    public var type         : Type? = nil
+    public let location     : SourceRange?
+
+    public var description: String {
+        var result = self.name
+        if !self.placeholders.isEmpty {
+            result += "<" + self.placeholders.joined(separator: ", ") + ">"
+        }
+        result += "("
+        result += self.parameters.map({ String(describing: $0) }).joined(separator: ", ")
+        result += ")"
+        if let annotation = self.codomainAnnot {
+            result += " -> \(annotation)"
+        }
+        return result + " \(self.body)"
+    }
+
+}
+
+public class ParamDecl: Node {
+
+    public init(
+        label         : String?,
+        name          : String,
+        typeAnnotation: Node,
+        location      : SourceRange? = nil)
+    {
+        self.label          = label
+        self.name           = name
+        self.typeAnnotation = typeAnnotation
+        self.location       = location
+    }
+
+    public func accept(_ visitor: inout NodeVisitor) {
+        visitor.visit(node: self)
+    }
+
+    public let label         : String?
+    public let name          : String
+    public let typeAnnotation: Node
+    public var type          : Type? = nil
+    public let location      : SourceRange?
+
+    public var description: String {
+        var interface = self.name
+        if let label = self.label {
+            if label != self.name {
+                interface = "\(label) \(interface)"
+            }
+        } else {
+            interface = "_ \(interface)"
+        }
+        return "\(interface): \(self.typeAnnotation)"
+    }
+
+}
+
 public class PropDecl: Node {
 
     public init(
@@ -149,7 +233,10 @@ public class TypeAnnot: Node {
 
     public var description: String {
         if let sign = self.signature {
-            return "\(sign) \(self.qualifiers)"
+            let qual = String(describing: self.qualifiers)
+            return qual != ""
+                ? "\(qual) \(sign)"
+                : String(describing: sign)
         }
         return String(describing: self.qualifiers)
     }
