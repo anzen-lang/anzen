@@ -159,7 +159,7 @@ public struct Grammar {
         "function" ~~> ws ~~> name ~~
         placeholders.amid(ws.?).? ~~
         paramDecls.amid(ws.?) ~~
-        (Lexer.regex("->").amid(ws.?) ~~> qualTypeSign).amid(ws.?).? ~~
+        (Lexer.regex("->").amid(ws.?) ~~> typeAnnotation).amid(ws.?).? ~~
         block
         ^^^ { (val, loc) in
             return FunDecl(
@@ -181,7 +181,7 @@ public struct Grammar {
     /// name [name] ":" type_sign
     static let paramDecl: Parser<Node> =
         name ~~ name.amid(ws.?).? ~~
-        (Lexer.character(":").amid(ws.?) ~~> qualTypeSign)
+        (Lexer.character(":").amid(ws.?) ~~> typeAnnotation)
         ^^^ { (val, loc) in
             let (interface, sign) = val
             let (label    , name) = interface
@@ -194,7 +194,7 @@ public struct Grammar {
     /// "let" name [":" type_sign] [assign_op expr]
     static let propDecl: Parser<Node> =
         "let" ~~> ws ~~> name ~~
-        (Lexer.character(":").amid(ws.?) ~~> qualTypeSign).? ~~
+        (Lexer.character(":").amid(ws.?) ~~> typeAnnotation).? ~~
         (bindingOp ~~ expr).?
         ^^^ { (val, loc) in
             let (name, sign) = val.0
@@ -223,6 +223,8 @@ public struct Grammar {
         }
 
     // MARK: Type signatures
+
+    static let typeAnnotation = qualTypeSign | typeSign
 
     static let qualTypeSign: Parser<Node> =
         typeQualifier.many(separatedBy: ws) <~~ ws ~~ typeSign.?
@@ -255,13 +257,13 @@ public struct Grammar {
 
     static let funSign: Parser<Node> =
         "(" ~~> (paramSign.many(separatedBy: comma) <~~ comma.?).? <~~ ")" ~~
-        (Lexer.regex("->").amid(ws.?) ~~> qualTypeSign)
+        (Lexer.regex("->").amid(ws.?) ~~> typeAnnotation)
         ^^^ { (val, loc) in
             return FunSign(parameters: val.0 ?? [], codomain: val.1, location: loc)
         }
 
     static let paramSign: Parser<Node> =
-        name.? ~~ (Lexer.character(":").amid(ws.?) ~~> qualTypeSign)
+        name.? ~~ (Lexer.character(":").amid(ws.?) ~~> typeAnnotation)
         ^^^ { (val, loc) in
             return ParamSign(label: val.0, typeAnnotation: val.1, location: loc)
         }
@@ -283,8 +285,8 @@ public struct Grammar {
     // MARK: Other terminal symbols
 
     static let comment  = Lexer.regex("\\#[^\\n]*")
-    static let newlines = (Lexer.newLine | comment).+
     static let ws       = Lexer.whitespaces
+    static let newlines = (Lexer.newLine | ws.? ~~> comment).+
     static let name     = Lexer.regex("[a-zA-Z_]\\w*")
     static let comma    = Lexer.character(",").amid(ws.?)
 

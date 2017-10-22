@@ -5,7 +5,9 @@ public struct SymbolsExtractor: ASTVisitor {
         self.nodeStack.append(node)
         try! self.traverse(node)
         _ = self.nodeStack.popLast()
-        return true
+
+        // Cancel further traversal since we already visited the relevant node's children.
+        return false
     }
 
     @discardableResult
@@ -13,7 +15,9 @@ public struct SymbolsExtractor: ASTVisitor {
         self.nodeStack.append(node)
         try! self.traverse(node)
         self.nodeStack.removeLast()
-        return true
+
+        // Cancel further traversal since we already visited the relevant node's children.
+        return false
     }
 
     @discardableResult
@@ -31,28 +35,30 @@ public struct SymbolsExtractor: ASTVisitor {
         try! self.traverse(node.body)
         self.nodeStack.removeLast()
 
-        return try! self.traverse(node)
+        // Cancel further traversal since we already visited the relevant node's children.
+        return false
     }
 
     @discardableResult
     public mutating func visit(_ node: ParamDecl) -> Bool {
         var block = self.nodeStack.last
         block?.symbols.insert(node.name)
-        return try! self.traverse(node)
+        return true
     }
 
     @discardableResult
     public mutating func visit(_ node: PropDecl) -> Bool {
         var block = self.nodeStack.last
         block?.symbols.insert(node.name)
-        return try! self.traverse(node)
+        return true
     }
 
     @discardableResult
     public mutating func visit(_ node: StructDecl) -> Bool {
+        print(node)
         var block = self.nodeStack.last
         block?.symbols.insert(node.name)
-        return try! self.traverse(node)
+        return true
     }
 
     var nodeStack: [ScopeOpeningNode] = []
