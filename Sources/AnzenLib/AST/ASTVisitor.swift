@@ -12,7 +12,7 @@ public protocol ASTVisitor {
 
     // MARK: Type signatures
 
-    mutating func visit(node: TypeAnnot)     throws -> Bool
+    mutating func visit(node: QualSign)      throws -> Bool
     mutating func visit(node: FunSign)       throws -> Bool
     mutating func visit(node: ParamSign)     throws -> Bool
 
@@ -65,7 +65,7 @@ public extension ASTVisitor {
 
     // MARK: Type signatures
 
-    mutating func visit(node: TypeAnnot) throws -> Bool {
+    mutating func visit(node: QualSign) throws -> Bool {
         return true
     }
 

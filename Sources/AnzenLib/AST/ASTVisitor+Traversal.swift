@@ -12,7 +12,7 @@ public extension ASTVisitor {
             return try self.traverse(n)
         case let n as StructDecl:
             return try self.traverse(n)
-        case let n as TypeAnnot:
+        case let n as QualSign:
             return try self.traverse(n)
         case let n as FunSign:
             return try self.traverse(n)
@@ -99,7 +99,7 @@ public extension ASTVisitor {
 
     // MARK: Type signatures
 
-    mutating func traverse(_ node: TypeAnnot) throws -> Bool {
+    mutating func traverse(_ node: QualSign) throws -> Bool {
         if let signature = node.signature {
             guard try self.traverse(signature) else { return false }
         }

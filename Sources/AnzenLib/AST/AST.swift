@@ -75,6 +75,8 @@ public class Block: Node {
 
 }
 
+// MARK: Declarations
+
 public class FunDecl: Node {
 
     public init(
@@ -211,9 +213,12 @@ public class StructDecl: Node {
         }
         return result + " \(self.body)"
     }
+
 }
 
-public class TypeAnnot: Node {
+// MARK: Type signatures
+
+public class QualSign: Node {
 
     public init(
         qualifiers: TypeQualifier, signature: Node?, location: SourceRange? = nil)
@@ -280,6 +285,8 @@ public class ParamSign: Node {
 
 }
 
+// MARK: Statements
+
 public class BindingStmt: Node {
 
     public init(lvalue: Node, op: Operator, rvalue: Node, location: SourceRange? = nil) {
@@ -319,6 +326,8 @@ public class ReturnStmt: Node {
     }
 
 }
+
+// MARK: Expressions
 
 public class IfExpr: Node {
 

@@ -154,12 +154,12 @@ public struct Grammar {
 
     // MARK: Declarations
 
-    /// "function" name [placeholders] "(" [param_decls] ")" ["->" type_annot] block
+    /// "function" name [placeholders] "(" [param_decls] ")" ["->" type_sign] block
     static let funDecl: Parser<Node> =
         "function" ~~> ws ~~> name ~~
         placeholders.amid(ws.?).? ~~
         paramDecls.amid(ws.?) ~~
-        (Lexer.regex("->").amid(ws.?) ~~> typeAnnot).amid(ws.?).? ~~
+        (Lexer.regex("->").amid(ws.?) ~~> qualTypeSign).amid(ws.?).? ~~
         block
         ^^^ { (val, loc) in
             return FunDecl(
@@ -178,33 +178,33 @@ public struct Grammar {
     /// "(" [param_decl ("," param_decl)* [","]] ")"
     static let paramDecls = "(" ~~> (paramDecl.many(separatedBy: comma) <~~ comma.?).? <~~ ")"
 
-    /// name [name] ":" type_annot
+    /// name [name] ":" type_sign
     static let paramDecl: Parser<Node> =
         name ~~ name.amid(ws.?).? ~~
-        (Lexer.character(":").amid(ws.?) ~~> typeAnnot)
+        (Lexer.character(":").amid(ws.?) ~~> qualTypeSign)
         ^^^ { (val, loc) in
-            let (interface, annot) = val
-            let (label    , name ) = interface
+            let (interface, sign) = val
+            let (label    , name) = interface
             return ParamDecl(
                 label         : label != "_" ? label : nil,
                 name          : name ?? label,
-                typeAnnotation: annot)
+                typeAnnotation: sign)
         }
 
-    /// "let" name [":" type_annot] [assign_op expr]
+    /// "let" name [":" type_sign] [assign_op expr]
     static let propDecl: Parser<Node> =
         "let" ~~> ws ~~> name ~~
-        (Lexer.character(":").amid(ws.?) ~~> typeAnnot).? ~~
+        (Lexer.character(":").amid(ws.?) ~~> qualTypeSign).? ~~
         (bindingOp ~~ expr).?
         ^^^ { (val, loc) in
-            let (name, annot) = val.0
+            let (name, sign) = val.0
             let binding = val.1 != nil
                 ? (op: val.1!.0, value: val.1!.1 as Node)
                 : nil
 
             return PropDecl(
                 name          : name,
-                typeAnnotation: annot,
+                typeAnnotation: sign,
                 initialBinding: binding,
                 location      : loc)
         }
@@ -222,24 +222,17 @@ public struct Grammar {
                 location    : loc)
         }
 
-    // MARK: Type annotations
+    // MARK: Type signatures
 
-    static let typeAnnot = qualTypeAnnot | unqualTypeAnnot
-
-    static let unqualTypeAnnot: Parser<Node> =
-        typeSign
-        ^^^ { (val, loc) in TypeAnnot(qualifiers: [], signature: val, location: loc) }
-
-
-    static let qualTypeAnnot: Parser<Node> =
-        typeQualifier.many(separatedBy: ws) <~~ ws ~~ ident.?
+    static let qualTypeSign: Parser<Node> =
+        typeQualifier.many(separatedBy: ws) <~~ ws ~~ typeSign.?
         ^^^ { (val, loc) in
             var qualifiers: TypeQualifier = []
             for q in val.0 {
                 qualifiers.formUnion(q)
             }
 
-            return TypeAnnot(qualifiers: qualifiers, signature: val.1, location: loc)
+            return QualSign(qualifiers: qualifiers, signature: val.1, location: loc)
         }
 
     static let typeQualifier: Parser<TypeQualifier> = "@" ~~> name
@@ -262,13 +255,13 @@ public struct Grammar {
 
     static let funSign: Parser<Node> =
         "(" ~~> (paramSign.many(separatedBy: comma) <~~ comma.?).? <~~ ")" ~~
-        (Lexer.regex("->").amid(ws.?) ~~> typeAnnot)
+        (Lexer.regex("->").amid(ws.?) ~~> qualTypeSign)
         ^^^ { (val, loc) in
             return FunSign(parameters: val.0 ?? [], codomain: val.1, location: loc)
         }
 
     static let paramSign: Parser<Node> =
-        name.? ~~ (Lexer.character(":").amid(ws.?) ~~> typeAnnot)
+        name.? ~~ (Lexer.character(":").amid(ws.?) ~~> qualTypeSign)
         ^^^ { (val, loc) in
             return ParamSign(label: val.0, typeAnnotation: val.1, location: loc)
         }
