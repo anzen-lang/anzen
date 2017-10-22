@@ -26,15 +26,7 @@ public enum Operator: CustomStringConvertible {
     ]
 }
 
-public protocol NodeVisitor {
-
-    mutating func visit(node: Node)
-
-}
-
 public protocol Node: CustomStringConvertible {
-
-    func accept(_ visitor: inout NodeVisitor)
 
     var location: SourceRange? { get }
     var type    : Type?        { get set }
@@ -46,10 +38,6 @@ public class Module: Node {
     public init(statements: [Node], location: SourceRange? = nil) {
         self.statements = statements
         self.location   = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public var statements: [Node]
@@ -67,10 +55,6 @@ public class Block: Node {
     public init(statements: [Node], location: SourceRange? = nil) {
         self.statements = statements
         self.location   = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public var statements: [Node]
@@ -107,10 +91,6 @@ public class FunDecl: Node {
         self.codomain     = codomain
         self.body         = body
         self.location     = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public let name         : String
@@ -151,10 +131,6 @@ public class ParamDecl: Node {
         self.location       = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let label         : String?
     public let name          : String
     public let typeAnnotation: Node
@@ -187,10 +163,6 @@ public class PropDecl: Node {
         self.typeAnnotation = typeAnnotation
         self.initialBinding = initialBinding
         self.location       = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public let name          : String
@@ -226,10 +198,6 @@ public class StructDecl: Node {
         self.location     = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let name        : String
     public let placeholders: [String]
     public let body        : Node
@@ -253,10 +221,6 @@ public class TypeAnnot: Node {
         self.qualifiers = qualifiers
         self.signature  = signature
         self.location   = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public let qualifiers: TypeQualifier
@@ -284,10 +248,6 @@ public class FunSign: Node {
         self.location   = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let parameters : [Node]
     public let codomain   : Node
     public var type       : Type? = nil
@@ -306,10 +266,6 @@ public class ParamSign: Node {
         self.label          = label
         self.typeAnnotation = typeAnnotation
         self.location       = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public let label         : String?
@@ -333,10 +289,6 @@ public class BindingStmt: Node {
         self.location = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let lvalue  : Node
     public let op      : Operator
     public let rvalue  : Node
@@ -354,10 +306,6 @@ public class ReturnStmt: Node {
     public init(value: Node? = nil, location: SourceRange? = nil) {
         self.value     = value
         self.location = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public let value   : Node?
@@ -386,10 +334,6 @@ public class IfExpr: Node {
         self.location  = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let condition: Node
     public let thenBlock: Node
     public let elseBlock: Node?
@@ -415,10 +359,6 @@ public class BinExpr: Node {
         self.location = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let left     : Node
     public let op       : Operator
     public let right    : Node
@@ -439,10 +379,6 @@ public class UnExpr: Node {
         self.location = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let op       : Operator
     public let operand  : Node
     public var type     : Type? = nil
@@ -460,10 +396,6 @@ public class CallExpr: Node {
         self.callee    = callee
         self.arguments = arguments
         self.location  = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public let callee   : Node
@@ -492,10 +424,6 @@ public class CallArg: Node {
         self.location  = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let label    : String?
     public let bindingOp: Operator?
     public let value    : Node
@@ -522,10 +450,6 @@ public class SubscriptExpr: Node {
         self.location  = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let callee   : Node
     public let arguments: [Node]
     public var type     : Type? = nil
@@ -543,10 +467,6 @@ public class SelectExpr: Node {
         self.owner    = owner
         self.member   = member
         self.location = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public let owner   : Node?
@@ -570,10 +490,6 @@ public class Ident: Node {
         self.location = location
     }
 
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
-    }
-
     public let name    : String
     public var type    : Type? = nil
     public let location: SourceRange?
@@ -589,10 +505,6 @@ public class Literal<T>: Node {
     public init(value: T, location: SourceRange? = nil) {
         self.value    = value
         self.location = location
-    }
-
-    public func accept(_ visitor: inout NodeVisitor) {
-        visitor.visit(node: self)
     }
 
     public let value   : T
