@@ -10,6 +10,8 @@ public enum Operator: CustomStringConvertible {
     case or
     case cpy , ref , mov
 
+    // MARK: Pretty-printing
+
     public var description: String {
         return Operator.repr[self]!
     }
@@ -29,7 +31,12 @@ public enum Operator: CustomStringConvertible {
 public protocol Node: CustomStringConvertible {
 
     var location: SourceRange? { get }
-    var type    : Type?        { get set }
+
+}
+
+public protocol TypedNode: Node {
+
+    var type    : Type? { get set }
 
 }
 
@@ -41,8 +48,12 @@ public class Module: Node {
     }
 
     public var statements: [Node]
-    public var type      : Type? = nil
+
+    // MARK: Annotations
+
     public let location  : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         return self.statements.map({ String(describing: $0) }).joined(separator: "\n")
@@ -58,8 +69,12 @@ public class Block: Node {
     }
 
     public var statements: [Node]
-    public var type      : Type? = nil
+
+    // MARK: Annotations
+
     public let location  : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         var result = "{\n"
@@ -99,8 +114,13 @@ public class FunDecl: Node {
     public let parameters   : [Node]
     public let codomain     : Node?
     public let body         : Node
+
+    // MARK: Annotations
+
     public var type         : Type? = nil
     public let location     : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         var result = "function \(self.name)"
@@ -135,8 +155,13 @@ public class ParamDecl: Node {
     public let label         : String?
     public let name          : String
     public let typeAnnotation: Node
+
+    // MARK: Annotations
+
     public var type          : Type? = nil
     public let location      : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         var interface = self.name
@@ -169,8 +194,13 @@ public class PropDecl: Node {
     public let name          : String
     public let typeAnnotation: Node?
     public let initialBinding: (op: Operator, value: Node)?
+
+    // MARK: Annotations
+
     public var type          : Type? = nil
     public let location      : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         var result = "let \(self.name)"
@@ -202,8 +232,13 @@ public class StructDecl: Node {
     public let name        : String
     public let placeholders: [String]
     public let body        : Node
+
+    // MARK: Annotations
+
     public var type        : Type? = nil
     public let location    : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         var result = "struct \(self.name)"
@@ -217,7 +252,7 @@ public class StructDecl: Node {
 
 // MARK: Type signatures
 
-public class QualSign: Node {
+public class QualSign: TypedNode {
 
     public init(
         qualifiers: TypeQualifier, signature: Node?, location: SourceRange? = nil)
@@ -229,8 +264,13 @@ public class QualSign: Node {
 
     public let qualifiers: TypeQualifier
     public let signature : Node?
+
+    // MARK: Annotations
+
     public var type      : Type? = nil
     public let location  : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         if let sign = self.signature {
@@ -244,7 +284,7 @@ public class QualSign: Node {
 
 }
 
-public class FunSign: Node {
+public class FunSign: TypedNode {
 
     public init(parameters: [Node], codomain: Node, location: SourceRange? = nil) {
         self.parameters = parameters
@@ -254,8 +294,13 @@ public class FunSign: Node {
 
     public let parameters : [Node]
     public let codomain   : Node
+
+    // MARK: Annotations
+
     public var type       : Type? = nil
     public let location   : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         let parameters = self.parameters.map({ String(describing: $0) }).joined(separator: ", ")
@@ -264,7 +309,7 @@ public class FunSign: Node {
 
 }
 
-public class ParamSign: Node {
+public class ParamSign: TypedNode {
 
     public init(label: String?, typeAnnotation: Node, location: SourceRange? = nil) {
         self.label          = label
@@ -274,8 +319,13 @@ public class ParamSign: Node {
 
     public let label         : String?
     public let typeAnnotation: Node
+
+    // MARK: Annotations
+
     public var type          : Type? = nil
     public let location      : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         let labelText = self.label ?? "_"
@@ -298,8 +348,12 @@ public class BindingStmt: Node {
     public let lvalue  : Node
     public let op      : Operator
     public let rvalue  : Node
-    public var type    : Type? = nil
+
+    // MARK: Annotations
+
     public let location: SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         return "\(lvalue) \(op) \(rvalue)"
@@ -315,8 +369,12 @@ public class ReturnStmt: Node {
     }
 
     public let value   : Node?
-    public var type    : Type? = nil
+
+    // MARK: Annotations
+
     public let location: SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         return self.value != nil
@@ -328,7 +386,7 @@ public class ReturnStmt: Node {
 
 // MARK: Expressions
 
-public class IfExpr: Node {
+public class IfExpr: TypedNode {
 
     public init(
         condition: Node,
@@ -345,8 +403,13 @@ public class IfExpr: Node {
     public let condition: Node
     public let thenBlock: Node
     public let elseBlock: Node?
+
+    // MARK: Annotations
+
     public var type     : Type? = nil
     public let location : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         var result = "if \(self.condition) \(self.thenBlock)"
@@ -358,7 +421,7 @@ public class IfExpr: Node {
 
 }
 
-public class BinExpr: Node {
+public class BinExpr: TypedNode {
 
     public init(left: Node, op: Operator, right: Node, location: SourceRange? = nil) {
         self.left     = left
@@ -371,7 +434,12 @@ public class BinExpr: Node {
     public let op       : Operator
     public let right    : Node
     public var type     : Type? = nil
+
+    // MARK: Annotations
+
     public let location : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         return "(\(self.left) \(self.op) \(self.right))"
@@ -379,7 +447,7 @@ public class BinExpr: Node {
 
 }
 
-public class UnExpr: Node {
+public class UnExpr: TypedNode {
 
     public init(op: Operator, operand: Node, location: SourceRange? = nil) {
         self.op       = op
@@ -390,7 +458,12 @@ public class UnExpr: Node {
     public let op       : Operator
     public let operand  : Node
     public var type     : Type? = nil
+
+    // MARK: Annotations
+
     public let location : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         return "(\(self.op) \(self.operand))"
@@ -398,7 +471,7 @@ public class UnExpr: Node {
 
 }
 
-public class CallExpr: Node {
+public class CallExpr: TypedNode {
 
     public init(callee: Node, arguments: [Node], location: SourceRange? = nil) {
         self.callee    = callee
@@ -408,8 +481,13 @@ public class CallExpr: Node {
 
     public let callee   : Node
     public let arguments: [Node]
+
+    // MARK: Annotations
+
     public var type     : Type? = nil
     public let location : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         let args = self.arguments.map({ String(describing: $0) }).joined(separator: ", ")
@@ -418,7 +496,7 @@ public class CallExpr: Node {
 
 }
 
-public class CallArg: Node {
+public class CallArg: TypedNode {
 
     public init(
         label    : String? = nil,
@@ -435,8 +513,13 @@ public class CallArg: Node {
     public let label    : String?
     public let bindingOp: Operator?
     public let value    : Node
+
+    // MARK: Annotations
+
     public var type     : Type? = nil
     public let location : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         if let label = self.label, let op = self.bindingOp {
@@ -450,7 +533,7 @@ public class CallArg: Node {
 
 }
 
-public class SubscriptExpr: Node {
+public class SubscriptExpr: TypedNode {
 
     public init(callee: Node, arguments: [Node], location: SourceRange? = nil) {
         self.callee    = callee
@@ -460,8 +543,13 @@ public class SubscriptExpr: Node {
 
     public let callee   : Node
     public let arguments: [Node]
+
+    // MARK: Annotations
+
     public var type     : Type? = nil
     public let location : SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         let args = self.arguments.map({ String(describing: $0) }).joined(separator: ", ")
@@ -469,7 +557,7 @@ public class SubscriptExpr: Node {
     }
 }
 
-public class SelectExpr: Node {
+public class SelectExpr: TypedNode {
 
     public init(owner: Node? = nil, ownee: Node, location: SourceRange? = nil) {
         self.owner    = owner
@@ -479,8 +567,13 @@ public class SelectExpr: Node {
 
     public let owner   : Node?
     public let ownee   : Node
+
+    // MARK: Annotations
+
     public var type    : Type? = nil
     public let location: SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         if let owner = self.owner {
@@ -491,7 +584,7 @@ public class SelectExpr: Node {
 
 }
 
-public class Ident: Node {
+public class Ident: TypedNode {
 
     public init(name: String, location: SourceRange? = nil) {
         self.name     = name
@@ -499,8 +592,13 @@ public class Ident: Node {
     }
 
     public let name    : String
+
+    // MARK: Annotations
+
     public var type    : Type? = nil
     public let location: SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         return self.name
@@ -508,7 +606,7 @@ public class Ident: Node {
 
 }
 
-public class Literal<T>: Node {
+public class Literal<T>: TypedNode {
 
     public init(value: T, location: SourceRange? = nil) {
         self.value    = value
@@ -516,8 +614,13 @@ public class Literal<T>: Node {
     }
 
     public let value   : T
+
+    // MARK: Annotations
+
     public var type    : Type? = nil
     public let location: SourceRange?
+
+    // MARK: Pretty-printing
 
     public var description: String {
         return String(describing: self.value)
