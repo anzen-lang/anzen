@@ -1,3 +1,8 @@
+/// A visitor that extracts the symbols declared in the AST's scopes.
+///
+/// This visitor annotates the scope-opening nodes (i.e. `Module` and `Block` nodes) with the
+/// the symbols that are declared within. This is done so that identifiers referring to functions
+/// and types may be used before their formal declaration.
 public struct SymbolsExtractor: ASTVisitor {
 
     @discardableResult
@@ -25,9 +30,9 @@ public struct SymbolsExtractor: ASTVisitor {
         var block = self.nodeStack.last
         block?.symbols.insert(node.name)
 
-        // Note that we push the function's block onto the node stack before we visit its
-        // parameters, so that they get properly declared within the function's scope rather
-        // than that of the function itself.
+        // We push the function's block onto the node stack before visiting its parameters, so
+        // that they get properly declared within the function's scope rather than that of the
+        // function itself.
         self.nodeStack.append(node.body as! Block)
         for parameter in node.parameters {
             try! self.traverse(parameter)

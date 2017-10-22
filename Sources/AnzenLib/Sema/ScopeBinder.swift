@@ -1,0 +1,2 @@
+public struct ScopeBinder: ASTVisitor {
+}
