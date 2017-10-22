@@ -244,7 +244,7 @@ public extension ASTVisitor {
         if let owner = node.owner {
             guard try self.traverse(owner) else { return false }
         }
-        guard try self.traverse(node.member) else { return false }
+        guard try self.traverse(node.ownee) else { return false }
 
         return true
     }

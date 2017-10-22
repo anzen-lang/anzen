@@ -16,7 +16,8 @@ func main(args: [String] = CommandLine.arguments) throws {
 
     let source = try String(contentsOf: URL(fileURLWithPath: positionalArgs[0]))
     let module = try AnzenLib.Grammar.module.parse(source)
-    print(module)
+
+    print(String(reflecting: module))
 }
 
 do {

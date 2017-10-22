@@ -67,8 +67,7 @@ public class Block: Node {
             result += String(describing: stmt)
                 .split(separator: "\n")
                 .map({ "  " + $0 })
-                .joined(separator: "\n")
-            result += "\n"
+                .joined(separator: "\n") + "\n"
         }
         return result + "}"
     }
@@ -472,22 +471,22 @@ public class SubscriptExpr: Node {
 
 public class SelectExpr: Node {
 
-    public init(owner: Node? = nil, member: Node, location: SourceRange? = nil) {
+    public init(owner: Node? = nil, ownee: Node, location: SourceRange? = nil) {
         self.owner    = owner
-        self.member   = member
+        self.ownee    = ownee
         self.location = location
     }
 
     public let owner   : Node?
-    public let member  : Node
+    public let ownee   : Node
     public var type    : Type? = nil
     public let location: SourceRange?
 
     public var description: String {
         if let owner = self.owner {
-            return "\(owner).\(self.member)"
+            return "\(owner).\(self.ownee)"
         }
-        return ".\(self.member)"
+        return ".\(self.ownee)"
     }
 
 }

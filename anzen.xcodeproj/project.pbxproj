@@ -9,6 +9,10 @@
 /* Begin PBXBuildFile section */
 		12DC5F2A1F9A7D9E00309621 /* AST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F281F9A7C3300309621 /* AST.swift */; };
 		12DC5F2D1F9A88A400309621 /* Type.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F2C1F9A88A400309621 /* Type.swift */; };
+		12DC5F301F9CCCBD00309621 /* ScopeBinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F2F1F9CCCBD00309621 /* ScopeBinder.swift */; };
+		12DC5F331F9CD06900309621 /* ASTVisitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F321F9CD06900309621 /* ASTVisitor.swift */; };
+		12DC5F351F9CD56A00309621 /* ASTVisitor+Traversal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F341F9CD56900309621 /* ASTVisitor+Traversal.swift */; };
+		12DC5F391F9D023100309621 /* AST+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F381F9D023100309621 /* AST+Debug.swift */; };
 		OBJ_100 /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_24 /* Array.swift */; };
 		OBJ_101 /* Associable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_25 /* Associable.swift */; };
 		OBJ_102 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_26 /* Collection.swift */; };
@@ -24,7 +28,7 @@
 		OBJ_65 /* AnzenLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenLib::Product" /* AnzenLib.framework */; };
 		OBJ_66 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
 		OBJ_67 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
-		OBJ_78 /* AnzenLib.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* AnzenLib.swift */; };
+		OBJ_78 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* Parser.swift */; };
 		OBJ_80 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
 		OBJ_81 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
 		OBJ_88 /* Combinators.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_17 /* Combinators.swift */; };
@@ -84,6 +88,10 @@
 		12DC5F281F9A7C3300309621 /* AST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AST.swift; sourceTree = "<group>"; };
 		12DC5F2B1F9A7E0E00309621 /* InputSamples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = InputSamples; sourceTree = "<group>"; };
 		12DC5F2C1F9A88A400309621 /* Type.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Type.swift; sourceTree = "<group>"; };
+		12DC5F2F1F9CCCBD00309621 /* ScopeBinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScopeBinder.swift; path = Sources/AnzenLib/Sema/ScopeBinder.swift; sourceTree = SOURCE_ROOT; };
+		12DC5F321F9CD06900309621 /* ASTVisitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASTVisitor.swift; sourceTree = "<group>"; };
+		12DC5F341F9CD56900309621 /* ASTVisitor+Traversal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ASTVisitor+Traversal.swift"; sourceTree = "<group>"; };
+		12DC5F381F9D023100309621 /* AST+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AST+Debug.swift"; sourceTree = "<group>"; };
 		"Funky::Funky::Product" /* Funky.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Funky.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		OBJ_11 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		OBJ_13 /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = SOURCE_ROOT; };
@@ -106,7 +114,7 @@
 		OBJ_33 /* Sequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sequence.swift; sourceTree = "<group>"; };
 		OBJ_34 /* Set.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Set.swift; sourceTree = "<group>"; };
 		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		OBJ_9 /* AnzenLib.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnzenLib.swift; sourceTree = "<group>"; };
+		OBJ_9 /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
 		"Parsey::Parsey::Product" /* Parsey.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Parsey.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"anzen::AnzenLib::Product" /* AnzenLib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = AnzenLib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"anzen::anzenc::Product" /* anzenc */ = {isa = PBXFileReference; lastKnownFileType = text; path = anzenc; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -150,6 +158,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		12DC5F2E1F9CCC7100309621 /* Sema */ = {
+			isa = PBXGroup;
+			children = (
+				12DC5F2F1F9CCCBD00309621 /* ScopeBinder.swift */,
+			);
+			name = Sema;
+			path = Sources/AnzenLib/Sema;
+			sourceTree = SOURCE_ROOT;
+		};
+		12DC5F311F9CCFDA00309621 /* AST */ = {
+			isa = PBXGroup;
+			children = (
+				12DC5F281F9A7C3300309621 /* AST.swift */,
+				12DC5F381F9D023100309621 /* AST+Debug.swift */,
+				12DC5F321F9CD06900309621 /* ASTVisitor.swift */,
+				12DC5F341F9CD56900309621 /* ASTVisitor+Traversal.swift */,
+			);
+			name = AST;
+			path = Sources/AnzenLib/AST;
+			sourceTree = SOURCE_ROOT;
+		};
 		OBJ_10 /* anzenc */ = {
 			isa = PBXGroup;
 			children = (
@@ -246,8 +275,9 @@
 		OBJ_8 /* AnzenLib */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_9 /* AnzenLib.swift */,
-				12DC5F281F9A7C3300309621 /* AST.swift */,
+				12DC5F311F9CCFDA00309621 /* AST */,
+				12DC5F2E1F9CCC7100309621 /* Sema */,
+				OBJ_9 /* Parser.swift */,
 				12DC5F2C1F9A88A400309621 /* Type.swift */,
 			);
 			name = AnzenLib;
@@ -368,8 +398,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
+				12DC5F391F9D023100309621 /* AST+Debug.swift in Sources */,
+				12DC5F351F9CD56A00309621 /* ASTVisitor+Traversal.swift in Sources */,
+				12DC5F331F9CD06900309621 /* ASTVisitor.swift in Sources */,
 				12DC5F2A1F9A7D9E00309621 /* AST.swift in Sources */,
-				OBJ_78 /* AnzenLib.swift in Sources */,
+				OBJ_78 /* Parser.swift in Sources */,
+				12DC5F301F9CCCBD00309621 /* ScopeBinder.swift in Sources */,
 				12DC5F2D1F9A88A400309621 /* Type.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

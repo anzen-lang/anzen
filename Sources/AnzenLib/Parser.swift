@@ -4,7 +4,7 @@ import Parsey
 enum Trailer {
     case callArgs([Node])
     case subscriptArgs([Node])
-    case selectMember(Node)
+    case selectOwnee(Node)
 }
 
 public struct Grammar {
@@ -100,7 +100,7 @@ public struct Grammar {
             let (atom, trailers) = val
 
             // Trailers are the expression "suffixes" that get parsed after an atom expression.
-            // They may represent a list of call/subscript arguments or the member expressions.
+            // They may represent a list of call/subscript arguments or the ownee expressions.
             // Trailers are left-associative, i.e. `f(x)[y].z` is parsed `((f(x))[y]).z`.
             return trailers.reduce(atom) { result, trailer in
                 switch trailer {
@@ -108,8 +108,8 @@ public struct Grammar {
                     return CallExpr(callee: result, arguments: args, location: loc)
                 case let .subscriptArgs(args):
                     return SubscriptExpr(callee: result, arguments: args, location: loc)
-                case let .selectMember(member):
-                    return SelectExpr(owner: result, member: member, location: loc)
+                case let .selectOwnee(ownee):
+                    return SelectExpr(owner: result, ownee: ownee, location: loc)
                 }
             }
         }
@@ -122,7 +122,7 @@ public struct Grammar {
         | "[" ~~> callArg.many(separatedBy: comma) <~~ comma.? <~~ "]"
           ^^ { val in Trailer.subscriptArgs(val) }
         | "." ~~> ident
-          ^^ { val in Trailer.selectMember(val) }
+          ^^ { val in Trailer.selectOwnee(val) }
 
     static let ifExpr: Parser<Node> =
         "if" ~~> ws ~~> expr ~~ block.amid(ws.?) ~~ elseExpr.?
