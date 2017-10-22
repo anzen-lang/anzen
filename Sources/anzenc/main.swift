@@ -15,9 +15,8 @@ func main(args: [String] = CommandLine.arguments) throws {
     }
 
     let source = try String(contentsOf: URL(fileURLWithPath: positionalArgs[0]))
-    let module = try AnzenLib.Grammar.module.parse(source)
-
-    print(String(reflecting: module))
+    let module = try AnzenLib.parse(text: source)
+    _ = try AnzenLib.performSema(on: module)
 }
 
 do {

@@ -11,7 +11,7 @@ public struct Grammar {
 
     // MARK: Module (entry point of the grammar)
 
-    public static let module =
+    static let module =
         newlines.? ~~> stmt.* <~~ Lexer.end
         ^^^ { (val, loc) in Module(statements: val, location: loc) }
 

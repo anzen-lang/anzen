@@ -1,37 +1,39 @@
 public protocol ASTVisitor {
 
-    @discardableResult mutating func visit(_ node: Module)        throws -> Bool
-    @discardableResult mutating func visit(_ node: Block)         throws -> Bool
+    @discardableResult mutating func visit(_ node: Module)          throws -> Bool
+    @discardableResult mutating func visit(_ node: Block)           throws -> Bool
 
     // MARK: Declarations
 
-    @discardableResult mutating func visit(_ node: FunDecl)       throws -> Bool
-    @discardableResult mutating func visit(_ node: ParamDecl)     throws -> Bool
-    @discardableResult mutating func visit(_ node: PropDecl)      throws -> Bool
-    @discardableResult mutating func visit(_ node: StructDecl)    throws -> Bool
+    @discardableResult mutating func visit(_ node: FunDecl)         throws -> Bool
+    @discardableResult mutating func visit(_ node: ParamDecl)       throws -> Bool
+    @discardableResult mutating func visit(_ node: PropDecl)        throws -> Bool
+    @discardableResult mutating func visit(_ node: StructDecl)      throws -> Bool
 
     // MARK: Type signatures
 
-    @discardableResult mutating func visit(_ node: QualSign)      throws -> Bool
-    @discardableResult mutating func visit(_ node: FunSign)       throws -> Bool
-    @discardableResult mutating func visit(_ node: ParamSign)     throws -> Bool
+    @discardableResult mutating func visit(_ node: QualSign)        throws -> Bool
+    @discardableResult mutating func visit(_ node: FunSign)         throws -> Bool
+    @discardableResult mutating func visit(_ node: ParamSign)       throws -> Bool
 
     // MARK: Statements
 
-    @discardableResult mutating func visit(_ node: BindingStmt)   throws -> Bool
-    @discardableResult mutating func visit(_ node: ReturnStmt)    throws -> Bool
+    @discardableResult mutating func visit(_ node: BindingStmt)     throws -> Bool
+    @discardableResult mutating func visit(_ node: ReturnStmt)      throws -> Bool
 
     // MARK: Expressions
 
-    @discardableResult mutating func visit(_ node: IfExpr)        throws -> Bool
-    @discardableResult mutating func visit(_ node: BinExpr)       throws -> Bool
-    @discardableResult mutating func visit(_ node: UnExpr)        throws -> Bool
-    @discardableResult mutating func visit(_ node: CallExpr)      throws -> Bool
-    @discardableResult mutating func visit(_ node: CallArg)       throws -> Bool
-    @discardableResult mutating func visit(_ node: SubscriptExpr) throws -> Bool
-    @discardableResult mutating func visit(_ node: SelectExpr)    throws -> Bool
-    @discardableResult mutating func visit(_ node: Ident)         throws -> Bool
-    @discardableResult mutating func visit<T>(_ node: Literal<T>) throws -> Bool
+    @discardableResult mutating func visit(_ node: IfExpr)          throws -> Bool
+    @discardableResult mutating func visit(_ node: BinExpr)         throws -> Bool
+    @discardableResult mutating func visit(_ node: UnExpr)          throws -> Bool
+    @discardableResult mutating func visit(_ node: CallExpr)        throws -> Bool
+    @discardableResult mutating func visit(_ node: CallArg)         throws -> Bool
+    @discardableResult mutating func visit(_ node: SubscriptExpr)   throws -> Bool
+    @discardableResult mutating func visit(_ node: SelectExpr)      throws -> Bool
+    @discardableResult mutating func visit(_ node: Ident)           throws -> Bool
+    @discardableResult mutating func visit(_ node: Literal<Int>)    throws -> Bool
+    @discardableResult mutating func visit(_ node: Literal<Bool>)   throws -> Bool
+    @discardableResult mutating func visit(_ node: Literal<String>) throws -> Bool
 
 }
 
@@ -141,7 +143,17 @@ public extension ASTVisitor {
     }
 
     @discardableResult
-    mutating func visit<T>(node: Literal<T>) throws -> Bool {
+    mutating func visit(_ node: Literal<Int>) throws -> Bool {
+        return true
+    }
+
+    @discardableResult
+    mutating func visit(_ node: Literal<Bool>) throws -> Bool {
+        return true
+    }
+
+    @discardableResult
+    mutating func visit(_ node: Literal<String>) throws -> Bool {
         return true
     }
 

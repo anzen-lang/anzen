@@ -1,32 +1,6 @@
 import Parsey
 
-public enum Operator: CustomStringConvertible {
-    case not
-    case mul , div , mod
-    case add , sub
-    case lt  , le  , gt  , ge
-    case eq  , ne
-    case and
-    case or
-    case cpy , ref , mov
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        return Operator.repr[self]!
-    }
-
-    public static var repr: [Operator: String] = [
-        .not : "not",
-        .mul : "*"  , .div : "/"  , .mod : "%"  ,
-        .add : "+"  , .sub : "-"  ,
-        .lt  : "<"  , .le  : "<=" , .gt  : ">"  , .ge:  ">=" ,
-        .eq  : "==" , .ne  : "!=" ,
-        .and : "and",
-        .or  : "or" ,
-        .cpy : "="  , .ref : "&-" , .mov : "<-" ,
-    ]
-}
+// MARK: Protocols
 
 public protocol Node: CustomStringConvertible {
 
@@ -36,11 +10,18 @@ public protocol Node: CustomStringConvertible {
 
 public protocol TypedNode: Node {
 
-    var type    : Type? { get set }
+    var type: Type? { get set }
+}
+
+public protocol ScopeOpeningNode {
+
+    var symbols : Set<String> { get set }
 
 }
 
-public class Module: Node {
+// MARK: Scopes
+
+public class Module: Node, ScopeOpeningNode {
 
     public init(statements: [Node], location: SourceRange? = nil) {
         self.statements = statements
@@ -51,7 +32,8 @@ public class Module: Node {
 
     // MARK: Annotations
 
-    public let location  : SourceRange?
+    public let location: SourceRange?
+    public var symbols : Set<String> = []
 
     // MARK: Pretty-printing
 
@@ -61,7 +43,7 @@ public class Module: Node {
 
 }
 
-public class Block: Node {
+public class Block: Node, ScopeOpeningNode {
 
     public init(statements: [Node], location: SourceRange? = nil) {
         self.statements = statements
@@ -72,7 +54,8 @@ public class Block: Node {
 
     // MARK: Annotations
 
-    public let location  : SourceRange?
+    public let location: SourceRange?
+    public var symbols : Set<String> = []
 
     // MARK: Pretty-printing
 
@@ -109,16 +92,16 @@ public class FunDecl: Node {
         self.location     = location
     }
 
-    public let name         : String
-    public let placeholders : [String]
-    public let parameters   : [Node]
-    public let codomain     : Node?
-    public let body         : Node
+    public let name        : String
+    public let placeholders: [String]
+    public let parameters  : [Node]
+    public let codomain    : Node?
+    public let body        : Node
 
     // MARK: Annotations
 
-    public var type         : Type? = nil
-    public let location     : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -158,8 +141,8 @@ public class ParamDecl: Node {
 
     // MARK: Annotations
 
-    public var type          : Type? = nil
-    public let location      : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -197,8 +180,8 @@ public class PropDecl: Node {
 
     // MARK: Annotations
 
-    public var type          : Type? = nil
-    public let location      : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -235,8 +218,8 @@ public class StructDecl: Node {
 
     // MARK: Annotations
 
-    public var type        : Type? = nil
-    public let location    : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -267,8 +250,8 @@ public class QualSign: TypedNode {
 
     // MARK: Annotations
 
-    public var type      : Type? = nil
-    public let location  : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -292,13 +275,13 @@ public class FunSign: TypedNode {
         self.location   = location
     }
 
-    public let parameters : [Node]
-    public let codomain   : Node
+    public let parameters: [Node]
+    public let codomain  : Node
 
     // MARK: Annotations
 
-    public var type       : Type? = nil
-    public let location   : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -322,8 +305,8 @@ public class ParamSign: TypedNode {
 
     // MARK: Annotations
 
-    public var type          : Type? = nil
-    public let location      : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -345,9 +328,9 @@ public class BindingStmt: Node {
         self.location = location
     }
 
-    public let lvalue  : Node
-    public let op      : Operator
-    public let rvalue  : Node
+    public let lvalue: Node
+    public let op    : Operator
+    public let rvalue: Node
 
     // MARK: Annotations
 
@@ -368,7 +351,7 @@ public class ReturnStmt: Node {
         self.location = location
     }
 
-    public let value   : Node?
+    public let value: Node?
 
     // MARK: Annotations
 
@@ -406,8 +389,8 @@ public class IfExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type     : Type? = nil
-    public let location : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -430,14 +413,14 @@ public class BinExpr: TypedNode {
         self.location = location
     }
 
-    public let left     : Node
-    public let op       : Operator
-    public let right    : Node
-    public var type     : Type? = nil
+    public let left : Node
+    public let op   : Operator
+    public let right: Node
+    public var type : Type? = nil
 
     // MARK: Annotations
 
-    public let location : SourceRange?
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -455,13 +438,13 @@ public class UnExpr: TypedNode {
         self.location = location
     }
 
-    public let op       : Operator
-    public let operand  : Node
-    public var type     : Type? = nil
+    public let op     : Operator
+    public let operand: Node
+    public var type   : Type? = nil
 
     // MARK: Annotations
 
-    public let location : SourceRange?
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -484,8 +467,8 @@ public class CallExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type     : Type? = nil
-    public let location : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -516,8 +499,8 @@ public class CallArg: TypedNode {
 
     // MARK: Annotations
 
-    public var type     : Type? = nil
-    public let location : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -546,8 +529,8 @@ public class SubscriptExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type     : Type? = nil
-    public let location : SourceRange?
+    public var type    : Type? = nil
+    public let location: SourceRange?
 
     // MARK: Pretty-printing
 
@@ -565,8 +548,8 @@ public class SelectExpr: TypedNode {
         self.location = location
     }
 
-    public let owner   : Node?
-    public let ownee   : Node
+    public let owner: Node?
+    public let ownee: Node
 
     // MARK: Annotations
 
@@ -591,7 +574,7 @@ public class Ident: TypedNode {
         self.location = location
     }
 
-    public let name    : String
+    public let name: String
 
     // MARK: Annotations
 
@@ -613,7 +596,7 @@ public class Literal<T>: TypedNode {
         self.location = location
     }
 
-    public let value   : T
+    public let value: T
 
     // MARK: Annotations
 

@@ -7,12 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		12B52FF81F9D364C00921F29 /* Operator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12B52FF61F9D35F900921F29 /* Operator.swift */; };
 		12DC5F2A1F9A7D9E00309621 /* AST.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F281F9A7C3300309621 /* AST.swift */; };
 		12DC5F2D1F9A88A400309621 /* Type.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F2C1F9A88A400309621 /* Type.swift */; };
-		12DC5F301F9CCCBD00309621 /* ScopeBinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F2F1F9CCCBD00309621 /* ScopeBinder.swift */; };
+		12DC5F301F9CCCBD00309621 /* SymbolsExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F2F1F9CCCBD00309621 /* SymbolsExtractor.swift */; };
 		12DC5F331F9CD06900309621 /* ASTVisitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F321F9CD06900309621 /* ASTVisitor.swift */; };
 		12DC5F351F9CD56A00309621 /* ASTVisitor+Traversal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F341F9CD56900309621 /* ASTVisitor+Traversal.swift */; };
 		12DC5F391F9D023100309621 /* AST+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F381F9D023100309621 /* AST+Debug.swift */; };
+		12DC5F3D1F9D309000309621 /* Frontend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F3C1F9D309000309621 /* Frontend.swift */; };
 		OBJ_100 /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_24 /* Array.swift */; };
 		OBJ_101 /* Associable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_25 /* Associable.swift */; };
 		OBJ_102 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_26 /* Collection.swift */; };
@@ -85,13 +87,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		12B52FF61F9D35F900921F29 /* Operator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operator.swift; sourceTree = "<group>"; };
 		12DC5F281F9A7C3300309621 /* AST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AST.swift; sourceTree = "<group>"; };
 		12DC5F2B1F9A7E0E00309621 /* InputSamples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = InputSamples; sourceTree = "<group>"; };
 		12DC5F2C1F9A88A400309621 /* Type.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Type.swift; sourceTree = "<group>"; };
-		12DC5F2F1F9CCCBD00309621 /* ScopeBinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScopeBinder.swift; path = Sources/AnzenLib/Sema/ScopeBinder.swift; sourceTree = SOURCE_ROOT; };
+		12DC5F2F1F9CCCBD00309621 /* SymbolsExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SymbolsExtractor.swift; path = Sources/AnzenLib/Sema/SymbolsExtractor.swift; sourceTree = SOURCE_ROOT; };
 		12DC5F321F9CD06900309621 /* ASTVisitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASTVisitor.swift; sourceTree = "<group>"; };
 		12DC5F341F9CD56900309621 /* ASTVisitor+Traversal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ASTVisitor+Traversal.swift"; sourceTree = "<group>"; };
 		12DC5F381F9D023100309621 /* AST+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AST+Debug.swift"; sourceTree = "<group>"; };
+		12DC5F3C1F9D309000309621 /* Frontend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frontend.swift; sourceTree = "<group>"; };
 		"Funky::Funky::Product" /* Funky.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Funky.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		OBJ_11 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		OBJ_13 /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = SOURCE_ROOT; };
@@ -161,7 +165,7 @@
 		12DC5F2E1F9CCC7100309621 /* Sema */ = {
 			isa = PBXGroup;
 			children = (
-				12DC5F2F1F9CCCBD00309621 /* ScopeBinder.swift */,
+				12DC5F2F1F9CCCBD00309621 /* SymbolsExtractor.swift */,
 			);
 			name = Sema;
 			path = Sources/AnzenLib/Sema;
@@ -174,6 +178,7 @@
 				12DC5F381F9D023100309621 /* AST+Debug.swift */,
 				12DC5F321F9CD06900309621 /* ASTVisitor.swift */,
 				12DC5F341F9CD56900309621 /* ASTVisitor+Traversal.swift */,
+				12B52FF61F9D35F900921F29 /* Operator.swift */,
 			);
 			name = AST;
 			path = Sources/AnzenLib/AST;
@@ -249,7 +254,7 @@
 			name = Products;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		OBJ_5 /*  */ = {
+		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
 				OBJ_6 /* Package.swift */,
@@ -260,7 +265,6 @@
 				OBJ_14 /* Dependencies */,
 				OBJ_35 /* Products */,
 			);
-			name = "";
 			sourceTree = "<group>";
 		};
 		OBJ_7 /* Sources */ = {
@@ -277,6 +281,7 @@
 			children = (
 				12DC5F311F9CCFDA00309621 /* AST */,
 				12DC5F2E1F9CCC7100309621 /* Sema */,
+				12DC5F3C1F9D309000309621 /* Frontend.swift */,
 				OBJ_9 /* Parser.swift */,
 				12DC5F2C1F9A88A400309621 /* Type.swift */,
 			);
@@ -372,7 +377,7 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = OBJ_5 /*  */;
+			mainGroup = OBJ_5;
 			productRefGroup = OBJ_35 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -399,11 +404,13 @@
 			buildActionMask = 0;
 			files = (
 				12DC5F391F9D023100309621 /* AST+Debug.swift in Sources */,
+				12DC5F3D1F9D309000309621 /* Frontend.swift in Sources */,
 				12DC5F351F9CD56A00309621 /* ASTVisitor+Traversal.swift in Sources */,
 				12DC5F331F9CD06900309621 /* ASTVisitor.swift in Sources */,
 				12DC5F2A1F9A7D9E00309621 /* AST.swift in Sources */,
 				OBJ_78 /* Parser.swift in Sources */,
-				12DC5F301F9CCCBD00309621 /* ScopeBinder.swift in Sources */,
+				12DC5F301F9CCCBD00309621 /* SymbolsExtractor.swift in Sources */,
+				12B52FF81F9D364C00921F29 /* Operator.swift in Sources */,
 				12DC5F2D1F9A88A400309621 /* Type.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
