@@ -1,12 +1,23 @@
-public struct Type {
+public struct QualifiedType: Equatable {
 
-    public let qualifiers : TypeQualifier
-    public let unqualified: UnqualifiedType
+    public var qualifiers     : TypeQualifier
+    public var unqualifiedType: UnqualifiedType
+
+    public var isGeneric: Bool {
+        return self.unqualifiedType.isGeneric
+    }
+
+    public static func ==(lhs: QualifiedType, rhs: QualifiedType) -> Bool {
+        return (lhs.qualifiers == rhs.qualifiers)
+            && (lhs.unqualifiedType === rhs.unqualifiedType)
+    }
 
 }
 
-public enum UnqualifiedType {
-    case `struct`(name: String)
+public protocol UnqualifiedType: class {
+
+    var isGeneric: Bool { get }
+
 }
 
 public struct TypeQualifier: OptionSet, CustomStringConvertible {

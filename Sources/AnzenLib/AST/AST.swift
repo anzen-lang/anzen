@@ -10,7 +10,7 @@ public protocol Node: CustomStringConvertible {
 
 public protocol TypedNode: Node {
 
-    var type: Type? { get set }
+    var type: QualifiedType? { get set }
 }
 
 public protocol ScopeOpeningNode {
@@ -100,7 +100,7 @@ public class FunDecl: Node {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -141,7 +141,7 @@ public class ParamDecl: Node {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -180,7 +180,7 @@ public class PropDecl: Node {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -218,7 +218,7 @@ public class StructDecl: Node {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -250,7 +250,7 @@ public class QualSign: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -280,7 +280,7 @@ public class FunSign: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -305,7 +305,7 @@ public class ParamSign: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -389,7 +389,7 @@ public class IfExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -416,7 +416,7 @@ public class BinExpr: TypedNode {
     public let left : Node
     public let op   : Operator
     public let right: Node
-    public var type : Type? = nil
+    public var type : QualifiedType? = nil
 
     // MARK: Annotations
 
@@ -440,7 +440,7 @@ public class UnExpr: TypedNode {
 
     public let op     : Operator
     public let operand: Node
-    public var type   : Type? = nil
+    public var type   : QualifiedType? = nil
 
     // MARK: Annotations
 
@@ -467,7 +467,7 @@ public class CallExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -499,7 +499,7 @@ public class CallArg: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -529,7 +529,7 @@ public class SubscriptExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -553,7 +553,7 @@ public class SelectExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -578,7 +578,7 @@ public class Ident: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
@@ -600,7 +600,7 @@ public class Literal<T>: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : Type? = nil
+    public var type    : QualifiedType? = nil
     public let location: SourceRange?
 
     // MARK: Pretty-printing
