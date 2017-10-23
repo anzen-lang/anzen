@@ -1,13 +1,17 @@
 /// A named symbol.
-public struct Symbol {
+public class Symbol {
 
-    public init(name: String) {
+    public init(name: String, type: QualifiedType? = nil) {
         self.name = name
+        self.type = type
     }
 
     public var name: String
-    public var type: Type? = nil
+    public var type: QualifiedType?
     public var node: Node? = nil
+
+    /// Let function symbols be marked overloadable.
+    public var isOverloadable = false
 
 }
 
@@ -24,6 +28,13 @@ public class Scope {
 
         self.name   = name
         self.parent = parent
+    }
+
+    public func defines(name: String) -> Bool {
+        if let symbols = self.symbols[name] {
+            return !symbols.isEmpty
+        }
+        return false
     }
 
     public func add(symbol: Symbol) {

@@ -13,15 +13,21 @@ public protocol TypedNode: Node {
     var type: QualifiedType? { get set }
 }
 
-public protocol ScopeOpeningNode {
+public protocol ScopeOpeningNode: Node {
 
-    var symbols : Set<String> { get set }
+    var symbols: Set<String> { get set }
+
+}
+
+public protocol ScopedNode: Node {
+
+    var scope: Scope? { get set }
 
 }
 
 // MARK: Scopes
 
-public class Module: Node, ScopeOpeningNode {
+public class ModuleDecl: ScopeOpeningNode {
 
     public init(statements: [Node], location: SourceRange? = nil) {
         self.statements = statements
@@ -43,7 +49,7 @@ public class Module: Node, ScopeOpeningNode {
 
 }
 
-public class Block: Node, ScopeOpeningNode {
+public class Block: ScopeOpeningNode {
 
     public init(statements: [Node], location: SourceRange? = nil) {
         self.statements = statements
@@ -74,7 +80,7 @@ public class Block: Node, ScopeOpeningNode {
 
 // MARK: Declarations
 
-public class FunDecl: Node {
+public class FunDecl: TypedNode, ScopedNode {
 
     public init(
         name        : String,
@@ -100,8 +106,9 @@ public class FunDecl: Node {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
+    public var scope   : Scope? = nil
 
     // MARK: Pretty-printing
 
@@ -121,7 +128,7 @@ public class FunDecl: Node {
 
 }
 
-public class ParamDecl: Node {
+public class ParamDecl: TypedNode, ScopedNode {
 
     public init(
         label         : String?,
@@ -141,8 +148,9 @@ public class ParamDecl: Node {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
+    public var scope   : Scope? = nil
 
     // MARK: Pretty-printing
 
@@ -160,7 +168,7 @@ public class ParamDecl: Node {
 
 }
 
-public class PropDecl: Node {
+public class PropDecl: TypedNode, ScopedNode {
 
     public init(
         name          : String,
@@ -180,8 +188,9 @@ public class PropDecl: Node {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
+    public var scope   : Scope? = nil
 
     // MARK: Pretty-printing
 
@@ -198,7 +207,7 @@ public class PropDecl: Node {
 
 }
 
-public class StructDecl: Node {
+public class StructDecl: TypedNode, ScopedNode {
 
     public init(
         name        : String,
@@ -218,8 +227,9 @@ public class StructDecl: Node {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
+    public var scope   : Scope? = nil
 
     // MARK: Pretty-printing
 
@@ -250,8 +260,8 @@ public class QualSign: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -280,8 +290,8 @@ public class FunSign: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -305,8 +315,8 @@ public class ParamSign: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -389,8 +399,8 @@ public class IfExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -416,11 +426,11 @@ public class BinExpr: TypedNode {
     public let left : Node
     public let op   : Operator
     public let right: Node
-    public var type : QualifiedType? = nil
 
     // MARK: Annotations
 
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -440,11 +450,11 @@ public class UnExpr: TypedNode {
 
     public let op     : Operator
     public let operand: Node
-    public var type   : QualifiedType? = nil
 
     // MARK: Annotations
 
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -467,8 +477,8 @@ public class CallExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -499,8 +509,8 @@ public class CallArg: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -529,8 +539,8 @@ public class SubscriptExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -553,8 +563,8 @@ public class SelectExpr: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
 
     // MARK: Pretty-printing
 
@@ -567,7 +577,7 @@ public class SelectExpr: TypedNode {
 
 }
 
-public class Ident: TypedNode {
+public class Ident: TypedNode, ScopedNode {
 
     public init(name: String, location: SourceRange? = nil) {
         self.name     = name
@@ -578,8 +588,9 @@ public class Ident: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
     public let location: SourceRange?
+    public var type    : QualifiedType? = nil
+    public var scope   : Scope? = nil
 
     // MARK: Pretty-printing
 

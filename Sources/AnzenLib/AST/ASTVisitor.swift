@@ -1,160 +1,38 @@
 public protocol ASTVisitor {
 
-    @discardableResult mutating func visit(_ node: Module)          throws -> Bool
-    @discardableResult mutating func visit(_ node: Block)           throws -> Bool
+    mutating func visit(_ node: ModuleDecl)      throws
+    mutating func visit(_ node: Block)           throws
 
     // MARK: Declarations
 
-    @discardableResult mutating func visit(_ node: FunDecl)         throws -> Bool
-    @discardableResult mutating func visit(_ node: ParamDecl)       throws -> Bool
-    @discardableResult mutating func visit(_ node: PropDecl)        throws -> Bool
-    @discardableResult mutating func visit(_ node: StructDecl)      throws -> Bool
+    mutating func visit(_ node: FunDecl)         throws
+    mutating func visit(_ node: ParamDecl)       throws
+    mutating func visit(_ node: PropDecl)        throws
+    mutating func visit(_ node: StructDecl)      throws
 
     // MARK: Type signatures
 
-    @discardableResult mutating func visit(_ node: QualSign)        throws -> Bool
-    @discardableResult mutating func visit(_ node: FunSign)         throws -> Bool
-    @discardableResult mutating func visit(_ node: ParamSign)       throws -> Bool
+    mutating func visit(_ node: QualSign)        throws
+    mutating func visit(_ node: FunSign)         throws
+    mutating func visit(_ node: ParamSign)       throws
 
     // MARK: Statements
 
-    @discardableResult mutating func visit(_ node: BindingStmt)     throws -> Bool
-    @discardableResult mutating func visit(_ node: ReturnStmt)      throws -> Bool
+    mutating func visit(_ node: BindingStmt)     throws
+    mutating func visit(_ node: ReturnStmt)      throws
 
     // MARK: Expressions
 
-    @discardableResult mutating func visit(_ node: IfExpr)          throws -> Bool
-    @discardableResult mutating func visit(_ node: BinExpr)         throws -> Bool
-    @discardableResult mutating func visit(_ node: UnExpr)          throws -> Bool
-    @discardableResult mutating func visit(_ node: CallExpr)        throws -> Bool
-    @discardableResult mutating func visit(_ node: CallArg)         throws -> Bool
-    @discardableResult mutating func visit(_ node: SubscriptExpr)   throws -> Bool
-    @discardableResult mutating func visit(_ node: SelectExpr)      throws -> Bool
-    @discardableResult mutating func visit(_ node: Ident)           throws -> Bool
-    @discardableResult mutating func visit(_ node: Literal<Int>)    throws -> Bool
-    @discardableResult mutating func visit(_ node: Literal<Bool>)   throws -> Bool
-    @discardableResult mutating func visit(_ node: Literal<String>) throws -> Bool
-
-}
-
-public extension ASTVisitor {
-
-    @discardableResult
-    mutating func visit(_ node: Module) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: Block) throws -> Bool {
-        return true
-    }
-
-    // MARK: Declarations
-
-    @discardableResult
-    mutating func visit(_ node: FunDecl) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: ParamDecl) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: PropDecl) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: StructDecl) throws -> Bool {
-        return true
-    }
-
-    // MARK: Type signatures
-
-    @discardableResult
-    mutating func visit(_ node: QualSign) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: FunSign) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: ParamSign) throws -> Bool {
-        return true
-    }
-
-    // MARK: Statements
-
-    @discardableResult
-    mutating func visit(_ node: BindingStmt) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: ReturnStmt) throws -> Bool {
-        return true
-    }
-
-    // MARK: Expressions
-
-    @discardableResult
-    mutating func visit(_ node: IfExpr) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: BinExpr) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: UnExpr) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: CallExpr) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: CallArg) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: SubscriptExpr) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: SelectExpr) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: Ident) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: Literal<Int>) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: Literal<Bool>) throws -> Bool {
-        return true
-    }
-
-    @discardableResult
-    mutating func visit(_ node: Literal<String>) throws -> Bool {
-        return true
-    }
+    mutating func visit(_ node: IfExpr)          throws
+    mutating func visit(_ node: BinExpr)         throws
+    mutating func visit(_ node: UnExpr)          throws
+    mutating func visit(_ node: CallExpr)        throws
+    mutating func visit(_ node: CallArg)         throws
+    mutating func visit(_ node: SubscriptExpr)   throws
+    mutating func visit(_ node: SelectExpr)      throws
+    mutating func visit(_ node: Ident)           throws
+    mutating func visit(_ node: Literal<Int>)    throws
+    mutating func visit(_ node: Literal<Bool>)   throws
+    mutating func visit(_ node: Literal<String>) throws
 
 }

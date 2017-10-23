@@ -13,7 +13,7 @@ public struct Grammar {
 
     static let module =
         newlines.? ~~> stmt.* <~~ Lexer.end
-        ^^^ { (val, loc) in Module(statements: val, location: loc) }
+        ^^^ { (val, loc) in ModuleDecl(statements: val, location: loc) }
 
     static let block: Parser<Node> =
         "{" ~~> newlines.? ~~> stmt.* <~~ "}"

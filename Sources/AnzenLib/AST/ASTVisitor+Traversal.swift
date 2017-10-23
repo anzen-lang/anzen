@@ -1,240 +1,243 @@
 public extension ASTVisitor {
 
-    @discardableResult
-    mutating func traverse(_ node: Node) throws -> Bool {
+    mutating func traverse(_ node: Node) throws {
         switch node {
-        case let n as Module:
-            return try self.visit(n) && self.traverse(n)
-        case let n as Block:
-            return try self.visit(n) && self.traverse(n)
-        case let n as FunDecl:
-            return try self.visit(n) && self.traverse(n)
-        case let n as ParamDecl:
-            return try self.visit(n) && self.traverse(n)
-        case let n as PropDecl:
-            return try self.visit(n) && self.traverse(n)
-        case let n as StructDecl:
-            return try self.visit(n) && self.traverse(n)
-        case let n as QualSign:
-            return try self.visit(n) && self.traverse(n)
-        case let n as FunSign:
-            return try self.visit(n) && self.traverse(n)
-        case let n as ParamSign:
-            return try self.visit(n) && self.traverse(n)
-        case let n as BindingStmt:
-            return try self.visit(n) && self.traverse(n)
-        case let n as ReturnStmt:
-            return try self.visit(n) && self.traverse(n)
-        case let n as IfExpr:
-            return try self.visit(n) && self.traverse(n)
-        case let n as BinExpr:
-            return try self.visit(n) && self.traverse(n)
-        case let n as UnExpr:
-            return try self.visit(n) && self.traverse(n)
-        case let n as CallExpr:
-            return try self.visit(n) && self.traverse(n)
-        case let n as CallArg:
-            return try self.visit(n) && self.traverse(n)
-        case let n as SubscriptExpr:
-            return try self.visit(n) && self.traverse(n)
-        case let n as SelectExpr:
-            return try self.visit(n) && self.traverse(n)
-        case let n as Ident:
-            return try self.visit(n) && self.traverse(n)
-        case let n as Literal<Int>:
-            return try self.visit(n) && self.traverse(n)
-        case let n as Literal<Bool>:
-            return try self.visit(n) && self.traverse(n)
-        case let n as Literal<String>:
-            return try self.visit(n) && self.traverse(n)
+        case let n as ModuleDecl:      try self.visit(n)
+        case let n as Block:           try self.visit(n)
+        case let n as FunDecl:         try self.visit(n)
+        case let n as ParamDecl:       try self.visit(n)
+        case let n as PropDecl:        try self.visit(n)
+        case let n as StructDecl:      try self.visit(n)
+        case let n as QualSign:        try self.visit(n)
+        case let n as FunSign:         try self.visit(n)
+        case let n as ParamSign:       try self.visit(n)
+        case let n as BindingStmt:     try self.visit(n)
+        case let n as ReturnStmt:      try self.visit(n)
+        case let n as IfExpr:          try self.visit(n)
+        case let n as BinExpr:         try self.visit(n)
+        case let n as UnExpr:          try self.visit(n)
+        case let n as CallExpr:        try self.visit(n)
+        case let n as CallArg:         try self.visit(n)
+        case let n as SubscriptExpr:   try self.visit(n)
+        case let n as SelectExpr:      try self.visit(n)
+        case let n as Ident:           try self.visit(n)
+        case let n as Literal<Int>:    try self.visit(n)
+        case let n as Literal<Bool>:   try self.visit(n)
+        case let n as Literal<String>: try self.visit(n)
         default:
             assertionFailure("unexpected node during traversal")
         }
-
-        return true
     }
-
-    @discardableResult
-    mutating func traverse(_ nodes: [Node]) throws -> Bool {
+    
+    mutating func traverse(_ nodes: [Node]) throws {
         for node in nodes {
-            guard try self.traverse(node) else { return false }
+            try self.traverse(node)
         }
-        return true
     }
 
-    @discardableResult
-    mutating func traverse(_ node: Module) throws -> Bool {
-        return try self.traverse(node.statements)
+    mutating func visit(_ node: ModuleDecl) throws {
+        try self.traverse(node)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: Block) throws -> Bool {
-        return try self.traverse(node.statements)
+    mutating func traverse(_ node: ModuleDecl) throws {
+        try self.traverse(node.statements)
+    }
+
+    mutating func visit(_ node: Block) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: Block) throws {
+        try self.traverse(node.statements)
     }
 
     // MARK: Declarations
 
-    @discardableResult
-    mutating func traverse(_ node: FunDecl) throws -> Bool {
-        guard try self.traverse(node.parameters) else { return false }
+    mutating func visit(_ node: FunDecl) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: FunDecl) throws {
+        try self.traverse(node.parameters)
         if let codomain = node.codomain {
-            guard try self.traverse(codomain) else { return false }
+            try self.traverse(codomain)
         }
-        guard try self.traverse(node.body) else { return false }
-
-        return true
+        try self.traverse(node.body)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: ParamDecl) throws -> Bool {
-        guard try self.traverse(node.typeAnnotation) else { return false }
-
-        return true
+    mutating func visit(_ node: ParamDecl) throws {
+        try self.traverse(node)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: PropDecl) throws -> Bool {
+    mutating func traverse(_ node: ParamDecl) throws {
+        try self.traverse(node.typeAnnotation)
+    }
+
+    mutating func visit(_ node: PropDecl) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: PropDecl) throws {
         if let typeAnnotation = node.typeAnnotation {
-            guard try self.traverse(typeAnnotation) else { return false }
+            try self.traverse(typeAnnotation)
         }
         if let (_, value) = node.initialBinding {
-            guard try self.traverse(value) else { return false }
+            try self.traverse(value)
         }
-
-        return true
     }
 
-    @discardableResult
-    mutating func traverse(_ node: StructDecl) throws -> Bool {
-        guard try self.traverse(node.body) else { return false }
-
-        return true
+    mutating func visit(_ node: StructDecl) throws {
+        try self.traverse(node)
+    }
+    
+    mutating func traverse(_ node: StructDecl) throws {
+        try self.traverse(node.body)
     }
 
     // MARK: Type signatures
 
-    @discardableResult
-    mutating func traverse(_ node: QualSign) throws -> Bool {
+    mutating func visit(_ node: QualSign) throws {
+        try self.traverse(node)
+    }
+    
+    mutating func traverse(_ node: QualSign) throws {
         if let signature = node.signature {
-            guard try self.traverse(signature) else { return false }
+            try self.traverse(signature)
         }
-
-        return true
     }
 
-    @discardableResult
-    mutating func traverse(_ node: FunSign) throws -> Bool {
-        guard try self.traverse(node.parameters) else { return false }
-        guard try self.traverse(node.codomain) else { return false }
-
-        return true
+    mutating func visit(_ node: FunSign) throws {
+        try self.traverse(node)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: ParamSign) throws -> Bool {
-        guard try self.traverse(node.typeAnnotation) else { return false }
+    mutating func traverse(_ node: FunSign) throws {
+        try self.traverse(node.parameters)
+        try self.traverse(node.codomain)
+    }
 
-        return true
+    mutating func visit(_ node: ParamSign) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: ParamSign) throws {
+        try self.traverse(node.typeAnnotation)
     }
 
     // MARK: Statements
 
-    @discardableResult
-    mutating func traverse(_ node: BindingStmt) throws -> Bool {
-        guard try self.traverse(node.lvalue) else { return false }
-        guard try self.traverse(node.rvalue) else { return false }
-
-        return true
+    mutating func visit(_ node: BindingStmt) throws {
+        try self.traverse(node)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: ReturnStmt) throws -> Bool {
-        if let value = node.value {
-            guard try self.traverse(value) else { return false }
-        }
+    mutating func traverse(_ node: BindingStmt) throws {
+        try self.traverse(node.lvalue)
+        try self.traverse(node.rvalue)
+    }
 
-        return true
+    mutating func visit(_ node: ReturnStmt) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: ReturnStmt) throws {
+        if let value = node.value {
+            try self.traverse(value)
+        }
     }
 
     // MARK: Expressions
 
-    @discardableResult
-    mutating func traverse(_ node: IfExpr) throws -> Bool {
-        guard try self.traverse(node.condition) else { return false }
-        guard try self.traverse(node.thenBlock) else { return false }
+    mutating func visit(_ node: IfExpr) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: IfExpr) throws {
+        try self.traverse(node.condition)
+        try self.traverse(node.thenBlock)
         if let elseBlock = node.elseBlock {
-            guard try self.traverse(elseBlock) else { return false }
+            try self.traverse(elseBlock)
         }
-
-        return true
     }
 
-    @discardableResult
-    mutating func traverse(_ node: BinExpr) throws -> Bool {
-        guard try self.traverse(node.left) else { return false }
-        guard try self.traverse(node.right) else { return false }
-
-        return true
+    mutating func visit(_ node: BinExpr) throws {
+        try self.traverse(node)
+    }
+    
+    mutating func traverse(_ node: BinExpr) throws {
+        try self.traverse(node.left)
+        try self.traverse(node.right)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: UnExpr) throws -> Bool {
-        guard try self.traverse(node.operand) else { return false }
-
-        return true
+    mutating func visit(_ node: UnExpr) throws {
+        try self.traverse(node)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: CallExpr) throws -> Bool {
-        guard try self.traverse(node.callee) else { return false }
-        guard try self.traverse(node.arguments) else { return false }
-
-        return true
+    mutating func traverse(_ node: UnExpr) throws {
+        try self.traverse(node.operand)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: CallArg) throws -> Bool {
-        guard try self.traverse(node.value) else { return false }
-
-        return true
+    mutating func visit(_ node: CallExpr) throws {
+        try self.traverse(node)
+    }
+    
+    mutating func traverse(_ node: CallExpr) throws {
+        try self.traverse(node.callee)
+        try self.traverse(node.arguments)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: SubscriptExpr) throws -> Bool {
-        guard try self.traverse(node.callee) else { return false }
-        guard try self.traverse(node.arguments) else { return false }
-
-        return true
+    mutating func visit(_ node: CallArg) throws {
+        try self.traverse(node)
+    }
+    
+    mutating func traverse(_ node: CallArg) throws {
+        try self.traverse(node.value)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: SelectExpr) throws -> Bool {
+    mutating func visit(_ node: SubscriptExpr) throws {
+        try self.traverse(node)
+    }
+    
+    mutating func traverse(_ node: SubscriptExpr) throws {
+        try self.traverse(node.callee)
+        try self.traverse(node.arguments)
+    }
+
+    mutating func visit(_ node: SelectExpr) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: SelectExpr) throws {
         if let owner = node.owner {
-            guard try self.traverse(owner) else { return false }
+            try self.traverse(owner)
         }
-        guard try self.traverse(node.ownee) else { return false }
-
-        return true
+        try self.traverse(node.ownee)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: Ident) throws -> Bool {
-        return true
+    mutating func visit(_ node: Ident) throws {
+        try self.traverse(node)
     }
 
-    @discardableResult
-    mutating func traverse(_ node: Literal<Int>) throws -> Bool {
-        return true
+    mutating func traverse(_ node: Ident) throws {
     }
 
-    @discardableResult
-    mutating func traverse(_ node: Literal<Bool>) throws -> Bool {
-        return true
+    mutating func visit(_ node: Literal<Int>) throws {
+        try self.traverse(node)
+    }
+    
+    mutating func traverse(_ node: Literal<Int>) throws {
     }
 
-    @discardableResult
-    mutating func traverse(_ node: Literal<String>) throws -> Bool {
-        return true
+    mutating func visit(_ node: Literal<Bool>) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: Literal<Bool>) throws {
+    }
+
+    mutating func visit(_ node: Literal<String>) throws {
+        try self.traverse(node)
+    }
+    
+    mutating func traverse(_ node: Literal<String>) throws {
     }
 
 }

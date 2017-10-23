@@ -1,6 +1,6 @@
 // MARK: Scopes
 
-extension Module: CustomDebugStringConvertible {
+extension ModuleDecl: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var result = "Module:\n"
@@ -41,6 +41,10 @@ extension FunDecl: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "FunDecl:\n"
 
+        if let desc = attrDesc(of: self.scope) {
+            result += "- scope:\(desc)"
+        }
+
         result += "- name: \(self.name)\n"
         if let desc = attrDesc(of: self.placeholders) {
             result += "- placeholders:\(desc)"
@@ -65,6 +69,10 @@ extension ParamDecl: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "ParamDecl:\n"
 
+        if let desc = attrDesc(of: self.scope) {
+            result += "- scope:\(desc)"
+        }
+
         if let desc = attrDesc(of: self.label) {
             result += "- label:\(desc)"
         }
@@ -82,6 +90,10 @@ extension PropDecl: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var result = "PropDecl:\n"
+
+        if let desc = attrDesc(of: self.scope) {
+            result += "- scope:\(desc)"
+        }
 
         result += "- name: \(self.name)\n"
         if let desc = attrDesc(of: self.typeAnnotation) {
@@ -105,6 +117,10 @@ extension StructDecl: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var result = "StructDecl:\n"
+
+        if let desc = attrDesc(of: self.scope) {
+            result += "- scope:\(desc)"
+        }
 
         result += "- name: \(self.name)\n"
         if let desc = attrDesc(of: self.placeholders) {
@@ -337,6 +353,10 @@ extension Ident: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var result = "Ident:\n"
+
+        if let desc = attrDesc(of: self.scope) {
+            result += "- scope:\(desc)"
+        }
 
         result += "- name: \(self.name)\n"
 

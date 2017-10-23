@@ -17,6 +17,12 @@
 		12DC5F351F9CD56A00309621 /* ASTVisitor+Traversal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F341F9CD56900309621 /* ASTVisitor+Traversal.swift */; };
 		12DC5F391F9D023100309621 /* AST+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F381F9D023100309621 /* AST+Debug.swift */; };
 		12DC5F3D1F9D309000309621 /* Frontend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DC5F3C1F9D309000309621 /* Frontend.swift */; };
+		751C25BE1F9DF1A800924251 /* Builtin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C25BD1F9DF1A800924251 /* Builtin.swift */; };
+		751C25C21F9DFAF700924251 /* TypeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C25C11F9DFAF700924251 /* TypeName.swift */; };
+		751C25C51F9E020E00924251 /* Stack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C25C41F9E020E00924251 /* Stack.swift */; };
+		7582B3DC1F9E0C0E00F6B8B8 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7582B3DB1F9E0C0E00F6B8B8 /* Error.swift */; };
+		75CAA3AC1F9DE09300BBF1F9 /* TypeFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CAA3AA1F9DE09000BBF1F9 /* TypeFactory.swift */; };
+		75CAA3AF1F9DE50500BBF1F9 /* StructType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CAA3AD1F9DE4D800BBF1F9 /* StructType.swift */; };
 		OBJ_100 /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_24 /* Array.swift */; };
 		OBJ_101 /* Associable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_25 /* Associable.swift */; };
 		OBJ_102 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_26 /* Collection.swift */; };
@@ -100,6 +106,12 @@
 		12DC5F341F9CD56900309621 /* ASTVisitor+Traversal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ASTVisitor+Traversal.swift"; sourceTree = "<group>"; };
 		12DC5F381F9D023100309621 /* AST+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AST+Debug.swift"; sourceTree = "<group>"; };
 		12DC5F3C1F9D309000309621 /* Frontend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frontend.swift; sourceTree = "<group>"; };
+		751C25BD1F9DF1A800924251 /* Builtin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Builtin.swift; sourceTree = "<group>"; };
+		751C25C11F9DFAF700924251 /* TypeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeName.swift; sourceTree = "<group>"; };
+		751C25C41F9E020E00924251 /* Stack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stack.swift; sourceTree = "<group>"; };
+		7582B3DB1F9E0C0E00F6B8B8 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
+		75CAA3AA1F9DE09000BBF1F9 /* TypeFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeFactory.swift; sourceTree = "<group>"; };
+		75CAA3AD1F9DE4D800BBF1F9 /* StructType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructType.swift; sourceTree = "<group>"; };
 		"Funky::Funky::Product" /* Funky.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Funky.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		OBJ_11 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		OBJ_13 /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = SOURCE_ROOT; };
@@ -188,6 +200,28 @@
 			);
 			name = AST;
 			path = Sources/AnzenLib/AST;
+			sourceTree = SOURCE_ROOT;
+		};
+		751C25C31F9E01E400924251 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				751C25C41F9E020E00924251 /* Stack.swift */,
+			);
+			name = Utils;
+			path = Sources/AnzenLib/Utils;
+			sourceTree = SOURCE_ROOT;
+		};
+		75CAA3A91F9DE04E00BBF1F9 /* TypeSystem */ = {
+			isa = PBXGroup;
+			children = (
+				12DC5F2C1F9A88A400309621 /* Type.swift */,
+				75CAA3AA1F9DE09000BBF1F9 /* TypeFactory.swift */,
+				751C25C11F9DFAF700924251 /* TypeName.swift */,
+				75CAA3AD1F9DE4D800BBF1F9 /* StructType.swift */,
+				751C25BD1F9DF1A800924251 /* Builtin.swift */,
+			);
+			name = TypeSystem;
+			path = Sources/AnzenLib/TypeSystem;
 			sourceTree = SOURCE_ROOT;
 		};
 		OBJ_10 /* anzenc */ = {
@@ -287,9 +321,11 @@
 			children = (
 				12DC5F311F9CCFDA00309621 /* AST */,
 				12DC5F2E1F9CCC7100309621 /* Sema */,
+				75CAA3A91F9DE04E00BBF1F9 /* TypeSystem */,
+				751C25C31F9E01E400924251 /* Utils */,
 				12DC5F3C1F9D309000309621 /* Frontend.swift */,
 				OBJ_9 /* Parser.swift */,
-				12DC5F2C1F9A88A400309621 /* Type.swift */,
+				7582B3DB1F9E0C0E00F6B8B8 /* Error.swift */,
 			);
 			name = AnzenLib;
 			path = Sources/AnzenLib;
@@ -411,12 +447,18 @@
 			files = (
 				12DC5F391F9D023100309621 /* AST+Debug.swift in Sources */,
 				12DC5F3D1F9D309000309621 /* Frontend.swift in Sources */,
+				751C25C21F9DFAF700924251 /* TypeName.swift in Sources */,
 				12B52FFB1F9D4D2500921F29 /* ScopeBinder.swift in Sources */,
+				751C25BE1F9DF1A800924251 /* Builtin.swift in Sources */,
 				12DC5F351F9CD56A00309621 /* ASTVisitor+Traversal.swift in Sources */,
 				12DC5F331F9CD06900309621 /* ASTVisitor.swift in Sources */,
 				12DC5F2A1F9A7D9E00309621 /* AST.swift in Sources */,
+				75CAA3AC1F9DE09300BBF1F9 /* TypeFactory.swift in Sources */,
+				7582B3DC1F9E0C0E00F6B8B8 /* Error.swift in Sources */,
 				OBJ_78 /* Parser.swift in Sources */,
 				12DC5F301F9CCCBD00309621 /* SymbolsExtractor.swift in Sources */,
+				75CAA3AF1F9DE50500BBF1F9 /* StructType.swift in Sources */,
+				751C25C51F9E020E00924251 /* Stack.swift in Sources */,
 				12B52FFE1F9D4F2700921F29 /* Scope.swift in Sources */,
 				12B52FF81F9D364C00921F29 /* Operator.swift in Sources */,
 				12DC5F2D1F9A88A400309621 /* Type.swift in Sources */,
