@@ -8,6 +8,7 @@ public final class TypeUnion: UnqualifiedType, ExpressibleByArrayLiteral {
         where S.Iterator.Element == QualifiedType
     {
         self.types = Set(sequence)
+        assert(!self.types.contains { $0.unqualified is TypeUnion })
     }
 
     public convenience init(arrayLiteral elements: QualifiedType...) {

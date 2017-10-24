@@ -1,10 +1,15 @@
 public struct QualifiedType: Hashable {
 
-    public var qualifiers     : TypeQualifier
-    public var unqualifiedType: UnqualifiedType
+    public init(type unqualified: UnqualifiedType, qualifiedBy qualifiers: TypeQualifier) {
+        self.qualifiers  = qualifiers
+        self.unqualified = unqualified
+    }
+
+    public var qualifiers : TypeQualifier
+    public var unqualified: UnqualifiedType
 
     public var isGeneric: Bool {
-        return self.unqualifiedType.isGeneric
+        return self.unqualified.isGeneric
     }
 
     public var hashValue: Int {
@@ -15,7 +20,7 @@ public struct QualifiedType: Hashable {
 
     public static func ==(lhs: QualifiedType, rhs: QualifiedType) -> Bool {
         return (lhs.qualifiers == rhs.qualifiers)
-            && (lhs.unqualifiedType === rhs.unqualifiedType)
+            && (lhs.unqualified === rhs.unqualified)
     }
 
 }
