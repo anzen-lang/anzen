@@ -1,5 +1,3 @@
-// MARK: Builtin scope
-
 public final class BuiltinScope: Scope {
 
     public init() {

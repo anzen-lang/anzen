@@ -1,10 +1,16 @@
-public struct QualifiedType: Equatable {
+public struct QualifiedType: Hashable {
 
     public var qualifiers     : TypeQualifier
     public var unqualifiedType: UnqualifiedType
 
     public var isGeneric: Bool {
         return self.unqualifiedType.isGeneric
+    }
+
+    public var hashValue: Int {
+        // NOTE: Because we ensure unqualified types (except unions) are unique, hashing them
+        // would probably be more costly than simply checking for their pointer equivalence.
+        return self.qualifiers.rawValue
     }
 
     public static func ==(lhs: QualifiedType, rhs: QualifiedType) -> Bool {

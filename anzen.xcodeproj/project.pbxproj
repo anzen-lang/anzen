@@ -20,6 +20,9 @@
 		751C25BE1F9DF1A800924251 /* Builtin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C25BD1F9DF1A800924251 /* Builtin.swift */; };
 		751C25C21F9DFAF700924251 /* TypeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C25C11F9DFAF700924251 /* TypeName.swift */; };
 		751C25C51F9E020E00924251 /* Stack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C25C41F9E020E00924251 /* Stack.swift */; };
+		755D90D41F9F73430038DF88 /* FunctionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D90D31F9F73430038DF88 /* FunctionType.swift */; };
+		755D90D61F9F74C40038DF88 /* TypeVariable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D90D51F9F74C40038DF88 /* TypeVariable.swift */; };
+		755D90D81F9F78360038DF88 /* TypeUnion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D90D71F9F78360038DF88 /* TypeUnion.swift */; };
 		7582B3DC1F9E0C0E00F6B8B8 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7582B3DB1F9E0C0E00F6B8B8 /* Error.swift */; };
 		75CAA3AC1F9DE09300BBF1F9 /* TypeFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CAA3AA1F9DE09000BBF1F9 /* TypeFactory.swift */; };
 		75CAA3AF1F9DE50500BBF1F9 /* StructType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CAA3AD1F9DE4D800BBF1F9 /* StructType.swift */; };
@@ -109,6 +112,9 @@
 		751C25BD1F9DF1A800924251 /* Builtin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Builtin.swift; sourceTree = "<group>"; };
 		751C25C11F9DFAF700924251 /* TypeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeName.swift; sourceTree = "<group>"; };
 		751C25C41F9E020E00924251 /* Stack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stack.swift; sourceTree = "<group>"; };
+		755D90D31F9F73430038DF88 /* FunctionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionType.swift; sourceTree = "<group>"; };
+		755D90D51F9F74C40038DF88 /* TypeVariable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeVariable.swift; sourceTree = "<group>"; };
+		755D90D71F9F78360038DF88 /* TypeUnion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeUnion.swift; sourceTree = "<group>"; };
 		7582B3DB1F9E0C0E00F6B8B8 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
 		75CAA3AA1F9DE09000BBF1F9 /* TypeFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeFactory.swift; sourceTree = "<group>"; };
 		75CAA3AD1F9DE4D800BBF1F9 /* StructType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructType.swift; sourceTree = "<group>"; };
@@ -216,7 +222,10 @@
 			children = (
 				12DC5F2C1F9A88A400309621 /* Type.swift */,
 				75CAA3AA1F9DE09000BBF1F9 /* TypeFactory.swift */,
+				755D90D71F9F78360038DF88 /* TypeUnion.swift */,
+				755D90D51F9F74C40038DF88 /* TypeVariable.swift */,
 				751C25C11F9DFAF700924251 /* TypeName.swift */,
+				755D90D31F9F73430038DF88 /* FunctionType.swift */,
 				75CAA3AD1F9DE4D800BBF1F9 /* StructType.swift */,
 				751C25BD1F9DF1A800924251 /* Builtin.swift */,
 			);
@@ -448,6 +457,7 @@
 				12DC5F391F9D023100309621 /* AST+Debug.swift in Sources */,
 				12DC5F3D1F9D309000309621 /* Frontend.swift in Sources */,
 				751C25C21F9DFAF700924251 /* TypeName.swift in Sources */,
+				755D90D61F9F74C40038DF88 /* TypeVariable.swift in Sources */,
 				12B52FFB1F9D4D2500921F29 /* ScopeBinder.swift in Sources */,
 				751C25BE1F9DF1A800924251 /* Builtin.swift in Sources */,
 				12DC5F351F9CD56A00309621 /* ASTVisitor+Traversal.swift in Sources */,
@@ -457,7 +467,9 @@
 				7582B3DC1F9E0C0E00F6B8B8 /* Error.swift in Sources */,
 				OBJ_78 /* Parser.swift in Sources */,
 				12DC5F301F9CCCBD00309621 /* SymbolsExtractor.swift in Sources */,
+				755D90D81F9F78360038DF88 /* TypeUnion.swift in Sources */,
 				75CAA3AF1F9DE50500BBF1F9 /* StructType.swift in Sources */,
+				755D90D41F9F73430038DF88 /* FunctionType.swift in Sources */,
 				751C25C51F9E020E00924251 /* Stack.swift in Sources */,
 				12B52FFE1F9D4F2700921F29 /* Scope.swift in Sources */,
 				12B52FF81F9D364C00921F29 /* Operator.swift in Sources */,

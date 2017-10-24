@@ -1,9 +1,18 @@
-import Foundation
-
 struct TypeFactory {
 
     public static func makeName(name: String, type: UnqualifiedType) -> TypeName {
         let newType = TypeName(name: name, type: type)
+        if let existing = TypeFactory.findSame(as: newType) {
+            return existing
+        }
+        TypeFactory.types.append(WeakReference(newType))
+        return newType
+    }
+
+    public static func makeFunction(
+        domain: [(label: String?, type: QualifiedType)], codomain: QualifiedType?) -> FunctionType
+    {
+        let newType = FunctionType(domain: domain, codomain: codomain)
         if let existing = TypeFactory.findSame(as: newType) {
             return existing
         }
