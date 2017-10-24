@@ -15,6 +15,21 @@ public struct ScopeBinder: ASTVisitor {
         self.scopes.pop()
     }
 
+    public mutating func visit(_ node: Block) throws {
+        // Create a scope for the block.
+        self.scopes.push(Scope(name: "block", parent: self.scopes.last))
+        self.underDeclaration[self.scopes.last] = []
+
+        // Add a new symbol for each entity declared within the block's scope.
+        for name in node.symbols {
+            self.scopes.last.add(symbol: Symbol(name: name))
+        }
+
+        // Visit the node's children.
+        try self.traverse(node)
+        self.scopes.pop()
+    }
+
     public mutating func visit(_ node: FunDecl) throws {
         // There should be at least one symbol named after the node's name, set by the visit of
         // the node that opened the scope of this declaration.
@@ -66,7 +81,6 @@ public struct ScopeBinder: ASTVisitor {
         //
 
         // Once we visited the function's signature, we can visit its body.
-        assert(node.body is Block)
         for name in (node.body as! Block).symbols {
             if !self.scopes.last.defines(name: name) {
                 self.scopes.last.add(symbol: Symbol(name: name))
@@ -118,10 +132,62 @@ public struct ScopeBinder: ASTVisitor {
         self.underDeclaration[self.scopes.last]?.remove(node.name)
     }
 
+    public mutating func visit(_ node: StructDecl) throws {
+        // There should be at least one symbol named after the node's name, set by the visit of
+        // the node that opened the scope of this declaration.
+        var symbols = self.scopes.last[node.name]
+        assert(symbols.count >= 1)
+
+        // Make sure the struct's name wasn't already declared.
+        guard symbols[0].node == nil else {
+            throw CompilerError.duplicateDeclaration(name: node.name, location: node.location)
+        }
+
+        // Bind the symbol to the current node.
+        symbols[0].node = node
+        node.scope = self.scopes.last
+
+        // Create a scope for the struct before visiting its body.
+        self.scopes.push(Scope(name: node.name, parent: self.scopes.last))
+        self.underDeclaration[self.scopes.last] = []
+
+        // Introduce a `Self` symbol in the type's scope, to handle the `Self` placeholder.
+        let selfSymbol = Symbol(name: "Self")
+        selfSymbol.node = node
+        self.scopes.last.add(symbol: selfSymbol)
+
+        // Add a new symbol for each of the struct's member and generic placeholders.
+        for name in (node.body as! Block).symbols.union(node.placeholders) {
+            self.scopes.last.add(symbol: Symbol(name: name))
+        }
+
+        // Visit the node's body.
+        try self.traverse(node.body)
+        self.scopes.pop()
+    }
+
+    public mutating func visit(_ node: SelectExpr) throws {
+        // NOTE: Unfortunately, we can't bind the symbols of a select expression's ownee, because
+        // it depends on the kind of declaration the owner's is refencing.
+        if let owner = node.owner {
+            try self.traverse(owner)
+        }
+    }
+
     public mutating func visit(_ node: Ident) throws {
-        guard let definingScope = self.scopes.last.findScopeDefining(name: node.name) else {
+        guard var definingScope = self.scopes.last.findScopeDefining(name: node.name) else {
             throw CompilerError.undefinedSymbol(name: node.name, location: node.location)
         }
+
+        // If we're visiting the initial value of the identifier's declaration, we should bind it
+        // to an enclosing scope.
+        if self.underDeclaration[definingScope]?.contains(node.name) ?? false {
+            guard let scope = definingScope.parent?.findScopeDefining(name: node.name) else {
+                throw CompilerError.undefinedSymbol(name: node.name, location: node.location)
+            }
+            definingScope = scope
+        }
+
         node.scope = definingScope
     }
 
