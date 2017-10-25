@@ -25,6 +25,8 @@
 		755D90D61F9F74C40038DF88 /* TypeVariable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D90D51F9F74C40038DF88 /* TypeVariable.swift */; };
 		755D90D81F9F78360038DF88 /* TypeUnion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D90D71F9F78360038DF88 /* TypeUnion.swift */; };
 		755D90DA1F9F8C850038DF88 /* TypeSolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D90D91F9F8C850038DF88 /* TypeSolver.swift */; };
+		755D90DC1FA083AF0038DF88 /* Type+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D90DB1FA083AF0038DF88 /* Type+Debug.swift */; };
+		755D90DE1FA085CF0038DF88 /* Substitution.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755D90DD1FA085CF0038DF88 /* Substitution.swift */; };
 		7582B3DC1F9E0C0E00F6B8B8 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7582B3DB1F9E0C0E00F6B8B8 /* Error.swift */; };
 		75CAA3AC1F9DE09300BBF1F9 /* TypeFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CAA3AA1F9DE09000BBF1F9 /* TypeFactory.swift */; };
 		75CAA3AF1F9DE50500BBF1F9 /* StructType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75CAA3AD1F9DE4D800BBF1F9 /* StructType.swift */; };
@@ -119,6 +121,8 @@
 		755D90D51F9F74C40038DF88 /* TypeVariable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeVariable.swift; sourceTree = "<group>"; };
 		755D90D71F9F78360038DF88 /* TypeUnion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeUnion.swift; sourceTree = "<group>"; };
 		755D90D91F9F8C850038DF88 /* TypeSolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeSolver.swift; sourceTree = "<group>"; };
+		755D90DB1FA083AF0038DF88 /* Type+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Type+Debug.swift"; sourceTree = "<group>"; };
+		755D90DD1FA085CF0038DF88 /* Substitution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Substitution.swift; sourceTree = "<group>"; };
 		7582B3DB1F9E0C0E00F6B8B8 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
 		75CAA3AA1F9DE09000BBF1F9 /* TypeFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeFactory.swift; sourceTree = "<group>"; };
 		75CAA3AD1F9DE4D800BBF1F9 /* StructType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructType.swift; sourceTree = "<group>"; };
@@ -195,6 +199,7 @@
 				12B52FF91F9D4D0000921F29 /* ScopeBinder.swift */,
 				755D90D91F9F8C850038DF88 /* TypeSolver.swift */,
 				12B52FFC1F9D4EC700921F29 /* Scope.swift */,
+				755D90DD1FA085CF0038DF88 /* Substitution.swift */,
 			);
 			name = Sema;
 			path = Sources/AnzenLib/Sema;
@@ -227,6 +232,7 @@
 			isa = PBXGroup;
 			children = (
 				12DC5F2C1F9A88A400309621 /* Type.swift */,
+				755D90DB1FA083AF0038DF88 /* Type+Debug.swift */,
 				75CAA3AA1F9DE09000BBF1F9 /* TypeFactory.swift */,
 				755D90D71F9F78360038DF88 /* TypeUnion.swift */,
 				755D90D51F9F74C40038DF88 /* TypeVariable.swift */,
@@ -469,6 +475,8 @@
 				755D90DA1F9F8C850038DF88 /* TypeSolver.swift in Sources */,
 				12DC5F351F9CD56A00309621 /* ASTVisitor+Traversal.swift in Sources */,
 				127081B81FA0065200D36BB4 /* Sequence+Extension.swift in Sources */,
+				755D90DC1FA083AF0038DF88 /* Type+Debug.swift in Sources */,
+				755D90DE1FA085CF0038DF88 /* Substitution.swift in Sources */,
 				12DC5F331F9CD06900309621 /* ASTVisitor.swift in Sources */,
 				12DC5F2A1F9A7D9E00309621 /* AST.swift in Sources */,
 				75CAA3AC1F9DE09300BBF1F9 /* TypeFactory.swift in Sources */,

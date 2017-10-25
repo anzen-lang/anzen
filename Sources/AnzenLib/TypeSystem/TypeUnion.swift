@@ -75,11 +75,3 @@ extension TypeUnion: Equatable {
     }
 
 }
-
-extension TypeUnion: CustomStringConvertible {
-
-    public var description: String {
-        return "{" + self.types.map({ String(describing: $0) }).joined(separator: ", ") + "}"
-    }
-
-}

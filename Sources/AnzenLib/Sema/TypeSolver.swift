@@ -1,159 +1,15 @@
-struct Substitution {
-
-    mutating func unify(_ t: QualifiedType, _ u: QualifiedType) throws {
-        let a = self.walked(t)
-        let b = self.walked(u)
-
-        // Make sure only type unions and type names don't have any type qualifier.
-        assert(!a.qualifiers.isEmpty || (a.unqualified is TypeUnion))
-        assert(!b.qualifiers.isEmpty || (b.unqualified is TypeUnion))
-
-        // If `a` and `b` are equal they're already unified.
-        guard a != b else { return }
-
-        switch (a.unqualified, b.unqualified) {
-        case let (variable as TypeVariable, union as TypeUnion):
-            let matching = union.filter { $0.qualifiers == a.qualifiers }
-            guard matching.count > 0 else {
-                throw CompilerError.inferenceError
-            }
-            union.formIntersection(TypeUnion(matching))
-            self.storage[variable] = matching.count > 1
-                ? union
-                : matching[0].unqualified
-
-        case let (variable as TypeVariable, _):
-            guard a.qualifiers == b.qualifiers else { throw CompilerError.inferenceError }
-            self.storage[variable] = b.unqualified
-
-        case (_, _ as TypeVariable):
-            try self.unify(b, a)
-
-        case let (lhs as TypeUnion, rhs as TypeUnion):
-            let walkedL = lhs.map({ self.walked($0) })
-            let walkedR = rhs.map({ self.walked($0) })
-
-            // Compute the intersection of `lhs` with `rhs`.
-            let result = (walkedL * walkedR).flatMap({ self.matches($0.0, $0.1) ? $0.0 : nil })
-            guard result.count > 0 else {
-                throw CompilerError.inferenceError
-            }
-
-            // Unify the variables of `lhs` with the compatible variables in `rhs`.
-            for l in walkedL {
-                if l.unqualified is TypeVariable {
-                    do {
-                        try self.unify(l, QualifiedType(type: TypeUnion(walkedR)))
-                    } catch(CompilerError.inferenceError) {
-                        continue
-                    }
-                }
-            }
-
-            // Unify the variables of `rhs` with the compatible variables in `lhs`.
-            for r in walkedR {
-                if r.unqualified is TypeVariable {
-                    do {
-                        try self.unify(r, QualifiedType(type: TypeUnion(walkedL)))
-                    } catch(CompilerError.inferenceError) {
-                        continue
-                    }
-                }
-            }
-
-            // `lhs = rhs = lhs & rhs`
-            lhs.formIntersection(TypeUnion(result))
-            rhs.formIntersection(TypeUnion(result))
-
-        case let (union as TypeUnion, _):
-            let result = union.flatMap({ self.matches($0, b) ? $0 : nil })
-            try self.unify(a, QualifiedType(type: TypeUnion(result)))
-
-        case let (_, union as TypeUnion):
-            let result = union.flatMap({ self.matches(a, $0) ? $0 : nil })
-            try self.unify(b, QualifiedType(type: TypeUnion(result)))
-
-        default:
-            throw CompilerError.inferenceError
-        }
-    }
-
-    func matches(_ t: QualifiedType, _ u: QualifiedType) -> Bool {
-        let a = self.walked(t)
-        let b = self.walked(u)
-
-        // If `a` and `b` are equal they're already unified.
-        guard a != b else { return true }
-
-        switch (a.unqualified, b.unqualified) {
-        case let (_ as TypeVariable, union as TypeUnion):
-            return union.contains(where: { self.matches(a, $0) })
-
-        case (_ as TypeVariable, _):
-            return a.qualifiers == b.qualifiers
-
-        case (_, _ as TypeVariable):
-            return self.matches(b, a)
-
-        case let (union as TypeUnion, _):
-            return union.contains(where: { self.matches($0, b) })
-
-        case let (_, union as TypeUnion):
-            return union.contains(where: { self.matches(a, $0) })
-
-        case let (lhs as FunctionType, rhs as FunctionType):
-            let result = a.qualifiers == b.qualifiers
-                && lhs.domain.count == rhs.domain.count
-                && zip(lhs.domain, rhs.domain).forAll({ l, r in
-                       l.label == r.label && self.matches(l.type, r.type)
-                   })
-            guard result else { return false }
-            guard let l = lhs.codomain, let r = rhs.codomain else {
-                return (lhs.codomain == nil) && (rhs.codomain == nil)
-            }
-            return self.matches(l, r)
-
-        case let (lhs as StructType, rhs as StructType):
-            return a.qualifiers == b.qualifiers
-                && lhs.name == rhs.name
-                && lhs.members.keys == rhs.members.keys
-                && lhs.members.forAll({ self.matches($0.value, rhs.members[$0.key]!) })
-
-        default:
-            return false
-        }
-    }
-
-    // MARK: Internals
-
-    private func walked(_ t: QualifiedType) -> QualifiedType {
-        // Find the unified value of the unqualified type.
-        let unqualified = self.walked(t.unqualified)
-
-        // If the unqualified type is an union, make sure all members are qualified appropriately.
-        if let union = unqualified as? TypeUnion {
-            assert(t.qualifiers.isEmpty || union.forAll({ $0.qualifiers == t.qualifiers }))
-        }
-
-        // Otherwise we return the walked qualified type.
-        return QualifiedType(type: unqualified, qualifiedBy: t.qualifiers)
-    }
-
-    private func walked(_ t: UnqualifiedType) -> UnqualifiedType {
-        if let variable     = t as? TypeVariable,
-           let unifiedValue = self.storage[variable]
-        {
-            return self.walked(unifiedValue)
-        } else {
-            return t
-        }
-    }
-
-    private var storage: [TypeVariable: UnqualifiedType] = [:]
-
-}
-
 public struct TypeSolver: ASTVisitor {
+
+    /// Infer the type annotations of a module AST.
+    public mutating func infer(_ module: ModuleDecl) throws {
+        try self.visit(module)
+
+        // TODO: Fixed point.
+
+        // Reify all type annotations.
+        var reifier = TypeReifier(using: self.environment)
+        try! reifier.visit(module)
+    }
 
     public mutating func visit(_ node: PropDecl) throws {
         // Property declarations are typed with the same type as that of the symbol they declare.
@@ -249,7 +105,7 @@ public struct TypeSolver: ASTVisitor {
                 assert(union.qualifiers.isEmpty)
                 assert(union.unqualified is TypeUnion)
                 variants = Array(union.unqualified as! TypeUnion)
-                    .filter { !$0.qualifiers.intersection(node.qualifiers).isEmpty }
+                    .filter { $0.qualifiers.intersection(node.qualifiers) == node.qualifiers }
 
             // Otherwise, if it only specifies qualifiers, we use a type variable.
             } else {
@@ -328,3 +184,21 @@ fileprivate enum VariableID: Hashable {
     }
 
 }
+
+/// An AST walker that reifies the type of all typed nodes.
+fileprivate struct TypeReifier: ASTVisitor {
+
+    init(using environment: Substitution) {
+        self.environment = environment
+    }
+
+    func visit(_ node: PropDecl) throws {
+        if let type = node.type {
+            node.type = self.environment.reify(type)
+        }
+    }
+
+    let environment: Substitution
+
+}
+

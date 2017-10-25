@@ -1,4 +1,4 @@
-public struct QualifiedType: Hashable, CustomStringConvertible {
+public struct QualifiedType: Hashable {
 
     public init(type unqualified: UnqualifiedType, qualifiedBy qualifiers: TypeQualifier = []) {
         self.qualifiers  = qualifiers
@@ -23,14 +23,6 @@ public struct QualifiedType: Hashable, CustomStringConvertible {
             && (lhs.unqualified === rhs.unqualified)
     }
 
-    public var description: String {
-        if self.unqualified is TypeUnion {
-            return String(describing: self.unqualified)
-        } else {
-            return "\(self.qualifiers) \(self.unqualified)"
-        }
-    }
-
 }
 
 public protocol UnqualifiedType: class {
@@ -39,7 +31,7 @@ public protocol UnqualifiedType: class {
 
 }
 
-public struct TypeQualifier: OptionSet, CustomStringConvertible {
+public struct TypeQualifier: OptionSet {
 
     public init(rawValue: Int) {
         self.rawValue = rawValue
@@ -53,17 +45,6 @@ public struct TypeQualifier: OptionSet, CustomStringConvertible {
     static let shd = TypeQualifier(rawValue: 1 << 3)
     static let val = TypeQualifier(rawValue: 1 << 4)
     static let ref = TypeQualifier(rawValue: 1 << 5)
-
-    public var description: String {
-        var result = [String]()
-        if self.contains(.cst) { result.append("@cst") }
-        if self.contains(.mut) { result.append("@mut") }
-        if self.contains(.stk) { result.append("@stk") }
-        if self.contains(.shd) { result.append("@shd") }
-        if self.contains(.val) { result.append("@val") }
-        if self.contains(.ref) { result.append("@ref") }
-        return result.joined(separator: " ")
-    }
 
     public static let combinations: [TypeQualifier] = [
         [.cst, .stk, .val],
