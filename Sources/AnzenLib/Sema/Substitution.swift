@@ -13,14 +13,20 @@ struct Substitution {
 
         switch (a.unqualified, b.unqualified) {
         case let (variable as TypeVariable, union as TypeUnion):
-            let matching = union.filter { $0.qualifiers == a.qualifiers }
+            // Keep only the types that match the variable.
+            var matching = union.filter { $0.qualifiers == a.qualifiers }
             guard matching.count > 0 else {
                 throw CompilerError.inferenceError
             }
-            union.formIntersection(TypeUnion(matching))
-            self.storage[variable] = matching.count > 1
-                ? union
-                : matching[0].unqualified
+            union.replaceContent(with: Set(matching))
+
+            // Make sure we don't unify a variable with itself.
+            matching = matching.filter { $0.unqualified !== variable }
+            if matching.count > 0 {
+                self.storage[variable] = matching.count > 1
+                    ? union
+                    : matching[0].unqualified
+            }
 
         case let (variable as TypeVariable, _):
             guard a.qualifiers == b.qualifiers else { throw CompilerError.inferenceError }
@@ -63,7 +69,7 @@ struct Substitution {
             guard result.count > 0 else {
                 throw CompilerError.inferenceError
             }
-            union.formIntersection(TypeUnion(result))
+            union.replaceContent(with: Set(result))
 
         case (_, _ as TypeUnion):
             try? self.unify(b, a)
