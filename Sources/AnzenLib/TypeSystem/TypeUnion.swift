@@ -50,6 +50,10 @@ public final class TypeUnion: UnqualifiedType, ExpressibleByArrayLiteral {
         self.types.formIntersection(other.types)
     }
 
+    public func replaceContent(with content: Set<QualifiedType>) {
+        self.types = content
+    }
+
     public var count: Int {
         return self.types.count
     }

@@ -23,11 +23,21 @@ public struct TypeSolver: ASTVisitor {
         }
 
         // If there's an initial binding, we infer the type it produces.
-        if let (bindingOp, bindingValue) = node.initialBinding {
-            print(bindingOp)
-            print(bindingValue)
+        if let (bindingOp, initialValue) = node.initialBinding {
+            // Infer the initial value's type.
+            let rvalue = try self.analyseValueExpression(initialValue)
 
-            // TODO
+            // Infer the property's type from its binding.
+            let result = inferBindingTypes(
+                lvalue: inferred ?? node.type!,
+                op    : bindingOp,
+                rvalue: rvalue)
+            try self.environment.unify(rvalue, result.rvalue)
+            if inferred != nil {
+                try self.environment.unify(inferred!, result.lvalue)
+            } else {
+                inferred = result.lvalue
+            }
         }
 
         // If we couldn't get any additional type information, we use the type of the symbol.
@@ -62,6 +72,31 @@ public struct TypeSolver: ASTVisitor {
     }
 
     // MARK: Internals
+
+    private mutating func analyseValueExpression(_ expr: Node) throws -> QualifiedType {
+        // Expressions should be typed nodes.
+        assert(expr is TypedNode)
+
+        switch expr {
+        case let literal as Literal<Int>:
+            literal.type = QualifiedType(
+                type: BuiltinScope.AnzenInt, qualifiedBy: [.cst, .stk, .val])
+            return literal.type!
+
+        case let literal as Literal<Bool>:
+            literal.type = QualifiedType(
+                type: BuiltinScope.AnzenBool, qualifiedBy: [.cst, .stk, .val])
+            return literal.type!
+
+        case let literal as Literal<String>:
+            literal.type = QualifiedType(
+                type: BuiltinScope.AnzenString, qualifiedBy: [.cst, .stk, .val])
+            return literal.type!
+
+        default:
+            fatalError("unexpected node for expression")
+        }
+    }
 
     private mutating func analyseTypeAnnotation(_ annotation: Node) throws -> QualifiedType {
         // Type annotations should be typed nodes.
@@ -111,7 +146,7 @@ public struct TypeSolver: ASTVisitor {
             } else {
                 let variable = TypeVariable()
                 variants = TypeQualifier.combinations
-                    .filter { !$0.intersection(node.qualifiers).isEmpty }
+                    .filter { $0.intersection(node.qualifiers) == node.qualifiers }
                     .map    { QualifiedType(type: variable, qualifiedBy: $0) }
             }
 
@@ -202,3 +237,82 @@ fileprivate struct TypeReifier: ASTVisitor {
 
 }
 
+/// Infer all possible types of the lvalue and rvalue of a binding from partial information.
+fileprivate func inferBindingTypes(lvalue: QualifiedType, op: Operator, rvalue: QualifiedType)
+    -> (lvalue: QualifiedType, rvalue: QualifiedType)
+{
+    // NOTE: There are various illegal use of the binding operators that we could detect here. For
+    // instance, it is illegal to move a `@ref` rvalue. But we'll let that errors be checked by
+    // the reference checker instead, to preserve the compartmentalization of compiling passes.
+
+    let ltypes = lvalue.unqualified is TypeUnion
+        ? Array(lvalue.unqualified as! TypeUnion)
+        : [lvalue]
+    let rtypes = rvalue.unqualified is TypeUnion
+        ? Array(rvalue.unqualified as! TypeUnion)
+        : [rvalue]
+
+    let lresult: [QualifiedType]
+    let rresult: [QualifiedType]
+
+    switch op {
+    // A copy binding preserves the rvalue's type, but takes the lvalue's type qualifiers. The
+    // lvalue's type can have any qualifier.
+    case .cpy:
+        // The lvalue's qualifiers are preserved.
+        lresult = (ltypes * rtypes).map { lhs, rhs in
+            return QualifiedType(type: rhs.unqualified, qualifiedBy: lhs.qualifiers)
+        }
+
+        // The rvalue's type can be any of the lvalue's type variants.
+        rresult = (ltypes * TypeQualifier.combinations).map { (pair) -> QualifiedType in
+            let (lhs, qualifiers) = pair
+            return QualifiedType(type: lhs.unqualified, qualifiedBy: qualifiers)
+        }
+
+    // A move binding always bind `@val` expressions on its to `@val` variables on its left.
+    case .mov:
+        // The lvalue's type can be any `@val` variant of the rvalue's type.
+        lresult = (rtypes * TypeQualifier.combinations).flatMap { (pair) -> QualifiedType? in
+            let (rhs, qualifiers) = pair
+            return qualifiers.contains(.val)
+                ? QualifiedType(type: rhs.unqualified, qualifiedBy: qualifiers)
+                : nil
+        }
+
+        // The rvalue's type can be any `@val` variant of the lvalue's type.
+        rresult = (ltypes * TypeQualifier.combinations).flatMap { (pair) -> QualifiedType? in
+            let (lhs, qualifiers) = pair
+            return qualifiers.contains(.val)
+                ? QualifiedType(type: lhs.unqualified, qualifiedBy: qualifiers)
+                : nil
+        }
+
+    // A reference binding always produces `@ref` lvalues from any rvalue.
+    case .ref:
+        // The lvalue's type can be any `@ref` variant of the rvalue's type.
+        lresult = (rtypes * TypeQualifier.combinations).flatMap { (pair) -> QualifiedType? in
+            let (rhs, qualifiers) = pair
+            return qualifiers.contains(.ref)
+                ? QualifiedType(type: rhs.unqualified, qualifiedBy: qualifiers)
+                : nil
+        }
+
+        // The rvalue's type can be any of the lvalue's type variants.
+        rresult = (ltypes * TypeQualifier.combinations).map { (pair) -> QualifiedType in
+            let (lhs, qualifiers) = pair
+            return QualifiedType(type: lhs.unqualified, qualifiedBy: qualifiers)
+        }
+
+    default:
+        fatalError("unexpected binding operator")
+    }
+
+    return (
+        lresult.count > 1
+            ? QualifiedType(type: TypeUnion(lresult))
+            : lresult[0],
+        rresult.count > 1
+            ? QualifiedType(type: TypeUnion(rresult))
+            : rresult[0])
+}

@@ -38,8 +38,8 @@ struct Substitution {
             guard result.count > 0 else {
                 throw CompilerError.inferenceError
             }
-            lhs.formIntersection(TypeUnion(result))
-            rhs.formIntersection(TypeUnion(result))
+            lhs.replaceContent(with: Set(result))
+            rhs.replaceContent(with: Set(result))
 
             // Unify the variables of `lhs` with the compatible variables in `rhs`.
             let qualifiedR = QualifiedType(type: TypeUnion(walkedR))
