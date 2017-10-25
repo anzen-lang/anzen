@@ -1,37 +1,30 @@
 struct TypeFactory {
 
     public static func makeName(name: String, type: UnqualifiedType) -> TypeName {
-        let newType = TypeName(name: name, type: type)
-        if let existing = TypeFactory.findSame(as: newType) {
-            return existing
-        }
-        TypeFactory.types.append(WeakReference(newType))
-        return newType
+        return self.insert(TypeName(name: name, type: type))
     }
 
     public static func makeFunction(
         domain: [(label: String?, type: QualifiedType)], codomain: QualifiedType?) -> FunctionType
     {
-        let newType = FunctionType(domain: domain, codomain: codomain)
-        if let existing = TypeFactory.findSame(as: newType) {
-            return existing
-        }
-        TypeFactory.types.append(WeakReference(newType))
-        return newType
+        return self.insert(FunctionType(domain: domain, codomain: codomain))
     }
 
     public static func makeStruct(
         name: String, members: [String: QualifiedType] = [:]) -> StructType
     {
-        let newType = StructType(name: name, members: members)
-        if let existing = TypeFactory.findSame(as: newType) {
+        return self.insert(StructType(name: name, members: members))
+    }
+
+    // Mark: Internals
+
+    static func insert<T: UnqualifiedType & Equatable>(_ newType: T) -> T {
+        if let existing = findSame(as: newType) {
             return existing
         }
         TypeFactory.types.append(WeakReference(newType))
         return newType
     }
-
-    // Mark: Internals
 
     fileprivate static func findSame<T>(as newType: T) -> T?
         where T: UnqualifiedType & Equatable
