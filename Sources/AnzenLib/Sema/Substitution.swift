@@ -133,15 +133,30 @@ struct Substitution {
         }
     }
 
-    public func reify(_ type: QualifiedType) -> QualifiedType {
+    public func reify(_ type: QualifiedType, memo: [(UnqualifiedType, UnqualifiedType)] = [])
+        -> QualifiedType
+    {
         let walked = self.walked(type)
+
+        // Check if the unqualified type is already being reified, so we can avoid infinite
+        // recursions on types that may refer themselves (e.g. structs).
+        if let (_, reified) = memo.first(where: { (t, _) in t === walked.unqualified }) {
+            return QualifiedType(type: reified, qualifiedBy: walked.qualifiers)
+        }
 
         switch walked.unqualified {
         case let union as TypeUnion:
-            let reifiedUnion = TypeUnion(union.map { self.reify($0) })
+            let reifiedUnion = TypeUnion(union.map { self.reify($0, memo: memo) })
             return reifiedUnion.count > 1
                 ? QualifiedType(type: reifiedUnion)
                 : reifiedUnion.first(where: { _ in true })!
+
+        case let structType as StructType:
+            let reified = StructType(name: structType.name, members: [:])
+            for (name, member) in structType.members {
+                reified.members[name] = self.reify(member, memo: memo + [(structType, reified)])
+            }
+            return QualifiedType(type: reified, qualifiedBy: walked.qualifiers)
 
         default:
             return walked
