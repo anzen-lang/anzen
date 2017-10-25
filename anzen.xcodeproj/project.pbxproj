@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		127081B81FA0065200D36BB4 /* Sequence+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127081B71FA0065200D36BB4 /* Sequence+Extension.swift */; };
 		12B52FF81F9D364C00921F29 /* Operator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12B52FF61F9D35F900921F29 /* Operator.swift */; };
 		12B52FFB1F9D4D2500921F29 /* ScopeBinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12B52FF91F9D4D0000921F29 /* ScopeBinder.swift */; };
 		12B52FFE1F9D4F2700921F29 /* Scope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12B52FFC1F9D4EC700921F29 /* Scope.swift */; };
@@ -99,6 +100,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		127081B71FA0065200D36BB4 /* Sequence+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sequence+Extension.swift"; sourceTree = "<group>"; };
 		12B52FF61F9D35F900921F29 /* Operator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operator.swift; sourceTree = "<group>"; };
 		12B52FF91F9D4D0000921F29 /* ScopeBinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopeBinder.swift; sourceTree = "<group>"; };
 		12B52FFC1F9D4EC700921F29 /* Scope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scope.swift; sourceTree = "<group>"; };
@@ -215,6 +217,7 @@
 			isa = PBXGroup;
 			children = (
 				751C25C41F9E020E00924251 /* Stack.swift */,
+				127081B71FA0065200D36BB4 /* Sequence+Extension.swift */,
 			);
 			name = Utils;
 			path = Sources/AnzenLib/Utils;
@@ -465,6 +468,7 @@
 				751C25BE1F9DF1A800924251 /* Builtin.swift in Sources */,
 				755D90DA1F9F8C850038DF88 /* TypeSolver.swift in Sources */,
 				12DC5F351F9CD56A00309621 /* ASTVisitor+Traversal.swift in Sources */,
+				127081B81FA0065200D36BB4 /* Sequence+Extension.swift in Sources */,
 				12DC5F331F9CD06900309621 /* ASTVisitor.swift in Sources */,
 				12DC5F2A1F9A7D9E00309621 /* AST.swift in Sources */,
 				75CAA3AC1F9DE09300BBF1F9 /* TypeFactory.swift in Sources */,

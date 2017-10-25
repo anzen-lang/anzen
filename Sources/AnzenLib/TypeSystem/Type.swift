@@ -1,6 +1,6 @@
-public struct QualifiedType: Hashable {
+public struct QualifiedType: Hashable, CustomStringConvertible {
 
-    public init(type unqualified: UnqualifiedType, qualifiedBy qualifiers: TypeQualifier) {
+    public init(type unqualified: UnqualifiedType, qualifiedBy qualifiers: TypeQualifier = []) {
         self.qualifiers  = qualifiers
         self.unqualified = unqualified
     }
@@ -21,6 +21,14 @@ public struct QualifiedType: Hashable {
     public static func ==(lhs: QualifiedType, rhs: QualifiedType) -> Bool {
         return (lhs.qualifiers == rhs.qualifiers)
             && (lhs.unqualified === rhs.unqualified)
+    }
+
+    public var description: String {
+        if self.unqualified is TypeUnion {
+            return String(describing: self.unqualified)
+        } else {
+            return "\(self.qualifiers) \(self.unqualified)"
+        }
     }
 
 }
@@ -56,5 +64,13 @@ public struct TypeQualifier: OptionSet, CustomStringConvertible {
         if self.contains(.ref) { result.append("@ref") }
         return result.joined(separator: " ")
     }
+
+    public static let combinations: [TypeQualifier] = [
+        [.cst, .stk, .val],
+        [.cst, .stk, .ref],
+        [.mut, .stk, .val],
+        [.mut, .stk, .ref],
+        [.mut, .shd, .val],
+    ]
 
 }

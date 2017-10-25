@@ -4,6 +4,10 @@ public final class TypeUnion: UnqualifiedType, ExpressibleByArrayLiteral {
         self.types = []
     }
 
+    public init(_ other: TypeUnion) {
+        self.types = other.types
+    }
+
     public init<S: Sequence>(_ sequence: S)
         where S.Iterator.Element == QualifiedType
     {
@@ -27,11 +31,27 @@ public final class TypeUnion: UnqualifiedType, ExpressibleByArrayLiteral {
     }
 
     public func union(_ other: TypeUnion) -> TypeUnion {
-        return TypeUnion(self.types.union(other.types))
+        let result = TypeUnion()
+        result.types = self.types.union(other.types)
+        return result
     }
 
     public func formUnion(_ other: TypeUnion) {
         self.types.formUnion(other.types)
+    }
+
+    public func intersection(_ other: TypeUnion) -> TypeUnion {
+        let result = TypeUnion()
+        result.types = self.types.intersection(other.types)
+        return result
+    }
+
+    public func formIntersection(_ other: TypeUnion) {
+        self.types.formIntersection(other.types)
+    }
+
+    public var count: Int {
+        return self.types.count
     }
 
     // MARK: Internals
@@ -52,6 +72,14 @@ extension TypeUnion: Equatable {
 
     public static func ==(lhs: TypeUnion, rhs: TypeUnion) -> Bool {
         return lhs.types == rhs.types
+    }
+
+}
+
+extension TypeUnion: CustomStringConvertible {
+
+    public var description: String {
+        return "{" + self.types.map({ String(describing: $0) }).joined(separator: ", ") + "}"
     }
 
 }

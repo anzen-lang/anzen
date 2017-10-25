@@ -8,6 +8,7 @@ extension ModuleDecl: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.symbols) {
             result += "- symbols:\(desc)"
         }
+
         if let desc = attrDesc(of: self.statements) {
             result += "- statements:\(desc)"
         }
@@ -25,6 +26,7 @@ extension Block: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.symbols) {
             result += "- symbols:\(desc)"
         }
+
         if let desc = attrDesc(of: self.statements) {
             result += "- statements:\(desc)"
         }
@@ -43,6 +45,9 @@ extension FunDecl: CustomDebugStringConvertible {
 
         if let desc = attrDesc(of: self.scope) {
             result += "- scope:\(desc)"
+        }
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
         }
 
         result += "- name: \(self.name)\n"
@@ -72,6 +77,9 @@ extension ParamDecl: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.scope) {
             result += "- scope:\(desc)"
         }
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
 
         if let desc = attrDesc(of: self.label) {
             result += "- label:\(desc)"
@@ -93,6 +101,9 @@ extension PropDecl: CustomDebugStringConvertible {
 
         if let desc = attrDesc(of: self.scope) {
             result += "- scope:\(desc)"
+        }
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
         }
 
         result += "- name: \(self.name)\n"
@@ -121,6 +132,9 @@ extension StructDecl: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.scope) {
             result += "- scope:\(desc)"
         }
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
 
         result += "- name: \(self.name)\n"
         if let desc = attrDesc(of: self.placeholders) {
@@ -142,6 +156,10 @@ extension QualSign: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "QualSign:\n"
 
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
+
         let qualifiers = self.qualifiers != []
             ? String(describing: self.qualifiers)
             : "@?"
@@ -160,6 +178,10 @@ extension FunSign: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "FunSign:\n"
 
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
+
         if let desc = attrDesc(of: self.parameters) {
             result += "- parameters:\(desc)"
         }
@@ -176,6 +198,10 @@ extension ParamSign: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var result = "ParamSign:\n"
+
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
 
         if let desc = attrDesc(of: self.label) {
             result += "- label:\(desc)"
@@ -230,6 +256,10 @@ extension IfExpr: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "IfExpr:\n"
 
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
+
         if let desc = attrDesc(of: self.condition) {
             result += "- condition:\(desc)"
         }
@@ -250,6 +280,10 @@ extension BinExpr: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "BinExpr:\n"
 
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
+
         if let desc = attrDesc(of: self.left) {
             result += "- left:\(desc)"
         }
@@ -268,6 +302,10 @@ extension UnExpr: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "UnExpr:\n"
 
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
+
         result += "- op: \(self.op)\n"
         if let desc = attrDesc(of: self.operand) {
             result += "- right:\(desc)"
@@ -282,6 +320,10 @@ extension CallExpr: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var result = "CallExpr:\n"
+
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
 
         if let desc = attrDesc(of: self.callee) {
             result += "- callee:\(desc)"
@@ -299,6 +341,10 @@ extension CallArg: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var result = "CallArg:\n"
+
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
 
         if let desc = attrDesc(of: self.label) {
             result += "- label:\(desc)"
@@ -320,6 +366,10 @@ extension SubscriptExpr: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "SubscriptExpr:\n"
 
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
+
         if let desc = attrDesc(of: self.callee) {
             result += "- callee:\(desc)"
         }
@@ -336,6 +386,10 @@ extension SelectExpr: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var result = "SelectExpr:\n"
+
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
 
         if let desc = attrDesc(of: self.owner) {
             result += "- owner:\(desc)"
@@ -357,6 +411,9 @@ extension Ident: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.scope) {
             result += "- scope:\(desc)"
         }
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
 
         result += "- name: \(self.name)\n"
 
@@ -369,6 +426,10 @@ extension Literal: CustomDebugStringConvertible {
 
     public var debugDescription: String {
         var result = "Literal:\n"
+
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
 
         result += "- value: \(self.value)\n"
 
@@ -387,7 +448,7 @@ fileprivate func attrDesc(of attribute: [Node]) -> String? {
     var result = "\n"
     for child in attribute {
         let childDescription = String(reflecting: child).split(separator: "\n")
-        result += "  - \(childDescription[0])\n"
+        result += "  * \(childDescription[0])\n"
         for line in childDescription.dropFirst() {
             result += "    \(line)\n"
         }
@@ -405,7 +466,7 @@ fileprivate func attrDesc(of attribute: Node?) -> String? {
         return " \(childDescription[0])\n"
     } else {
         var result = "\n"
-        result += "  - \(childDescription[0])\n"
+        result += "  * \(childDescription[0])\n"
         for line in childDescription.dropFirst() {
             result += "    \(line)\n"
         }

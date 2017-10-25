@@ -14,6 +14,10 @@ public func performSema(on module: ModuleDecl) throws -> ModuleDecl {
     var scopeBinder = ScopeBinder()
     try scopeBinder.visit(module)
 
+    // Infer the types of declarations and expressions.
+    var typeSolver = TypeSolver()
+    try typeSolver.visit(module)
+
     print(String(reflecting: module))
 
     return module
