@@ -227,7 +227,7 @@ public struct Grammar {
     static let typeAnnotation = qualTypeSign | typeSign
 
     static let qualTypeSign: Parser<Node> =
-        typeQualifier.many(separatedBy: ws) <~~ ws ~~ typeSign.?
+        typeQualifier.many(separatedBy: ws) ~~ (ws ~~> typeSign).?
         ^^^ { (val, loc) in
             var qualifiers: TypeQualifier = []
             for q in val.0 {
