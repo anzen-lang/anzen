@@ -67,11 +67,11 @@ struct Substitution {
 
         case let (union as TypeUnion, _):
             let result = union.flatMap({ self.matches($0, b) ? $0 : nil })
-            union.formIntersection(TypeUnion(result))
+            try self.unify(a, QualifiedType(type: TypeUnion(result)))
 
         case let (_, union as TypeUnion):
             let result = union.flatMap({ self.matches(a, $0) ? $0 : nil })
-            union.formIntersection(TypeUnion(result))
+            try self.unify(b, QualifiedType(type: TypeUnion(result)))
 
         default:
             throw CompilerError.inferenceError
