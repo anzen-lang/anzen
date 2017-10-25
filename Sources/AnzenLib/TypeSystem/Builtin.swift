@@ -4,6 +4,9 @@ public final class BuiltinScope: Scope {
         super.init(name: "Anzen")
 
         self.add(symbol: Symbol(
+            name: "Type",
+            type: self.makeTypeName(from: BuiltinScope.AnzenType)))
+        self.add(symbol: Symbol(
             name: "Int",
             type: self.makeTypeName(from: BuiltinScope.AnzenInt)))
         self.add(symbol: Symbol(
@@ -16,6 +19,7 @@ public final class BuiltinScope: Scope {
 
     // MARK: Builtin types
 
+    public static var AnzenType   = TypeFactory.makeStruct(name: "Type")
     public static var AnzenInt    = TypeFactory.makeStruct(name: "Int")
     public static var AnzenBool   = TypeFactory.makeStruct(name: "Bool")
     public static var AnzenString = TypeFactory.makeStruct(name: "String")

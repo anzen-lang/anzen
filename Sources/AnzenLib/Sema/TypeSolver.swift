@@ -71,9 +71,21 @@ public struct TypeSolver: ASTVisitor {
         try self.environment.unify(node.type!, declarationType)
     }
 
+    public mutating func visit(_ node: BindingStmt) throws {
+        let lvalue = try self.analyseValueExpression(node.lvalue)
+        let rvalue = try self.analyseValueExpression(node.rvalue)
+
+        // Propagate type constraints implied by the binding operator.
+        let result = inferBindingTypes(lvalue: lvalue, op: node.op, rvalue: rvalue)
+        try self.environment.unify(lvalue, result.lvalue)
+        try self.environment.unify(rvalue, result.rvalue)
+    }
+
     // MARK: Internals
 
-    private mutating func analyseValueExpression(_ expr: Node) throws -> QualifiedType {
+    private mutating func analyseValueExpression(
+        _ expr: Node, asCallee: Bool = false) throws -> QualifiedType
+    {
         // Expressions should be typed nodes.
         assert(expr is TypedNode)
 
@@ -92,6 +104,22 @@ public struct TypeSolver: ASTVisitor {
             literal.type = QualifiedType(
                 type: BuiltinScope.AnzenString, qualifiedBy: [.cst, .stk, .val])
             return literal.type!
+
+        case let node as Ident:
+            if node.type == nil {
+                node.type = self.getSymbolType(scope: node.scope!, name: node.name)
+            }
+
+            // If the node is used as callee (in a call or subscript expression) or owner (in a
+            // select expression), we should return the type associated with the typename,
+            // otherwise the builtin metatype `Type`.
+            if let typeName = node.type!.unqualified as? TypeName {
+                node.type = asCallee
+                    ? QualifiedType(type: typeName.type, qualifiedBy: [.cst, .stk, .val])
+                    : QualifiedType(type: BuiltinScope.AnzenType, qualifiedBy: [.cst, .stk, .val])
+            }
+
+            return node.type!
 
         default:
             fatalError("unexpected node for expression")
@@ -220,23 +248,6 @@ fileprivate enum VariableID: Hashable {
 
 }
 
-/// An AST walker that reifies the type of all typed nodes.
-fileprivate struct TypeReifier: ASTVisitor {
-
-    init(using environment: Substitution) {
-        self.environment = environment
-    }
-
-    func visit(_ node: PropDecl) throws {
-        if let type = node.type {
-            node.type = self.environment.reify(type)
-        }
-    }
-
-    let environment: Substitution
-
-}
-
 /// Infer all possible types of the lvalue and rvalue of a binding from partial information.
 fileprivate func inferBindingTypes(lvalue: QualifiedType, op: Operator, rvalue: QualifiedType)
     -> (lvalue: QualifiedType, rvalue: QualifiedType)
@@ -315,4 +326,21 @@ fileprivate func inferBindingTypes(lvalue: QualifiedType, op: Operator, rvalue: 
         rresult.count > 1
             ? QualifiedType(type: TypeUnion(rresult))
             : rresult[0])
+}
+
+/// An AST walker that reifies the type of all typed nodes.
+fileprivate struct TypeReifier: ASTVisitor {
+
+    init(using environment: Substitution) {
+        self.environment = environment
+    }
+
+    func visit(_ node: PropDecl) throws {
+        if let type = node.type {
+            node.type = self.environment.reify(type)
+        }
+    }
+
+    let environment: Substitution
+
 }
