@@ -11,6 +11,73 @@ public struct TypeSolver: ASTVisitor {
         try! reifier.visit(module)
     }
 
+    public mutating func visit(_ node: FunDecl) throws {
+        // TODO: Handle generic placeholders.
+
+        // Get the type of each parameter.
+        var domain: [(label: String?, type: QualifiedType)] = []
+        for child in node.parameters {
+            let parameter = child as! ParamDecl
+            try self.visit(parameter)
+            domain.append((parameter.label, parameter.type!))
+        }
+
+        // The codomain is either a signature to analyse, or `nil`.
+        var codomain: QualifiedType? = nil
+        if node.codomain != nil {
+            codomain = try self.analyseTypeAnnotation(node.codomain!)
+            if let union = codomain!.unqualified as? TypeUnion {
+                codomain = mostRestrictiveVariants(of: union)
+            }
+        }
+
+        // Once we've computed the domain and codomain of the function's signature, we can create
+        // a type for the function itself. Note that functions (unless global) are actually
+        // garbage collected objects. Therefore they are declared with `@mut @shd @ref`.
+        let functionType = QualifiedType(
+            type       : TypeFactory.makeFunction(domain: domain, codomain: codomain),
+            qualifiedBy: [.mut, .shd, .ref])
+        node.type = functionType
+
+        // As functions may be overloaded, we can't unify the function type we've created with the
+        // function's symbol directly. Instead, we should create a type union so as to handle
+        // overloaded signatures.
+        let varID: VariableID = .named(node.scope!, node.name)
+        if let symbolType = self.symbolTypes[varID] {
+            (symbolType.unqualified as! TypeUnion).formUnion(TypeUnion([functionType]))
+        } else {
+            self.symbolTypes[varID] = QualifiedType(type: TypeUnion([functionType]))
+        }
+
+        // Visit the body of the function.
+        self.returnTypes.push((node.scope!, codomain))
+        try self.visit(node.body as! Block)
+        self.returnTypes.pop()
+
+        // NOTE: Checking whether or not the function has a return statement in all its execution
+        // paths shouldn't be performed here, but in the pass that analyses the program's CFG.
+
+        // Set the symbol's type.
+        node.scope![node.name].first(where: { $0 === node })?.type = node.type
+    }
+
+    public mutating func visit(_ node: ParamDecl) throws {
+        // Parameter declarations are typed with the same type as that of the symbol they declare.
+        node.type = self.getSymbolType(scope: node.scope!, name: node.name)
+
+        var inferred = try self.analyseTypeAnnotation(node.typeAnnotation)
+
+        // If inference yielded several choices, choose the most restrictive options for each
+        // distinct unqualified type.
+        if let union = inferred.unqualified as? TypeUnion {
+            inferred = mostRestrictiveVariants(of: union)
+        }
+
+        try self.environment.unify(node.type!, inferred)
+
+        // TODO: Unify type annotations with default values.
+    }
+
     public mutating func visit(_ node: PropDecl) throws {
         // Property declarations are typed with the same type as that of the symbol they declare.
         node.type = self.getSymbolType(scope: node.scope!, name: node.name)
@@ -46,25 +113,7 @@ public struct TypeSolver: ASTVisitor {
         // If inference yielded several choices, choose the most restrictive options for each
         // distinct unqualified type.
         if let union = declarationType.unqualified as? TypeUnion {
-            assert(declarationType.qualifiers.isEmpty)
-
-            // Isolate unqualified types by erasing their qualifiers.
-            let distinct = Set(union.map { QualifiedType(type: $0.unqualified, qualifiedBy: []) })
-
-            var choices: [QualifiedType] = []
-            for type in distinct {
-                for combination in TypeQualifier.combinations {
-                    let t = QualifiedType(type: type.unqualified, qualifiedBy: combination)
-                    if union.contains(t) {
-                        choices.append(t)
-                        break
-                    }
-                }
-            }
-
-            declarationType = choices.count > 1
-                ? QualifiedType(type: TypeUnion(choices))
-                : choices[0]
+            declarationType = mostRestrictiveVariants(of: union)
         }
 
         // Unify the symbol's type with that of its declaration.
@@ -79,6 +128,23 @@ public struct TypeSolver: ASTVisitor {
         let result = inferBindingTypes(lvalue: lvalue, op: node.op, rvalue: rvalue)
         try self.environment.unify(lvalue, result.lvalue)
         try self.environment.unify(rvalue, result.rvalue)
+    }
+
+    public mutating func visit(_ node: ReturnStmt) throws {
+        if let expectedReturnType = self.returnTypes.last.returnType {
+            guard let value = node.value else {
+                throw CompilerError.inferenceError
+            }
+
+            let returnType = try self.analyseValueExpression(value)
+            try self.environment.unify(expectedReturnType, returnType)
+        } else {
+            guard node.value == nil else {
+                throw CompilerError.inferenceError
+            }
+        }
+
+        // TODO: Handle the "from <scope_name>" syntax.
     }
 
     // MARK: Internals
@@ -143,7 +209,7 @@ public struct TypeSolver: ASTVisitor {
 
             // `symbolType` should be either a union of type variables (if the symbol's type is
             // still unknown) or a type name. That's because the identifier is used as a type
-            // signature, and therefore isn't allowed to be a variable.
+            // signature, and therefore shouldn't represent a fully qualified type.
             // FIXME: We should probably throw rather than fail the assertion here.
             assert((symbolType.unqualified is TypeUnion) || (symbolType.unqualified is TypeName))
 
@@ -224,6 +290,12 @@ public struct TypeSolver: ASTVisitor {
     /// A mapping `(VariableID) -> TypeUnion`.
     private var symbolTypes: [VariableID: QualifiedType] = [:]
 
+    /// A stack of pairs of scopes and expected return types.
+    ///
+    /// We use this stack as we visit scopes that may return a value (e.g. functions), so that we
+    /// can unify the expected type of all return statements.
+    private var returnTypes: Stack<(scope: Scope, returnType: QualifiedType?)> = []
+
 }
 
 // MARK: Internals
@@ -246,6 +318,26 @@ fileprivate enum VariableID: Hashable {
         }
     }
 
+}
+
+fileprivate func mostRestrictiveVariants(of union: TypeUnion) -> QualifiedType {
+    // Isolate unqualified types by erasing their qualifiers.
+    let distinct = Set(union.map { QualifiedType(type: $0.unqualified, qualifiedBy: []) })
+
+    var choices: [QualifiedType] = []
+    for type in distinct {
+        for combination in TypeQualifier.combinations {
+            let t = QualifiedType(type: type.unqualified, qualifiedBy: combination)
+            if union.contains(t) {
+                choices.append(t)
+                break
+            }
+        }
+    }
+
+    return choices.count > 1
+        ? QualifiedType(type: TypeUnion(choices))
+        : choices[0]
 }
 
 /// Infer all possible types of the lvalue and rvalue of a binding from partial information.
@@ -335,10 +427,31 @@ fileprivate struct TypeReifier: ASTVisitor {
         self.environment = environment
     }
 
-    func visit(_ node: PropDecl) throws {
+    func reify(typeOf node: TypedNode) {
         if let type = node.type {
             node.type = self.environment.reify(type)
         }
+    }
+
+    mutating func visit(_ node: FunDecl) {
+        self.reify(typeOf: node)
+        try! self.traverse(node)
+    }
+
+    func visit(_ node: ParamDecl) {
+        self.reify(typeOf: node)
+    }
+
+    func visit(_ node: PropDecl) {
+        self.reify(typeOf: node)
+    }
+
+    func visit(_ node: QualSign) {
+        self.reify(typeOf: node)
+    }
+
+    func visit(_ node: Ident) {
+        self.reify(typeOf: node)
     }
 
     let environment: Substitution

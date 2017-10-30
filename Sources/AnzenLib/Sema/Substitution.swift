@@ -157,12 +157,24 @@ struct Substitution {
                 ? QualifiedType(type: reifiedUnion)
                 : reifiedUnion.first(where: { _ in true })!
 
+        case let functionType as FunctionType:
+            let reified = TypeFactory.makeFunction(
+                domain: functionType.domain.map({ param in
+                    return (param.label, self.reify(param.type, memo: memo))
+                }),
+                codomain: functionType.codomain != nil
+                    ? self.reify(functionType.codomain!, memo: memo)
+                    : nil)
+            return QualifiedType(type: reified, qualifiedBy: walked.qualifiers)
+
         case let structType as StructType:
             let reified = StructType(name: structType.name, members: [:])
             for (name, member) in structType.members {
                 reified.members[name] = self.reify(member, memo: memo + [(structType, reified)])
             }
-            return QualifiedType(type: reified, qualifiedBy: walked.qualifiers)
+            return QualifiedType(
+                type: TypeFactory.insert(reified),
+                qualifiedBy: walked.qualifiers)
 
         default:
             return walked
@@ -171,7 +183,7 @@ struct Substitution {
 
     // MARK: Internals
 
-    private func walked(_ t: QualifiedType) -> QualifiedType {
+    func walked(_ t: QualifiedType) -> QualifiedType {
         // Find the unified value of the unqualified type.
         let unqualified = self.walked(t.unqualified)
 

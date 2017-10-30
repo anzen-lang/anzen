@@ -51,7 +51,7 @@ public struct TypeQualifier: OptionSet {
         [.cst, .stk, .ref],
         [.mut, .stk, .val],
         [.mut, .stk, .ref],
-        [.mut, .shd, .val],
+        [.mut, .shd, .ref],
     ]
 
 }

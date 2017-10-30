@@ -2,7 +2,7 @@ import Parsey
 
 // MARK: Protocols
 
-public protocol Node: CustomStringConvertible {
+public protocol Node: class, CustomStringConvertible {
 
     var location: SourceRange? { get }
 
