@@ -33,15 +33,20 @@ extension TypeUnion: CustomStringConvertible {
 
 }
 
+extension TypeVariable: CustomStringConvertible {
+
+    public var description: String {
+        return "$\(self.id)"
+    }
+
+}
+
 extension FunctionType: CustomStringConvertible {
 
     public var description: String {
         let domainDescription = self.domain.map({ param in (param.label ?? "_") + ": \(param.type)" })
             .joined(separator: ", ")
-        let codomainDescription = self.codomain != nil
-            ? String(describing: self.codomain!)
-            : "Nothing"
-        return "(\(domainDescription)) -> \(codomainDescription)"
+        return "(\(domainDescription)) -> \(self.codomain)"
     }
 
 }

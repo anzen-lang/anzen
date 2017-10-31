@@ -22,13 +22,17 @@ public struct TypeSolver: ASTVisitor {
             domain.append((parameter.label, parameter.type!))
         }
 
-        // The codomain is either a signature to analyse, or `nil`.
-        var codomain: QualifiedType? = nil
+        // The codomain is either a signature to analyse, or `Nothing`.
+        var codomain: QualifiedType
         if node.codomain != nil {
             codomain = try self.analyseTypeAnnotation(node.codomain!)
-            if let union = codomain!.unqualified as? TypeUnion {
+            if let union = codomain.unqualified as? TypeUnion {
                 codomain = mostRestrictiveVariants(of: union)
             }
+        } else {
+            codomain = QualifiedType(
+                type       : BuiltinScope.AnzenNothing,
+                qualifiedBy: [.cst, .stk, .val])
         }
 
         // Once we've computed the domain and codomain of the function's signature, we can create
@@ -44,7 +48,10 @@ public struct TypeSolver: ASTVisitor {
         // overloaded signatures.
         let varID: VariableID = .named(node.scope!, node.name)
         if let symbolType = self.symbolTypes[varID] {
-            (symbolType.unqualified as! TypeUnion).formUnion(TypeUnion([functionType]))
+            guard let overloads = symbolType.unqualified as? TypeUnion else {
+                throw CompilerError.inferenceError
+            }
+            overloads.insert(functionType)
         } else {
             self.symbolTypes[varID] = QualifiedType(type: TypeUnion([functionType]))
         }
@@ -62,20 +69,18 @@ public struct TypeSolver: ASTVisitor {
     }
 
     public mutating func visit(_ node: ParamDecl) throws {
-        // Parameter declarations are typed with the same type as that of the symbol they declare.
-        node.type = self.getSymbolType(scope: node.scope!, name: node.name)
-
+        // Infer the type of the parameter based on its annotation.
         var inferred = try self.analyseTypeAnnotation(node.typeAnnotation)
-
-        // If inference yielded several choices, choose the most restrictive options for each
-        // distinct unqualified type.
         if let union = inferred.unqualified as? TypeUnion {
             inferred = mostRestrictiveVariants(of: union)
         }
 
-        try self.environment.unify(node.type!, inferred)
-
         // TODO: Unify type annotations with default values.
+
+        // Parameter declarations are typed with the same type as that of the symbol they declare.
+        node.type = self.getSymbolType(scope: node.scope!, name: node.name)
+        try self.environment.unify(node.type!, inferred)
+        node.scope![node.name].first(where: { $0 === node })?.type = node.type
     }
 
     public mutating func visit(_ node: PropDecl) throws {
@@ -118,6 +123,7 @@ public struct TypeSolver: ASTVisitor {
 
         // Unify the symbol's type with that of its declaration.
         try self.environment.unify(node.type!, declarationType)
+        node.scope![node.name].first(where: { $0 === node })?.type = node.type
     }
 
     public mutating func visit(_ node: BindingStmt) throws {
@@ -131,18 +137,19 @@ public struct TypeSolver: ASTVisitor {
     }
 
     public mutating func visit(_ node: ReturnStmt) throws {
-        if let expectedReturnType = self.returnTypes.last.returnType {
-            guard let value = node.value else {
-                throw CompilerError.inferenceError
-            }
-
-            let returnType = try self.analyseValueExpression(value)
-            try self.environment.unify(expectedReturnType, returnType)
-        } else {
+        // If "Nothing" is the expected return type, the statement shouldn't return any value.
+        if self.returnTypes.last.type.unqualified === BuiltinScope.AnzenNothing {
             guard node.value == nil else {
                 throw CompilerError.inferenceError
             }
         }
+
+        guard let value = node.value else {
+            throw CompilerError.inferenceError
+        }
+
+        let returnType = try self.analyseValueExpression(value)
+        try self.environment.unify(self.returnTypes.last.type, returnType)
 
         // TODO: Handle the "from <scope_name>" syntax.
     }
@@ -172,6 +179,8 @@ public struct TypeSolver: ASTVisitor {
             return literal.type!
 
         case let node as Ident:
+            // The type of identifiers may be dissociated from that of their corresponding symbols
+            // when working with generics. Therefore we've to make sure not to re-associate them.
             if node.type == nil {
                 node.type = self.getSymbolType(scope: node.scope!, name: node.name)
             }
@@ -220,7 +229,18 @@ public struct TypeSolver: ASTVisitor {
     }
 
     private mutating func analyseCallExpression(_ node: CallExpr) throws -> QualifiedType {
-        // First we get the type of the callee.
+        // Infer the type of each argument (as an rvalue).
+        let argumentTypes = try node.arguments.map { try self.analyseValueExpression($0) }
+
+        // If we didn't infer a return type yet, we create a fresh variale.
+        if node.type == nil {
+            let returnType = TypeVariable()
+            let variants = TypeQualifier.combinations
+                .map { QualifiedType(type: returnType, qualifiedBy: $0) }
+            node.type = QualifiedType(type: TypeUnion(variants))
+        }
+
+        // Infer the type of the callee.
         let calleeType = try self.analyseValueExpression(node.callee, asCallee: true)
         let prospects = calleeType.unqualified is TypeUnion
             ? Array(calleeType.unqualified as! TypeUnion)
@@ -257,9 +277,7 @@ public struct TypeSolver: ASTVisitor {
         // Once we've got candidates, we filter out those whose profile doesn't match the call.
         let compatibleCandidates = candidates.filter { signature in
             // Check if the number of parameters matches.
-            guard signature.domain.count == node.arguments.count else {
-                return false
-            }
+            guard signature.domain.count == node.arguments.count else { return false }
 
             // Check if the labels match.
             for i in 0 ..< signature.domain.count {
@@ -271,37 +289,19 @@ public struct TypeSolver: ASTVisitor {
             return true
         }
 
-        // Infer the type of each argument (as an rvalue).
-        let argumentTypes = try node.arguments.map { try self.analyseValueExpression($0) }
-
-        // If we didn't infer a type for the passed type yet, we create a fresh variable.
-        // Either the return type was already inferred in a previous pass, or we create a fresh
-        // variable for it.
-        if node.type == nil {
-            let returnType = TypeVariable()
-            let variants = TypeQualifier.combinations
-                .map { QualifiedType(type: returnType, qualifiedBy: $0) }
-            node.type = QualifiedType(type: TypeUnion(variants))
-        }
-
         // TODO: Generic specialization.
 
         // Once we've got specialized candidates, we filter out those whose domain and codomain
         // don't match the inferred arguments and return types.
         let selectedCandidates = compatibleCandidates.filter { signature in
+            // Check the codomain.
+            guard self.environment.matches(signature.codomain, node.type!) else { return false }
+
             // Check the domain.
             for i in 0 ..< signature.domain.count {
                 guard self.environment.matches(signature.domain[i].type, argumentTypes[i]) else {
                     return false
                 }
-            }
-
-            // Check the codomain (if any).
-            if let codomain = signature.codomain {
-                guard self.environment.matches(codomain, node.type!) else {
-                    return false
-                }
-                // TODO: Handle `(...) -> Nothing` functions.
             }
 
             return true
@@ -316,12 +316,7 @@ public struct TypeSolver: ASTVisitor {
             let returnType = selectedCodomains.count > 1
                 ? QualifiedType(type: TypeUnion(selectedCodomains))
                 : selectedCodomains[0]
-            if let nodeType = node.type {
-                try self.environment.unify(nodeType, returnType)
-            } else {
-                node.type = returnType
-            }
-
+            try self.environment.unify(node.type!, returnType)
             return returnType
         }
 
@@ -332,10 +327,20 @@ public struct TypeSolver: ASTVisitor {
                 type: TypeUnion.flattening(selectedCandidates.map { $0.domain[0].type }))
             try self.environment.unify(domains, argumentTypes[i])
         }
-
         let codomains = QualifiedType(
             type: TypeUnion.flattening(selectedCandidates.flatMap { $0.codomain }))
         try self.environment.unify(codomains, node.type!)
+
+        // Set the type of the callee.
+        // Note that we can't unify here, because the callee's type might be associated with the
+        // symol of the function (or type) used as a callee. If that type is overloaded or
+        // generic, unification would remove overloads that weren't compatible with this call.
+        let qualifiedCandidates = selectedCandidates.map {
+            QualifiedType(type: $0, qualifiedBy: [.mut, .shd, .ref])
+        }
+        (node.callee as? TypedNode)?.type = qualifiedCandidates.count > 1
+            ? QualifiedType(type: TypeUnion(qualifiedCandidates))
+            : qualifiedCandidates[0]
 
         return node.type!
     }
@@ -442,7 +447,7 @@ public struct TypeSolver: ASTVisitor {
     ///
     /// We use this stack as we visit scopes that may return a value (e.g. functions), so that we
     /// can unify the expected type of all return statements.
-    private var returnTypes: Stack<(scope: Scope, returnType: QualifiedType?)> = []
+    private var returnTypes: Stack<(scope: Scope, type: QualifiedType)> = []
 
 }
 
@@ -586,16 +591,19 @@ fileprivate struct TypeReifier: ASTVisitor {
         try! self.traverse(node)
     }
 
-    func visit(_ node: ParamDecl) {
+    mutating func visit(_ node: ParamDecl) {
         self.reify(typeOf: node)
+        try! self.traverse(node)
     }
 
-    func visit(_ node: PropDecl) {
+    mutating func visit(_ node: PropDecl) {
         self.reify(typeOf: node)
+        try! self.traverse(node)
     }
 
-    func visit(_ node: QualSign) {
+    mutating func visit(_ node: QualSign) {
         self.reify(typeOf: node)
+        try! self.traverse(node)
     }
 
     func visit(_ node: Ident) {

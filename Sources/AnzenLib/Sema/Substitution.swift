@@ -36,8 +36,8 @@ struct Substitution {
             try self.unify(b, a)
 
         case let (lhs as TypeUnion, rhs as TypeUnion):
-            let walkedL = lhs.map({ self.walked($0) })
-            let walkedR = rhs.map({ self.walked($0) })
+            let walkedL = TypeUnion.flattening(lhs.map({ self.walked($0) }))
+            let walkedR = TypeUnion.flattening(rhs.map({ self.walked($0) }))
 
             // Compute the intersection of `lhs` with `rhs`.
             let result = (walkedL * walkedR).flatMap({ self.matches($0.0, $0.1) ? $0.0 : nil })
@@ -123,10 +123,7 @@ struct Substitution {
                     l.label == r.label && self.matches(l.type, r.type)
                 })
             guard result else { return false }
-            guard let l = lhs.codomain, let r = rhs.codomain else {
-                return (lhs.codomain == nil) && (rhs.codomain == nil)
-            }
-            return self.matches(l, r)
+            return self.matches(lhs.codomain, rhs.codomain)
 
         case let (lhs as StructType, rhs as StructType):
             return a.qualifiers == b.qualifiers
@@ -162,9 +159,7 @@ struct Substitution {
                 domain: functionType.domain.map({ param in
                     return (param.label, self.reify(param.type, memo: memo))
                 }),
-                codomain: functionType.codomain != nil
-                    ? self.reify(functionType.codomain!, memo: memo)
-                    : nil)
+                codomain: self.reify(functionType.codomain))
             return QualifiedType(type: reified, qualifiedBy: walked.qualifiers)
 
         case let structType as StructType:
@@ -187,9 +182,11 @@ struct Substitution {
         // Find the unified value of the unqualified type.
         let unqualified = self.walked(t.unqualified)
 
-        // If the unqualified type is an union, make sure all members are qualified appropriately.
-        if let union = unqualified as? TypeUnion {
-            assert(t.qualifiers.isEmpty || union.forAll({ $0.qualifiers == t.qualifiers }))
+        // If `t` is a variable that gets walked to a type is an union, we filter out members that
+        // don't share the same qualifiers. This may happen when a variant of `t` has been unified
+        // with a union prior this.
+        if let union = unqualified as? TypeUnion, !t.qualifiers.isEmpty {
+            return QualifiedType(type: TypeUnion(union.filter { $0.qualifiers == t.qualifiers }))
         }
 
         // Otherwise we return the walked qualified type.

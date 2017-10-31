@@ -2,14 +2,14 @@ public class FunctionType: UnqualifiedType {
 
     init(
         domain  : [(label: String?, type: QualifiedType)],
-        codomain: QualifiedType?)
+        codomain: QualifiedType)
     {
         self.domain   = domain
         self.codomain = codomain
     }
 
     public let domain  : [(label: String?, type: QualifiedType)]
-    public var codomain: QualifiedType?
+    public var codomain: QualifiedType
 
     public var isGeneric: Bool { return false }
 

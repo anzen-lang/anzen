@@ -57,10 +57,6 @@
 		OBJ_181 /* Reducible.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_64 /* Reducible.swift */; };
 		OBJ_182 /* Sequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_65 /* Sequence.swift */; };
 		OBJ_183 /* Set.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_66 /* Set.swift */; };
-		OBJ_78 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
-		OBJ_84 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_46 /* Package.swift */; };
-		OBJ_90 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_48 /* Package.swift */; };
-		OBJ_96 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_55 /* Package.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -421,20 +417,6 @@
 			productReference = "Funky::Funky::Product" /* Funky.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		"Funky::SwiftPMPackageDescription" /* FunkyPackageDescription */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_92 /* Build configuration list for PBXNativeTarget "FunkyPackageDescription" */;
-			buildPhases = (
-				OBJ_95 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = FunkyPackageDescription;
-			productName = FunkyPackageDescription;
-			productType = "com.apple.product-type.framework";
-		};
 		"Parsey::Parsey" /* Parsey */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = OBJ_157 /* Build configuration list for PBXNativeTarget "Parsey" */;
@@ -450,34 +432,6 @@
 			name = Parsey;
 			productName = Parsey;
 			productReference = "Parsey::Parsey::Product" /* Parsey.framework */;
-			productType = "com.apple.product-type.framework";
-		};
-		"Parsey::SwiftPMPackageDescription" /* ParseyPackageDescription */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_86 /* Build configuration list for PBXNativeTarget "ParseyPackageDescription" */;
-			buildPhases = (
-				OBJ_89 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = ParseyPackageDescription;
-			productName = ParseyPackageDescription;
-			productType = "com.apple.product-type.framework";
-		};
-		"SwiftProductGenerator::SwiftPMPackageDescription" /* SwiftProductGeneratorPackageDescription */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_80 /* Build configuration list for PBXNativeTarget "SwiftProductGeneratorPackageDescription" */;
-			buildPhases = (
-				OBJ_83 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = SwiftProductGeneratorPackageDescription;
-			productName = SwiftProductGeneratorPackageDescription;
 			productType = "com.apple.product-type.framework";
 		};
 		"SwiftProductGenerator::SwiftProductGenerator" /* SwiftProductGenerator */ = {
@@ -513,20 +467,6 @@
 			name = AnzenLib;
 			productName = AnzenLib;
 			productReference = "anzen::AnzenLib::Product" /* AnzenLib.framework */;
-			productType = "com.apple.product-type.framework";
-		};
-		"anzen::SwiftPMPackageDescription" /* anzenPackageDescription */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_74 /* Build configuration list for PBXNativeTarget "anzenPackageDescription" */;
-			buildPhases = (
-				OBJ_77 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = anzenPackageDescription;
-			productName = anzenPackageDescription;
 			productType = "com.apple.product-type.framework";
 		};
 		"anzen::anzenc" /* anzenc */ = {
@@ -569,10 +509,6 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				"anzen::SwiftPMPackageDescription" /* anzenPackageDescription */,
-				"SwiftProductGenerator::SwiftPMPackageDescription" /* SwiftProductGeneratorPackageDescription */,
-				"Parsey::SwiftPMPackageDescription" /* ParseyPackageDescription */,
-				"Funky::SwiftPMPackageDescription" /* FunkyPackageDescription */,
 				"anzen::anzenc" /* anzenc */,
 				"anzen::AnzenLib" /* AnzenLib */,
 				"SwiftProductGenerator::SwiftProductGenerator" /* SwiftProductGenerator */,
@@ -657,38 +593,6 @@
 				OBJ_181 /* Reducible.swift in Sources */,
 				OBJ_182 /* Sequence.swift in Sources */,
 				OBJ_183 /* Set.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		OBJ_77 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 0;
-			files = (
-				OBJ_78 /* Package.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		OBJ_83 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 0;
-			files = (
-				OBJ_84 /* Package.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		OBJ_89 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 0;
-			files = (
-				OBJ_90 /* Package.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		OBJ_95 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 0;
-			files = (
-				OBJ_96 /* Package.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -975,78 +879,6 @@
 			};
 			name = Release;
 		};
-		OBJ_75 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Debug;
-		};
-		OBJ_76 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Release;
-		};
-		OBJ_81 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Debug;
-		};
-		OBJ_82 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Release;
-		};
-		OBJ_87 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Debug;
-		};
-		OBJ_88 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Release;
-		};
-		OBJ_93 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Debug;
-		};
-		OBJ_94 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Release;
-		};
 		OBJ_99 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1110,42 +942,6 @@
 			buildConfigurations = (
 				OBJ_3 /* Debug */,
 				OBJ_4 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		OBJ_74 /* Build configuration list for PBXNativeTarget "anzenPackageDescription" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				OBJ_75 /* Debug */,
-				OBJ_76 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		OBJ_80 /* Build configuration list for PBXNativeTarget "SwiftProductGeneratorPackageDescription" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				OBJ_81 /* Debug */,
-				OBJ_82 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		OBJ_86 /* Build configuration list for PBXNativeTarget "ParseyPackageDescription" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				OBJ_87 /* Debug */,
-				OBJ_88 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		OBJ_92 /* Build configuration list for PBXNativeTarget "FunkyPackageDescription" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				OBJ_93 /* Debug */,
-				OBJ_94 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

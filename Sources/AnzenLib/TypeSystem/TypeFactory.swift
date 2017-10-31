@@ -5,7 +5,7 @@ struct TypeFactory {
     }
 
     public static func makeFunction(
-        domain: [(label: String?, type: QualifiedType)], codomain: QualifiedType?) -> FunctionType
+        domain: [(label: String?, type: QualifiedType)], codomain: QualifiedType) -> FunctionType
     {
         return self.insert(FunctionType(domain: domain, codomain: codomain))
     }

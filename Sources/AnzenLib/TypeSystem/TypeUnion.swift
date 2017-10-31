@@ -27,6 +27,7 @@ public final class TypeUnion: UnqualifiedType, ExpressibleByArrayLiteral {
     public func insert(_ newMember: QualifiedType)
         -> (inserted: Bool, memberAfterInsert: QualifiedType)
     {
+        assert(!(newMember.unqualified is TypeUnion))
         return self.types.insert(newMember)
     }
 
@@ -52,6 +53,7 @@ public final class TypeUnion: UnqualifiedType, ExpressibleByArrayLiteral {
 
     public func replaceContent(with content: Set<QualifiedType>) {
         self.types = content
+        assert(!self.types.contains { $0.unqualified is TypeUnion })
     }
 
     public var count: Int {
