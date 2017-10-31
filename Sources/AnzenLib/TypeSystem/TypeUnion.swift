@@ -58,6 +58,20 @@ public final class TypeUnion: UnqualifiedType, ExpressibleByArrayLiteral {
         return self.types.count
     }
 
+    public static func flattening<S: Sequence>(_ sequence: S) -> TypeUnion
+        where S.Iterator.Element == QualifiedType
+    {
+        var types = Set<QualifiedType>()
+        for t in sequence {
+            if let union = t.unqualified as? TypeUnion {
+                types.formUnion(union)
+            } else {
+                types.insert(t)
+            }
+        }
+        return TypeUnion(types)
+    }
+
     // MARK: Internals
 
     fileprivate var types: Set<QualifiedType>

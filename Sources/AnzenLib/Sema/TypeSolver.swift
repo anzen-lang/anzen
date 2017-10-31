@@ -187,6 +187,30 @@ public struct TypeSolver: ASTVisitor {
 
             return node.type!
 
+        case let node as CallArg:
+            // If we didn't infer a type for the passed type yet, we create a fresh variable.
+            if node.type == nil {
+                let variable = TypeVariable()
+                let variants = TypeQualifier.combinations
+                    .map { QualifiedType(type: variable, qualifiedBy: $0) }
+                node.type = QualifiedType(type: TypeUnion(variants))
+            }
+
+            // Infer the type of the argument's value.
+            let argumentType = try self.analyseValueExpression(node.value)
+
+            // A call argument can be seen as a binding statement, where the argument's value is
+            // the rvalue and the passed argument is the lvalue. Since we store the type of the
+            // passed argument is stored as the node's type, we use it as the lvalue.
+            let result = inferBindingTypes(
+                lvalue: node.type!,
+                op    : node.bindingOp ?? .cpy,
+                rvalue: argumentType)
+
+            try self.environment.unify(node.type!, result.lvalue)
+            try self.environment.unify(argumentType, result.rvalue)
+            return node.type!
+
         case let node as CallExpr:
             return try self.analyseCallExpression(node)
 
@@ -250,6 +274,7 @@ public struct TypeSolver: ASTVisitor {
         // Infer the type of each argument (as an rvalue).
         let argumentTypes = try node.arguments.map { try self.analyseValueExpression($0) }
 
+        // If we didn't infer a type for the passed type yet, we create a fresh variable.
         // Either the return type was already inferred in a previous pass, or we create a fresh
         // variable for it.
         if node.type == nil {
@@ -266,12 +291,7 @@ public struct TypeSolver: ASTVisitor {
         let selectedCandidates = compatibleCandidates.filter { signature in
             // Check the domain.
             for i in 0 ..< signature.domain.count {
-                let argument = node.arguments[i] as! CallArg
-                let (passedType, _) = inferBindingTypes(
-                    lvalue: signature.domain[i].type,
-                    op    : argument.bindingOp ?? .cpy,
-                    rvalue: argumentTypes[i])
-                guard self.environment.matches(signature.domain[i].type, passedType) else {
+                guard self.environment.matches(signature.domain[i].type, argumentTypes[i]) else {
                     return false
                 }
             }
@@ -281,7 +301,6 @@ public struct TypeSolver: ASTVisitor {
                 guard self.environment.matches(codomain, node.type!) else {
                     return false
                 }
-
                 // TODO: Handle `(...) -> Nothing` functions.
             }
 
@@ -306,15 +325,19 @@ public struct TypeSolver: ASTVisitor {
             return returnType
         }
 
-        // Unify the type of the arguments with the domain of the selected candidates, so as to
-        // propagate type constraints.
+        // Unify arguments with the domains of the selected candidates, and the return type with
+        // their codomain (when applicable).
         for i in 0 ..< node.arguments.count {
             let domains = QualifiedType(
-                type: TypeUnion(selectedCandidates.map { $0.domain[i].type }))
+                type: TypeUnion.flattening(selectedCandidates.map { $0.domain[0].type }))
             try self.environment.unify(domains, argumentTypes[i])
         }
 
-        return prospects[0]
+        let codomains = QualifiedType(
+            type: TypeUnion.flattening(selectedCandidates.flatMap { $0.codomain }))
+        try self.environment.unify(codomains, node.type!)
+
+        return node.type!
     }
 
     private mutating func analyseTypeAnnotation(_ annotation: Node) throws -> QualifiedType {
