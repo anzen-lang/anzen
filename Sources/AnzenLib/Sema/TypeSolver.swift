@@ -187,9 +187,134 @@ public struct TypeSolver: ASTVisitor {
 
             return node.type!
 
+        case let node as CallExpr:
+            return try self.analyseCallExpression(node)
+
         default:
             fatalError("unexpected node for expression")
         }
+    }
+
+    private mutating func analyseCallExpression(_ node: CallExpr) throws -> QualifiedType {
+        // First we get the type of the callee.
+        let calleeType = try self.analyseValueExpression(node.callee, asCallee: true)
+        let prospects = calleeType.unqualified is TypeUnion
+            ? Array(calleeType.unqualified as! TypeUnion)
+            : [calleeType]
+
+        // For each type the callee can represent, we identify which are callable candidates.
+        var candidates       : [FunctionType] = []
+        var selectedCodomains: [QualifiedType] = []
+        for signature in prospects {
+            switch signature.unqualified {
+            // All function signatures are candidates.
+            case let functionType as FunctionType:
+                candidates.append(functionType)
+
+            // If the prospect is a variable, it may represent a function type whose codomain has
+            // yet to be inferred. Therefore we add a fresh variable to the set of codomains.
+            case _ as TypeVariable:
+                let codomain = TypeVariable()
+                let variants = TypeQualifier.combinations
+                    .map { QualifiedType(type: codomain, qualifiedBy: $0) }
+                selectedCodomains.append(QualifiedType(type: TypeUnion(variants)))
+
+            // If the signature is a type name, the callee is used as an initializer. Therefore
+            // all the type's initializers become candidate.
+            case _ as TypeName:
+                fatalError("TODO")
+
+            // If the prospect doesn't fall in one of the above categories, it isn't callable.
+            default:
+                break
+            }
+        }
+
+        // Once we've got candidates, we filter out those whose profile doesn't match the call.
+        let compatibleCandidates = candidates.filter { signature in
+            // Check if the number of parameters matches.
+            guard signature.domain.count == node.arguments.count else {
+                return false
+            }
+
+            // Check if the labels match.
+            for i in 0 ..< signature.domain.count {
+                guard signature.domain[i].label == (node.arguments[i] as! CallArg).label else {
+                    return false
+                }
+            }
+
+            return true
+        }
+
+        // Infer the type of each argument (as an rvalue).
+        let argumentTypes = try node.arguments.map { try self.analyseValueExpression($0) }
+
+        // Either the return type was already inferred in a previous pass, or we create a fresh
+        // variable for it.
+        if node.type == nil {
+            let returnType = TypeVariable()
+            let variants = TypeQualifier.combinations
+                .map { QualifiedType(type: returnType, qualifiedBy: $0) }
+            node.type = QualifiedType(type: TypeUnion(variants))
+        }
+
+        // TODO: Generic specialization.
+
+        // Once we've got specialized candidates, we filter out those whose domain and codomain
+        // don't match the inferred arguments and return types.
+        let selectedCandidates = compatibleCandidates.filter { signature in
+            // Check the domain.
+            for i in 0 ..< signature.domain.count {
+                let argument = node.arguments[i] as! CallArg
+                let (passedType, _) = inferBindingTypes(
+                    lvalue: signature.domain[i].type,
+                    op    : argument.bindingOp ?? .cpy,
+                    rvalue: argumentTypes[i])
+                guard self.environment.matches(signature.domain[i].type, passedType) else {
+                    return false
+                }
+            }
+
+            // Check the codomain (if any).
+            if let codomain = signature.codomain {
+                guard self.environment.matches(codomain, node.type!) else {
+                    return false
+                }
+
+                // TODO: Handle `(...) -> Nothing` functions.
+            }
+
+            return true
+        }
+
+        // If we can't find any candidate, we use the codomains we've selected so far (if any).
+        guard !selectedCandidates.isEmpty else {
+            guard !selectedCodomains.isEmpty else {
+                throw CompilerError.inferenceError
+            }
+
+            let returnType = selectedCodomains.count > 1
+                ? QualifiedType(type: TypeUnion(selectedCodomains))
+                : selectedCodomains[0]
+            if let nodeType = node.type {
+                try self.environment.unify(nodeType, returnType)
+            } else {
+                node.type = returnType
+            }
+
+            return returnType
+        }
+
+        // Unify the type of the arguments with the domain of the selected candidates, so as to
+        // propagate type constraints.
+        for i in 0 ..< node.arguments.count {
+            let domains = QualifiedType(
+                type: TypeUnion(selectedCandidates.map { $0.domain[i].type }))
+            try self.environment.unify(domains, argumentTypes[i])
+        }
+
+        return prospects[0]
     }
 
     private mutating func analyseTypeAnnotation(_ annotation: Node) throws -> QualifiedType {
