@@ -1,8 +1,8 @@
 /// A visitor that extracts the symbols declared in the AST's scopes.
 ///
-/// This visitor annotates the scope-opening nodes (i.e. `Module` and `Block` nodes) with the
-/// the symbols that are declared within. This is done so that identifiers referring to functions
-/// and types may be used before their formal declaration.
+/// This visitor annotates the scope-opening nodes with the the symbols that are declared within.
+/// This is done so that identifiers referring to functions and types may be used before their
+/// formal declaration.
 public struct SymbolsExtractor: ASTVisitor {
 
     public mutating func visit(_ node: ModuleDecl) {

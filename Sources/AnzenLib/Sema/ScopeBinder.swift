@@ -87,7 +87,7 @@ public struct ScopeBinder: ASTVisitor {
                 self.scopes.last.add(symbol: Symbol(name: name))
             }
         }
-        try self.visit(node.body)
+        try self.visit(node.body.statements)
         self.scopes.pop()
     }
 
@@ -163,7 +163,7 @@ public struct ScopeBinder: ASTVisitor {
         }
 
         // Visit the node's body.
-        try self.visit(node.body)
+        try self.visit(node.body.statements)
         self.scopes.pop()
     }
 
