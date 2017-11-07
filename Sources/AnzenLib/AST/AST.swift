@@ -87,7 +87,7 @@ public class FunDecl: TypedNode, ScopedNode {
         placeholders: [String] = [],
         parameters  : [Node],
         codomain    : Node? = nil,
-        body        : Node,
+        body        : Block,
         location    : SourceRange? = nil)
     {
         self.name         = name
@@ -102,7 +102,7 @@ public class FunDecl: TypedNode, ScopedNode {
     public let placeholders: [String]
     public let parameters  : [Node]
     public let codomain    : Node?
-    public let body        : Node
+    public let body        : Block
 
     // MARK: Annotations
 
@@ -213,7 +213,7 @@ public class StructDecl: TypedNode, ScopedNode {
     public init(
         name        : String,
         placeholders: [String] = [],
-        body        : Node,
+        body        : Block,
         location    : SourceRange? = nil)
     {
         self.name         = name
@@ -224,7 +224,7 @@ public class StructDecl: TypedNode, ScopedNode {
 
     public let name        : String
     public let placeholders: [String]
-    public let body        : Node
+    public let body        : Block
 
     // MARK: Annotations
 

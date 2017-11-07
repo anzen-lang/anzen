@@ -167,7 +167,7 @@ public struct Grammar {
                 placeholders: val.0.0.0.1 ?? [],
                 parameters  : val.0.0.1 ?? [],
                 codomain    : val.0.1,
-                body        : val.1,
+                body        : val.1 as! Block,
                 location    : loc)
         }
 
@@ -218,7 +218,7 @@ public struct Grammar {
             return StructDecl(
                 name        : val.0.0,
                 placeholders: val.0.1 ?? [],
-                body        : val.1,
+                body        : val.1 as! Block,
                 location    : loc)
         }
 

@@ -23,9 +23,9 @@ public struct SymbolsExtractor: ASTVisitor {
         // We push the function's block onto the node stack before visiting its parameters, so
         // that they get properly declared within the function's scope rather than that of the
         // function itself.
-        self.nodeStack.push(node.body as! Block)
+        self.nodeStack.push(node.body)
         try! self.traverse(node.parameters)
-        try! self.traverse((node.body as! Block).statements)
+        try! self.traverse(node.body.statements)
         self.nodeStack.pop()
     }
 

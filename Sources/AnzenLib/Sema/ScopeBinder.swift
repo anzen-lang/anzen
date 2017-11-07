@@ -82,7 +82,7 @@ public struct ScopeBinder: ASTVisitor {
         //
 
         // Once we visited the function's signature, we can visit its body.
-        for name in (node.body as! Block).symbols {
+        for name in node.body.symbols {
             if !self.scopes.last.defines(name: name) {
                 self.scopes.last.add(symbol: Symbol(name: name))
             }
@@ -158,7 +158,7 @@ public struct ScopeBinder: ASTVisitor {
         self.scopes.last.add(symbol: selfSymbol)
 
         // Add a new symbol for each of the struct's member and generic placeholders.
-        for name in (node.body as! Block).symbols.union(node.placeholders) {
+        for name in node.body.symbols.union(node.placeholders) {
             self.scopes.last.add(symbol: Symbol(name: name))
         }
 

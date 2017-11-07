@@ -69,7 +69,7 @@ public struct TypeSolver: ASTVisitor {
 
         // Visit the body of the function.
         self.returnTypes.push((node.scope!, codomain))
-        try self.visit(node.body as! Block)
+        try self.visit(node.body)
         self.returnTypes.pop()
 
         // NOTE: Checking whether or not the function has a return statement in all its execution
