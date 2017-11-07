@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7593BF2E1FA919AF0024683C /* TypePlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7593BF2D1FA919AF0024683C /* TypePlaceholder.swift */; };
+		75DAF96C1FB19D6400642F45 /* Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DAF96B1FB19D6400642F45 /* Debug.swift */; };
 		OBJ_102 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_38 /* main.swift */; };
 		OBJ_104 /* AnzenLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenLib::Product" /* AnzenLib.framework */; };
 		OBJ_105 /* SwiftProductGenerator.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "SwiftProductGenerator::SwiftProductGenerator::Product" /* SwiftProductGenerator.framework */; };
@@ -119,6 +121,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		7593BF2D1FA919AF0024683C /* TypePlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePlaceholder.swift; sourceTree = "<group>"; };
+		75DAF96B1FB19D6400642F45 /* Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debug.swift; sourceTree = "<group>"; };
 		"Funky::Funky::Product" /* Funky.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Funky.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		OBJ_10 /* AST+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AST+Debug.swift"; sourceTree = "<group>"; };
 		OBJ_11 /* AST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AST.swift; sourceTree = "<group>"; };
@@ -236,15 +240,16 @@
 		OBJ_24 /* TypeSystem */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_25 /* Builtin.swift */,
-				OBJ_26 /* FunctionType.swift */,
-				OBJ_27 /* StructType.swift */,
-				OBJ_28 /* Type+Debug.swift */,
 				OBJ_29 /* Type.swift */,
 				OBJ_30 /* TypeFactory.swift */,
-				OBJ_31 /* TypeName.swift */,
+				OBJ_28 /* Type+Debug.swift */,
 				OBJ_32 /* TypeUnion.swift */,
 				OBJ_33 /* TypeVariable.swift */,
+				OBJ_31 /* TypeName.swift */,
+				7593BF2D1FA919AF0024683C /* TypePlaceholder.swift */,
+				OBJ_26 /* FunctionType.swift */,
+				OBJ_27 /* StructType.swift */,
+				OBJ_25 /* Builtin.swift */,
 			);
 			path = TypeSystem;
 			sourceTree = "<group>";
@@ -254,6 +259,7 @@
 			children = (
 				OBJ_35 /* Sequence+Extension.swift */,
 				OBJ_36 /* Stack.swift */,
+				75DAF96B1FB19D6400642F45 /* Debug.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -316,7 +322,7 @@
 			path = ".build/checkouts/Parsey.git--5956736748209023752/Sources";
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_5 /*  */ = {
+		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
 				OBJ_6 /* Package.swift */,
@@ -327,7 +333,6 @@
 				OBJ_42 /* Dependencies */,
 				OBJ_67 /* Products */,
 			);
-			name = "";
 			sourceTree = "<group>";
 		};
 		OBJ_54 /* Funky 2.0.1 */ = {
@@ -495,7 +500,7 @@
 		OBJ_1 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 9999;
+				LastUpgradeCheck = 0910;
 			};
 			buildConfigurationList = OBJ_2 /* Build configuration list for PBXProject "anzen" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -504,7 +509,7 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = OBJ_5 /*  */;
+			mainGroup = OBJ_5;
 			productRefGroup = OBJ_67 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -548,7 +553,9 @@
 				OBJ_134 /* FunctionType.swift in Sources */,
 				OBJ_135 /* StructType.swift in Sources */,
 				OBJ_136 /* Type+Debug.swift in Sources */,
+				7593BF2E1FA919AF0024683C /* TypePlaceholder.swift in Sources */,
 				OBJ_137 /* Type.swift in Sources */,
+				75DAF96C1FB19D6400642F45 /* Debug.swift in Sources */,
 				OBJ_138 /* TypeFactory.swift in Sources */,
 				OBJ_139 /* TypeName.swift in Sources */,
 				OBJ_140 /* TypeUnion.swift in Sources */,

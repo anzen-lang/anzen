@@ -1,3 +1,5 @@
+import SwiftProductGenerator
+
 public struct TypeSolver: ASTVisitor {
 
     /// Infer the type annotations of a module AST.
@@ -12,7 +14,14 @@ public struct TypeSolver: ASTVisitor {
     }
 
     public mutating func visit(_ node: FunDecl) throws {
-        // TODO: Handle generic placeholders.
+        // Create a placeholder type for each of the function's generic placeholders.
+        for placeholderName in node.placeholders {
+            let varID = VariableID.named(node.innerScope!, placeholderName)
+            if self.symbolTypes[varID] == nil {
+                let placeholder = TypePlaceholder(named: placeholderName)
+                self.symbolTypes [varID] = QualifiedType(type: placeholder)
+            }
+        }
 
         // Get the type of each parameter.
         var domain: [(label: String?, type: QualifiedType)] = []
@@ -38,22 +47,24 @@ public struct TypeSolver: ASTVisitor {
         // Once we've computed the domain and codomain of the function's signature, we can create
         // a type for the function itself. Note that functions (unless global) are actually
         // garbage collected objects. Therefore they are declared with `@mut @shd @ref`.
-        let functionType = QualifiedType(
-            type       : TypeFactory.makeFunction(domain: domain, codomain: codomain),
+        node.type = QualifiedType(
+            type: TypeFactory.makeFunction(
+                placeholders: Set(node.placeholders),
+                domain      : domain,
+                codomain    : codomain),
             qualifiedBy: [.mut, .shd, .ref])
-        node.type = functionType
 
         // As functions may be overloaded, we can't unify the function type we've created with the
         // function's symbol directly. Instead, we should create a type union so as to handle
         // overloaded signatures.
-        let varID: VariableID = .named(node.scope!, node.name)
+        let varID = VariableID.named(node.scope!, node.name)
         if let symbolType = self.symbolTypes[varID] {
             guard let overloads = symbolType.unqualified as? TypeUnion else {
-                throw CompilerError.inferenceError
+                throw CompilerError.inferenceError(file: #file, line: #line)
             }
-            overloads.insert(functionType)
+            overloads.insert(node.type!)
         } else {
-            self.symbolTypes[varID] = QualifiedType(type: TypeUnion([functionType]))
+            self.symbolTypes[varID] = QualifiedType(type: TypeUnion([node.type!]))
         }
 
         // Visit the body of the function.
@@ -75,11 +86,17 @@ public struct TypeSolver: ASTVisitor {
             inferred = mostRestrictiveVariants(of: union)
         }
 
-        // TODO: Unify type annotations with default values.
-
         // Parameter declarations are typed with the same type as that of the symbol they declare.
-        node.type = self.getSymbolType(scope: node.scope!, name: node.name)
-        try self.environment.unify(node.type!, inferred)
+        let varID = VariableID.named(node.scope!, node.name)
+        if self.symbolTypes[varID] == nil {
+            self.symbolTypes[varID] = inferred
+        }
+
+        // NOTE: Since we don't support parameter with default values yet, there's no need to
+        // unify the symbol of the parameter with the inferred type yet, as there's no constraint
+        // to be propagated.
+
+        node.type = inferred
         node.scope![node.name].first(where: { $0 === node })?.type = node.type
     }
 
@@ -140,12 +157,12 @@ public struct TypeSolver: ASTVisitor {
         // If "Nothing" is the expected return type, the statement shouldn't return any value.
         if self.returnTypes.last.type.unqualified === BuiltinScope.AnzenNothing {
             guard node.value == nil else {
-                throw CompilerError.inferenceError
+                throw CompilerError.inferenceError(file: #file, line: #line)
             }
         }
 
         guard let value = node.value else {
-            throw CompilerError.inferenceError
+            throw CompilerError.inferenceError(file: #file, line: #line)
         }
 
         let returnType = try self.analyseValueExpression(value)
@@ -199,10 +216,7 @@ public struct TypeSolver: ASTVisitor {
         case let node as CallArg:
             // If we didn't infer a type for the passed type yet, we create a fresh variable.
             if node.type == nil {
-                let variable = TypeVariable()
-                let variants = TypeQualifier.combinations
-                    .map { QualifiedType(type: variable, qualifiedBy: $0) }
-                node.type = QualifiedType(type: TypeUnion(variants))
+                node.type = TypeFactory.makeVariants(of: TypeVariable())
             }
 
             // Infer the type of the argument's value.
@@ -234,10 +248,7 @@ public struct TypeSolver: ASTVisitor {
 
         // If we didn't infer a return type yet, we create a fresh variale.
         if node.type == nil {
-            let returnType = TypeVariable()
-            let variants = TypeQualifier.combinations
-                .map { QualifiedType(type: returnType, qualifiedBy: $0) }
-            node.type = QualifiedType(type: TypeUnion(variants))
+            node.type = TypeFactory.makeVariants(of: TypeVariable())
         }
 
         // Infer the type of the callee.
@@ -258,10 +269,7 @@ public struct TypeSolver: ASTVisitor {
             // If the prospect is a variable, it may represent a function type whose codomain has
             // yet to be inferred. Therefore we add a fresh variable to the set of codomains.
             case _ as TypeVariable:
-                let codomain = TypeVariable()
-                let variants = TypeQualifier.combinations
-                    .map { QualifiedType(type: codomain, qualifiedBy: $0) }
-                selectedCodomains.append(QualifiedType(type: TypeUnion(variants)))
+                selectedCodomains.append(TypeFactory.makeVariants(of: TypeVariable()))
 
             // If the signature is a type name, the callee is used as an initializer. Therefore
             // all the type's initializers become candidate.
@@ -289,11 +297,43 @@ public struct TypeSolver: ASTVisitor {
             return true
         }
 
-        // TODO: Generic specialization.
+        // Among compatible signatures, we may have to specialize the generic ones.
+        var choices = argumentTypes.map {
+            return $0.unqualified is TypeUnion
+                ? Array($0.unqualified as! TypeUnion)
+                : [$0]
+        }
+        choices += node.type!.unqualified is TypeUnion
+            ? [Array(node.type!.unqualified as! TypeUnion)]
+            : [[node.type!]]
+
+        var specializedCandidates: [FunctionType] = []
+        for candidate in compatibleCandidates {
+            let walked = self.environment.reify(
+                QualifiedType(type: candidate, qualifiedBy: [.mut, .shd, .ref]))
+            let unspecialized = walked.unqualified as! FunctionType
+
+            for types in Product(choices) {
+                let specializer = QualifiedType(
+                    type: TypeFactory.makeFunction(
+                        domain: zip(unspecialized.domain, types.dropLast())
+                            .map { (arg) -> (label: String?, type: QualifiedType) in
+                                return (arg.0.label, arg.1)
+                            },
+                        codomain: types.last!),
+                    qualifiedBy: walked.qualifiers)
+
+                if let specialized = specialize(walked, with: specializer) {
+                    specializedCandidates.append(specialized.unqualified as! FunctionType)
+                }
+
+                // Let's take a moment to admire the complexity of that code ... 🤯
+            }
+        }
 
         // Once we've got specialized candidates, we filter out those whose domain and codomain
         // don't match the inferred arguments and return types.
-        let selectedCandidates = compatibleCandidates.filter { signature in
+        let selectedCandidates = specializedCandidates.filter { signature in
             // Check the codomain.
             guard self.environment.matches(signature.codomain, node.type!) else { return false }
 
@@ -310,7 +350,7 @@ public struct TypeSolver: ASTVisitor {
         // If we can't find any candidate, we use the codomains we've selected so far (if any).
         guard !selectedCandidates.isEmpty else {
             guard !selectedCodomains.isEmpty else {
-                throw CompilerError.inferenceError
+                throw CompilerError.inferenceError(file: #file, line: #line)
             }
 
             let returnType = selectedCodomains.count > 1
@@ -361,15 +401,19 @@ public struct TypeSolver: ASTVisitor {
             var symbolType = self.getSymbolType(scope: node.scope!, name: node.name)
 
             // `symbolType` should be either a union of type variables (if the symbol's type is
-            // still unknown) or a type name. That's because the identifier is used as a type
-            // signature, and therefore shouldn't represent a fully qualified type.
-            // FIXME: We should probably throw rather than fail the assertion here.
-            assert((symbolType.unqualified is TypeUnion) || (symbolType.unqualified is TypeName))
+            // still unknown), a type name (if it refers to a nominal type), or a type placeholder
+            // (if it refers to a generic placeholder). That's because the identifier is used as a
+            // type signature, and therefore shouldn't represent a fully qualified type inferred
+            // from an expression.
+            let unqualified = symbolType.unqualified
 
-            if let typeName = symbolType.unqualified as? TypeName {
-                let variants = TypeQualifier.combinations
-                    .map { QualifiedType(type: typeName.type, qualifiedBy: $0) }
-                symbolType = QualifiedType(type: TypeUnion(variants))
+            if let typeName = unqualified as? TypeName {
+                symbolType = TypeFactory.makeVariants(of: typeName.type)
+            } else {
+                guard (unqualified is TypeUnion) || (unqualified is TypePlaceholder) else {
+                    // The identifier does not represent a type.
+                    throw CompilerError.inferenceError(file: #file, line: #line)
+                }
             }
 
             node.type = symbolType
@@ -399,7 +443,7 @@ public struct TypeSolver: ASTVisitor {
 
             // If there's no variant left, the specified qualifiers are invalid.
             guard !variants.isEmpty else {
-                throw CompilerError.inferenceError
+                throw CompilerError.inferenceError(file: #file, line: #line)
             }
 
             node.type = variants.count > 1
@@ -413,7 +457,7 @@ public struct TypeSolver: ASTVisitor {
     }
 
     private mutating func getSymbolType(scope: Scope, name: String) -> QualifiedType {
-        let varID: VariableID = .named(scope, name)
+        let varID = VariableID.named(scope, name)
         if let type = self.symbolTypes[varID] {
             return type
         } else {
@@ -427,10 +471,7 @@ public struct TypeSolver: ASTVisitor {
 
             // Otherwise create a fresh variable.
             } else {
-                let variable = TypeVariable()
-                let variants = TypeQualifier.combinations
-                    .map { QualifiedType(type: variable, qualifiedBy: $0) }
-                self.symbolTypes[varID] = QualifiedType(type: TypeUnion(variants))
+                self.symbolTypes[varID] = TypeFactory.makeVariants(of: TypeVariable())
             }
 
             return self.symbolTypes[varID]!
@@ -440,8 +481,11 @@ public struct TypeSolver: ASTVisitor {
     /// A substitution map `(TypeVariable) -> UnqualifiedType`.
     private var environment = Substitution()
 
-    /// A mapping `(VariableID) -> TypeUnion`.
+    /// A mapping `(VariableID) -> QualifiedType`.
     private var symbolTypes: [VariableID: QualifiedType] = [:]
+
+    /// A mapping `(VariableID) -> TypeVariable`.
+    private var placeholders: [VariableID: TypePlaceholder] = [:]
 
     /// A stack of pairs of scopes and expected return types.
     ///
@@ -571,6 +615,87 @@ fileprivate func inferBindingTypes(lvalue: QualifiedType, op: Operator, rvalue: 
         rresult.count > 1
             ? QualifiedType(type: TypeUnion(rresult))
             : rresult[0])
+}
+
+fileprivate func specialize(
+    _ unspecialized : QualifiedType,
+    with specializer: QualifiedType) -> QualifiedType?
+{
+    var specializations: [String: QualifiedType] = [:]
+    return specialize(unspecialized, with: specializer, specializations: &specializations)
+}
+
+fileprivate func specialize(
+    _ unspecialized : QualifiedType,
+    with specializer: QualifiedType,
+    specializations : inout [String: QualifiedType]) -> QualifiedType?
+{
+    guard unspecialized.isGeneric else {
+        return unspecialized
+    }
+
+    assert(!(specializer.unqualified is TypeUnion))
+
+    switch unspecialized.unqualified {
+    case let (typePlaceholder as TypePlaceholder):
+        // Return the previously chosen specialization, if any.
+        if let t = specializations[typePlaceholder.name] {
+            return t
+        }
+
+        // FIXME: Make sure we don't create multiple variables for the same placeholder.
+        specializations[typePlaceholder.name] = specializer.isGeneric
+            ? TypeFactory.makeVariants(of: TypeVariable())
+            : specializer
+        return specializations[typePlaceholder.name]
+
+    case let (functionType as FunctionType):
+        guard let specializerFunction = specializer.unqualified as? FunctionType else {
+            return nil
+        }
+
+        // Create a new specialization list that overrides the current placeholders.
+        var subSpecializations = specializations
+        for placehoder in functionType.placeholders {
+            subSpecializations[placehoder] = nil
+        }
+
+        var domain: [(label: String?, type: QualifiedType)] = []
+        for (original, replacement) in zip(functionType.domain, specializerFunction.domain) {
+            guard original.label == replacement.label else { return nil }
+            guard let specialized = specialize(
+                original.type, with: replacement.type,
+                specializations: &subSpecializations)
+                else {
+                    return nil
+            }
+            domain.append((original.label, specialized))
+        }
+
+        guard let codomain = specialize(
+            functionType.codomain, with: specializerFunction.codomain,
+            specializations: &subSpecializations)
+            else {
+                return nil
+        }
+
+        // Store all specializations that aren't part of the functions' placeholders.
+        for sub in subSpecializations {
+            if !functionType.placeholders.contains(sub.key) {
+                specializations[sub.key] = sub.value
+            }
+        }
+
+        return QualifiedType(
+            type       : TypeFactory.makeFunction(domain: domain, codomain: codomain),
+            qualifiedBy: unspecialized.qualifiers)
+
+    default:
+        assertionFailure()
+        break
+    }
+
+    return nil
 }
 
 /// An AST walker that reifies the type of all typed nodes.

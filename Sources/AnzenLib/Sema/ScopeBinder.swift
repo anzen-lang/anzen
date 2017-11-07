@@ -56,6 +56,7 @@ public struct ScopeBinder: ASTVisitor {
         // Create a scope for the function before visiting its signature and body.
         self.scopes.push(Scope(name: node.name, parent: self.scopes.last))
         self.underDeclaration[self.scopes.last] = []
+        node.innerScope = self.scopes.last
 
         // Add a new symbol for each of the function's generic placeholders.
         for placeholder in node.placeholders {

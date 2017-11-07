@@ -11,7 +11,7 @@ public class TypeVariable: UnqualifiedType {
     // type variables to hold a specialization list, so as to represent "some type specialized as
     // such". This would reduce the number of variables we have to create, but would also make
     // matching and unification harder.
-    public var isGeneric: Bool { return false }
+    public let isGeneric = false
 
     // MARK: Internals
 
@@ -38,5 +38,3 @@ extension TypeVariable: Hashable {
     }
 
 }
-
-

@@ -4,9 +4,9 @@ struct Substitution {
         let a = self.walked(t)
         let b = self.walked(u)
 
-        // Make sure only type unions and type names don't have any type qualifier.
-        assert(!a.qualifiers.isEmpty || (a.unqualified is TypeUnion))
-        assert(!b.qualifiers.isEmpty || (b.unqualified is TypeUnion))
+        // Make sure only type unions don't have any type qualifier.
+        // assert(!a.qualifiers.isEmpty || (a.unqualified is TypeUnion))
+        // assert(!b.qualifiers.isEmpty || (b.unqualified is TypeUnion))
 
         // If `a` and `b` are equal they're already unified.
         guard a != b else { return }
@@ -16,7 +16,7 @@ struct Substitution {
             // Keep only the types that match the variable.
             var matching = union.filter { $0.qualifiers == a.qualifiers }
             guard matching.count > 0 else {
-                throw CompilerError.inferenceError
+                throw CompilerError.inferenceError(file: #file, line: #line)
             }
             union.replaceContent(with: Set(matching))
 
@@ -29,11 +29,20 @@ struct Substitution {
             }
 
         case let (variable as TypeVariable, _):
-            guard a.qualifiers == b.qualifiers else { throw CompilerError.inferenceError }
+            guard a.qualifiers == b.qualifiers else {
+                throw CompilerError.inferenceError(file: #file, line: #line)
+
+            }
             self.storage[variable] = b.unqualified
 
         case (_, _ as TypeVariable):
             try self.unify(b, a)
+
+        case (_ as TypePlaceholder, _):
+            break
+
+        case (_ , _ as TypePlaceholder):
+            break
 
         case let (lhs as TypeUnion, rhs as TypeUnion):
             let walkedL = TypeUnion.flattening(lhs.map({ self.walked($0) }))
@@ -42,7 +51,7 @@ struct Substitution {
             // Compute the intersection of `lhs` with `rhs`.
             let result = (walkedL * walkedR).flatMap({ self.matches($0.0, $0.1) ? $0.0 : nil })
             guard result.count > 0 else {
-                throw CompilerError.inferenceError
+                throw CompilerError.inferenceError(file: #file, line: #line)
             }
             lhs.replaceContent(with: Set(result))
             rhs.replaceContent(with: Set(result))
@@ -67,7 +76,7 @@ struct Substitution {
                 }
             }
             guard result.count > 0 else {
-                throw CompilerError.inferenceError
+                throw CompilerError.inferenceError(file: #file, line: #line)
             }
             union.replaceContent(with: Set(result))
 
@@ -82,14 +91,14 @@ struct Substitution {
                 && lhs.name == rhs.name
                 && lhs.members.keys == rhs.members.keys
                 else {
-                    throw CompilerError.inferenceError
+                    throw CompilerError.inferenceError(file: #file, line: #line)
             }
             for (key, member) in lhs.members {
                 try self.unify(member, rhs.members[key]!)
             }
 
         default:
-            throw CompilerError.inferenceError
+            throw CompilerError.inferenceError(file: #file, line: #line)
         }
     }
 
@@ -156,7 +165,8 @@ struct Substitution {
 
         case let functionType as FunctionType:
             let reified = TypeFactory.makeFunction(
-                domain: functionType.domain.map({ param in
+                placeholders: functionType.placeholders,
+                domain      : functionType.domain.map({ param in
                     return (param.label, self.reify(param.type, memo: memo))
                 }),
                 codomain: self.reify(functionType.codomain))

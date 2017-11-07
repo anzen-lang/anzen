@@ -8,7 +8,9 @@ public class StructType: UnqualifiedType {
     public let name   : String
     public var members: [String: QualifiedType]
 
-    public var isGeneric: Bool { return false }
+    public var isGeneric: Bool {
+        return self.members.contains(where: { $0.value.isGeneric })
+    }
 
 }
 

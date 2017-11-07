@@ -5,15 +5,33 @@ struct TypeFactory {
     }
 
     public static func makeFunction(
-        domain: [(label: String?, type: QualifiedType)], codomain: QualifiedType) -> FunctionType
+        placeholders: Set<String> = [],
+        domain      : [(label: String?, type: QualifiedType)],
+        codomain    : QualifiedType) -> FunctionType
     {
-        return self.insert(FunctionType(domain: domain, codomain: codomain))
+        return self.insert(
+            FunctionType(placeholders: placeholders, domain: domain, codomain: codomain))
     }
 
     public static func makeStruct(
         name: String, members: [String: QualifiedType] = [:]) -> StructType
     {
         return self.insert(StructType(name: name, members: members))
+    }
+
+    public static func makeVariants(of unqualifiedType: UnqualifiedType) -> QualifiedType {
+        let variants = TypeQualifier.combinations
+            .map { QualifiedType(type: unqualifiedType, qualifiedBy: $0) }
+        return QualifiedType(type: TypeUnion(variants))
+    }
+
+    public static func makeVariants(
+        of unqualifiedType: UnqualifiedType,
+        withQualifiers    : (TypeQualifier) -> Bool) -> QualifiedType
+    {
+        let variants = TypeQualifier.combinations.filter(withQualifiers)
+            .map { QualifiedType(type: unqualifiedType, qualifiedBy: $0) }
+        return QualifiedType(type: TypeUnion(variants))
     }
 
     // Mark: Internals

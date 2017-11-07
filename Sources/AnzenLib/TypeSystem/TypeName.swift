@@ -24,4 +24,3 @@ extension TypeName: Equatable {
     }
 
 }
-

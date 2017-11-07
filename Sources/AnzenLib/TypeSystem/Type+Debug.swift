@@ -41,12 +41,24 @@ extension TypeVariable: CustomStringConvertible {
 
 }
 
+extension TypePlaceholder: CustomStringConvertible {
+
+    public var description: String {
+        return self.name
+    }
+
+}
+
 extension FunctionType: CustomStringConvertible {
 
     public var description: String {
-        let domainDescription = self.domain.map({ param in (param.label ?? "_") + ": \(param.type)" })
+        let placehodersDescription = !self.placeholders.isEmpty
+            ? "<" + self.placeholders.sorted().joined(separator: ", ") + ">"
+            : ""
+        let domainDescription = self.domain
+            .map { param in (param.label ?? "_") + ": \(param.type)" }
             .joined(separator: ", ")
-        return "(\(domainDescription)) -> \(self.codomain)"
+        return "\(placehodersDescription)(\(domainDescription)) -> \(self.codomain)"
     }
 
 }

@@ -33,8 +33,7 @@ public final class BuiltinScope: Scope {
 
     private func makeTypeName(from builtinType: StructType) -> QualifiedType {
         return QualifiedType(
-            type: TypeFactory.makeName(name: builtinType.name, type: builtinType),
-            qualifiedBy: [])
+            type: TypeFactory.makeName(name: builtinType.name, type: builtinType))
     }
 
 }

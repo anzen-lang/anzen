@@ -106,9 +106,10 @@ public class FunDecl: TypedNode, ScopedNode {
 
     // MARK: Annotations
 
-    public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-    public var scope   : Scope? = nil
+    public let location  : SourceRange?
+    public var type      : QualifiedType? = nil
+    public var scope     : Scope? = nil
+    public var innerScope: Scope? = nil
 
     // MARK: Pretty-printing
 

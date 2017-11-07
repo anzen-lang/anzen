@@ -21,8 +21,11 @@ func main(args: [String] = CommandLine.arguments) throws {
 
 do {
     try main()
-} catch(let e) {
-    print(e)
+} catch AnzenLib.CompilerError.inferenceError(let file, let line) {
+    let basename = file.split(separator: "/").last!
+    print("inferenceError at \(basename):\(line)")
+} catch let e {
+    print(e.localizedDescription)
     exit(1)
 }
 exit(0)
