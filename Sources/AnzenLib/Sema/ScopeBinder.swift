@@ -151,6 +151,7 @@ public struct ScopeBinder: ASTVisitor {
         // Create a scope for the struct before visiting its body.
         self.scopes.push(Scope(name: node.name, parent: self.scopes.last))
         self.underDeclaration[self.scopes.last] = []
+        node.innerScope = self.scopes.last
 
         // Introduce a `Self` symbol in the type's scope, to handle the `Self` placeholder.
         let selfSymbol = Symbol(name: "Self")

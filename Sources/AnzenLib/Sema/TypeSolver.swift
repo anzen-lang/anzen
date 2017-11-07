@@ -143,6 +143,39 @@ public struct TypeSolver: ASTVisitor {
         node.scope![node.name].first(where: { $0 === node })?.type = node.type
     }
 
+    public mutating func visit(_ node: StructDecl) throws {
+        // Create the struct type if we haven't already.
+        if node.type == nil {
+            // Retrieve the type variable associated with each of the struct's members.
+            let members = node.body.symbols.map {
+                return ($0, self.getSymbolType(scope: node.innerScope!, name: $0))
+            }
+
+            let structType = TypeFactory.makeStruct(
+                name   : node.name,
+                members: Dictionary(uniqueKeysWithValues: members))
+            node.type = QualifiedType(
+                type: TypeFactory.makeName(name: node.name, type: structType))
+
+            // Bind the `Self` placeholder.
+            node.innerScope!.symbols["Self"]![0].type = node.type
+
+            // FIXME: We manually set the type of the symbol and don't use `getSymbolType`. The
+            // reason is that don't want to create qualified type variables, as it wouldn't be
+            // possible to unify them with a type name later on. We should probably rethink how
+            // type variables can be associated with type names.
+            let varID = VariableID.named(node.scope!, node.name)
+            assert(self.symbolTypes[varID] == nil)
+            self.symbolTypes[varID] = node.type
+
+            // Set the symbol's type.
+            node.scope![node.name].first(where: { $0 === node })?.type = node.type
+        }
+
+        // Visit the struct's body.
+        try self.visit(node.body)
+    }
+
     public mutating func visit(_ node: BindingStmt) throws {
         let lvalue = try self.analyseValueExpression(node.lvalue)
         let rvalue = try self.analyseValueExpression(node.rvalue)

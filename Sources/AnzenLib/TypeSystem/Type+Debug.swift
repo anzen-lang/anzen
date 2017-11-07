@@ -41,6 +41,14 @@ extension TypeVariable: CustomStringConvertible {
 
 }
 
+extension TypeName: CustomStringConvertible {
+
+    public var description: String {
+        return "TypeName[\(self.type)]"
+    }
+
+}
+
 extension TypePlaceholder: CustomStringConvertible {
 
     public var description: String {
