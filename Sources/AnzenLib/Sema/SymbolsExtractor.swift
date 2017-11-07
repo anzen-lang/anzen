@@ -7,13 +7,13 @@ public struct SymbolsExtractor: ASTVisitor {
 
     public mutating func visit(_ node: ModuleDecl) {
         self.nodeStack.push(node)
-        try! self.traverse(node)
+        try! self.visit(node.statements)
         self.nodeStack.pop()
     }
 
     public mutating func visit(_ node: Block) {
         self.nodeStack.push(node)
-        try! self.traverse(node)
+        try! self.visit(node.statements)
         self.nodeStack.pop()
     }
 
@@ -24,8 +24,8 @@ public struct SymbolsExtractor: ASTVisitor {
         // that they get properly declared within the function's scope rather than that of the
         // function itself.
         self.nodeStack.push(node.body)
-        try! self.traverse(node.parameters)
-        try! self.traverse(node.body.statements)
+        try! self.visit(node.parameters)
+        try! self.visit(node.body.statements)
         self.nodeStack.pop()
     }
 

@@ -11,7 +11,7 @@ public struct ScopeBinder: ASTVisitor {
         }
 
         // Visit the node's children.
-        try self.traverse(node)
+        try self.visit(node.statements)
         self.scopes.pop()
     }
 
@@ -26,7 +26,7 @@ public struct ScopeBinder: ASTVisitor {
         }
 
         // Visit the node's children.
-        try self.traverse(node)
+        try self.visit(node.statements)
         self.scopes.pop()
     }
 
@@ -69,9 +69,9 @@ public struct ScopeBinder: ASTVisitor {
             assert(parameter is ParamDecl)
             self.scopes.last.add(symbol: Symbol(name: (parameter as! ParamDecl).name))
         }
-        try self.traverse(node.parameters)
+        try self.visit(node.parameters)
         if let codomain = node.codomain {
-            try self.traverse(codomain)
+            try self.visit(codomain)
         }
 
         // FIXME: When we'll implement parameter default values, we'll also have to make sure that
@@ -87,7 +87,7 @@ public struct ScopeBinder: ASTVisitor {
                 self.scopes.last.add(symbol: Symbol(name: name))
             }
         }
-        try self.traverse(node.body)
+        try self.visit(node.body)
         self.scopes.pop()
     }
 
@@ -163,7 +163,7 @@ public struct ScopeBinder: ASTVisitor {
         }
 
         // Visit the node's body.
-        try self.traverse(node.body)
+        try self.visit(node.body)
         self.scopes.pop()
     }
 
@@ -171,7 +171,7 @@ public struct ScopeBinder: ASTVisitor {
         // NOTE: Unfortunately, we can't bind the symbols of a select expression's ownee, because
         // it depends on the kind of declaration the owner's is refencing.
         if let owner = node.owner {
-            try self.traverse(owner)
+            try self.visit(owner)
         }
     }
 

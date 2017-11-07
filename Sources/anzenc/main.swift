@@ -25,7 +25,7 @@ do {
     let basename = file.split(separator: "/").last!
     print("inferenceError at \(basename):\(line)")
 } catch let e {
-    print(e.localizedDescription)
+    print(e)
     exit(1)
 }
 exit(0)

@@ -1,6 +1,6 @@
 public extension ASTVisitor {
 
-    mutating func traverse(_ node: Node) throws {
+    mutating func visit(_ node: Node) throws {
         switch node {
         case let n as ModuleDecl:      try self.visit(n)
         case let n as Block:           try self.visit(n)
@@ -25,13 +25,13 @@ public extension ASTVisitor {
         case let n as Literal<Bool>:   try self.visit(n)
         case let n as Literal<String>: try self.visit(n)
         default:
-            assertionFailure("unexpected node during traversal")
+            assertionFailure("unexpected node during generic visit")
         }
     }
     
-    mutating func traverse(_ nodes: [Node]) throws {
+    mutating func visit(_ nodes: [Node]) throws {
         for node in nodes {
-            try self.traverse(node)
+            try self.visit(node)
         }
     }
 
@@ -40,7 +40,7 @@ public extension ASTVisitor {
     }
 
     mutating func traverse(_ node: ModuleDecl) throws {
-        try self.traverse(node.statements)
+        try self.visit(node.statements)
     }
 
     mutating func visit(_ node: Block) throws {
@@ -48,7 +48,7 @@ public extension ASTVisitor {
     }
 
     mutating func traverse(_ node: Block) throws {
-        try self.traverse(node.statements)
+        try self.visit(node.statements)
     }
 
     // MARK: Declarations
@@ -58,11 +58,11 @@ public extension ASTVisitor {
     }
 
     mutating func traverse(_ node: FunDecl) throws {
-        try self.traverse(node.parameters)
+        try self.visit(node.parameters)
         if let codomain = node.codomain {
-            try self.traverse(codomain)
+            try self.visit(codomain)
         }
-        try self.traverse(node.body)
+        try self.visit(node.body)
     }
 
     mutating func visit(_ node: ParamDecl) throws {
@@ -70,7 +70,7 @@ public extension ASTVisitor {
     }
 
     mutating func traverse(_ node: ParamDecl) throws {
-        try self.traverse(node.typeAnnotation)
+        try self.visit(node.typeAnnotation)
     }
 
     mutating func visit(_ node: PropDecl) throws {
@@ -79,10 +79,10 @@ public extension ASTVisitor {
 
     mutating func traverse(_ node: PropDecl) throws {
         if let typeAnnotation = node.typeAnnotation {
-            try self.traverse(typeAnnotation)
+            try self.visit(typeAnnotation)
         }
         if let (_, value) = node.initialBinding {
-            try self.traverse(value)
+            try self.visit(value)
         }
     }
 
@@ -91,7 +91,7 @@ public extension ASTVisitor {
     }
     
     mutating func traverse(_ node: StructDecl) throws {
-        try self.traverse(node.body)
+        try self.visit(node.body)
     }
 
     // MARK: Type signatures
@@ -102,7 +102,7 @@ public extension ASTVisitor {
     
     mutating func traverse(_ node: QualSign) throws {
         if let signature = node.signature {
-            try self.traverse(signature)
+            try self.visit(signature)
         }
     }
 
@@ -111,8 +111,8 @@ public extension ASTVisitor {
     }
 
     mutating func traverse(_ node: FunSign) throws {
-        try self.traverse(node.parameters)
-        try self.traverse(node.codomain)
+        try self.visit(node.parameters)
+        try self.visit(node.codomain)
     }
 
     mutating func visit(_ node: ParamSign) throws {
@@ -120,7 +120,7 @@ public extension ASTVisitor {
     }
 
     mutating func traverse(_ node: ParamSign) throws {
-        try self.traverse(node.typeAnnotation)
+        try self.visit(node.typeAnnotation)
     }
 
     // MARK: Statements
@@ -130,8 +130,8 @@ public extension ASTVisitor {
     }
 
     mutating func traverse(_ node: BindingStmt) throws {
-        try self.traverse(node.lvalue)
-        try self.traverse(node.rvalue)
+        try self.visit(node.lvalue)
+        try self.visit(node.rvalue)
     }
 
     mutating func visit(_ node: ReturnStmt) throws {
@@ -140,7 +140,7 @@ public extension ASTVisitor {
 
     mutating func traverse(_ node: ReturnStmt) throws {
         if let value = node.value {
-            try self.traverse(value)
+            try self.visit(value)
         }
     }
 
@@ -151,10 +151,10 @@ public extension ASTVisitor {
     }
 
     mutating func traverse(_ node: IfExpr) throws {
-        try self.traverse(node.condition)
-        try self.traverse(node.thenBlock)
+        try self.visit(node.condition)
+        try self.visit(node.thenBlock)
         if let elseBlock = node.elseBlock {
-            try self.traverse(elseBlock)
+            try self.visit(elseBlock)
         }
     }
 
@@ -163,8 +163,8 @@ public extension ASTVisitor {
     }
     
     mutating func traverse(_ node: BinExpr) throws {
-        try self.traverse(node.left)
-        try self.traverse(node.right)
+        try self.visit(node.left)
+        try self.visit(node.right)
     }
 
     mutating func visit(_ node: UnExpr) throws {
@@ -172,7 +172,7 @@ public extension ASTVisitor {
     }
 
     mutating func traverse(_ node: UnExpr) throws {
-        try self.traverse(node.operand)
+        try self.visit(node.operand)
     }
 
     mutating func visit(_ node: CallExpr) throws {
@@ -180,8 +180,8 @@ public extension ASTVisitor {
     }
     
     mutating func traverse(_ node: CallExpr) throws {
-        try self.traverse(node.callee)
-        try self.traverse(node.arguments)
+        try self.visit(node.callee)
+        try self.visit(node.arguments)
     }
 
     mutating func visit(_ node: CallArg) throws {
@@ -189,7 +189,7 @@ public extension ASTVisitor {
     }
     
     mutating func traverse(_ node: CallArg) throws {
-        try self.traverse(node.value)
+        try self.visit(node.value)
     }
 
     mutating func visit(_ node: SubscriptExpr) throws {
@@ -197,8 +197,8 @@ public extension ASTVisitor {
     }
     
     mutating func traverse(_ node: SubscriptExpr) throws {
-        try self.traverse(node.callee)
-        try self.traverse(node.arguments)
+        try self.visit(node.callee)
+        try self.visit(node.arguments)
     }
 
     mutating func visit(_ node: SelectExpr) throws {
@@ -207,37 +207,21 @@ public extension ASTVisitor {
 
     mutating func traverse(_ node: SelectExpr) throws {
         if let owner = node.owner {
-            try self.traverse(owner)
+            try self.visit(owner)
         }
-        try self.traverse(node.ownee)
+        try self.visit(node.ownee)
     }
 
     mutating func visit(_ node: Ident) throws {
-        try self.traverse(node)
-    }
-
-    mutating func traverse(_ node: Ident) throws {
     }
 
     mutating func visit(_ node: Literal<Int>) throws {
-        try self.traverse(node)
-    }
-    
-    mutating func traverse(_ node: Literal<Int>) throws {
     }
 
     mutating func visit(_ node: Literal<Bool>) throws {
-        try self.traverse(node)
-    }
-
-    mutating func traverse(_ node: Literal<Bool>) throws {
     }
 
     mutating func visit(_ node: Literal<String>) throws {
-        try self.traverse(node)
-    }
-    
-    mutating func traverse(_ node: Literal<String>) throws {
     }
 
 }
