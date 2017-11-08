@@ -11,6 +11,9 @@ public func inferTypes(_ module: ModuleDecl) throws {
     try pass1.visit(module)
     var pass2 = TypeSolver(environment: environment)
     try pass2.visit(module)
+
+    // TODO: Compute fixed point on pass 2 so that constraints may propagate up.
+
     var pass3 = TypeReifier(environment: environment)
     try pass3.visit(module)
 }
@@ -273,9 +276,10 @@ struct TypeSolver: ASTVisitor {
         // Infer the type of the callee.
         try self.visit(node.callee)
         let calleeType = (node.callee as! TypedNode).type!
-        let prospects  = calleeType.unqualified is TypeUnion
+        var prospects  = calleeType.unqualified is TypeUnion
             ? Array(calleeType.unqualified as! TypeUnion)
             : [calleeType]
+        prospects = prospects.map { self.environment.walked($0) }
 
         // For each type the callee can represent, we identify which are callable candidates.
         var candidates: [FunctionType]  = []

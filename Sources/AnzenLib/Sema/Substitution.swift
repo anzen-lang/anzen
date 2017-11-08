@@ -52,23 +52,40 @@ class Substitution {
             let walkedR = TypeUnion.flattening(rhs.map({ self.walked($0) }))
 
             // Compute the intersection of `lhs` with `rhs`.
-            let result = (walkedL * walkedR).flatMap({ self.matches($0.0, $0.1) ? $0.0 : nil })
+            let result = (walkedL * walkedR).flatMap({ self.matches($0.0, $0.1) ? $0 : nil })
             guard result.count > 0 else {
                 throw CompilerError.inferenceError(file: #file, line: #line)
             }
-            lhs.replaceContent(with: Set(result))
-            rhs.replaceContent(with: Set(result))
+            let newContent = Set(result.map { $0.0 })
+            lhs.replaceContent(with: newContent)
+            rhs.replaceContent(with: newContent)
 
-            // Unify the variables of `lhs` with the compatible variables in `rhs`.
-            let qualifiedR = QualifiedType(type: TypeUnion(walkedR))
-            for l in walkedL.lazy.filter({ $0.unqualified is TypeVariable }) {
-                try? self.unify(l, qualifiedR)
+            // We now have to unify the we kept from `lhs` (resp. `rhs`) with the compatible types
+            // in `rhs` (resp. `lhs`). For instance:
+            //
+            //     lhs = {@cst $0, @mut $0, @ref $1}
+            //     rhs = {@cst T0, @ref T0, @ref T1, @shd T1}
+            //
+            //                     ▼
+            //
+            //     lhs = {@cst $0, @ref $1}
+            //     rhs = {@cst $0, @ref $1}
+            //     $0 -> @cst T0
+            //     $1 -> {@ref T0, @ref T1}
+            //
+            // Note that `@mut $0` from `lhs` and `@shd T1` frrom `rhs` are discarded, because
+            // they don't have a matching type in the opposite union.
+
+            for l in result.flatMap({ $0.0.unqualified is TypeVariable ? $0.0 : nil }) {
+                let qualified = QualifiedType(
+                    type: TypeUnion(walkedL.filter { $0.qualifiers == l.qualifiers }))
+                try self.unify(l, qualified)
             }
 
-            // Unify the variables of `rhs` with the compatible variables in `lhs`.
-            let qualifiedL = QualifiedType(type: TypeUnion(walkedL))
-            for r in walkedR.lazy.filter({ $0.unqualified is TypeVariable }) {
-                try? self.unify(r, qualifiedL)
+            for r in result.flatMap({ $0.1.unqualified is TypeVariable ? $0.1 : nil }) {
+                let qualified = QualifiedType(
+                    type: TypeUnion(walkedL.filter { $0.qualifiers == r.qualifiers }))
+                try self.unify(r, qualified)
             }
 
         case let (union as TypeUnion, _):
@@ -201,12 +218,15 @@ class Substitution {
         // Find the unified value of the unqualified type.
         let unqualified = self.walked(t.unqualified)
 
-        // If `t` is a variable that gets walked to a type is an union, we filter out members that
-        // don't share the same qualifiers. This may happen when a variant of `t` has been unified
-        // with a union prior this.
-        if let union = unqualified as? TypeUnion, !t.qualifiers.isEmpty {
-            return QualifiedType(type: TypeUnion(union.filter { $0.qualifiers == t.qualifiers }))
-        }
+        // QUESTION:
+        // If `t` is a variable that gets walked to a type is an union, it is possible for the
+        // latter to contain qualified types whose qualifiers don't agree. This may happen when a
+        // variant of `t` has been unified with a union prior to this. We can't simply filter them
+        // out to create a new union, as it would break unification (`union.replaceContent(with:)`
+        // would become useless), and it is unclear if keeping them can be harmful.
+        // if t.unqualified is TypeVariable, let union = unqualified as? TypeUnion {
+        //     assert(union.forAll { $0.qualifiers == t.qualifiers })
+        // }
 
         // Otherwise we return the walked qualified type.
         return QualifiedType(type: unqualified, qualifiedBy: t.qualifiers)
