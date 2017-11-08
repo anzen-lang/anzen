@@ -85,7 +85,7 @@ public class FunDecl: TypedNode, ScopedNode {
     public init(
         name        : String,
         placeholders: [String] = [],
-        parameters  : [Node],
+        parameters  : [ParamDecl],
         codomain    : Node? = nil,
         body        : Block,
         location    : SourceRange? = nil)
@@ -100,7 +100,7 @@ public class FunDecl: TypedNode, ScopedNode {
 
     public let name        : String
     public let placeholders: [String]
-    public let parameters  : [Node]
+    public let parameters  : [ParamDecl]
     public let codomain    : Node?
     public let body        : Block
 
@@ -468,14 +468,14 @@ public class UnExpr: TypedNode {
 
 public class CallExpr: TypedNode {
 
-    public init(callee: Node, arguments: [Node], location: SourceRange? = nil) {
+    public init(callee: Node, arguments: [CallArg], location: SourceRange? = nil) {
         self.callee    = callee
         self.arguments = arguments
         self.location  = location
     }
 
     public let callee   : Node
-    public let arguments: [Node]
+    public let arguments: [CallArg]
 
     // MARK: Annotations
 
@@ -530,14 +530,14 @@ public class CallArg: TypedNode {
 
 public class SubscriptExpr: TypedNode {
 
-    public init(callee: Node, arguments: [Node], location: SourceRange? = nil) {
+    public init(callee: Node, arguments: [CallArg], location: SourceRange? = nil) {
         self.callee    = callee
         self.arguments = arguments
         self.location  = location
     }
 
     public let callee   : Node
-    public let arguments: [Node]
+    public let arguments: [CallArg]
 
     // MARK: Annotations
 

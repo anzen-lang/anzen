@@ -15,8 +15,7 @@ public func performSema(on module: ModuleDecl) throws -> ModuleDecl {
     try scopeBinder.visit(module)
 
     // Infer the types of declarations and expressions.
-    var typeSolver = TypeSolver()
-    try typeSolver.infer(module)
+    try inferTypes(module)
 
     print(String(reflecting: module))
 

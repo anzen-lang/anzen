@@ -2,8 +2,8 @@ import os.log
 import Parsey
 
 enum Trailer {
-    case callArgs([Node])
-    case subscriptArgs([Node])
+    case callArgs([CallArg])
+    case subscriptArgs([CallArg])
     case selectOwnee(Node)
 }
 
@@ -118,9 +118,9 @@ public struct Grammar {
 
     static let trailer =
           "(" ~~> (callArg.many(separatedBy: comma) <~~ comma.?).? <~~ ")"
-          ^^ { val in Trailer.callArgs(val ?? []) }
+            ^^ { val in Trailer.callArgs(val?.map { $0 as! CallArg } ?? []) }
         | "[" ~~> callArg.many(separatedBy: comma) <~~ comma.? <~~ "]"
-          ^^ { val in Trailer.subscriptArgs(val) }
+          ^^ { val in Trailer.subscriptArgs(val.map { $0 as! CallArg }) }
         | "." ~~> ident
           ^^ { val in Trailer.selectOwnee(val) }
 
@@ -165,7 +165,7 @@ public struct Grammar {
             return FunDecl(
                 name        : val.0.0.0.0,
                 placeholders: val.0.0.0.1 ?? [],
-                parameters  : val.0.0.1 ?? [],
+                parameters  : val.0.0.1?.map { $0 as! ParamDecl } ?? [],
                 codomain    : val.0.1,
                 body        : val.1 as! Block,
                 location    : loc)

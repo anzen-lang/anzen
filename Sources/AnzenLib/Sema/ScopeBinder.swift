@@ -44,13 +44,15 @@ public struct ScopeBinder: ASTVisitor {
 
         // If the symbol's already associated with a function declaration, we're visiting an
         // overload. Therefore we should create a new symbol.
-        if symbols[0].node != nil {
-            self.scopes.last.add(symbol: Symbol(name: node.name))
+        var functionSymbol = symbols[0]
+        if functionSymbol.node != nil {
+            functionSymbol = Symbol(name: node.name)
+            self.scopes.last.add(symbol: functionSymbol)
         }
 
         // Bind the symbol to the current node.
-        symbols.last!.node = node
-        symbols.last!.isOverloadable = true
+        functionSymbol.node           = node
+        functionSymbol.isOverloadable = true
         node.scope = self.scopes.last
 
         // Create a scope for the function before visiting its signature and body.
@@ -66,8 +68,7 @@ public struct ScopeBinder: ASTVisitor {
         // Visit the function's signature **before** visiting the its body, so that we may not
         // bind a parameter to a declaration from the function's body.
         for parameter in node.parameters {
-            assert(parameter is ParamDecl)
-            self.scopes.last.add(symbol: Symbol(name: (parameter as! ParamDecl).name))
+            self.scopes.last.add(symbol: Symbol(name: parameter.name))
         }
         try self.visit(node.parameters)
         if let codomain = node.codomain {

@@ -1,12 +1,8 @@
-struct Substitution {
+class Substitution {
 
-    mutating func unify(_ t: QualifiedType, _ u: QualifiedType) throws {
+    func unify(_ t: QualifiedType, _ u: QualifiedType) throws {
         let a = self.walked(t)
         let b = self.walked(u)
-
-        // Make sure only type unions don't have any type qualifier.
-        // assert(!a.qualifiers.isEmpty || (a.unqualified is TypeUnion))
-        // assert(!b.qualifiers.isEmpty || (b.unqualified is TypeUnion))
 
         // If `a` and `b` are equal they're already unified.
         guard a != b else { return }
@@ -37,6 +33,13 @@ struct Substitution {
 
         case (_, _ as TypeVariable):
             try self.unify(b, a)
+
+        case let (lhs as TypeName, rhs as TypeName):
+            if let variable = lhs.type as? TypeVariable {
+                self.storage[variable] = rhs.type
+            } else if let variable = rhs.type as? TypeVariable {
+                self.storage[variable] = lhs.type
+            }
 
         case (_ as TypePlaceholder, _):
             break
@@ -163,6 +166,12 @@ struct Substitution {
                 ? QualifiedType(type: reifiedUnion)
                 : reifiedUnion.first(where: { _ in true })!
 
+        case let typeName as TypeName:
+            let reified = TypeFactory.makeName(
+                name: typeName.name,
+                type: self.reify(QualifiedType(type: typeName.type), memo: memo).unqualified)
+            return QualifiedType(type: reified, qualifiedBy: walked.qualifiers)
+
         case let functionType as FunctionType:
             let reified = TypeFactory.makeFunction(
                 placeholders: functionType.placeholders,
@@ -203,7 +212,7 @@ struct Substitution {
         return QualifiedType(type: unqualified, qualifiedBy: t.qualifiers)
     }
 
-    private func walked(_ t: UnqualifiedType) -> UnqualifiedType {
+    func walked(_ t: UnqualifiedType) -> UnqualifiedType {
         if let variable     = t as? TypeVariable,
            let unifiedValue = self.storage[variable]
         {
@@ -213,6 +222,6 @@ struct Substitution {
         }
     }
 
-    private var storage: [TypeVariable: UnqualifiedType] = [:]
+    var storage: [TypeVariable: UnqualifiedType] = [:]
 
 }
