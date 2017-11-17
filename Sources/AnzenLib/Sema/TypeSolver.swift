@@ -296,6 +296,7 @@ struct TypeSolver: ASTVisitor {
 
             // If the prospect doesn't fall in one of the above categories, it isn't callable.
             default:
+                assertionFailure()
                 break
             }
         }
@@ -431,6 +432,57 @@ struct TypeSolver: ASTVisitor {
         try self.environment.unify(argumentType, result.rvalue)
     }
 
+    mutating func visit(_ node: SelectExpr) throws {
+        guard let owner = node.owner else {
+            fatalError("TODO: Handle implicit select expressions.")
+        }
+
+        // Infer the type of the owner.
+        try self.visit(owner)
+        let ownerType = (node.owner as! TypedNode).type!
+        var prospects = ownerType.unqualified is TypeUnion
+            ? Array(ownerType.unqualified as! TypeUnion)
+            : [ownerType]
+        prospects = prospects.map { self.environment.walked($0) }
+
+        // For each type the owner can represent, we identify possible member candidates.
+        var candidates: [QualifiedType]  = []
+        for ownerType in prospects {
+            switch ownerType.unqualified {
+            // If the owner's type is a type variable, we have no choice but to return a fresh
+            // unrelated variable.
+            case _ as TypeVariable:
+                node.type = TypeFactory.makeVariants(of: TypeVariable())
+
+            // For instances of nominal types, we search for the member and return it's type.
+            case let structType as StructType:
+                if let member = structType.members[node.ownee.name] {
+                    candidates.append(contentsOf:
+                        member.unqualified is TypeUnion
+                            ? (member.unqualified as! TypeUnion)
+                            : [member])
+                }
+
+            // If the prospect doesn't fall in one of the above categories, it isn't selectable.
+            default:
+                break
+            }
+        }
+
+        guard !candidates.isEmpty else {
+            // Reify all types for a better error reporting.
+            let types  = TypeUnion(prospects.map { self.environment.reify($0) })
+            let reason = "no candidate in "                               +
+                         types.map({ "'\($0)'" }).joined(separator: ", ") +
+                         " has an attribute '\(node.ownee.name)'"
+            throw InferenceError(reason: reason, location: node.location)
+        }
+
+        node.type = candidates.count > 1
+            ? QualifiedType(type: TypeUnion(candidates))
+            : candidates[0]
+    }
+
     mutating func visit(_ node: Ident) throws {
         // The type of identifiers may be dissociated from that of their corresponding symbols
         // when working with generics. Therefore we've to make sure not to re-associate them.
@@ -497,6 +549,11 @@ struct TypeReifier: ASTVisitor {
     }
 
     mutating func visit(_ node: QualSign) {
+        self.reify(typeOf: node)
+        try! self.traverse(node)
+    }
+
+    mutating func visit(_ node: SelectExpr) {
         self.reify(typeOf: node)
         try! self.traverse(node)
     }

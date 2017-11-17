@@ -4,7 +4,7 @@ import Parsey
 enum Trailer {
     case callArgs([CallArg])
     case subscriptArgs([CallArg])
-    case selectOwnee(Node)
+    case selectOwnee(Ident)
 }
 
 public struct Grammar {
@@ -122,7 +122,7 @@ public struct Grammar {
         | "[" ~~> callArg.many(separatedBy: comma) <~~ comma.? <~~ "]"
           ^^ { val in Trailer.subscriptArgs(val.map { $0 as! CallArg }) }
         | "." ~~> ident
-          ^^ { val in Trailer.selectOwnee(val) }
+          ^^ { val in Trailer.selectOwnee(val as! Ident) }
 
     static let ifExpr: Parser<Node> =
         "if" ~~> ws ~~> expr ~~ block.amid(ws.?) ~~ elseExpr.?
