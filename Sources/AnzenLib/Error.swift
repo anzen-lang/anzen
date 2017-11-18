@@ -31,3 +31,17 @@ public struct InferenceError: Error, CustomStringConvertible {
     }
 
 }
+
+public struct IRGenError: Error {
+
+    public init(reason: String? = nil, file: String? = nil, location: SourceRange? = nil) {
+        self.reason   = reason
+        self.file     = file
+        self.location = location
+    }
+
+    public let reason  : String?
+    public let file    : String?
+    public let location: SourceRange?
+
+}

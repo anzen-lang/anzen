@@ -554,14 +554,14 @@ public class SubscriptExpr: TypedNode {
 
 public class SelectExpr: TypedNode {
 
-    public init(owner: Node? = nil, ownee: Node, location: SourceRange? = nil) {
+    public init(owner: Node? = nil, ownee: Ident, location: SourceRange? = nil) {
         self.owner    = owner
         self.ownee    = ownee
         self.location = location
     }
 
     public let owner: Node?
-    public let ownee: Node
+    public let ownee: Ident
 
     // MARK: Annotations
 

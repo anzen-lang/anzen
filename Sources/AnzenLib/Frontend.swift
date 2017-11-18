@@ -19,5 +19,11 @@ public func performSema(on module: ModuleDecl) throws -> ModuleDecl {
 
     print(String(reflecting: module))
 
+    // Generate the LLVM IR of the module.
+    var irGenerator = IRGenerator(moduleName: "__main__", asEntryPoint: true)
+    try irGenerator.visit(module)
+    irGenerator.finalize()
+    irGenerator.module.dump()
+
     return module
 }
