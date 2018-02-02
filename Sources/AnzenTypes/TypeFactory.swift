@@ -19,21 +19,6 @@ struct TypeFactory {
         return self.insert(StructType(name: name, members: members))
     }
 
-    public static func makeVariants(of unqualifiedType: UnqualifiedType) -> QualifiedType {
-        let variants = TypeQualifier.combinations
-            .map { QualifiedType(type: unqualifiedType, qualifiedBy: $0) }
-        return QualifiedType(type: TypeUnion(variants))
-    }
-
-    public static func makeVariants(
-        of unqualifiedType: UnqualifiedType,
-        withQualifiers    : (TypeQualifier) -> Bool) -> QualifiedType
-    {
-        let variants = TypeQualifier.combinations.filter(withQualifiers)
-            .map { QualifiedType(type: unqualifiedType, qualifiedBy: $0) }
-        return QualifiedType(type: TypeUnion(variants))
-    }
-
     // Mark: Internals
 
     static func insert<T: UnqualifiedType & Equatable>(_ newType: T) -> T {

@@ -3,13 +3,13 @@ import AnzenTypes
 /// A named symbol.
 public class Symbol {
 
-    public init(name: String, type: AnzenType? = nil) {
+    public init(name: String, type: SemanticType? = nil) {
         self.name = name
         self.type = type
     }
 
     public var name: String
-    public var type: AnzenType?
+    public var type: SemanticType?
     public var node: Node? = nil
 
     /// Let function symbols be marked overloadable.

@@ -16,10 +16,6 @@ extension TypeQualifier: CustomStringConvertible {
         var result = [String]()
         if self.contains(.cst) { result.append("@cst") }
         if self.contains(.mut) { result.append("@mut") }
-        if self.contains(.stk) { result.append("@stk") }
-        if self.contains(.shd) { result.append("@shd") }
-        if self.contains(.val) { result.append("@val") }
-        if self.contains(.ref) { result.append("@ref") }
         return result.joined(separator: " ")
     }
 

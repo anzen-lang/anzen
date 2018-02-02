@@ -11,7 +11,7 @@ public protocol Node: class {
 
 public protocol TypedNode: Node {
 
-    var type: AnzenType? { get set }
+    var type: SemanticType? { get set }
 }
 
 public protocol ScopeOpeningNode: Node {
@@ -89,7 +89,7 @@ public class FunDecl: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var type      : AnzenType? = nil
+    public var type      : SemanticType? = nil
     public var scope     : Scope? = nil
     public var innerScope: Scope? = nil
 
@@ -116,7 +116,7 @@ public class ParamDecl: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
     public var scope   : Scope? = nil
 
 }
@@ -145,7 +145,7 @@ public class PropDecl: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
     public var scope   : Scope? = nil
 
 }
@@ -171,7 +171,7 @@ public class StructDecl: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var type      : AnzenType? = nil
+    public var type      : SemanticType? = nil
     public var scope     : Scope? = nil
     public var innerScope: Scope? = nil
 
@@ -195,7 +195,7 @@ public class QualSign: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -213,7 +213,7 @@ public class FunSign: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -231,7 +231,7 @@ public class ParamSign: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -294,7 +294,7 @@ public class IfExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -314,7 +314,7 @@ public class BinExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -332,7 +332,7 @@ public class UnExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -350,7 +350,7 @@ public class CallExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -375,7 +375,7 @@ public class CallArg: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -393,7 +393,7 @@ public class SubscriptExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -411,7 +411,7 @@ public class SelectExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
 
 }
 
@@ -427,7 +427,7 @@ public class Ident: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
     public var scope   : Scope? = nil
 
 }
@@ -443,7 +443,7 @@ public class Literal<T>: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : AnzenType? = nil
+    public var type    : SemanticType? = nil
     public let location: SourceRange?
 
 }

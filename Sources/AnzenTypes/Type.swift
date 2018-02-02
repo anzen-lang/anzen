@@ -1,7 +1,10 @@
-public protocol AnzenType {
+public protocol SemanticType {
+
+    var isGeneric: Bool { get }
+
 }
 
-public struct QualifiedType: Hashable {
+public struct QualifiedType: Hashable, SemanticType {
 
     public init(type unqualified: UnqualifiedType, qualifiedBy qualifiers: TypeQualifier = []) {
         self.qualifiers  = qualifiers
@@ -44,16 +47,5 @@ public struct TypeQualifier: OptionSet {
 
     public static let cst = TypeQualifier(rawValue: 1 << 0)
     public static let mut = TypeQualifier(rawValue: 1 << 1)
-    public static let stk = TypeQualifier(rawValue: 1 << 2)
-    public static let shd = TypeQualifier(rawValue: 1 << 3)
-    public static let val = TypeQualifier(rawValue: 1 << 4)
-    public static let ref = TypeQualifier(rawValue: 1 << 5)
-
-    public static let combinations: [TypeQualifier] = [
-        [.cst, .stk, .ref],
-        [.mut, .stk, .ref],
-        [.cst, .shd, .ref],
-        [.mut, .shd, .ref],
-    ]
 
 }

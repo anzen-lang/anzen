@@ -1,4 +1,4 @@
-public final class TypeUnion: UnqualifiedType, ExpressibleByArrayLiteral {
+public final class TypeUnion: SemanticType, ExpressibleByArrayLiteral {
 
     public init() {
         self.types = []

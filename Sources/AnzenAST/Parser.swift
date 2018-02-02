@@ -248,10 +248,6 @@ public struct Grammar {
             switch val {
             case "cst": return .cst
             case "mut": return .mut
-            case "stk": return .stk
-            case "shd": return .shd
-            case "val": return .val
-            case "ref": return .ref
             default:
                 print("warning: unexpected qualifier: '\(val)'")
                 return []
