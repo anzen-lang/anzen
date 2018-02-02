@@ -1,13 +1,15 @@
+import AnzenTypes
+
 /// A named symbol.
 public class Symbol {
 
-    public init(name: String, type: QualifiedType? = nil) {
+    public init(name: String, type: AnzenType? = nil) {
         self.name = name
         self.type = type
     }
 
     public var name: String
-    public var type: QualifiedType?
+    public var type: AnzenType?
     public var node: Node? = nil
 
     /// Let function symbols be marked overloadable.

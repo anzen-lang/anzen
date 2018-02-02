@@ -1,8 +1,9 @@
+import AnzenTypes
 import Parsey
 
 // MARK: Protocols
 
-public protocol Node: class, CustomStringConvertible {
+public protocol Node: class {
 
     var location: SourceRange? { get }
 
@@ -10,7 +11,7 @@ public protocol Node: class, CustomStringConvertible {
 
 public protocol TypedNode: Node {
 
-    var type: QualifiedType? { get set }
+    var type: AnzenType? { get set }
 }
 
 public protocol ScopeOpeningNode: Node {
@@ -41,12 +42,6 @@ public class ModuleDecl: ScopeOpeningNode {
     public let location: SourceRange?
     public var symbols : Set<String> = []
 
-    // MARK: Pretty-printing
-
-    public var description: String {
-        return self.statements.map({ String(describing: $0) }).joined(separator: "\n")
-    }
-
 }
 
 public class Block: ScopeOpeningNode {
@@ -62,19 +57,6 @@ public class Block: ScopeOpeningNode {
 
     public let location: SourceRange?
     public var symbols : Set<String> = []
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        var result = "{\n"
-        for stmt in self.statements {
-            result += String(describing: stmt)
-                .split(separator: "\n")
-                .map({ "  " + $0 })
-                .joined(separator: "\n") + "\n"
-        }
-        return result + "}"
-    }
 
 }
 
@@ -107,25 +89,9 @@ public class FunDecl: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var type      : QualifiedType? = nil
+    public var type      : AnzenType? = nil
     public var scope     : Scope? = nil
     public var innerScope: Scope? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        var result = "function \(self.name)"
-        if !self.placeholders.isEmpty {
-            result += "<" + self.placeholders.joined(separator: ", ") + ">"
-        }
-        result += "("
-        result += self.parameters.map({ String(describing: $0) }).joined(separator: ", ")
-        result += ")"
-        if let annotation = self.codomain {
-            result += " -> \(annotation)"
-        }
-        return result + " \(self.body)"
-    }
 
 }
 
@@ -150,22 +116,8 @@ public class ParamDecl: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
+    public var type    : AnzenType? = nil
     public var scope   : Scope? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        var interface = self.name
-        if let label = self.label {
-            if label != self.name {
-                interface = "\(label) \(interface)"
-            }
-        } else {
-            interface = "_ \(interface)"
-        }
-        return "\(interface): \(self.typeAnnotation)"
-    }
 
 }
 
@@ -190,21 +142,8 @@ public class PropDecl: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
+    public var type    : AnzenType? = nil
     public var scope   : Scope? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        var result = "let \(self.name)"
-        if let annotation = self.typeAnnotation {
-            result += ": \(annotation)"
-        }
-        if let (op, val) = self.initialBinding {
-            result += " \(op) \(val)"
-        }
-        return result
-    }
 
 }
 
@@ -229,19 +168,9 @@ public class StructDecl: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var type      : QualifiedType? = nil
+    public var type      : AnzenType? = nil
     public var scope     : Scope? = nil
     public var innerScope: Scope? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        var result = "struct \(self.name)"
-        if !self.placeholders.isEmpty {
-            result += "<" + self.placeholders.joined(separator: ", ") + ">"
-        }
-        return result + " \(self.body)"
-    }
 
 }
 
@@ -263,19 +192,7 @@ public class QualSign: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        if let sign = self.signature {
-            let qual = String(describing: self.qualifiers)
-            return qual != ""
-                ? "\(qual) \(sign)"
-                : String(describing: sign)
-        }
-        return String(describing: self.qualifiers)
-    }
+    public var type    : AnzenType? = nil
 
 }
 
@@ -293,14 +210,7 @@ public class FunSign: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        let parameters = self.parameters.map({ String(describing: $0) }).joined(separator: ", ")
-        return "(\(parameters)) -> \(self.codomain)"
-    }
+    public var type    : AnzenType? = nil
 
 }
 
@@ -318,14 +228,7 @@ public class ParamSign: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        let labelText = self.label ?? "_"
-        return "\(labelText) \(self.typeAnnotation)"
-    }
+    public var type    : AnzenType? = nil
 
 }
 
@@ -348,12 +251,6 @@ public class BindingStmt: Node {
 
     public let location: SourceRange?
 
-    // MARK: Pretty-printing
-
-    public var description: String {
-        return "\(lvalue) \(op) \(rvalue)"
-    }
-
 }
 
 public class ReturnStmt: Node {
@@ -368,14 +265,6 @@ public class ReturnStmt: Node {
     // MARK: Annotations
 
     public let location: SourceRange?
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        return self.value != nil
-            ? "return \(self.value!)"
-            : "return"
-    }
 
 }
 
@@ -402,17 +291,7 @@ public class IfExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        var result = "if \(self.condition) \(self.thenBlock)"
-        if let elseBlock = self.elseBlock {
-            result += " else \(elseBlock)"
-        }
-        return result
-    }
+    public var type    : AnzenType? = nil
 
 }
 
@@ -432,13 +311,7 @@ public class BinExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        return "(\(self.left) \(self.op) \(self.right))"
-    }
+    public var type    : AnzenType? = nil
 
 }
 
@@ -456,13 +329,7 @@ public class UnExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        return "(\(self.op) \(self.operand))"
-    }
+    public var type    : AnzenType? = nil
 
 }
 
@@ -480,14 +347,7 @@ public class CallExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        let args = self.arguments.map({ String(describing: $0) }).joined(separator: ", ")
-        return "\(self.callee)(\(args))"
-    }
+    public var type    : AnzenType? = nil
 
 }
 
@@ -512,19 +372,7 @@ public class CallArg: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        if let label = self.label, let op = self.bindingOp {
-            return "\(label) \(op) \(self.value)"
-        }
-        if let op = self.bindingOp {
-            return "\(op) \(self.value)"
-        }
-        return String(describing: self.value)
-    }
+    public var type    : AnzenType? = nil
 
 }
 
@@ -542,14 +390,8 @@ public class SubscriptExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
+    public var type    : AnzenType? = nil
 
-    // MARK: Pretty-printing
-
-    public var description: String {
-        let args = self.arguments.map({ String(describing: $0) }).joined(separator: ", ")
-        return "\(self.callee)[\(args)]"
-    }
 }
 
 public class SelectExpr: TypedNode {
@@ -566,16 +408,7 @@ public class SelectExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        if let owner = self.owner {
-            return "\(owner).\(self.ownee)"
-        }
-        return ".\(self.ownee)"
-    }
+    public var type    : AnzenType? = nil
 
 }
 
@@ -591,14 +424,8 @@ public class Ident: TypedNode, ScopedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : QualifiedType? = nil
+    public var type    : AnzenType? = nil
     public var scope   : Scope? = nil
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        return self.name
-    }
 
 }
 
@@ -613,13 +440,7 @@ public class Literal<T>: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : QualifiedType? = nil
+    public var type    : AnzenType? = nil
     public let location: SourceRange?
-
-    // MARK: Pretty-printing
-
-    public var description: String {
-        return String(describing: self.value)
-    }
 
 }

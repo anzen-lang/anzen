@@ -1,3 +1,6 @@
+public protocol AnzenType {
+}
+
 public struct QualifiedType: Hashable {
 
     public init(type unqualified: UnqualifiedType, qualifiedBy qualifiers: TypeQualifier = []) {
@@ -39,12 +42,12 @@ public struct TypeQualifier: OptionSet {
 
     public let rawValue: Int
 
-    static let cst = TypeQualifier(rawValue: 1 << 0)
-    static let mut = TypeQualifier(rawValue: 1 << 1)
-    static let stk = TypeQualifier(rawValue: 1 << 2)
-    static let shd = TypeQualifier(rawValue: 1 << 3)
-    static let val = TypeQualifier(rawValue: 1 << 4)
-    static let ref = TypeQualifier(rawValue: 1 << 5)
+    public static let cst = TypeQualifier(rawValue: 1 << 0)
+    public static let mut = TypeQualifier(rawValue: 1 << 1)
+    public static let stk = TypeQualifier(rawValue: 1 << 2)
+    public static let shd = TypeQualifier(rawValue: 1 << 3)
+    public static let val = TypeQualifier(rawValue: 1 << 4)
+    public static let ref = TypeQualifier(rawValue: 1 << 5)
 
     public static let combinations: [TypeQualifier] = [
         [.cst, .stk, .ref],
