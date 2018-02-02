@@ -47,10 +47,9 @@ public struct TypeQualifier: OptionSet {
     static let ref = TypeQualifier(rawValue: 1 << 5)
 
     public static let combinations: [TypeQualifier] = [
-        [.cst, .stk, .val],
         [.cst, .stk, .ref],
-        [.mut, .stk, .val],
         [.mut, .stk, .ref],
+        [.cst, .shd, .ref],
         [.mut, .shd, .ref],
     ]
 

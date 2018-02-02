@@ -28,30 +28,19 @@ struct IRGenerator: ASTVisitor {
         }
     }
 
-    mutating func visit(_ node: PropDecl) throws {
-        if let insertBlock = self.builder.insertBlock {
-            // Get the LLVM function under declaration.
-            let fn = insertBlock.parent!
-
-            // Create an alloca for the local variable, and store it as a local symbol table.
-            let property = self.createEntryBlockAlloca(
-                in: fn, named: node.name, typed: node.type!)
-            self.locals.last[node.name] = property
-
-            if let (op, value) = node.initialBinding {
-                try self.createBinding(to: property, op: op, rvalue: value as! TypedNode)
-            }
+    mutating func visit(_ node: Ident) throws {
+        guard let binding = self.locals.last[node.name] else {
+            fatalError("undefined identifier '\(node.name)'")
         }
-//        // Create a global variable.
-//        var property = self.builder.addGlobal(
-//            node.name, type: node.type!.irType(context: self.llvmContext)!)
-//        property.linkage = .common
-//        property.initializer = initialValue
-//        self.globals[node.name] = property
+        self.stack.push(binding)
     }
 
     mutating func visit(_ node: Literal<Int>) throws {
-        self.stack.push(IntType.int64.constant(node.value))
+        self.stack.push(ValueBinding(
+            ref       : IntType.int64.constant(node.value),
+            qualifiers: node.type!.qualifiers,
+            read      : { return IntType.int64.constant(node.value) },
+            write     : { _ in fatalError("cannot write into a constant") }))
     }
 
     /// The LLVM module currently being generated.
@@ -68,73 +57,26 @@ struct IRGenerator: ASTVisitor {
     ///
     /// - Note: The stack should be emptied every time after the IR of a particular statement has
     ///   been generated.
-    var stack: Stack<IRValue> = []
+    var stack: Stack<ValueBinding> = []
 
     /// A stack of maps of local symbols.
-    var locals: Stack<[String: PropertyBinding]> = []
-
-    /// A map of global symbols.
-    var globals: [String: IRGlobal] = [:]
+    var locals: Stack<[String: ValueBinding]> = []
 
     /// LLVM sanity checker.
     let functionVerifier: FunctionPassManager
 
-    // MARK: Internals
-
-    func createEntryBlockAlloca(
-        in function    : Function,
-        named name     : String,
-        typed anzenType: QualifiedType) -> PropertyBinding
-    {
-        let irType = anzenType.irType(context: self.llvmContext)!
-        let currentBlock = self.builder.insertBlock
-        let entryBlock = function.entryBlock!
-        if let firstInst = entryBlock.firstInstruction {
-            builder.position(firstInst, block: entryBlock)
-        }
-        let alloca = builder.buildAlloca(type: irType, name: name)
-        if let block = currentBlock {
-            builder.positionAtEnd(of: block)
-        }
-        return PropertyBinding(
-            ref       : alloca,
-            qualifiers: anzenType.qualifiers,
-            read      : { self.builder.buildLoad(alloca) },
-            write     : { self.builder.buildStore($0, to: alloca) })
-    }
-
-    mutating func createBinding(
-        to dest: PropertyBinding, op: Operator, rvalue: TypedNode) throws
-    {
-        switch op {
-        case .cpy:
-            // Dereference the lvalue if needed.
-            let ptr = dest.qualifiers.contains(.ref)
-                ? self.builder.buildLoad(dest.ref)
-                : dest.ref
-//                ? self.builder.buildLoad(dest.read())
-//                : dest.read()
-
-            // Generate the rvalue and dereference it if needed.
-            try self.visit(rvalue)
-            let val = rvalue.type!.qualifiers.contains(.ref)
-                ? self.builder.buildLoad(self.stack.pop()!)
-                : self.stack.pop()!
-
-            self.builder.buildStore(val, to: ptr)
-
-        default:
-            break
-        }
-    }
-
 }
 
-struct PropertyBinding {
+/// Represents the binding of some value to some memory location.
+struct ValueBinding {
 
-    let ref       : IRValue
+    /// A pointer to the memory location the value is allocated to.
+    let ref: IRValue
+
+    // The type qualifiers of the value's type (e.g. @ref, @shd, ...).
     let qualifiers: TypeQualifier
-    let read      : () -> IRValue
-    let write     : (IRValue) -> Void
+
+    let read : () -> IRValue
+    let write: (IRValue) -> ()
 
 }

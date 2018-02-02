@@ -553,6 +553,16 @@ struct TypeReifier: ASTVisitor {
         try! self.traverse(node)
     }
 
+    mutating func visit(_ node: CallExpr) throws {
+        self.reify(typeOf: node)
+        try! self.traverse(node)
+    }
+
+    mutating func visit(_ node: CallArg) throws {
+        self.reify(typeOf: node)
+        try! self.traverse(node)
+    }
+
     mutating func visit(_ node: SelectExpr) {
         self.reify(typeOf: node)
         try! self.traverse(node)
