@@ -62,7 +62,10 @@ extension ParamDecl: CustomStringConvertible {
 extension PropDecl: CustomStringConvertible {
 
     public var description: String {
-        var result = "let \(self.name)"
+        var result = self.reassignable
+            ? "var "
+            : "let "
+        result += self.name
         if let annotation = self.typeAnnotation {
             result += ": \(annotation)"
         }

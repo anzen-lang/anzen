@@ -196,20 +196,23 @@ public struct Grammar {
 
     /// "let" name [":" type_sign] [assign_op expr]
     public static let propDecl: Parser<Node> =
-        "let" ~~> ws ~~> name ~~
+        (Lexer.regex("let") | Lexer.regex("var")) ~~
+        (ws ~~> name) ~~
         (Lexer.character(":").amid(ws.?) ~~> typeAnnotation).? ~~
         (bindingOp ~~ expr).?
         ^^^ { (val, loc) in
-            let (name, sign) = val.0
-            let binding = val.1 != nil
-                ? (op: val.1!.0, value: val.1!.1 as Node)
-                : nil
+            let (declType, name) = val.0.0
+            let sign = val.0.1
+             let binding = val.1 != nil
+                 ? (op: val.1!.0, value: val.1!.1 as Node)
+                 : nil
 
-            return PropDecl(
-                name          : name,
-                typeAnnotation: sign,
-                initialBinding: binding,
-                location      : loc)
+             return PropDecl(
+                 name          : name,
+                 reassignable  : declType == "var",
+                 typeAnnotation: sign,
+                 initialBinding: binding,
+                 location      : loc)
         }
 
     /// "struct" name [placeholders] block

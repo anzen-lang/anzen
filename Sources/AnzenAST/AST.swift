@@ -125,17 +125,20 @@ public class PropDecl: TypedNode, ScopedNode {
 
     public init(
         name          : String,
+        reassignable  : Bool = false,
         typeAnnotation: Node? = nil,
         initialBinding: (op: Operator, value: Node)? = nil,
         location      : SourceRange? = nil)
     {
         self.name           = name
+        self.reassignable   = reassignable
         self.typeAnnotation = typeAnnotation
         self.initialBinding = initialBinding
         self.location       = location
     }
 
     public let name          : String
+    public let reassignable  : Bool
     public let typeAnnotation: Node?
     public let initialBinding: (op: Operator, value: Node)?
 
