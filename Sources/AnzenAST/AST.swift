@@ -329,7 +329,7 @@ public class StructDecl: ScopeNode, NamedNode {
 public class QualSign: TypedNode {
 
     public init(
-        qualifiers: [TypeQualifier], signature: Node?, location: SourceRange? = nil)
+        qualifiers: Set<TypeQualifier>, signature: Node?, location: SourceRange? = nil)
     {
         self.qualifiers = qualifiers
         self.signature  = signature
@@ -337,7 +337,7 @@ public class QualSign: TypedNode {
     }
 
     /// The qualifiers of the signature.
-    public let qualifiers: [TypeQualifier]
+    public let qualifiers: Set<TypeQualifier>
 
     /// The semantic type definition of the signature.
     ///

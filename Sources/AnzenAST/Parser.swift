@@ -234,8 +234,7 @@ public struct Grammar {
     public static let qualTypeSign: Parser<Node> =
         typeQualifier.many(separatedBy: ws) ~~ (ws ~~> typeSign).?
         ^^^ { (val, loc) in
-            var qualifiers: [TypeQualifier] = val.0
-
+            var qualifiers = Set(val.0)
             return QualSign(qualifiers: qualifiers, signature: val.1, location: loc)
         }
 
