@@ -42,9 +42,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "LLVM::LLVM"
-               BuildableName = "LLVM.framework"
-               BlueprintName = "LLVM"
+               BlueprintIdentifier = "anzen::AnzenSema"
+               BuildableName = "AnzenSema.framework"
+               BlueprintName = "AnzenSema"
                ReferencedContainer = "container:anzen.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -56,9 +56,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "SwiftProductGenerator::SwiftProductGenerator"
-               BuildableName = "SwiftProductGenerator.framework"
-               BlueprintName = "SwiftProductGenerator"
+               BlueprintIdentifier = "anzen::AnzenAST"
+               BuildableName = "AnzenAST.framework"
+               BlueprintName = "AnzenAST"
                ReferencedContainer = "container:anzen.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -87,6 +87,20 @@
                BlueprintIdentifier = "Funky::Funky"
                BuildableName = "Funky.framework"
                BlueprintName = "Funky"
+               ReferencedContainer = "container:anzen.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "anzen::AnzenTypes"
+               BuildableName = "AnzenTypes.framework"
+               BlueprintName = "AnzenTypes"
                ReferencedContainer = "container:anzen.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

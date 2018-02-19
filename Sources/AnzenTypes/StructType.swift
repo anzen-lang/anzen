@@ -1,34 +1,18 @@
-public class StructType: UnqualifiedType {
+public class StructType: SemanticType {
 
-    init(name: String, members: [String: QualifiedType]) {
-        self.name    = name
-        self.members = members
+    init(name: String, placeholders: Set<String> = [], members: [String: QualifiedType]) {
+        self.name         = name
+        self.placeholders = placeholders
+        self.members      = members
     }
 
-    public let name   : String
-    public var members: [String: QualifiedType]
+    public let name        : String
+    public let placeholders: Set<String>
+    public var members     : [String: QualifiedType]
 
     public var isGeneric: Bool {
-        return self.members.contains(where: { $0.value.isGeneric })
+        return self.members.values.contains(where: { $0.type.isGeneric })
     }
 
 }
 
-// MARK: Internals
-
-extension StructType: Equatable {
-
-    public static func ==(lhs: StructType, rhs: StructType) -> Bool {
-        guard lhs.name == rhs.name else { return false }
-        guard lhs.members.count == rhs.members.count else { return false }
-
-        // Recursively check for members equality.
-        for (name, ltype) in lhs.members {
-            guard let rtype = rhs.members[name] else { return false }
-            guard ltype == rtype else { return false }
-        }
-
-        return true
-    }
-
-}

@@ -1,9 +1,11 @@
-public class FunctionType: UnqualifiedType {
+public class FunctionType: SemanticType {
+
+    public typealias ParameterDescription = (label: String?, type: QualifiedType)
 
     init(
         placeholders: Set<String> = [],
-        domain      : [(label: String?, type: QualifiedType)],
-        codomain    : QualifiedType)
+        from domain : [ParameterDescription],
+        to codomain : QualifiedType)
     {
         self.placeholders = placeholders
         self.domain       = domain
@@ -11,7 +13,7 @@ public class FunctionType: UnqualifiedType {
     }
 
     public let placeholders: Set<String>
-    public let domain      : [(label: String?, type: QualifiedType)]
+    public let domain      : [ParameterDescription]
     public var codomain    : QualifiedType
 
     public var isGeneric: Bool {
@@ -19,21 +21,3 @@ public class FunctionType: UnqualifiedType {
     }
 
 }
-
-// MARK: Internals
-
-extension FunctionType: Equatable {
-
-    public static func ==(lhs: FunctionType, rhs: FunctionType) -> Bool {
-        guard lhs.placeholders == rhs.placeholders else { return false }
-        guard lhs.codomain     == rhs.codomain     else { return false }
-        guard lhs.domain.count == rhs.domain.count else { return false }
-        for (lparam, rparam) in zip(lhs.domain, rhs.domain) {
-            guard lparam.label == rparam.label else { return false }
-            guard lparam.type  == rparam.type  else { return false }
-        }
-        return true
-    }
-
-}
-

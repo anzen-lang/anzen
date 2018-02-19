@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
-        .package(url: "https://github.com/rxwei/Parsey.git", from: "2.0.0"),
+        .package(url: "https://github.com/kyouko-taiga/Parsey.git", .branch("master")),
         .package(url: "https://github.com/kyouko-taiga/SwiftProductGenerator.git", from: "1.0.1"),
         // .package(url: "https://github.com/trill-lang/LLVMSwift.git", .branch("master")),
     ],
@@ -21,8 +21,8 @@ let package = Package(
         // packages which this package depends on.
         .target(name: "anzenc"    , dependencies: ["AnzenLib"]),
         .target(name: "AnzenLib"  , dependencies: ["AnzenAST"]),
-        // .target(name: "AnzenSema" , dependencies: ["AnzenAST"]),
         .target(name: "AnzenAST"  , dependencies: ["Parsey", "AnzenTypes"]),
+        // .target(name: "AnzenSema" , dependencies: ["AnzenAST", "AnzenTypes"]),
         .target(name: "AnzenTypes"),
     ]
 )

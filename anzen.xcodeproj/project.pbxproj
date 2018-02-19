@@ -7,581 +7,501 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		75DF23851FBF2BF100A7ED17 /* IRGen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DF23841FBF2BF100A7ED17 /* IRGen.swift */; };
-		75DF23871FBF35CF00A7ED17 /* Type+LLVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DF23861FBF35CF00A7ED17 /* Type+LLVM.swift */; };
-		OBJ_122 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
-		OBJ_128 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_85 /* Package.swift */; };
-		OBJ_134 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_89 /* Package.swift */; };
-		OBJ_140 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_91 /* Package.swift */; };
-		OBJ_146 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_98 /* Package.swift */; };
-		OBJ_152 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_40 /* main.swift */; };
-		OBJ_154 /* AnzenLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenLib::Product" /* AnzenLib.framework */; };
-		OBJ_155 /* LLVM.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "LLVM::LLVM::Product" /* LLVM.framework */; };
-		OBJ_156 /* SwiftProductGenerator.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "SwiftProductGenerator::SwiftProductGenerator::Product" /* SwiftProductGenerator.framework */; };
-		OBJ_157 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
-		OBJ_158 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
-		OBJ_173 /* AST+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* AST+Debug.swift */; };
-		OBJ_174 /* AST.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* AST.swift */; };
-		OBJ_175 /* ASTVisitor+Traversal.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* ASTVisitor+Traversal.swift */; };
-		OBJ_176 /* ASTVisitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_13 /* ASTVisitor.swift */; };
-		OBJ_177 /* Operator.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* Operator.swift */; };
-		OBJ_178 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* Error.swift */; };
-		OBJ_179 /* Frontend.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_16 /* Frontend.swift */; };
-		OBJ_180 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_17 /* Parser.swift */; };
-		OBJ_181 /* Scope.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_19 /* Scope.swift */; };
-		OBJ_182 /* ScopeBinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_20 /* ScopeBinder.swift */; };
-		OBJ_183 /* Substitution.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_21 /* Substitution.swift */; };
-		OBJ_184 /* SymbolsExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_22 /* SymbolsExtractor.swift */; };
-		OBJ_185 /* TypeSolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_23 /* TypeSolver.swift */; };
-		OBJ_186 /* Builtin.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_25 /* Builtin.swift */; };
-		OBJ_187 /* FunctionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_26 /* FunctionType.swift */; };
-		OBJ_188 /* StructType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_27 /* StructType.swift */; };
-		OBJ_189 /* Type+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_28 /* Type+Debug.swift */; };
-		OBJ_190 /* Type.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_29 /* Type.swift */; };
-		OBJ_191 /* TypeFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_30 /* TypeFactory.swift */; };
-		OBJ_192 /* TypeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_31 /* TypeName.swift */; };
-		OBJ_193 /* TypePlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_32 /* TypePlaceholder.swift */; };
-		OBJ_194 /* TypeUnion.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_33 /* TypeUnion.swift */; };
-		OBJ_195 /* TypeVariable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_34 /* TypeVariable.swift */; };
-		OBJ_196 /* Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_36 /* Debug.swift */; };
-		OBJ_197 /* Sequence+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_37 /* Sequence+Extension.swift */; };
-		OBJ_198 /* Stack.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_38 /* Stack.swift */; };
-		OBJ_200 /* LLVM.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "LLVM::LLVM::Product" /* LLVM.framework */; };
-		OBJ_201 /* SwiftProductGenerator.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "SwiftProductGenerator::SwiftProductGenerator::Product" /* SwiftProductGenerator.framework */; };
-		OBJ_202 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
-		OBJ_203 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
-		OBJ_212 /* Alias.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_47 /* Alias.swift */; };
-		OBJ_213 /* ArrayType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_48 /* ArrayType.swift */; };
-		OBJ_214 /* BasicBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_49 /* BasicBlock.swift */; };
-		OBJ_215 /* Call.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_50 /* Call.swift */; };
-		OBJ_216 /* Clause.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_51 /* Clause.swift */; };
-		OBJ_217 /* Constant.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_52 /* Constant.swift */; };
-		OBJ_218 /* FloatType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_53 /* FloatType.swift */; };
-		OBJ_219 /* Function.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_54 /* Function.swift */; };
-		OBJ_220 /* FunctionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_55 /* FunctionType.swift */; };
-		OBJ_221 /* Global.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_56 /* Global.swift */; };
-		OBJ_222 /* IRBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_57 /* IRBuilder.swift */; };
-		OBJ_223 /* IRGlobal.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_58 /* IRGlobal.swift */; };
-		OBJ_224 /* IRType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_59 /* IRType.swift */; };
-		OBJ_225 /* IRValue+Kinds.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_60 /* IRValue+Kinds.swift */; };
-		OBJ_226 /* IRValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_61 /* IRValue.swift */; };
-		OBJ_227 /* Initialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_62 /* Initialization.swift */; };
-		OBJ_228 /* Instruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_63 /* Instruction.swift */; };
-		OBJ_229 /* IntType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_64 /* IntType.swift */; };
-		OBJ_230 /* JIT.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_65 /* JIT.swift */; };
-		OBJ_231 /* LabelType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_66 /* LabelType.swift */; };
-		OBJ_232 /* Linkage.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_67 /* Linkage.swift */; };
-		OBJ_233 /* MemoryBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_68 /* MemoryBuffer.swift */; };
-		OBJ_234 /* MetadataType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_69 /* MetadataType.swift */; };
-		OBJ_235 /* Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_70 /* Module.swift */; };
-		OBJ_236 /* ObjectFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_71 /* ObjectFile.swift */; };
-		OBJ_237 /* OpCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_72 /* OpCode.swift */; };
-		OBJ_238 /* PassManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_73 /* PassManager.swift */; };
-		OBJ_239 /* PhiNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_74 /* PhiNode.swift */; };
-		OBJ_240 /* PointerType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_75 /* PointerType.swift */; };
-		OBJ_241 /* StructType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_76 /* StructType.swift */; };
-		OBJ_242 /* Switch.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_77 /* Switch.swift */; };
-		OBJ_243 /* TargetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_78 /* TargetData.swift */; };
-		OBJ_244 /* TargetMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_79 /* TargetMachine.swift */; };
-		OBJ_245 /* TokenType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_80 /* TokenType.swift */; };
-		OBJ_246 /* Use.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_81 /* Use.swift */; };
-		OBJ_247 /* VectorType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_82 /* VectorType.swift */; };
-		OBJ_248 /* VoidType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_83 /* VoidType.swift */; };
-		OBJ_249 /* X86MMXType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_84 /* X86MMXType.swift */; };
-		OBJ_255 /* SwiftProductGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_88 /* SwiftProductGenerator.swift */; };
-		OBJ_261 /* Combinators.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_92 /* Combinators.swift */; };
-		OBJ_262 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_93 /* Error.swift */; };
-		OBJ_263 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_94 /* Lexer.swift */; };
-		OBJ_264 /* Location.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_95 /* Location.swift */; };
-		OBJ_265 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_96 /* Parser.swift */; };
-		OBJ_267 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
-		OBJ_273 /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_99 /* Array.swift */; };
-		OBJ_274 /* Associable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_100 /* Associable.swift */; };
-		OBJ_275 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_101 /* Collection.swift */; };
-		OBJ_276 /* Function.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_102 /* Function.swift */; };
-		OBJ_277 /* Mappable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_103 /* Mappable.swift */; };
-		OBJ_278 /* Numeric.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_104 /* Numeric.swift */; };
-		OBJ_279 /* Operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_105 /* Operators.swift */; };
-		OBJ_280 /* Optional.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_106 /* Optional.swift */; };
-		OBJ_281 /* Reducible.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_107 /* Reducible.swift */; };
-		OBJ_282 /* Sequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_108 /* Sequence.swift */; };
-		OBJ_283 /* Set.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_109 /* Set.swift */; };
+		7555E22E202766070057B6E2 /* TypeConstraint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555E22D202766070057B6E2 /* TypeConstraint.swift */; };
+		7555E230202766C70057B6E2 /* TypeSolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555E22F202766C70057B6E2 /* TypeSolver.swift */; };
+		75C2311D202520F70048EC71 /* Stack.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_39 /* Stack.swift */; };
+		75C2311E2025210B0048EC71 /* Sequence+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_38 /* Sequence+Extension.swift */; };
+		75C231202025213D0048EC71 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C2311F2025213D0048EC71 /* Error.swift */; };
+		OBJ_100 /* AnzenSema.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenSema::Product" /* AnzenSema.framework */; };
+		OBJ_101 /* AnzenAST.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenAST::Product" /* AnzenAST.framework */; };
+		OBJ_102 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
+		OBJ_103 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
+		OBJ_104 /* AnzenTypes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenTypes::Product" /* AnzenTypes.framework */; };
+		OBJ_121 /* Driver.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_34 /* Driver.swift */; };
+		OBJ_122 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_35 /* Error.swift */; };
+		OBJ_123 /* Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_37 /* Debug.swift */; };
+		OBJ_127 /* AnzenSema.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenSema::Product" /* AnzenSema.framework */; };
+		OBJ_128 /* AnzenAST.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenAST::Product" /* AnzenAST.framework */; };
+		OBJ_129 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
+		OBJ_130 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
+		OBJ_131 /* AnzenTypes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenTypes::Product" /* AnzenTypes.framework */; };
+		OBJ_141 /* BuiltinTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_28 /* BuiltinTypes.swift */; };
+		OBJ_142 /* ScopeBinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_29 /* ScopeBinder.swift */; };
+		OBJ_144 /* SymbolsExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_31 /* SymbolsExtractor.swift */; };
+		OBJ_145 /* TypeCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_32 /* TypeCreator.swift */; };
+		OBJ_147 /* AnzenAST.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenAST::Product" /* AnzenAST.framework */; };
+		OBJ_148 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
+		OBJ_149 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
+		OBJ_150 /* AnzenTypes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenTypes::Product" /* AnzenTypes.framework */; };
+		OBJ_159 /* AST+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_19 /* AST+Debug.swift */; };
+		OBJ_160 /* AST+PrettyPrint.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_20 /* AST+PrettyPrint.swift */; };
+		OBJ_161 /* AST.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_21 /* AST.swift */; };
+		OBJ_162 /* ASTVisitor+Traversal.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_22 /* ASTVisitor+Traversal.swift */; };
+		OBJ_163 /* ASTVisitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_23 /* ASTVisitor.swift */; };
+		OBJ_164 /* Operator.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_24 /* Operator.swift */; };
+		OBJ_165 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_25 /* Parser.swift */; };
+		OBJ_166 /* Scope.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_26 /* Scope.swift */; };
+		OBJ_168 /* Parsey.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Parsey::Parsey::Product" /* Parsey.framework */; };
+		OBJ_169 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
+		OBJ_170 /* AnzenTypes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenTypes::Product" /* AnzenTypes.framework */; };
+		OBJ_178 /* Combinators.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_48 /* Combinators.swift */; };
+		OBJ_179 /* Error.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_49 /* Error.swift */; };
+		OBJ_180 /* Lexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_50 /* Lexer.swift */; };
+		OBJ_181 /* Location.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_51 /* Location.swift */; };
+		OBJ_182 /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_52 /* Parser.swift */; };
+		OBJ_184 /* Funky.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "Funky::Funky::Product" /* Funky.framework */; };
+		OBJ_190 /* Array.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_55 /* Array.swift */; };
+		OBJ_191 /* Associable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_56 /* Associable.swift */; };
+		OBJ_192 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_57 /* Collection.swift */; };
+		OBJ_193 /* Function.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_58 /* Function.swift */; };
+		OBJ_194 /* Mappable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_59 /* Mappable.swift */; };
+		OBJ_195 /* Numeric.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_60 /* Numeric.swift */; };
+		OBJ_196 /* Operators.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_61 /* Operators.swift */; };
+		OBJ_197 /* Optional.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_62 /* Optional.swift */; };
+		OBJ_198 /* Reducible.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_63 /* Reducible.swift */; };
+		OBJ_199 /* Sequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_64 /* Sequence.swift */; };
+		OBJ_200 /* Set.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_65 /* Set.swift */; };
+		OBJ_206 /* FunctionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* FunctionType.swift */; };
+		OBJ_207 /* StructType.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* StructType.swift */; };
+		OBJ_209 /* Type.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* Type.swift */; };
+		OBJ_211 /* TypeAlias.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* TypeAlias.swift */; };
+		OBJ_212 /* TypePlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* TypePlaceholder.swift */; };
+		OBJ_214 /* TypeVariable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_17 /* TypeVariable.swift */; };
+		OBJ_79 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
+		OBJ_85 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_47 /* Package.swift */; };
+		OBJ_91 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_54 /* Package.swift */; };
+		OBJ_97 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_41 /* main.swift */; };
+		OBJ_99 /* AnzenLib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AnzenLib::Product" /* AnzenLib.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		75DF23791FBF299600A7ED17 /* PBXContainerItemProxy */ = {
+		75C2310A202520910048EC71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "anzen::AnzenLib";
 			remoteInfo = AnzenLib;
 		};
-		75DF237A1FBF299600A7ED17 /* PBXContainerItemProxy */ = {
+		75C2310B202520910048EC71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = "LLVM::LLVM";
-			remoteInfo = LLVM;
+			remoteGlobalIDString = "anzen::AnzenSema";
+			remoteInfo = AnzenSema;
 		};
-		75DF237B1FBF299600A7ED17 /* PBXContainerItemProxy */ = {
+		75C2310C202520910048EC71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = "SwiftProductGenerator::SwiftProductGenerator";
-			remoteInfo = SwiftProductGenerator;
+			remoteGlobalIDString = "anzen::AnzenAST";
+			remoteInfo = AnzenAST;
 		};
-		75DF237C1FBF299600A7ED17 /* PBXContainerItemProxy */ = {
+		75C2310D202520910048EC71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "Parsey::Parsey";
 			remoteInfo = Parsey;
 		};
-		75DF237D1FBF299600A7ED17 /* PBXContainerItemProxy */ = {
+		75C2310E202520910048EC71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "Funky::Funky";
 			remoteInfo = Funky;
 		};
-		75DF237E1FBF299600A7ED17 /* PBXContainerItemProxy */ = {
+		75C2310F202520910048EC71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "Funky::Funky";
 			remoteInfo = Funky;
 		};
-		75DF237F1FBF299600A7ED17 /* PBXContainerItemProxy */ = {
+		75C23110202520910048EC71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = "LLVM::LLVM";
-			remoteInfo = LLVM;
+			remoteGlobalIDString = "anzen::AnzenTypes";
+			remoteInfo = AnzenTypes;
 		};
-		75DF23801FBF299600A7ED17 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = OBJ_1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = "SwiftProductGenerator::SwiftProductGenerator";
-			remoteInfo = SwiftProductGenerator;
-		};
-		75DF23811FBF299600A7ED17 /* PBXContainerItemProxy */ = {
+		75C23111202520910048EC71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "Parsey::Parsey";
 			remoteInfo = Parsey;
 		};
-		75DF23821FBF299600A7ED17 /* PBXContainerItemProxy */ = {
+		75C23112202520910048EC71 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = OBJ_1 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = "Funky::Funky";
 			remoteInfo = Funky;
+		};
+		75C23113202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "anzen::AnzenTypes";
+			remoteInfo = AnzenTypes;
+		};
+		75C23114202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "anzen::AnzenAST";
+			remoteInfo = AnzenAST;
+		};
+		75C23115202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "Parsey::Parsey";
+			remoteInfo = Parsey;
+		};
+		75C23116202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "Funky::Funky";
+			remoteInfo = Funky;
+		};
+		75C23117202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "anzen::AnzenTypes";
+			remoteInfo = AnzenTypes;
+		};
+		75C23118202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "anzen::AnzenSema";
+			remoteInfo = AnzenSema;
+		};
+		75C23119202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "anzen::AnzenAST";
+			remoteInfo = AnzenAST;
+		};
+		75C2311A202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "Parsey::Parsey";
+			remoteInfo = Parsey;
+		};
+		75C2311B202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "Funky::Funky";
+			remoteInfo = Funky;
+		};
+		75C2311C202520910048EC71 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = OBJ_1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = "anzen::AnzenTypes";
+			remoteInfo = AnzenTypes;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		75DF23841FBF2BF100A7ED17 /* IRGen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRGen.swift; sourceTree = "<group>"; };
-		75DF23861FBF35CF00A7ED17 /* Type+LLVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Type+LLVM.swift"; sourceTree = "<group>"; };
+		7555E22D202766070057B6E2 /* TypeConstraint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeConstraint.swift; sourceTree = "<group>"; };
+		7555E22F202766C70057B6E2 /* TypeSolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeSolver.swift; sourceTree = "<group>"; };
+		75C2311F2025213D0048EC71 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
 		"Funky::Funky::Product" /* Funky.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Funky.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		"LLVM::LLVM::Product" /* LLVM.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LLVM.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		OBJ_10 /* AST+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AST+Debug.swift"; sourceTree = "<group>"; };
-		OBJ_100 /* Associable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Associable.swift; sourceTree = "<group>"; };
-		OBJ_101 /* Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collection.swift; sourceTree = "<group>"; };
-		OBJ_102 /* Function.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Function.swift; sourceTree = "<group>"; };
-		OBJ_103 /* Mappable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mappable.swift; sourceTree = "<group>"; };
-		OBJ_104 /* Numeric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Numeric.swift; sourceTree = "<group>"; };
-		OBJ_105 /* Operators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operators.swift; sourceTree = "<group>"; };
-		OBJ_106 /* Optional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Optional.swift; sourceTree = "<group>"; };
-		OBJ_107 /* Reducible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reducible.swift; sourceTree = "<group>"; };
-		OBJ_108 /* Sequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sequence.swift; sourceTree = "<group>"; };
-		OBJ_109 /* Set.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Set.swift; sourceTree = "<group>"; };
-		OBJ_11 /* AST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AST.swift; sourceTree = "<group>"; };
-		OBJ_12 /* ASTVisitor+Traversal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ASTVisitor+Traversal.swift"; sourceTree = "<group>"; };
-		OBJ_13 /* ASTVisitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASTVisitor.swift; sourceTree = "<group>"; };
-		OBJ_14 /* Operator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operator.swift; sourceTree = "<group>"; };
-		OBJ_15 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
-		OBJ_16 /* Frontend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frontend.swift; sourceTree = "<group>"; };
-		OBJ_17 /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
-		OBJ_19 /* Scope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scope.swift; sourceTree = "<group>"; };
-		OBJ_20 /* ScopeBinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopeBinder.swift; sourceTree = "<group>"; };
-		OBJ_21 /* Substitution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Substitution.swift; sourceTree = "<group>"; };
-		OBJ_22 /* SymbolsExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolsExtractor.swift; sourceTree = "<group>"; };
-		OBJ_23 /* TypeSolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeSolver.swift; sourceTree = "<group>"; };
-		OBJ_25 /* Builtin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Builtin.swift; sourceTree = "<group>"; };
-		OBJ_26 /* FunctionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionType.swift; sourceTree = "<group>"; };
-		OBJ_27 /* StructType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructType.swift; sourceTree = "<group>"; };
-		OBJ_28 /* Type+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Type+Debug.swift"; sourceTree = "<group>"; };
-		OBJ_29 /* Type.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Type.swift; sourceTree = "<group>"; };
-		OBJ_30 /* TypeFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeFactory.swift; sourceTree = "<group>"; };
-		OBJ_31 /* TypeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeName.swift; sourceTree = "<group>"; };
-		OBJ_32 /* TypePlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePlaceholder.swift; sourceTree = "<group>"; };
-		OBJ_33 /* TypeUnion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeUnion.swift; sourceTree = "<group>"; };
-		OBJ_34 /* TypeVariable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeVariable.swift; sourceTree = "<group>"; };
-		OBJ_36 /* Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debug.swift; sourceTree = "<group>"; };
-		OBJ_37 /* Sequence+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sequence+Extension.swift"; sourceTree = "<group>"; };
-		OBJ_38 /* Stack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stack.swift; sourceTree = "<group>"; };
-		OBJ_40 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		OBJ_42 /* InputSamples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = InputSamples; sourceTree = SOURCE_ROOT; };
-		OBJ_43 /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = SOURCE_ROOT; };
-		OBJ_47 /* Alias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alias.swift; sourceTree = "<group>"; };
-		OBJ_48 /* ArrayType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrayType.swift; sourceTree = "<group>"; };
-		OBJ_49 /* BasicBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasicBlock.swift; sourceTree = "<group>"; };
-		OBJ_50 /* Call.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Call.swift; sourceTree = "<group>"; };
-		OBJ_51 /* Clause.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clause.swift; sourceTree = "<group>"; };
-		OBJ_52 /* Constant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constant.swift; sourceTree = "<group>"; };
-		OBJ_53 /* FloatType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatType.swift; sourceTree = "<group>"; };
-		OBJ_54 /* Function.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Function.swift; sourceTree = "<group>"; };
-		OBJ_55 /* FunctionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionType.swift; sourceTree = "<group>"; };
-		OBJ_56 /* Global.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Global.swift; sourceTree = "<group>"; };
-		OBJ_57 /* IRBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRBuilder.swift; sourceTree = "<group>"; };
-		OBJ_58 /* IRGlobal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRGlobal.swift; sourceTree = "<group>"; };
-		OBJ_59 /* IRType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRType.swift; sourceTree = "<group>"; };
+		OBJ_10 /* StructType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructType.swift; sourceTree = "<group>"; };
+		OBJ_12 /* Type.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Type.swift; sourceTree = "<group>"; };
+		OBJ_14 /* TypeAlias.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeAlias.swift; sourceTree = "<group>"; };
+		OBJ_15 /* TypePlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePlaceholder.swift; sourceTree = "<group>"; };
+		OBJ_17 /* TypeVariable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeVariable.swift; sourceTree = "<group>"; };
+		OBJ_19 /* AST+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AST+Debug.swift"; sourceTree = "<group>"; };
+		OBJ_20 /* AST+PrettyPrint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AST+PrettyPrint.swift"; sourceTree = "<group>"; };
+		OBJ_21 /* AST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AST.swift; sourceTree = "<group>"; };
+		OBJ_22 /* ASTVisitor+Traversal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ASTVisitor+Traversal.swift"; sourceTree = "<group>"; };
+		OBJ_23 /* ASTVisitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASTVisitor.swift; sourceTree = "<group>"; };
+		OBJ_24 /* Operator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operator.swift; sourceTree = "<group>"; };
+		OBJ_25 /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
+		OBJ_26 /* Scope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scope.swift; sourceTree = "<group>"; };
+		OBJ_28 /* BuiltinTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltinTypes.swift; sourceTree = "<group>"; };
+		OBJ_29 /* ScopeBinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScopeBinder.swift; sourceTree = "<group>"; };
+		OBJ_31 /* SymbolsExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolsExtractor.swift; sourceTree = "<group>"; };
+		OBJ_32 /* TypeCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypeCreator.swift; sourceTree = "<group>"; };
+		OBJ_34 /* Driver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Driver.swift; sourceTree = "<group>"; };
+		OBJ_35 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
+		OBJ_37 /* Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debug.swift; sourceTree = "<group>"; };
+		OBJ_38 /* Sequence+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sequence+Extension.swift"; sourceTree = "<group>"; };
+		OBJ_39 /* Stack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stack.swift; sourceTree = "<group>"; };
+		OBJ_41 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		OBJ_43 /* InputSamples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = InputSamples; sourceTree = SOURCE_ROOT; };
+		OBJ_44 /* docs */ = {isa = PBXFileReference; lastKnownFileType = folder; path = docs; sourceTree = SOURCE_ROOT; };
+		OBJ_47 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/alvae/Developer/Anzen/anzen/.build/checkouts/Parsey.git--5956736748209023752/Package.swift"; sourceTree = "<group>"; };
+		OBJ_48 /* Combinators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Combinators.swift; sourceTree = "<group>"; };
+		OBJ_49 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
+		OBJ_50 /* Lexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lexer.swift; sourceTree = "<group>"; };
+		OBJ_51 /* Location.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Location.swift; sourceTree = "<group>"; };
+		OBJ_52 /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
+		OBJ_54 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/alvae/Developer/Anzen/anzen/.build/checkouts/Funky-5714955810262541138/Package.swift"; sourceTree = "<group>"; };
+		OBJ_55 /* Array.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
+		OBJ_56 /* Associable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Associable.swift; sourceTree = "<group>"; };
+		OBJ_57 /* Collection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collection.swift; sourceTree = "<group>"; };
+		OBJ_58 /* Function.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Function.swift; sourceTree = "<group>"; };
+		OBJ_59 /* Mappable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mappable.swift; sourceTree = "<group>"; };
 		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		OBJ_60 /* IRValue+Kinds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "IRValue+Kinds.swift"; sourceTree = "<group>"; };
-		OBJ_61 /* IRValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRValue.swift; sourceTree = "<group>"; };
-		OBJ_62 /* Initialization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Initialization.swift; sourceTree = "<group>"; };
-		OBJ_63 /* Instruction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Instruction.swift; sourceTree = "<group>"; };
-		OBJ_64 /* IntType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntType.swift; sourceTree = "<group>"; };
-		OBJ_65 /* JIT.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JIT.swift; sourceTree = "<group>"; };
-		OBJ_66 /* LabelType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabelType.swift; sourceTree = "<group>"; };
-		OBJ_67 /* Linkage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Linkage.swift; sourceTree = "<group>"; };
-		OBJ_68 /* MemoryBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryBuffer.swift; sourceTree = "<group>"; };
-		OBJ_69 /* MetadataType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataType.swift; sourceTree = "<group>"; };
-		OBJ_70 /* Module.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Module.swift; sourceTree = "<group>"; };
-		OBJ_71 /* ObjectFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectFile.swift; sourceTree = "<group>"; };
-		OBJ_72 /* OpCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpCode.swift; sourceTree = "<group>"; };
-		OBJ_73 /* PassManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassManager.swift; sourceTree = "<group>"; };
-		OBJ_74 /* PhiNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhiNode.swift; sourceTree = "<group>"; };
-		OBJ_75 /* PointerType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointerType.swift; sourceTree = "<group>"; };
-		OBJ_76 /* StructType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructType.swift; sourceTree = "<group>"; };
-		OBJ_77 /* Switch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Switch.swift; sourceTree = "<group>"; };
-		OBJ_78 /* TargetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetData.swift; sourceTree = "<group>"; };
-		OBJ_79 /* TargetMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetMachine.swift; sourceTree = "<group>"; };
-		OBJ_80 /* TokenType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenType.swift; sourceTree = "<group>"; };
-		OBJ_81 /* Use.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Use.swift; sourceTree = "<group>"; };
-		OBJ_82 /* VectorType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorType.swift; sourceTree = "<group>"; };
-		OBJ_83 /* VoidType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoidType.swift; sourceTree = "<group>"; };
-		OBJ_84 /* X86MMXType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = X86MMXType.swift; sourceTree = "<group>"; };
-		OBJ_85 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/alvae/Developer/Anzen/anzen/.build/checkouts/LLVMSwift.git-4771311259758870997/Package.swift"; sourceTree = "<group>"; };
-		OBJ_88 /* SwiftProductGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftProductGenerator.swift; sourceTree = "<group>"; };
-		OBJ_89 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/alvae/Developer/Anzen/anzen/.build/checkouts/SwiftProductGenerator.git-1191388352435814927/Package.swift"; sourceTree = "<group>"; };
-		OBJ_91 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/alvae/Developer/Anzen/anzen/.build/checkouts/Parsey.git--5956736748209023752/Package.swift"; sourceTree = "<group>"; };
-		OBJ_92 /* Combinators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Combinators.swift; sourceTree = "<group>"; };
-		OBJ_93 /* Error.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Error.swift; sourceTree = "<group>"; };
-		OBJ_94 /* Lexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lexer.swift; sourceTree = "<group>"; };
-		OBJ_95 /* Location.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Location.swift; sourceTree = "<group>"; };
-		OBJ_96 /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
-		OBJ_98 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; name = Package.swift; path = "/Users/alvae/Developer/Anzen/anzen/.build/checkouts/Funky-5714955810262541138/Package.swift"; sourceTree = "<group>"; };
-		OBJ_99 /* Array.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Array.swift; sourceTree = "<group>"; };
+		OBJ_60 /* Numeric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Numeric.swift; sourceTree = "<group>"; };
+		OBJ_61 /* Operators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operators.swift; sourceTree = "<group>"; };
+		OBJ_62 /* Optional.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Optional.swift; sourceTree = "<group>"; };
+		OBJ_63 /* Reducible.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Reducible.swift; sourceTree = "<group>"; };
+		OBJ_64 /* Sequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sequence.swift; sourceTree = "<group>"; };
+		OBJ_65 /* Set.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Set.swift; sourceTree = "<group>"; };
+		OBJ_9 /* FunctionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FunctionType.swift; sourceTree = "<group>"; };
 		"Parsey::Parsey::Product" /* Parsey.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Parsey.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		"SwiftProductGenerator::SwiftProductGenerator::Product" /* SwiftProductGenerator.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SwiftProductGenerator.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		"anzen::AnzenAST::Product" /* AnzenAST.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = AnzenAST.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"anzen::AnzenLib::Product" /* AnzenLib.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = AnzenLib.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		"anzen::AnzenSema::Product" /* AnzenSema.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = AnzenSema.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		"anzen::AnzenTypes::Product" /* AnzenTypes.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = AnzenTypes.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"anzen::anzenc::Product" /* anzenc */ = {isa = PBXFileReference; lastKnownFileType = text; path = anzenc; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		OBJ_153 /* Frameworks */ = {
+		OBJ_126 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_154 /* AnzenLib.framework in Frameworks */,
-				OBJ_155 /* LLVM.framework in Frameworks */,
-				OBJ_156 /* SwiftProductGenerator.framework in Frameworks */,
-				OBJ_157 /* Parsey.framework in Frameworks */,
-				OBJ_158 /* Funky.framework in Frameworks */,
+				OBJ_127 /* AnzenSema.framework in Frameworks */,
+				OBJ_128 /* AnzenAST.framework in Frameworks */,
+				OBJ_129 /* Parsey.framework in Frameworks */,
+				OBJ_130 /* Funky.framework in Frameworks */,
+				OBJ_131 /* AnzenTypes.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_199 /* Frameworks */ = {
+		OBJ_146 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_200 /* LLVM.framework in Frameworks */,
-				OBJ_201 /* SwiftProductGenerator.framework in Frameworks */,
-				OBJ_202 /* Parsey.framework in Frameworks */,
-				OBJ_203 /* Funky.framework in Frameworks */,
+				OBJ_147 /* AnzenAST.framework in Frameworks */,
+				OBJ_148 /* Parsey.framework in Frameworks */,
+				OBJ_149 /* Funky.framework in Frameworks */,
+				OBJ_150 /* AnzenTypes.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_250 /* Frameworks */ = {
+		OBJ_167 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_168 /* Parsey.framework in Frameworks */,
+				OBJ_169 /* Funky.framework in Frameworks */,
+				OBJ_170 /* AnzenTypes.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_183 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 0;
+			files = (
+				OBJ_184 /* Funky.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		OBJ_201 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_256 /* Frameworks */ = {
+		OBJ_215 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_266 /* Frameworks */ = {
+		OBJ_98 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_267 /* Funky.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		OBJ_284 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 0;
-			files = (
+				OBJ_99 /* AnzenLib.framework in Frameworks */,
+				OBJ_100 /* AnzenSema.framework in Frameworks */,
+				OBJ_101 /* AnzenAST.framework in Frameworks */,
+				OBJ_102 /* Parsey.framework in Frameworks */,
+				OBJ_103 /* Funky.framework in Frameworks */,
+				OBJ_104 /* AnzenTypes.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		75DF23831FBF2A3800A7ED17 /* IRGen */ = {
+		OBJ_18 /* AnzenAST */ = {
 			isa = PBXGroup;
 			children = (
-				75DF23841FBF2BF100A7ED17 /* IRGen.swift */,
-				75DF23861FBF35CF00A7ED17 /* Type+LLVM.swift */,
+				OBJ_21 /* AST.swift */,
+				OBJ_19 /* AST+Debug.swift */,
+				OBJ_20 /* AST+PrettyPrint.swift */,
+				OBJ_23 /* ASTVisitor.swift */,
+				OBJ_22 /* ASTVisitor+Traversal.swift */,
+				OBJ_24 /* Operator.swift */,
+				OBJ_25 /* Parser.swift */,
+				OBJ_26 /* Scope.swift */,
 			);
-			name = IRGen;
-			path = Sources/AnzenLib/IRGen;
+			name = AnzenAST;
+			path = Sources/AnzenAST;
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_110 /* Products */ = {
+		OBJ_27 /* AnzenSema */ = {
 			isa = PBXGroup;
 			children = (
-				"anzen::anzenc::Product" /* anzenc */,
-				"anzen::AnzenLib::Product" /* AnzenLib.framework */,
-				"LLVM::LLVM::Product" /* LLVM.framework */,
-				"SwiftProductGenerator::SwiftProductGenerator::Product" /* SwiftProductGenerator.framework */,
-				"Parsey::Parsey::Product" /* Parsey.framework */,
-				"Funky::Funky::Product" /* Funky.framework */,
+				OBJ_28 /* BuiltinTypes.swift */,
+				OBJ_31 /* SymbolsExtractor.swift */,
+				OBJ_29 /* ScopeBinder.swift */,
+				7555E22D202766070057B6E2 /* TypeConstraint.swift */,
+				OBJ_32 /* TypeCreator.swift */,
+				7555E22F202766C70057B6E2 /* TypeSolver.swift */,
+				OBJ_39 /* Stack.swift */,
+				OBJ_38 /* Sequence+Extension.swift */,
+				75C2311F2025213D0048EC71 /* Error.swift */,
 			);
-			name = Products;
-			sourceTree = BUILT_PRODUCTS_DIR;
+			name = AnzenSema;
+			path = Sources/AnzenSema;
+			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_18 /* Sema */ = {
+		OBJ_33 /* AnzenLib */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_19 /* Scope.swift */,
-				OBJ_20 /* ScopeBinder.swift */,
-				OBJ_21 /* Substitution.swift */,
-				OBJ_22 /* SymbolsExtractor.swift */,
-				OBJ_23 /* TypeSolver.swift */,
+				OBJ_34 /* Driver.swift */,
+				OBJ_35 /* Error.swift */,
+				OBJ_36 /* Utils */,
 			);
-			path = Sema;
-			sourceTree = "<group>";
+			name = AnzenLib;
+			path = Sources/AnzenLib;
+			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_24 /* TypeSystem */ = {
+		OBJ_36 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_25 /* Builtin.swift */,
-				OBJ_86 /* SwiftProductGenerator 1.0.1 */,
-				OBJ_26 /* FunctionType.swift */,
-				OBJ_27 /* StructType.swift */,
-				OBJ_28 /* Type+Debug.swift */,
-				OBJ_29 /* Type.swift */,
-				OBJ_30 /* TypeFactory.swift */,
-				OBJ_31 /* TypeName.swift */,
-				OBJ_32 /* TypePlaceholder.swift */,
-				OBJ_33 /* TypeUnion.swift */,
-				OBJ_34 /* TypeVariable.swift */,
-			);
-			path = TypeSystem;
-			sourceTree = "<group>";
-		};
-		OBJ_35 /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				OBJ_36 /* Debug.swift */,
-				OBJ_37 /* Sequence+Extension.swift */,
-				OBJ_38 /* Stack.swift */,
+				OBJ_37 /* Debug.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
 		};
-		OBJ_39 /* anzenc */ = {
+		OBJ_40 /* anzenc */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_40 /* main.swift */,
+				OBJ_41 /* main.swift */,
 			);
 			name = anzenc;
 			path = Sources/anzenc;
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_41 /* Tests */ = {
+		OBJ_42 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = Tests;
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_44 /* Dependencies */ = {
+		OBJ_45 /* Dependencies */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_45 /* LLVM */,
-				OBJ_90 /* Parsey 2.0.0 */,
-				OBJ_97 /* Funky 2.0.1 */,
+				OBJ_46 /* Parsey 2.0.0 */,
+				OBJ_53 /* Funky 2.0.1 */,
 			);
 			name = Dependencies;
 			sourceTree = "<group>";
 		};
-		OBJ_45 /* LLVM */ = {
+		OBJ_46 /* Parsey 2.0.0 */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_46 /* LLVM */,
-				OBJ_85 /* Package.swift */,
-			);
-			name = LLVM;
-			sourceTree = SOURCE_ROOT;
-		};
-		OBJ_46 /* LLVM */ = {
-			isa = PBXGroup;
-			children = (
-				OBJ_47 /* Alias.swift */,
-				OBJ_48 /* ArrayType.swift */,
-				OBJ_49 /* BasicBlock.swift */,
-				OBJ_50 /* Call.swift */,
-				OBJ_51 /* Clause.swift */,
-				OBJ_52 /* Constant.swift */,
-				OBJ_53 /* FloatType.swift */,
-				OBJ_54 /* Function.swift */,
-				OBJ_55 /* FunctionType.swift */,
-				OBJ_56 /* Global.swift */,
-				OBJ_57 /* IRBuilder.swift */,
-				OBJ_58 /* IRGlobal.swift */,
-				OBJ_59 /* IRType.swift */,
-				OBJ_60 /* IRValue+Kinds.swift */,
-				OBJ_61 /* IRValue.swift */,
-				OBJ_62 /* Initialization.swift */,
-				OBJ_63 /* Instruction.swift */,
-				OBJ_64 /* IntType.swift */,
-				OBJ_65 /* JIT.swift */,
-				OBJ_66 /* LabelType.swift */,
-				OBJ_67 /* Linkage.swift */,
-				OBJ_68 /* MemoryBuffer.swift */,
-				OBJ_69 /* MetadataType.swift */,
-				OBJ_70 /* Module.swift */,
-				OBJ_71 /* ObjectFile.swift */,
-				OBJ_72 /* OpCode.swift */,
-				OBJ_73 /* PassManager.swift */,
-				OBJ_74 /* PhiNode.swift */,
-				OBJ_75 /* PointerType.swift */,
-				OBJ_76 /* StructType.swift */,
-				OBJ_77 /* Switch.swift */,
-				OBJ_78 /* TargetData.swift */,
-				OBJ_79 /* TargetMachine.swift */,
-				OBJ_80 /* TokenType.swift */,
-				OBJ_81 /* Use.swift */,
-				OBJ_82 /* VectorType.swift */,
-				OBJ_83 /* VoidType.swift */,
-				OBJ_84 /* X86MMXType.swift */,
-			);
-			name = LLVM;
-			path = ".build/checkouts/LLVMSwift.git-4771311259758870997/Sources/LLVM";
-			sourceTree = SOURCE_ROOT;
-		};
-		OBJ_5 /*  */ = {
-			isa = PBXGroup;
-			children = (
-				OBJ_6 /* Package.swift */,
-				OBJ_7 /* Sources */,
-				OBJ_41 /* Tests */,
-				OBJ_42 /* InputSamples */,
-				OBJ_43 /* docs */,
-				OBJ_44 /* Dependencies */,
-				OBJ_110 /* Products */,
-			);
-			name = "";
-			sourceTree = "<group>";
-		};
-		OBJ_7 /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				OBJ_8 /* AnzenLib */,
-				OBJ_39 /* anzenc */,
-			);
-			name = Sources;
-			sourceTree = SOURCE_ROOT;
-		};
-		OBJ_8 /* AnzenLib */ = {
-			isa = PBXGroup;
-			children = (
-				75DF23831FBF2A3800A7ED17 /* IRGen */,
-				OBJ_9 /* AST */,
-				OBJ_15 /* Error.swift */,
-				OBJ_16 /* Frontend.swift */,
-				OBJ_17 /* Parser.swift */,
-				OBJ_18 /* Sema */,
-				OBJ_24 /* TypeSystem */,
-				OBJ_35 /* Utils */,
-			);
-			name = AnzenLib;
-			path = Sources/AnzenLib;
-			sourceTree = SOURCE_ROOT;
-		};
-		OBJ_86 /* SwiftProductGenerator 1.0.1 */ = {
-			isa = PBXGroup;
-			children = (
-				OBJ_87 /* SwiftProductGenerator */,
-				OBJ_89 /* Package.swift */,
-			);
-			name = "SwiftProductGenerator 1.0.1";
-			sourceTree = SOURCE_ROOT;
-		};
-		OBJ_87 /* SwiftProductGenerator */ = {
-			isa = PBXGroup;
-			children = (
-				OBJ_88 /* SwiftProductGenerator.swift */,
-			);
-			name = SwiftProductGenerator;
-			path = ".build/checkouts/SwiftProductGenerator.git-1191388352435814927/Sources/SwiftProductGenerator";
-			sourceTree = SOURCE_ROOT;
-		};
-		OBJ_9 /* AST */ = {
-			isa = PBXGroup;
-			children = (
-				OBJ_10 /* AST+Debug.swift */,
-				OBJ_11 /* AST.swift */,
-				OBJ_12 /* ASTVisitor+Traversal.swift */,
-				OBJ_13 /* ASTVisitor.swift */,
-				OBJ_14 /* Operator.swift */,
-			);
-			path = AST;
-			sourceTree = "<group>";
-		};
-		OBJ_90 /* Parsey 2.0.0 */ = {
-			isa = PBXGroup;
-			children = (
-				OBJ_91 /* Package.swift */,
-				OBJ_92 /* Combinators.swift */,
-				OBJ_93 /* Error.swift */,
-				OBJ_94 /* Lexer.swift */,
-				OBJ_95 /* Location.swift */,
-				OBJ_96 /* Parser.swift */,
+				OBJ_47 /* Package.swift */,
+				OBJ_48 /* Combinators.swift */,
+				OBJ_49 /* Error.swift */,
+				OBJ_50 /* Lexer.swift */,
+				OBJ_51 /* Location.swift */,
+				OBJ_52 /* Parser.swift */,
 			);
 			name = "Parsey 2.0.0";
 			path = ".build/checkouts/Parsey.git--5956736748209023752/Sources";
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_97 /* Funky 2.0.1 */ = {
+		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
-				OBJ_98 /* Package.swift */,
-				OBJ_99 /* Array.swift */,
-				OBJ_100 /* Associable.swift */,
-				OBJ_101 /* Collection.swift */,
-				OBJ_102 /* Function.swift */,
-				OBJ_103 /* Mappable.swift */,
-				OBJ_104 /* Numeric.swift */,
-				OBJ_105 /* Operators.swift */,
-				OBJ_106 /* Optional.swift */,
-				OBJ_107 /* Reducible.swift */,
-				OBJ_108 /* Sequence.swift */,
-				OBJ_109 /* Set.swift */,
+				OBJ_6 /* Package.swift */,
+				OBJ_7 /* Sources */,
+				OBJ_42 /* Tests */,
+				OBJ_43 /* InputSamples */,
+				OBJ_44 /* docs */,
+				OBJ_45 /* Dependencies */,
+				OBJ_66 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		OBJ_53 /* Funky 2.0.1 */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_54 /* Package.swift */,
+				OBJ_55 /* Array.swift */,
+				OBJ_56 /* Associable.swift */,
+				OBJ_57 /* Collection.swift */,
+				OBJ_58 /* Function.swift */,
+				OBJ_59 /* Mappable.swift */,
+				OBJ_60 /* Numeric.swift */,
+				OBJ_61 /* Operators.swift */,
+				OBJ_62 /* Optional.swift */,
+				OBJ_63 /* Reducible.swift */,
+				OBJ_64 /* Sequence.swift */,
+				OBJ_65 /* Set.swift */,
 			);
 			name = "Funky 2.0.1";
 			path = ".build/checkouts/Funky-5714955810262541138/Sources";
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_66 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				"anzen::anzenc::Product" /* anzenc */,
+				"anzen::AnzenLib::Product" /* AnzenLib.framework */,
+				"anzen::AnzenSema::Product" /* AnzenSema.framework */,
+				"anzen::AnzenAST::Product" /* AnzenAST.framework */,
+				"Parsey::Parsey::Product" /* Parsey.framework */,
+				"Funky::Funky::Product" /* Funky.framework */,
+				"anzen::AnzenTypes::Product" /* AnzenTypes.framework */,
+			);
+			name = Products;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		OBJ_7 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_33 /* AnzenLib */,
+				OBJ_18 /* AnzenAST */,
+				OBJ_27 /* AnzenSema */,
+				OBJ_8 /* AnzenTypes */,
+				OBJ_40 /* anzenc */,
+			);
+			name = Sources;
+			sourceTree = SOURCE_ROOT;
+		};
+		OBJ_8 /* AnzenTypes */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_12 /* Type.swift */,
+				OBJ_14 /* TypeAlias.swift */,
+				OBJ_15 /* TypePlaceholder.swift */,
+				OBJ_17 /* TypeVariable.swift */,
+				OBJ_9 /* FunctionType.swift */,
+				OBJ_10 /* StructType.swift */,
+			);
+			name = AnzenTypes;
+			path = Sources/AnzenTypes;
 			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
@@ -589,10 +509,10 @@
 /* Begin PBXNativeTarget section */
 		"Funky::Funky" /* Funky */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_269 /* Build configuration list for PBXNativeTarget "Funky" */;
+			buildConfigurationList = OBJ_186 /* Build configuration list for PBXNativeTarget "Funky" */;
 			buildPhases = (
-				OBJ_272 /* Sources */,
-				OBJ_284 /* Frameworks */,
+				OBJ_189 /* Sources */,
+				OBJ_201 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -605,9 +525,9 @@
 		};
 		"Funky::SwiftPMPackageDescription" /* FunkyPackageDescription */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_142 /* Build configuration list for PBXNativeTarget "FunkyPackageDescription" */;
+			buildConfigurationList = OBJ_87 /* Build configuration list for PBXNativeTarget "FunkyPackageDescription" */;
 			buildPhases = (
-				OBJ_145 /* Sources */,
+				OBJ_90 /* Sources */,
 			);
 			buildRules = (
 			);
@@ -617,47 +537,17 @@
 			productName = FunkyPackageDescription;
 			productType = "com.apple.product-type.framework";
 		};
-		"LLVM::LLVM" /* LLVM */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_208 /* Build configuration list for PBXNativeTarget "LLVM" */;
-			buildPhases = (
-				OBJ_211 /* Sources */,
-				OBJ_250 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = LLVM;
-			productName = LLVM;
-			productReference = "LLVM::LLVM::Product" /* LLVM.framework */;
-			productType = "com.apple.product-type.framework";
-		};
-		"LLVM::SwiftPMPackageDescription" /* LLVMPackageDescription */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_124 /* Build configuration list for PBXNativeTarget "LLVMPackageDescription" */;
-			buildPhases = (
-				OBJ_127 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = LLVMPackageDescription;
-			productName = LLVMPackageDescription;
-			productType = "com.apple.product-type.framework";
-		};
 		"Parsey::Parsey" /* Parsey */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_257 /* Build configuration list for PBXNativeTarget "Parsey" */;
+			buildConfigurationList = OBJ_174 /* Build configuration list for PBXNativeTarget "Parsey" */;
 			buildPhases = (
-				OBJ_260 /* Sources */,
-				OBJ_266 /* Frameworks */,
+				OBJ_177 /* Sources */,
+				OBJ_183 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				OBJ_268 /* PBXTargetDependency */,
+				OBJ_185 /* PBXTargetDependency */,
 			);
 			name = Parsey;
 			productName = Parsey;
@@ -666,9 +556,9 @@
 		};
 		"Parsey::SwiftPMPackageDescription" /* ParseyPackageDescription */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_136 /* Build configuration list for PBXNativeTarget "ParseyPackageDescription" */;
+			buildConfigurationList = OBJ_81 /* Build configuration list for PBXNativeTarget "ParseyPackageDescription" */;
 			buildPhases = (
-				OBJ_139 /* Sources */,
+				OBJ_84 /* Sources */,
 			);
 			buildRules = (
 			);
@@ -678,61 +568,87 @@
 			productName = ParseyPackageDescription;
 			productType = "com.apple.product-type.framework";
 		};
-		"SwiftProductGenerator::SwiftPMPackageDescription" /* SwiftProductGeneratorPackageDescription */ = {
+		"anzen::AnzenAST" /* AnzenAST */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_130 /* Build configuration list for PBXNativeTarget "SwiftProductGeneratorPackageDescription" */;
+			buildConfigurationList = OBJ_155 /* Build configuration list for PBXNativeTarget "AnzenAST" */;
 			buildPhases = (
-				OBJ_133 /* Sources */,
+				OBJ_158 /* Sources */,
+				OBJ_167 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				OBJ_171 /* PBXTargetDependency */,
+				OBJ_172 /* PBXTargetDependency */,
+				OBJ_173 /* PBXTargetDependency */,
 			);
-			name = SwiftProductGeneratorPackageDescription;
-			productName = SwiftProductGeneratorPackageDescription;
-			productType = "com.apple.product-type.framework";
-		};
-		"SwiftProductGenerator::SwiftProductGenerator" /* SwiftProductGenerator */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_251 /* Build configuration list for PBXNativeTarget "SwiftProductGenerator" */;
-			buildPhases = (
-				OBJ_254 /* Sources */,
-				OBJ_256 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = SwiftProductGenerator;
-			productName = SwiftProductGenerator;
-			productReference = "SwiftProductGenerator::SwiftProductGenerator::Product" /* SwiftProductGenerator.framework */;
+			name = AnzenAST;
+			productName = AnzenAST;
+			productReference = "anzen::AnzenAST::Product" /* AnzenAST.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		"anzen::AnzenLib" /* AnzenLib */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_169 /* Build configuration list for PBXNativeTarget "AnzenLib" */;
+			buildConfigurationList = OBJ_117 /* Build configuration list for PBXNativeTarget "AnzenLib" */;
 			buildPhases = (
-				OBJ_172 /* Sources */,
-				OBJ_199 /* Frameworks */,
+				OBJ_120 /* Sources */,
+				OBJ_126 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				OBJ_204 /* PBXTargetDependency */,
-				OBJ_205 /* PBXTargetDependency */,
-				OBJ_206 /* PBXTargetDependency */,
-				OBJ_207 /* PBXTargetDependency */,
+				OBJ_132 /* PBXTargetDependency */,
+				OBJ_133 /* PBXTargetDependency */,
+				OBJ_134 /* PBXTargetDependency */,
+				OBJ_135 /* PBXTargetDependency */,
+				OBJ_136 /* PBXTargetDependency */,
 			);
 			name = AnzenLib;
 			productName = AnzenLib;
 			productReference = "anzen::AnzenLib::Product" /* AnzenLib.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		"anzen::AnzenSema" /* AnzenSema */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_137 /* Build configuration list for PBXNativeTarget "AnzenSema" */;
+			buildPhases = (
+				OBJ_140 /* Sources */,
+				OBJ_146 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				OBJ_151 /* PBXTargetDependency */,
+				OBJ_152 /* PBXTargetDependency */,
+				OBJ_153 /* PBXTargetDependency */,
+				OBJ_154 /* PBXTargetDependency */,
+			);
+			name = AnzenSema;
+			productName = AnzenSema;
+			productReference = "anzen::AnzenSema::Product" /* AnzenSema.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		"anzen::AnzenTypes" /* AnzenTypes */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = OBJ_202 /* Build configuration list for PBXNativeTarget "AnzenTypes" */;
+			buildPhases = (
+				OBJ_205 /* Sources */,
+				OBJ_215 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AnzenTypes;
+			productName = AnzenTypes;
+			productReference = "anzen::AnzenTypes::Product" /* AnzenTypes.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 		"anzen::SwiftPMPackageDescription" /* anzenPackageDescription */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_118 /* Build configuration list for PBXNativeTarget "anzenPackageDescription" */;
+			buildConfigurationList = OBJ_75 /* Build configuration list for PBXNativeTarget "anzenPackageDescription" */;
 			buildPhases = (
-				OBJ_121 /* Sources */,
+				OBJ_78 /* Sources */,
 			);
 			buildRules = (
 			);
@@ -744,19 +660,20 @@
 		};
 		"anzen::anzenc" /* anzenc */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = OBJ_148 /* Build configuration list for PBXNativeTarget "anzenc" */;
+			buildConfigurationList = OBJ_93 /* Build configuration list for PBXNativeTarget "anzenc" */;
 			buildPhases = (
-				OBJ_151 /* Sources */,
-				OBJ_153 /* Frameworks */,
+				OBJ_96 /* Sources */,
+				OBJ_98 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				OBJ_159 /* PBXTargetDependency */,
-				OBJ_161 /* PBXTargetDependency */,
-				OBJ_163 /* PBXTargetDependency */,
-				OBJ_165 /* PBXTargetDependency */,
-				OBJ_167 /* PBXTargetDependency */,
+				OBJ_105 /* PBXTargetDependency */,
+				OBJ_107 /* PBXTargetDependency */,
+				OBJ_109 /* PBXTargetDependency */,
+				OBJ_111 /* PBXTargetDependency */,
+				OBJ_113 /* PBXTargetDependency */,
+				OBJ_115 /* PBXTargetDependency */,
 			);
 			name = anzenc;
 			productName = anzenc;
@@ -778,518 +695,244 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = OBJ_5 /*  */;
-			productRefGroup = OBJ_110 /* Products */;
+			mainGroup = OBJ_5;
+			productRefGroup = OBJ_66 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				"anzen::SwiftPMPackageDescription" /* anzenPackageDescription */,
-				"LLVM::SwiftPMPackageDescription" /* LLVMPackageDescription */,
-				"SwiftProductGenerator::SwiftPMPackageDescription" /* SwiftProductGeneratorPackageDescription */,
 				"Parsey::SwiftPMPackageDescription" /* ParseyPackageDescription */,
 				"Funky::SwiftPMPackageDescription" /* FunkyPackageDescription */,
 				"anzen::anzenc" /* anzenc */,
 				"anzen::AnzenLib" /* AnzenLib */,
-				"LLVM::LLVM" /* LLVM */,
-				"SwiftProductGenerator::SwiftProductGenerator" /* SwiftProductGenerator */,
+				"anzen::AnzenSema" /* AnzenSema */,
+				"anzen::AnzenAST" /* AnzenAST */,
 				"Parsey::Parsey" /* Parsey */,
 				"Funky::Funky" /* Funky */,
+				"anzen::AnzenTypes" /* AnzenTypes */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		OBJ_121 /* Sources */ = {
+		OBJ_120 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_122 /* Package.swift in Sources */,
+				OBJ_121 /* Driver.swift in Sources */,
+				OBJ_122 /* Error.swift in Sources */,
+				OBJ_123 /* Debug.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_127 /* Sources */ = {
+		OBJ_140 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_128 /* Package.swift in Sources */,
+				75C231202025213D0048EC71 /* Error.swift in Sources */,
+				OBJ_141 /* BuiltinTypes.swift in Sources */,
+				OBJ_142 /* ScopeBinder.swift in Sources */,
+				OBJ_144 /* SymbolsExtractor.swift in Sources */,
+				75C2311E2025210B0048EC71 /* Sequence+Extension.swift in Sources */,
+				75C2311D202520F70048EC71 /* Stack.swift in Sources */,
+				7555E230202766C70057B6E2 /* TypeSolver.swift in Sources */,
+				7555E22E202766070057B6E2 /* TypeConstraint.swift in Sources */,
+				OBJ_145 /* TypeCreator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_133 /* Sources */ = {
+		OBJ_158 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_134 /* Package.swift in Sources */,
+				OBJ_159 /* AST+Debug.swift in Sources */,
+				OBJ_160 /* AST+PrettyPrint.swift in Sources */,
+				OBJ_161 /* AST.swift in Sources */,
+				OBJ_162 /* ASTVisitor+Traversal.swift in Sources */,
+				OBJ_163 /* ASTVisitor.swift in Sources */,
+				OBJ_164 /* Operator.swift in Sources */,
+				OBJ_165 /* Parser.swift in Sources */,
+				OBJ_166 /* Scope.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_139 /* Sources */ = {
+		OBJ_177 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_140 /* Package.swift in Sources */,
+				OBJ_178 /* Combinators.swift in Sources */,
+				OBJ_179 /* Error.swift in Sources */,
+				OBJ_180 /* Lexer.swift in Sources */,
+				OBJ_181 /* Location.swift in Sources */,
+				OBJ_182 /* Parser.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_145 /* Sources */ = {
+		OBJ_189 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_146 /* Package.swift in Sources */,
+				OBJ_190 /* Array.swift in Sources */,
+				OBJ_191 /* Associable.swift in Sources */,
+				OBJ_192 /* Collection.swift in Sources */,
+				OBJ_193 /* Function.swift in Sources */,
+				OBJ_194 /* Mappable.swift in Sources */,
+				OBJ_195 /* Numeric.swift in Sources */,
+				OBJ_196 /* Operators.swift in Sources */,
+				OBJ_197 /* Optional.swift in Sources */,
+				OBJ_198 /* Reducible.swift in Sources */,
+				OBJ_199 /* Sequence.swift in Sources */,
+				OBJ_200 /* Set.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_151 /* Sources */ = {
+		OBJ_205 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_152 /* main.swift in Sources */,
+				OBJ_206 /* FunctionType.swift in Sources */,
+				OBJ_207 /* StructType.swift in Sources */,
+				OBJ_209 /* Type.swift in Sources */,
+				OBJ_211 /* TypeAlias.swift in Sources */,
+				OBJ_212 /* TypePlaceholder.swift in Sources */,
+				OBJ_214 /* TypeVariable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_172 /* Sources */ = {
+		OBJ_78 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_173 /* AST+Debug.swift in Sources */,
-				OBJ_174 /* AST.swift in Sources */,
-				OBJ_175 /* ASTVisitor+Traversal.swift in Sources */,
-				OBJ_176 /* ASTVisitor.swift in Sources */,
-				OBJ_177 /* Operator.swift in Sources */,
-				OBJ_178 /* Error.swift in Sources */,
-				OBJ_179 /* Frontend.swift in Sources */,
-				OBJ_180 /* Parser.swift in Sources */,
-				OBJ_181 /* Scope.swift in Sources */,
-				OBJ_182 /* ScopeBinder.swift in Sources */,
-				OBJ_183 /* Substitution.swift in Sources */,
-				OBJ_184 /* SymbolsExtractor.swift in Sources */,
-				OBJ_185 /* TypeSolver.swift in Sources */,
-				OBJ_186 /* Builtin.swift in Sources */,
-				OBJ_187 /* FunctionType.swift in Sources */,
-				OBJ_188 /* StructType.swift in Sources */,
-				75DF23851FBF2BF100A7ED17 /* IRGen.swift in Sources */,
-				OBJ_189 /* Type+Debug.swift in Sources */,
-				OBJ_190 /* Type.swift in Sources */,
-				OBJ_191 /* TypeFactory.swift in Sources */,
-				OBJ_192 /* TypeName.swift in Sources */,
-				OBJ_193 /* TypePlaceholder.swift in Sources */,
-				OBJ_194 /* TypeUnion.swift in Sources */,
-				OBJ_195 /* TypeVariable.swift in Sources */,
-				OBJ_196 /* Debug.swift in Sources */,
-				OBJ_197 /* Sequence+Extension.swift in Sources */,
-				75DF23871FBF35CF00A7ED17 /* Type+LLVM.swift in Sources */,
-				OBJ_198 /* Stack.swift in Sources */,
+				OBJ_79 /* Package.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_211 /* Sources */ = {
+		OBJ_84 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_212 /* Alias.swift in Sources */,
-				OBJ_213 /* ArrayType.swift in Sources */,
-				OBJ_214 /* BasicBlock.swift in Sources */,
-				OBJ_215 /* Call.swift in Sources */,
-				OBJ_216 /* Clause.swift in Sources */,
-				OBJ_217 /* Constant.swift in Sources */,
-				OBJ_218 /* FloatType.swift in Sources */,
-				OBJ_219 /* Function.swift in Sources */,
-				OBJ_220 /* FunctionType.swift in Sources */,
-				OBJ_221 /* Global.swift in Sources */,
-				OBJ_222 /* IRBuilder.swift in Sources */,
-				OBJ_223 /* IRGlobal.swift in Sources */,
-				OBJ_224 /* IRType.swift in Sources */,
-				OBJ_225 /* IRValue+Kinds.swift in Sources */,
-				OBJ_226 /* IRValue.swift in Sources */,
-				OBJ_227 /* Initialization.swift in Sources */,
-				OBJ_228 /* Instruction.swift in Sources */,
-				OBJ_229 /* IntType.swift in Sources */,
-				OBJ_230 /* JIT.swift in Sources */,
-				OBJ_231 /* LabelType.swift in Sources */,
-				OBJ_232 /* Linkage.swift in Sources */,
-				OBJ_233 /* MemoryBuffer.swift in Sources */,
-				OBJ_234 /* MetadataType.swift in Sources */,
-				OBJ_235 /* Module.swift in Sources */,
-				OBJ_236 /* ObjectFile.swift in Sources */,
-				OBJ_237 /* OpCode.swift in Sources */,
-				OBJ_238 /* PassManager.swift in Sources */,
-				OBJ_239 /* PhiNode.swift in Sources */,
-				OBJ_240 /* PointerType.swift in Sources */,
-				OBJ_241 /* StructType.swift in Sources */,
-				OBJ_242 /* Switch.swift in Sources */,
-				OBJ_243 /* TargetData.swift in Sources */,
-				OBJ_244 /* TargetMachine.swift in Sources */,
-				OBJ_245 /* TokenType.swift in Sources */,
-				OBJ_246 /* Use.swift in Sources */,
-				OBJ_247 /* VectorType.swift in Sources */,
-				OBJ_248 /* VoidType.swift in Sources */,
-				OBJ_249 /* X86MMXType.swift in Sources */,
+				OBJ_85 /* Package.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_254 /* Sources */ = {
+		OBJ_90 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_255 /* SwiftProductGenerator.swift in Sources */,
+				OBJ_91 /* Package.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		OBJ_260 /* Sources */ = {
+		OBJ_96 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
-				OBJ_261 /* Combinators.swift in Sources */,
-				OBJ_262 /* Error.swift in Sources */,
-				OBJ_263 /* Lexer.swift in Sources */,
-				OBJ_264 /* Location.swift in Sources */,
-				OBJ_265 /* Parser.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		OBJ_272 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 0;
-			files = (
-				OBJ_273 /* Array.swift in Sources */,
-				OBJ_274 /* Associable.swift in Sources */,
-				OBJ_275 /* Collection.swift in Sources */,
-				OBJ_276 /* Function.swift in Sources */,
-				OBJ_277 /* Mappable.swift in Sources */,
-				OBJ_278 /* Numeric.swift in Sources */,
-				OBJ_279 /* Operators.swift in Sources */,
-				OBJ_280 /* Optional.swift in Sources */,
-				OBJ_281 /* Reducible.swift in Sources */,
-				OBJ_282 /* Sequence.swift in Sources */,
-				OBJ_283 /* Set.swift in Sources */,
+				OBJ_97 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		OBJ_159 /* PBXTargetDependency */ = {
+		OBJ_105 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "anzen::AnzenLib" /* AnzenLib */;
-			targetProxy = 75DF23791FBF299600A7ED17 /* PBXContainerItemProxy */;
+			targetProxy = 75C2310A202520910048EC71 /* PBXContainerItemProxy */;
 		};
-		OBJ_161 /* PBXTargetDependency */ = {
+		OBJ_107 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = "LLVM::LLVM" /* LLVM */;
-			targetProxy = 75DF237F1FBF299600A7ED17 /* PBXContainerItemProxy */;
+			target = "anzen::AnzenSema" /* AnzenSema */;
+			targetProxy = 75C23118202520910048EC71 /* PBXContainerItemProxy */;
 		};
-		OBJ_163 /* PBXTargetDependency */ = {
+		OBJ_109 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = "SwiftProductGenerator::SwiftProductGenerator" /* SwiftProductGenerator */;
-			targetProxy = 75DF23801FBF299600A7ED17 /* PBXContainerItemProxy */;
+			target = "anzen::AnzenAST" /* AnzenAST */;
+			targetProxy = 75C23119202520910048EC71 /* PBXContainerItemProxy */;
 		};
-		OBJ_165 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = "Parsey::Parsey" /* Parsey */;
-			targetProxy = 75DF23811FBF299600A7ED17 /* PBXContainerItemProxy */;
-		};
-		OBJ_167 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = "Funky::Funky" /* Funky */;
-			targetProxy = 75DF23821FBF299600A7ED17 /* PBXContainerItemProxy */;
-		};
-		OBJ_204 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = "LLVM::LLVM" /* LLVM */;
-			targetProxy = 75DF237A1FBF299600A7ED17 /* PBXContainerItemProxy */;
-		};
-		OBJ_205 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = "SwiftProductGenerator::SwiftProductGenerator" /* SwiftProductGenerator */;
-			targetProxy = 75DF237B1FBF299600A7ED17 /* PBXContainerItemProxy */;
-		};
-		OBJ_206 /* PBXTargetDependency */ = {
+		OBJ_111 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "Parsey::Parsey" /* Parsey */;
-			targetProxy = 75DF237C1FBF299600A7ED17 /* PBXContainerItemProxy */;
+			targetProxy = 75C2311A202520910048EC71 /* PBXContainerItemProxy */;
 		};
-		OBJ_207 /* PBXTargetDependency */ = {
+		OBJ_113 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "Funky::Funky" /* Funky */;
-			targetProxy = 75DF237E1FBF299600A7ED17 /* PBXContainerItemProxy */;
+			targetProxy = 75C2311B202520910048EC71 /* PBXContainerItemProxy */;
 		};
-		OBJ_268 /* PBXTargetDependency */ = {
+		OBJ_115 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "anzen::AnzenTypes" /* AnzenTypes */;
+			targetProxy = 75C2311C202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_132 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "anzen::AnzenSema" /* AnzenSema */;
+			targetProxy = 75C2310B202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_133 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "anzen::AnzenAST" /* AnzenAST */;
+			targetProxy = 75C23114202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_134 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Parsey::Parsey" /* Parsey */;
+			targetProxy = 75C23115202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_135 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = "Funky::Funky" /* Funky */;
-			targetProxy = 75DF237D1FBF299600A7ED17 /* PBXContainerItemProxy */;
+			targetProxy = 75C23116202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_136 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "anzen::AnzenTypes" /* AnzenTypes */;
+			targetProxy = 75C23117202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_151 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "anzen::AnzenAST" /* AnzenAST */;
+			targetProxy = 75C2310C202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_152 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Parsey::Parsey" /* Parsey */;
+			targetProxy = 75C23111202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_153 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Funky::Funky" /* Funky */;
+			targetProxy = 75C23112202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_154 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "anzen::AnzenTypes" /* AnzenTypes */;
+			targetProxy = 75C23113202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_171 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Parsey::Parsey" /* Parsey */;
+			targetProxy = 75C2310D202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_172 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Funky::Funky" /* Funky */;
+			targetProxy = 75C2310F202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_173 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "anzen::AnzenTypes" /* AnzenTypes */;
+			targetProxy = 75C23110202520910048EC71 /* PBXContainerItemProxy */;
+		};
+		OBJ_185 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = "Funky::Funky" /* Funky */;
+			targetProxy = 75C2310E202520910048EC71 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		OBJ_119 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Debug;
-		};
-		OBJ_120 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Release;
-		};
-		OBJ_125 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Debug;
-		};
-		OBJ_126 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Release;
-		};
-		OBJ_131 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Debug;
-		};
-		OBJ_132 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 4.0;
-			};
-			name = Release;
-		};
-		OBJ_137 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Debug;
-		};
-		OBJ_138 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Release;
-		};
-		OBJ_143 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Debug;
-		};
-		OBJ_144 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				LD = /usr/bin/true;
-				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
-				SWIFT_VERSION = 3.0;
-			};
-			name = Release;
-		};
-		OBJ_149 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
-				);
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/.build/checkouts/cllvm.git-2027423941697803239",
-				);
-				INFOPLIST_FILE = anzen.xcodeproj/anzenc_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-L/Users/alvae/Developer/Anzen/llvm/lib",
-					"-lLLVMLTO",
-					"-lLLVMPasses",
-					"-lLLVMObjCARCOpts",
-					"-lLLVMSymbolize",
-					"-lLLVMDebugInfoPDB",
-					"-lLLVMDebugInfoDWARF",
-					"-lLLVMFuzzMutate",
-					"-lLLVMTableGen",
-					"-lLLVMDlltoolDriver",
-					"-lLLVMLineEditor",
-					"-lLLVMOrcJIT",
-					"-lLLVMCoverage",
-					"-lLLVMMIRParser",
-					"-lLLVMTestingSupport",
-					"-lLLVMObjectYAML",
-					"-lLLVMLibDriver",
-					"-lLLVMOption",
-					"-lgtest_main",
-					"-lgtest",
-					"-lLLVMWindowsManifest",
-					"-lLLVMX86Disassembler",
-					"-lLLVMX86AsmParser",
-					"-lLLVMX86CodeGen",
-					"-lLLVMGlobalISel",
-					"-lLLVMSelectionDAG",
-					"-lLLVMAsmPrinter",
-					"-lLLVMDebugInfoCodeView",
-					"-lLLVMDebugInfoMSF",
-					"-lLLVMX86Desc",
-					"-lLLVMMCDisassembler",
-					"-lLLVMX86Info",
-					"-lLLVMX86AsmPrinter",
-					"-lLLVMX86Utils",
-					"-lLLVMMCJIT",
-					"-lLLVMInterpreter",
-					"-lLLVMExecutionEngine",
-					"-lLLVMRuntimeDyld",
-					"-lLLVMCodeGen",
-					"-lLLVMTarget",
-					"-lLLVMCoroutines",
-					"-lLLVMipo",
-					"-lLLVMInstrumentation",
-					"-lLLVMVectorize",
-					"-lLLVMScalarOpts",
-					"-lLLVMLinker",
-					"-lLLVMIRReader",
-					"-lLLVMAsmParser",
-					"-lLLVMInstCombine",
-					"-lLLVMTransformUtils",
-					"-lLLVMBitWriter",
-					"-lLLVMAnalysis",
-					"-lLLVMProfileData",
-					"-lLLVMObject",
-					"-lLLVMMCParser",
-					"-lLLVMMC",
-					"-lLLVMBitReader",
-					"-lLLVMCore",
-					"-lLLVMBinaryFormat",
-					"-lLLVMSupport",
-					"-lLLVMDemangle",
-					"-lcurses",
-					"-lz",
-					"-lm",
-					"-lc++",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -I/Users/alvae/Developer/Anzen/llvm_sources/include -I/Users/alvae/Developer/Anzen/llvm/include";
-				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
-				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
-				SWIFT_VERSION = 4.0;
-				TARGET_NAME = anzenc;
-			};
-			name = Debug;
-		};
-		OBJ_150 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
-				);
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/.build/checkouts/cllvm.git-2027423941697803239",
-				);
-				INFOPLIST_FILE = anzen.xcodeproj/anzenc_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-L/Users/alvae/Developer/Anzen/llvm/lib",
-					"-lLLVMLTO",
-					"-lLLVMPasses",
-					"-lLLVMObjCARCOpts",
-					"-lLLVMSymbolize",
-					"-lLLVMDebugInfoPDB",
-					"-lLLVMDebugInfoDWARF",
-					"-lLLVMFuzzMutate",
-					"-lLLVMTableGen",
-					"-lLLVMDlltoolDriver",
-					"-lLLVMLineEditor",
-					"-lLLVMOrcJIT",
-					"-lLLVMCoverage",
-					"-lLLVMMIRParser",
-					"-lLLVMTestingSupport",
-					"-lLLVMObjectYAML",
-					"-lLLVMLibDriver",
-					"-lLLVMOption",
-					"-lgtest_main",
-					"-lgtest",
-					"-lLLVMWindowsManifest",
-					"-lLLVMX86Disassembler",
-					"-lLLVMX86AsmParser",
-					"-lLLVMX86CodeGen",
-					"-lLLVMGlobalISel",
-					"-lLLVMSelectionDAG",
-					"-lLLVMAsmPrinter",
-					"-lLLVMDebugInfoCodeView",
-					"-lLLVMDebugInfoMSF",
-					"-lLLVMX86Desc",
-					"-lLLVMMCDisassembler",
-					"-lLLVMX86Info",
-					"-lLLVMX86AsmPrinter",
-					"-lLLVMX86Utils",
-					"-lLLVMMCJIT",
-					"-lLLVMInterpreter",
-					"-lLLVMExecutionEngine",
-					"-lLLVMRuntimeDyld",
-					"-lLLVMCodeGen",
-					"-lLLVMTarget",
-					"-lLLVMCoroutines",
-					"-lLLVMipo",
-					"-lLLVMInstrumentation",
-					"-lLLVMVectorize",
-					"-lLLVMScalarOpts",
-					"-lLLVMLinker",
-					"-lLLVMIRReader",
-					"-lLLVMAsmParser",
-					"-lLLVMInstCombine",
-					"-lLLVMTransformUtils",
-					"-lLLVMBitWriter",
-					"-lLLVMAnalysis",
-					"-lLLVMProfileData",
-					"-lLLVMObject",
-					"-lLLVMMCParser",
-					"-lLLVMMC",
-					"-lLLVMBitReader",
-					"-lLLVMCore",
-					"-lLLVMBinaryFormat",
-					"-lLLVMSupport",
-					"-lLLVMDemangle",
-					"-lcurses",
-					"-lz",
-					"-lm",
-					"-lc++",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -I/Users/alvae/Developer/Anzen/llvm_sources/include -I/Users/alvae/Developer/Anzen/llvm/include";
-				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
-				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
-				SWIFT_VERSION = 4.0;
-				TARGET_NAME = anzenc;
-			};
-			name = Release;
-		};
-		OBJ_170 /* Debug */ = {
+		OBJ_118 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -1297,81 +940,11 @@
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/.build/checkouts/cllvm.git-2027423941697803239",
-				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = anzen.xcodeproj/AnzenLib_Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-L/Users/alvae/Developer/Anzen/llvm/lib",
-					"-lLLVMLTO",
-					"-lLLVMPasses",
-					"-lLLVMObjCARCOpts",
-					"-lLLVMSymbolize",
-					"-lLLVMDebugInfoPDB",
-					"-lLLVMDebugInfoDWARF",
-					"-lLLVMFuzzMutate",
-					"-lLLVMTableGen",
-					"-lLLVMDlltoolDriver",
-					"-lLLVMLineEditor",
-					"-lLLVMOrcJIT",
-					"-lLLVMCoverage",
-					"-lLLVMMIRParser",
-					"-lLLVMTestingSupport",
-					"-lLLVMObjectYAML",
-					"-lLLVMLibDriver",
-					"-lLLVMOption",
-					"-lgtest_main",
-					"-lgtest",
-					"-lLLVMWindowsManifest",
-					"-lLLVMX86Disassembler",
-					"-lLLVMX86AsmParser",
-					"-lLLVMX86CodeGen",
-					"-lLLVMGlobalISel",
-					"-lLLVMSelectionDAG",
-					"-lLLVMAsmPrinter",
-					"-lLLVMDebugInfoCodeView",
-					"-lLLVMDebugInfoMSF",
-					"-lLLVMX86Desc",
-					"-lLLVMMCDisassembler",
-					"-lLLVMX86Info",
-					"-lLLVMX86AsmPrinter",
-					"-lLLVMX86Utils",
-					"-lLLVMMCJIT",
-					"-lLLVMInterpreter",
-					"-lLLVMExecutionEngine",
-					"-lLLVMRuntimeDyld",
-					"-lLLVMCodeGen",
-					"-lLLVMTarget",
-					"-lLLVMCoroutines",
-					"-lLLVMipo",
-					"-lLLVMInstrumentation",
-					"-lLLVMVectorize",
-					"-lLLVMScalarOpts",
-					"-lLLVMLinker",
-					"-lLLVMIRReader",
-					"-lLLVMAsmParser",
-					"-lLLVMInstCombine",
-					"-lLLVMTransformUtils",
-					"-lLLVMBitWriter",
-					"-lLLVMAnalysis",
-					"-lLLVMProfileData",
-					"-lLLVMObject",
-					"-lLLVMMCParser",
-					"-lLLVMMC",
-					"-lLLVMBitReader",
-					"-lLLVMCore",
-					"-lLLVMBinaryFormat",
-					"-lLLVMSupport",
-					"-lLLVMDemangle",
-					"-lcurses",
-					"-lz",
-					"-lm",
-					"-lc++",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -I/Users/alvae/Developer/Anzen/llvm_sources/include -I/Users/alvae/Developer/Anzen/llvm/include";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = AnzenLib;
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -1381,7 +954,7 @@
 			};
 			name = Debug;
 		};
-		OBJ_171 /* Release */ = {
+		OBJ_119 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -1389,81 +962,11 @@
 					"$(inherited)",
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/.build/checkouts/cllvm.git-2027423941697803239",
-				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = anzen.xcodeproj/AnzenLib_Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-L/Users/alvae/Developer/Anzen/llvm/lib",
-					"-lLLVMLTO",
-					"-lLLVMPasses",
-					"-lLLVMObjCARCOpts",
-					"-lLLVMSymbolize",
-					"-lLLVMDebugInfoPDB",
-					"-lLLVMDebugInfoDWARF",
-					"-lLLVMFuzzMutate",
-					"-lLLVMTableGen",
-					"-lLLVMDlltoolDriver",
-					"-lLLVMLineEditor",
-					"-lLLVMOrcJIT",
-					"-lLLVMCoverage",
-					"-lLLVMMIRParser",
-					"-lLLVMTestingSupport",
-					"-lLLVMObjectYAML",
-					"-lLLVMLibDriver",
-					"-lLLVMOption",
-					"-lgtest_main",
-					"-lgtest",
-					"-lLLVMWindowsManifest",
-					"-lLLVMX86Disassembler",
-					"-lLLVMX86AsmParser",
-					"-lLLVMX86CodeGen",
-					"-lLLVMGlobalISel",
-					"-lLLVMSelectionDAG",
-					"-lLLVMAsmPrinter",
-					"-lLLVMDebugInfoCodeView",
-					"-lLLVMDebugInfoMSF",
-					"-lLLVMX86Desc",
-					"-lLLVMMCDisassembler",
-					"-lLLVMX86Info",
-					"-lLLVMX86AsmPrinter",
-					"-lLLVMX86Utils",
-					"-lLLVMMCJIT",
-					"-lLLVMInterpreter",
-					"-lLLVMExecutionEngine",
-					"-lLLVMRuntimeDyld",
-					"-lLLVMCodeGen",
-					"-lLLVMTarget",
-					"-lLLVMCoroutines",
-					"-lLLVMipo",
-					"-lLLVMInstrumentation",
-					"-lLLVMVectorize",
-					"-lLLVMScalarOpts",
-					"-lLLVMLinker",
-					"-lLLVMIRReader",
-					"-lLLVMAsmParser",
-					"-lLLVMInstCombine",
-					"-lLLVMTransformUtils",
-					"-lLLVMBitWriter",
-					"-lLLVMAnalysis",
-					"-lLLVMProfileData",
-					"-lLLVMObject",
-					"-lLLVMMCParser",
-					"-lLLVMMC",
-					"-lLLVMBitReader",
-					"-lLLVMCore",
-					"-lLLVMBinaryFormat",
-					"-lLLVMSupport",
-					"-lLLVMDemangle",
-					"-lcurses",
-					"-lz",
-					"-lm",
-					"-lc++",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -I/Users/alvae/Developer/Anzen/llvm_sources/include -I/Users/alvae/Developer/Anzen/llvm/include";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = AnzenLib;
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
@@ -1473,191 +976,7 @@
 			};
 			name = Release;
 		};
-		OBJ_209 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ENABLE_TESTABILITY = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
-				);
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/.build/checkouts/cllvm.git-2027423941697803239",
-				);
-				INFOPLIST_FILE = anzen.xcodeproj/LLVM_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-L/Users/alvae/Developer/Anzen/llvm/lib",
-					"-lLLVMLTO",
-					"-lLLVMPasses",
-					"-lLLVMObjCARCOpts",
-					"-lLLVMSymbolize",
-					"-lLLVMDebugInfoPDB",
-					"-lLLVMDebugInfoDWARF",
-					"-lLLVMFuzzMutate",
-					"-lLLVMTableGen",
-					"-lLLVMDlltoolDriver",
-					"-lLLVMLineEditor",
-					"-lLLVMOrcJIT",
-					"-lLLVMCoverage",
-					"-lLLVMMIRParser",
-					"-lLLVMTestingSupport",
-					"-lLLVMObjectYAML",
-					"-lLLVMLibDriver",
-					"-lLLVMOption",
-					"-lgtest_main",
-					"-lgtest",
-					"-lLLVMWindowsManifest",
-					"-lLLVMX86Disassembler",
-					"-lLLVMX86AsmParser",
-					"-lLLVMX86CodeGen",
-					"-lLLVMGlobalISel",
-					"-lLLVMSelectionDAG",
-					"-lLLVMAsmPrinter",
-					"-lLLVMDebugInfoCodeView",
-					"-lLLVMDebugInfoMSF",
-					"-lLLVMX86Desc",
-					"-lLLVMMCDisassembler",
-					"-lLLVMX86Info",
-					"-lLLVMX86AsmPrinter",
-					"-lLLVMX86Utils",
-					"-lLLVMMCJIT",
-					"-lLLVMInterpreter",
-					"-lLLVMExecutionEngine",
-					"-lLLVMRuntimeDyld",
-					"-lLLVMCodeGen",
-					"-lLLVMTarget",
-					"-lLLVMCoroutines",
-					"-lLLVMipo",
-					"-lLLVMInstrumentation",
-					"-lLLVMVectorize",
-					"-lLLVMScalarOpts",
-					"-lLLVMLinker",
-					"-lLLVMIRReader",
-					"-lLLVMAsmParser",
-					"-lLLVMInstCombine",
-					"-lLLVMTransformUtils",
-					"-lLLVMBitWriter",
-					"-lLLVMAnalysis",
-					"-lLLVMProfileData",
-					"-lLLVMObject",
-					"-lLLVMMCParser",
-					"-lLLVMMC",
-					"-lLLVMBitReader",
-					"-lLLVMCore",
-					"-lLLVMBinaryFormat",
-					"-lLLVMSupport",
-					"-lLLVMDemangle",
-					"-lcurses",
-					"-lz",
-					"-lm",
-					"-lc++",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -I/Users/alvae/Developer/Anzen/llvm_sources/include -I/Users/alvae/Developer/Anzen/llvm/include";
-				PRODUCT_BUNDLE_IDENTIFIER = LLVM;
-				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 4.0;
-				TARGET_NAME = LLVM;
-			};
-			name = Debug;
-		};
-		OBJ_210 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ENABLE_TESTABILITY = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
-				);
-				HEADER_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/.build/checkouts/cllvm.git-2027423941697803239",
-				);
-				INFOPLIST_FILE = anzen.xcodeproj/LLVM_Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-L/Users/alvae/Developer/Anzen/llvm/lib",
-					"-lLLVMLTO",
-					"-lLLVMPasses",
-					"-lLLVMObjCARCOpts",
-					"-lLLVMSymbolize",
-					"-lLLVMDebugInfoPDB",
-					"-lLLVMDebugInfoDWARF",
-					"-lLLVMFuzzMutate",
-					"-lLLVMTableGen",
-					"-lLLVMDlltoolDriver",
-					"-lLLVMLineEditor",
-					"-lLLVMOrcJIT",
-					"-lLLVMCoverage",
-					"-lLLVMMIRParser",
-					"-lLLVMTestingSupport",
-					"-lLLVMObjectYAML",
-					"-lLLVMLibDriver",
-					"-lLLVMOption",
-					"-lgtest_main",
-					"-lgtest",
-					"-lLLVMWindowsManifest",
-					"-lLLVMX86Disassembler",
-					"-lLLVMX86AsmParser",
-					"-lLLVMX86CodeGen",
-					"-lLLVMGlobalISel",
-					"-lLLVMSelectionDAG",
-					"-lLLVMAsmPrinter",
-					"-lLLVMDebugInfoCodeView",
-					"-lLLVMDebugInfoMSF",
-					"-lLLVMX86Desc",
-					"-lLLVMMCDisassembler",
-					"-lLLVMX86Info",
-					"-lLLVMX86AsmPrinter",
-					"-lLLVMX86Utils",
-					"-lLLVMMCJIT",
-					"-lLLVMInterpreter",
-					"-lLLVMExecutionEngine",
-					"-lLLVMRuntimeDyld",
-					"-lLLVMCodeGen",
-					"-lLLVMTarget",
-					"-lLLVMCoroutines",
-					"-lLLVMipo",
-					"-lLLVMInstrumentation",
-					"-lLLVMVectorize",
-					"-lLLVMScalarOpts",
-					"-lLLVMLinker",
-					"-lLLVMIRReader",
-					"-lLLVMAsmParser",
-					"-lLLVMInstCombine",
-					"-lLLVMTransformUtils",
-					"-lLLVMBitWriter",
-					"-lLLVMAnalysis",
-					"-lLLVMProfileData",
-					"-lLLVMObject",
-					"-lLLVMMCParser",
-					"-lLLVMMC",
-					"-lLLVMBitReader",
-					"-lLLVMCore",
-					"-lLLVMBinaryFormat",
-					"-lLLVMSupport",
-					"-lLLVMDemangle",
-					"-lcurses",
-					"-lz",
-					"-lm",
-					"-lc++",
-				);
-				OTHER_SWIFT_FLAGS = "$(inherited) -I/Users/alvae/Developer/Anzen/llvm_sources/include -I/Users/alvae/Developer/Anzen/llvm/include";
-				PRODUCT_BUNDLE_IDENTIFIER = LLVM;
-				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 4.0;
-				TARGET_NAME = LLVM;
-			};
-			name = Release;
-		};
-		OBJ_252 /* Debug */ = {
+		OBJ_138 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -1666,20 +985,20 @@
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = anzen.xcodeproj/SwiftProductGenerator_Info.plist;
+				INFOPLIST_FILE = anzen.xcodeproj/AnzenSema_Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
-				PRODUCT_BUNDLE_IDENTIFIER = SwiftProductGenerator;
+				PRODUCT_BUNDLE_IDENTIFIER = AnzenSema;
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 4.0;
-				TARGET_NAME = SwiftProductGenerator;
+				TARGET_NAME = AnzenSema;
 			};
 			name = Debug;
 		};
-		OBJ_253 /* Release */ = {
+		OBJ_139 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -1688,20 +1007,64 @@
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
-				INFOPLIST_FILE = anzen.xcodeproj/SwiftProductGenerator_Info.plist;
+				INFOPLIST_FILE = anzen.xcodeproj/AnzenSema_Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
 				OTHER_LDFLAGS = "$(inherited)";
 				OTHER_SWIFT_FLAGS = "$(inherited)";
-				PRODUCT_BUNDLE_IDENTIFIER = SwiftProductGenerator;
+				PRODUCT_BUNDLE_IDENTIFIER = AnzenSema;
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 4.0;
-				TARGET_NAME = SwiftProductGenerator;
+				TARGET_NAME = AnzenSema;
 			};
 			name = Release;
 		};
-		OBJ_258 /* Debug */ = {
+		OBJ_156 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/AnzenAST_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = AnzenAST;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = AnzenAST;
+			};
+			name = Debug;
+		};
+		OBJ_157 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/AnzenAST_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = AnzenAST;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = AnzenAST;
+			};
+			name = Release;
+		};
+		OBJ_175 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -1723,7 +1086,7 @@
 			};
 			name = Debug;
 		};
-		OBJ_259 /* Release */ = {
+		OBJ_176 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -1745,7 +1108,7 @@
 			};
 			name = Release;
 		};
-		OBJ_270 /* Debug */ = {
+		OBJ_187 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -1767,7 +1130,7 @@
 			};
 			name = Debug;
 		};
-		OBJ_271 /* Release */ = {
+		OBJ_188 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ENABLE_TESTABILITY = YES;
@@ -1786,6 +1149,50 @@
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 3.0;
 				TARGET_NAME = Funky;
+			};
+			name = Release;
+		};
+		OBJ_203 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/AnzenTypes_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = AnzenTypes;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = AnzenTypes;
+			};
+			name = Debug;
+		};
+		OBJ_204 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ENABLE_TESTABILITY = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/AnzenTypes_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = AnzenTypes;
+				PRODUCT_MODULE_NAME = "$(TARGET_NAME:c99extidentifier)";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = AnzenTypes;
 			};
 			name = Release;
 		};
@@ -1831,68 +1238,142 @@
 			};
 			name = Release;
 		};
+		OBJ_76 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD = /usr/bin/true;
+				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
+				SWIFT_VERSION = 4.0;
+			};
+			name = Debug;
+		};
+		OBJ_77 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD = /usr/bin/true;
+				OTHER_SWIFT_FLAGS = "-swift-version 4 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/4 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
+				SWIFT_VERSION = 4.0;
+			};
+			name = Release;
+		};
+		OBJ_82 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD = /usr/bin/true;
+				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Debug;
+		};
+		OBJ_83 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD = /usr/bin/true;
+				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Release;
+		};
+		OBJ_88 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD = /usr/bin/true;
+				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Debug;
+		};
+		OBJ_89 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LD = /usr/bin/true;
+				OTHER_SWIFT_FLAGS = "-swift-version 3 -I /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/pm/3 -target x86_64-apple-macosx10.10 -sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.13.sdk";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Release;
+		};
+		OBJ_94 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/anzenc_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
+				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = anzenc;
+			};
+			name = Debug;
+		};
+		OBJ_95 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
+				);
+				HEADER_SEARCH_PATHS = "$(inherited)";
+				INFOPLIST_FILE = anzen.xcodeproj/anzenc_Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(TOOLCHAIN_DIR)/usr/lib/swift/macosx @executable_path";
+				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_SWIFT_FLAGS = "$(inherited)";
+				SWIFT_FORCE_DYNAMIC_LINK_STDLIB = YES;
+				SWIFT_FORCE_STATIC_LINK_STDLIB = NO;
+				SWIFT_VERSION = 4.0;
+				TARGET_NAME = anzenc;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		OBJ_118 /* Build configuration list for PBXNativeTarget "anzenPackageDescription" */ = {
+		OBJ_117 /* Build configuration list for PBXNativeTarget "AnzenLib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_119 /* Debug */,
-				OBJ_120 /* Release */,
+				OBJ_118 /* Debug */,
+				OBJ_119 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_124 /* Build configuration list for PBXNativeTarget "LLVMPackageDescription" */ = {
+		OBJ_137 /* Build configuration list for PBXNativeTarget "AnzenSema" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_125 /* Debug */,
-				OBJ_126 /* Release */,
+				OBJ_138 /* Debug */,
+				OBJ_139 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_130 /* Build configuration list for PBXNativeTarget "SwiftProductGeneratorPackageDescription" */ = {
+		OBJ_155 /* Build configuration list for PBXNativeTarget "AnzenAST" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_131 /* Debug */,
-				OBJ_132 /* Release */,
+				OBJ_156 /* Debug */,
+				OBJ_157 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_136 /* Build configuration list for PBXNativeTarget "ParseyPackageDescription" */ = {
+		OBJ_174 /* Build configuration list for PBXNativeTarget "Parsey" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_137 /* Debug */,
-				OBJ_138 /* Release */,
+				OBJ_175 /* Debug */,
+				OBJ_176 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_142 /* Build configuration list for PBXNativeTarget "FunkyPackageDescription" */ = {
+		OBJ_186 /* Build configuration list for PBXNativeTarget "Funky" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_143 /* Debug */,
-				OBJ_144 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		OBJ_148 /* Build configuration list for PBXNativeTarget "anzenc" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				OBJ_149 /* Debug */,
-				OBJ_150 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		OBJ_169 /* Build configuration list for PBXNativeTarget "AnzenLib" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				OBJ_170 /* Debug */,
-				OBJ_171 /* Release */,
+				OBJ_187 /* Debug */,
+				OBJ_188 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -1906,38 +1387,47 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_208 /* Build configuration list for PBXNativeTarget "LLVM" */ = {
+		OBJ_202 /* Build configuration list for PBXNativeTarget "AnzenTypes" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_209 /* Debug */,
-				OBJ_210 /* Release */,
+				OBJ_203 /* Debug */,
+				OBJ_204 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_251 /* Build configuration list for PBXNativeTarget "SwiftProductGenerator" */ = {
+		OBJ_75 /* Build configuration list for PBXNativeTarget "anzenPackageDescription" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_252 /* Debug */,
-				OBJ_253 /* Release */,
+				OBJ_76 /* Debug */,
+				OBJ_77 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_257 /* Build configuration list for PBXNativeTarget "Parsey" */ = {
+		OBJ_81 /* Build configuration list for PBXNativeTarget "ParseyPackageDescription" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_258 /* Debug */,
-				OBJ_259 /* Release */,
+				OBJ_82 /* Debug */,
+				OBJ_83 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		OBJ_269 /* Build configuration list for PBXNativeTarget "Funky" */ = {
+		OBJ_87 /* Build configuration list for PBXNativeTarget "FunkyPackageDescription" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				OBJ_270 /* Debug */,
-				OBJ_271 /* Release */,
+				OBJ_88 /* Debug */,
+				OBJ_89 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		OBJ_93 /* Build configuration list for PBXNativeTarget "anzenc" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				OBJ_94 /* Debug */,
+				OBJ_95 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

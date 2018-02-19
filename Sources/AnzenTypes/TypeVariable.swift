@@ -1,6 +1,6 @@
-public class TypeVariable: UnqualifiedType {
+public struct TypeVariable: SemanticType {
 
-    init() {
+    public init() {
         self.id = TypeVariable.nextID
         TypeVariable.nextID += 1
     }
@@ -20,21 +20,14 @@ public class TypeVariable: UnqualifiedType {
 
 }
 
-// MARK: Internals
-
-extension TypeVariable: Equatable {
-
-    public static func ==(lhs: TypeVariable, rhs: TypeVariable) -> Bool {
-        return lhs === rhs
-    }
-
-}
-
 extension TypeVariable: Hashable {
 
     public var hashValue: Int {
-        // NOTE: That's the hash value of the `self` pointer.
-        return Unmanaged<TypeVariable>.passUnretained(self).toOpaque().hashValue
+        return self.id
+    }
+
+    public static func ==(lhs: TypeVariable, rhs: TypeVariable) -> Bool {
+        return lhs.id == rhs.id
     }
 
 }

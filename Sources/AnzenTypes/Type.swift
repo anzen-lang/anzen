@@ -1,51 +1,25 @@
 public protocol SemanticType {
 
+    /// Indicates whether or not the type is generic.
     var isGeneric: Bool { get }
 
 }
 
-public struct QualifiedType: Hashable, SemanticType {
+public enum TypeQualifier {
 
-    public init(type unqualified: UnqualifiedType, qualifiedBy qualifiers: TypeQualifier = []) {
-        self.qualifiers  = qualifiers
-        self.unqualified = unqualified
-    }
-
-    public var qualifiers : TypeQualifier
-    public var unqualified: UnqualifiedType
-
-    public var isGeneric: Bool {
-        return self.unqualified.isGeneric
-    }
-
-    public var hashValue: Int {
-        // NOTE: Because we ensure unqualified types (except unions) are unique, hashing them
-        // would probably be more costly than simply checking for their pointer equivalence.
-        return self.qualifiers.rawValue
-    }
-
-    public static func ==(lhs: QualifiedType, rhs: QualifiedType) -> Bool {
-        return (lhs.qualifiers == rhs.qualifiers)
-            && (lhs.unqualified === rhs.unqualified)
-    }
+    case cst
+    case mut
 
 }
 
-public protocol UnqualifiedType: class {
+public struct QualifiedType {
 
-    var isGeneric: Bool { get }
-
-}
-
-public struct TypeQualifier: OptionSet {
-
-    public init(rawValue: Int) {
-        self.rawValue = rawValue
+    public init(type: SemanticType, qualifiedBy qualifier: TypeQualifier) {
+        self.type      = type
+        self.qualifier = qualifier
     }
 
-    public let rawValue: Int
-
-    public static let cst = TypeQualifier(rawValue: 1 << 0)
-    public static let mut = TypeQualifier(rawValue: 1 << 1)
+    public let type     : SemanticType
+    public let qualifier: TypeQualifier
 
 }

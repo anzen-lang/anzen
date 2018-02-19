@@ -1,6 +1,6 @@
-public class TypePlaceholder: UnqualifiedType {
+public struct TypePlaceholder: SemanticType {
 
-    init(named name: String) {
+    public init(named name: String) {
         self.name = name
     }
 
@@ -11,19 +11,14 @@ public class TypePlaceholder: UnqualifiedType {
 
 // MARK: Internals
 
-extension TypePlaceholder: Equatable {
-
-    public static func ==(lhs: TypePlaceholder, rhs: TypePlaceholder) -> Bool {
-        return lhs === rhs
-    }
-
-}
-
 extension TypePlaceholder: Hashable {
 
     public var hashValue: Int {
-        // NOTE: That's the hash value of the `self` pointer.
-        return Unmanaged<TypePlaceholder>.passUnretained(self).toOpaque().hashValue
+        return self.name.hashValue
+    }
+
+    public static func ==(lhs: TypePlaceholder, rhs: TypePlaceholder) -> Bool {
+        return lhs.name == rhs.name
     }
 
 }

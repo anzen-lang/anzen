@@ -14,21 +14,14 @@ public protocol TypedNode: Node {
     var type: SemanticType? { get set }
 }
 
-public protocol ScopeOpeningNode: Node {
+public protocol ScopeNode: Node {
 
-    var symbols: Set<String> { get set }
-
-}
-
-public protocol ScopedNode: Node {
-
-    var scope: Scope? { get set }
-
+    var innerScope: Scope? { get set }
 }
 
 // MARK: Scopes
 
-public class ModuleDecl: ScopeOpeningNode {
+public class ModuleDecl: ScopeNode {
 
     public init(statements: [Node], location: SourceRange? = nil) {
         self.statements = statements
@@ -39,12 +32,12 @@ public class ModuleDecl: ScopeOpeningNode {
 
     // MARK: Annotations
 
-    public let location: SourceRange?
-    public var symbols : Set<String> = []
+    public let location  : SourceRange?
+    public var innerScope: Scope? = nil
 
 }
 
-public class Block: ScopeOpeningNode {
+public class Block: ScopeNode {
 
     public init(statements: [Node], location: SourceRange? = nil) {
         self.statements = statements
@@ -55,14 +48,14 @@ public class Block: ScopeOpeningNode {
 
     // MARK: Annotations
 
-    public let location: SourceRange?
-    public var symbols : Set<String> = []
+    public let location  : SourceRange?
+    public var innerScope: Scope? = nil
 
 }
 
 // MARK: Declarations
 
-public class FunDecl: TypedNode, ScopedNode {
+public class FunDecl: TypedNode, ScopeNode {
 
     public init(
         name        : String,
@@ -95,7 +88,7 @@ public class FunDecl: TypedNode, ScopedNode {
 
 }
 
-public class ParamDecl: TypedNode, ScopedNode {
+public class ParamDecl: TypedNode {
 
     public init(
         label         : String?,
@@ -121,7 +114,7 @@ public class ParamDecl: TypedNode, ScopedNode {
 
 }
 
-public class PropDecl: TypedNode, ScopedNode {
+public class PropDecl: TypedNode {
 
     public init(
         name          : String,
@@ -150,7 +143,7 @@ public class PropDecl: TypedNode, ScopedNode {
 
 }
 
-public class StructDecl: TypedNode, ScopedNode {
+public class StructDecl: TypedNode, ScopeNode {
 
     public init(
         name        : String,
@@ -182,14 +175,14 @@ public class StructDecl: TypedNode, ScopedNode {
 public class QualSign: TypedNode {
 
     public init(
-        qualifiers: TypeQualifier, signature: Node?, location: SourceRange? = nil)
+        qualifiers: [TypeQualifier], signature: Node?, location: SourceRange? = nil)
     {
         self.qualifiers = qualifiers
         self.signature  = signature
         self.location   = location
     }
 
-    public let qualifiers: TypeQualifier
+    public let qualifiers: [TypeQualifier]
     public let signature : Node?
 
     // MARK: Annotations
@@ -415,7 +408,7 @@ public class SelectExpr: TypedNode {
 
 }
 
-public class Ident: TypedNode, ScopedNode {
+public class Ident: TypedNode {
 
     public init(name: String, location: SourceRange? = nil) {
         self.name     = name

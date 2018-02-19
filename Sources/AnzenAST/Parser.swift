@@ -235,24 +235,14 @@ public struct Grammar {
     public static let qualTypeSign: Parser<Node> =
         typeQualifier.many(separatedBy: ws) ~~ (ws ~~> typeSign).?
         ^^^ { (val, loc) in
-            var qualifiers: TypeQualifier = []
-            for q in val.0 {
-                qualifiers.formUnion(q)
-            }
+            var qualifiers: [TypeQualifier] = val.0
 
             return QualSign(qualifiers: qualifiers, signature: val.1, location: loc)
         }
 
-    public static let typeQualifier: Parser<TypeQualifier> = "@" ~~> name
-        ^^ { val in
-            switch val {
-            case "cst": return .cst
-            case "mut": return .mut
-            default:
-                print("warning: unexpected qualifier: '\(val)'")
-                return []
-            }
-        }
+    public static let typeQualifier = cstQualifier | mutQualifier
+    public static let cstQualifier  = Lexer.token("@cst") ^^ { _ in TypeQualifier.cst }
+    public static let mutQualifier  = Lexer.token("@mut") ^^ { _ in TypeQualifier.mut }
 
     public static let typeSign: Parser<Node> =
         ident | funSign | "(" ~~> funSign <~~ ")"
@@ -286,7 +276,7 @@ public struct Grammar {
 
     // MARK: Other terminal symbols
 
-    public static let comment  = Lexer.regex("\\#[^\\n]*")
+    public static let comment  = Lexer.regex("\\/\\/[^\\n]*")
     public static let ws       = Lexer.whitespaces
     public static let newlines = (Lexer.newLine | ws.? ~~> comment).+
     public static let name     = Lexer.regex("[a-zA-Z_]\\w*")

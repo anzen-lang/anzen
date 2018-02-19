@@ -5,8 +5,8 @@ extension ModuleDecl: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "Module:\n"
 
-        if let desc = attrDesc(of: self.symbols) {
-            result += "- symbols:\(desc)"
+        if let desc = attrDesc(of: self.innerScope) {
+            result += "- innerScope:\(desc)"
         }
 
         if let desc = attrDesc(of: self.statements) {
@@ -23,8 +23,8 @@ extension Block: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "Block:\n"
 
-        if let desc = attrDesc(of: self.symbols) {
-            result += "- symbols:\(desc)"
+        if let desc = attrDesc(of: self.innerScope) {
+            result += "- innerScope:\(desc)"
         }
 
         if let desc = attrDesc(of: self.statements) {
