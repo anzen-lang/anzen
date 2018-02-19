@@ -21,7 +21,7 @@ public class Symbol {
 ///
 /// This collection stores the symbols that are declared within a scope (e.g. a function scope).
 /// It is a mapping `String -> [Symbol]`, as a symbol names may be overloaded.
-open class Scope {
+public class Scope {
 
     public init(name: String? = nil, parent: Scope? = nil) {
         // Create a unique ID for the scope.
@@ -42,6 +42,7 @@ open class Scope {
 
     /// Adds a symbol to this scope.
     public func add(symbol: Symbol) {
+        precondition(self[symbol.name].forAll({ $0.isOverloadable }))
         self[symbol.name].append(symbol)
     }
 
