@@ -645,6 +645,18 @@ public class Ident: NamedNode {
     public let location: SourceRange?
     public var scope   : Scope? = nil
 
+    /// The semantic type of this identifier.
+    ///
+    /// As an identifier might refer to an overloaded function, its type must be inferred before
+    /// it can be associated with the correct symbol, once static dispatching has been performed.
+    public var type: SemanticType? = nil
+
+    /// The symbol associated with the name of this identifier.
+    ///
+    /// As identifiers might refer to overloaded function names, their symbols can't be identified
+    /// by simply looking for that with the same name in the defining scope.
+    public var symbol: Symbol? = nil
+
 }
 
 /// A literal expression.
