@@ -3,24 +3,49 @@ import Parsey
 
 // MARK: Protocols
 
+/// Common interface for all AST nodes.
+///
+/// An Abstract Syntax Tree (AST) is a tree representation of a source code. Each node represents
+/// a particular construction (e.g. a variable declaration), with each child representing a sub-
+/// construction (e.g. the name of the variable being declared). The term "abstract" denotes the
+/// fact that concrete syntactic details such as line returns, extra parenthesis, etc. are
+/// *abstracted* away.
 public protocol Node: class {
 
+    /// Stores the location in the source file of the concrete syntax this node represents.
     var location: SourceRange? { get }
 
 }
 
+/// Common interface for typed nodes.
+///
+/// Some nodes of the AST are annotated with a type, either defined explicityl from the source, or
+/// automatically inferred during the semantic analysis phase (SEMA).
+///
+/// Note that Anzen distinguishes between semantic types, which denote the nature of a value (e.g.
+/// `Int`) and contextual types, which also describe the capabilities of a value at a given time
+/// (e.g. whether the value is read-only).
 public protocol TypedNode: Node {
 
+    /// Stores the semantic type of the node.
     var type: SemanticType? { get set }
 }
 
+/// Common interface for nodes that introduce a new scope.
+///
+/// Some nodes of the AST introduce a new lexical (a.k.a. static) scope, which is a region defining
+/// the lifetime of variables.
 public protocol ScopeNode: Node {
 
+    /// Store a reference to the scope this node introduces.
     var innerScope: Scope? { get set }
 }
 
 // MARK: Scopes
 
+/// An Anzen module.
+///
+/// This node represents an Anzen module (a.k.a. unit of compilation).
 public class ModuleDecl: ScopeNode {
 
     public init(statements: [Node], location: SourceRange? = nil) {
@@ -28,6 +53,7 @@ public class ModuleDecl: ScopeNode {
         self.location   = location
     }
 
+    /// Stores the statements of the module.
     public var statements: [Node]
 
     // MARK: Annotations
@@ -37,6 +63,9 @@ public class ModuleDecl: ScopeNode {
 
 }
 
+/// A block of statements.
+///
+/// This node represents a block of statements (e.g. a structure or function body).
 public class Block: ScopeNode {
 
     public init(statements: [Node], location: SourceRange? = nil) {
@@ -44,6 +73,7 @@ public class Block: ScopeNode {
         self.location   = location
     }
 
+    /// Stores the statements of the module.
     public var statements: [Node]
 
     // MARK: Annotations
@@ -55,6 +85,25 @@ public class Block: ScopeNode {
 
 // MARK: Declarations
 
+/// A function declaration.
+///
+/// Function declarations are composed of a signature and a body. The former defines the domain and
+/// codomain of the function, a set of type placeholders in the case it's generic, and an optional
+/// set of conditions which further restrict its application domain.
+///
+/// Here's an example of a function declaration:
+///
+///     fun multiply(x: Int, by y: Int) -> Int {
+///       return x * y
+///     }
+///
+/// The domain of the function comprises two parameters `x` and `y`, both of type `Int`. Note that
+/// the second parameter is associated with a label (named `by`). Both parameters are instances of
+/// `ParamDecl`. The codomain is a type identifier, that is an instance of `Ident`.
+///
+/// - Note: While the body of a funtion declaration is represented by a `Block` node, the node
+///   itself also conforms to `ScopeNode`. This is because function declarations open two scopes:
+///   the first is for the function's signature and the second is for its body.
 public class FunDecl: TypedNode, ScopeNode {
 
     public init(
@@ -73,11 +122,30 @@ public class FunDecl: TypedNode, ScopeNode {
         self.location     = location
     }
 
-    public let name        : String
+    /// The name of the function.
+    public let name: String
+
+    /// The generic placeholders of the function.
     public let placeholders: [String]
-    public let parameters  : [ParamDecl]
-    public let codomain    : Node?
-    public let body        : Block
+
+    /// The domain (i.e. parameters) of the function.
+    public let parameters: [ParamDecl]
+
+    /// The codomain of the function.
+    ///
+    /// Function codomains aren't restricted to type identifiers (i.e. instances of `Ident`). They
+    /// can also be type signatures (e.g. `FunSign`) or even expressions (e.g. `BinExpr`). This is
+    /// typically how functions that forward references are declared. For example:
+    ///
+    ///     fun min<T>(x: T, y: T) -> (x or y) where T is Comparable {
+    ///       if x < y { return &- x } else { return &- y }
+    ///     }
+    ///
+    /// Here the codomain is an instance of `BinExpr`.
+    public let codomain: Node?
+
+    /// The body of the function.
+    public let body: Block
 
     // MARK: Annotations
 
@@ -88,6 +156,7 @@ public class FunDecl: TypedNode, ScopeNode {
 
 }
 
+/// A function parameter declaration.
 public class ParamDecl: TypedNode {
 
     public init(
@@ -102,8 +171,16 @@ public class ParamDecl: TypedNode {
         self.location       = location
     }
 
-    public let label         : String?
-    public let name          : String
+    /// The label of the parameter.
+    public let label: String?
+
+    /// The name of the parameter.
+    public let name: String
+
+    /// The type annotation of the parameter.
+    ///
+    /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
+    ///   signature (i.e. an instance of `FunSign` or `StructSign`).
     public let typeAnnotation: Node
 
     // MARK: Annotations
@@ -114,6 +191,12 @@ public class ParamDecl: TypedNode {
 
 }
 
+/// A property declaration.
+///
+/// - Note: The term "property" can refer to variables, when declared within a function, or type
+///   members, when declared within a type declaration (e.g. a structure). Unlike variables, type
+///   members must be declared with either a type annotation or an initial binding value, so their
+///   type can be inferred unambiguously.
 public class PropDecl: TypedNode {
 
     public init(
@@ -130,9 +213,19 @@ public class PropDecl: TypedNode {
         self.location       = location
     }
 
-    public let name          : String
-    public let reassignable  : Bool
+    /// The name of the property.
+    public let name: String
+
+    /// Whether or not the property is reassignable (i.e. declared with `var` or `let`).
+    public let reassignable: Bool
+
+    /// The type annotation of the property.
+    ///
+    /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
+    ///   signature (i.e. an instance of `QualSign`, `FunSign` or `StructSign`).
     public let typeAnnotation: Node?
+
+    /// The initial binding value of the property.
     public let initialBinding: (op: Operator, value: Node)?
 
     // MARK: Annotations
@@ -143,6 +236,15 @@ public class PropDecl: TypedNode {
 
 }
 
+/// A structure declaration.
+///
+/// Structures represent aggregate of properties (instances of `PropDecl`), and may be optionally
+/// associated with operations (instances of `FunDecl`). We call the properties declared within a
+/// structure its "members".
+///
+/// - Note: While the body of a structure declaration is represented by a `Block` node, the node
+///   itself also conforms to `ScopeNode`. This is because structure declarations open two scopes:
+///   the first is for the function's signature and the second is for its body.
 public class StructDecl: TypedNode, ScopeNode {
 
     public init(
@@ -157,9 +259,16 @@ public class StructDecl: TypedNode, ScopeNode {
         self.location     = location
     }
 
-    public let name        : String
+    /// The name of the type.
+    public let name: String
+
+    /// The generic placeholders of the function.
     public let placeholders: [String]
-    public let body        : Block
+
+    /// The body of the type.
+    ///
+    /// - Note: The statements of a structure's body can only be instances `PropDecl` or `FunDecl`.
+    public let body: Block
 
     // MARK: Annotations
 
@@ -172,6 +281,10 @@ public class StructDecl: TypedNode, ScopeNode {
 
 // MARK: Type signatures
 
+/// A qualified type signature.
+///
+/// Qualified type signature comprise a semantic type definition (e.g. a type identifier) and a set
+/// of type qualifiers.
 public class QualSign: TypedNode {
 
     public init(
@@ -182,7 +295,13 @@ public class QualSign: TypedNode {
         self.location   = location
     }
 
+    /// The qualifiers of the signature.
     public let qualifiers: [TypeQualifier]
+
+    /// The semantic type definition of the signature.
+    ///
+    /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a semantic
+    ///   type signature (i.e. an instance of `FunSign` or `StructSign`).
     public let signature : Node?
 
     // MARK: Annotations
@@ -192,16 +311,25 @@ public class QualSign: TypedNode {
 
 }
 
+/// A function type signature.
 public class FunSign: TypedNode {
 
-    public init(parameters: [Node], codomain: Node, location: SourceRange? = nil) {
+    public init(parameters: [ParamSign], codomain: Node, location: SourceRange? = nil) {
         self.parameters = parameters
         self.codomain   = codomain
         self.location   = location
     }
 
-    public let parameters: [Node]
-    public let codomain  : Node
+    /// The parameters of the signature.
+    public let parameters: [ParamSign]
+
+    /// The codomain of the signature.
+    ///
+    /// - Note: Unlike the signature of function declarations, function type signatures can't
+    ///   feature expressions on their codomain, but only type defintiions. Hence this property
+    ///   should be either a type identifier (i.e. an instance of `Ident`), or a semantic type
+    ///   signature (i.e. an instance of `FunSign` or `StructSign`).
+    public let codomain: Node
 
     // MARK: Annotations
 
@@ -210,6 +338,7 @@ public class FunSign: TypedNode {
 
 }
 
+/// A parameter of a function type signature.
 public class ParamSign: TypedNode {
 
     public init(label: String?, typeAnnotation: Node, location: SourceRange? = nil) {
@@ -218,7 +347,13 @@ public class ParamSign: TypedNode {
         self.location       = location
     }
 
-    public let label         : String?
+    /// The label of the parameter.
+    public let label: String?
+
+    /// The type annotation of the property.
+    ///
+    /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
+    ///   signature (i.e. an instance of `QualSign`, `FunSign` or `StructSign`).
     public let typeAnnotation: Node
 
     // MARK: Annotations
@@ -230,6 +365,9 @@ public class ParamSign: TypedNode {
 
 // MARK: Statements
 
+/// A binding statement.
+///
+/// - Note: Binding statements are also sometimes referred to as assignments.
 public class BindingStmt: Node {
 
     public init(lvalue: Node, op: Operator, rvalue: Node, location: SourceRange? = nil) {
@@ -239,8 +377,13 @@ public class BindingStmt: Node {
         self.location = location
     }
 
+    /// The lvalue of the binding.
     public let lvalue: Node
-    public let op    : Operator
+
+    /// The binding operator.
+    public let op: Operator
+
+    /// The rvalue of the binding.
     public let rvalue: Node
 
     // MARK: Annotations
@@ -249,6 +392,7 @@ public class BindingStmt: Node {
 
 }
 
+/// A return statement.
 public class ReturnStmt: Node {
 
     public init(value: Node? = nil, location: SourceRange? = nil) {
@@ -256,6 +400,7 @@ public class ReturnStmt: Node {
         self.location = location
     }
 
+    /// The value of the return statement.
     public let value: Node?
 
     // MARK: Annotations
@@ -266,6 +411,7 @@ public class ReturnStmt: Node {
 
 // MARK: Expressions
 
+/// A condition expression.
 public class IfExpr: TypedNode {
 
     public init(
@@ -280,8 +426,13 @@ public class IfExpr: TypedNode {
         self.location  = location
     }
 
+    /// The condition of the expression.
     public let condition: Node
+
+    /// The block of statements to execute if the condition is statisfied.
     public let thenBlock: Node
+
+    /// The block of statements to execute if the condition isn't statisfied.
     public let elseBlock: Node?
 
     // MARK: Annotations
@@ -291,6 +442,7 @@ public class IfExpr: TypedNode {
 
 }
 
+/// A binary expression.
 public class BinExpr: TypedNode {
 
     public init(left: Node, op: Operator, right: Node, location: SourceRange? = nil) {
@@ -300,8 +452,13 @@ public class BinExpr: TypedNode {
         self.location = location
     }
 
+    /// The left operand of the expression.
     public let left : Node
-    public let op   : Operator
+
+    /// The operator of the expression.
+    public let op: Operator
+
+    /// The right operand of the expression.
     public let right: Node
 
     // MARK: Annotations
@@ -311,6 +468,7 @@ public class BinExpr: TypedNode {
 
 }
 
+/// An unary expression.
 public class UnExpr: TypedNode {
 
     public init(op: Operator, operand: Node, location: SourceRange? = nil) {
@@ -319,7 +477,10 @@ public class UnExpr: TypedNode {
         self.location = location
     }
 
-    public let op     : Operator
+    /// The operator of the expression.
+    public let op: Operator
+
+    /// The left operand of the expression.
     public let operand: Node
 
     // MARK: Annotations
@@ -329,6 +490,7 @@ public class UnExpr: TypedNode {
 
 }
 
+/// A call expression.
 public class CallExpr: TypedNode {
 
     public init(callee: Node, arguments: [CallArg], location: SourceRange? = nil) {
@@ -337,7 +499,10 @@ public class CallExpr: TypedNode {
         self.location  = location
     }
 
-    public let callee   : Node
+    /// The callee.
+    public let callee: Node
+
+    /// The arguments of the call.
     public let arguments: [CallArg]
 
     // MARK: Annotations
@@ -347,6 +512,7 @@ public class CallExpr: TypedNode {
 
 }
 
+/// A call argument.
 public class CallArg: TypedNode {
 
     public init(
@@ -361,9 +527,14 @@ public class CallArg: TypedNode {
         self.location  = location
     }
 
-    public let label    : String?
+    /// The label of the argument.
+    public let label: String?
+
+    /// The binding operator of the argument.
     public let bindingOp: Operator?
-    public let value    : Node
+
+    /// The value of the argument.
+    public let value: Node
 
     // MARK: Annotations
 
@@ -372,6 +543,7 @@ public class CallArg: TypedNode {
 
 }
 
+/// A subscript expression.
 public class SubscriptExpr: TypedNode {
 
     public init(callee: Node, arguments: [CallArg], location: SourceRange? = nil) {
@@ -380,7 +552,10 @@ public class SubscriptExpr: TypedNode {
         self.location  = location
     }
 
-    public let callee   : Node
+    /// The callee.
+    public let callee: Node
+
+    /// The arguments of the subscript.
     public let arguments: [CallArg]
 
     // MARK: Annotations
@@ -390,6 +565,7 @@ public class SubscriptExpr: TypedNode {
 
 }
 
+/// A select expression.
 public class SelectExpr: TypedNode {
 
     public init(owner: Node? = nil, ownee: Ident, location: SourceRange? = nil) {
@@ -398,7 +574,10 @@ public class SelectExpr: TypedNode {
         self.location = location
     }
 
+    /// The owner.
     public let owner: Node?
+
+    /// The ownee.
     public let ownee: Ident
 
     // MARK: Annotations
@@ -408,6 +587,7 @@ public class SelectExpr: TypedNode {
 
 }
 
+/// An identifier.
 public class Ident: TypedNode {
 
     public init(name: String, location: SourceRange? = nil) {
@@ -415,7 +595,10 @@ public class Ident: TypedNode {
         self.location = location
     }
 
+    /// The name of the identifier.
     public let name: String
+
+    // TODO: Implement generic specializers.
 
     // MARK: Annotations
 
@@ -425,6 +608,7 @@ public class Ident: TypedNode {
 
 }
 
+/// A literal expression.
 public class Literal<T>: TypedNode {
 
     public init(value: T, location: SourceRange? = nil) {
@@ -432,6 +616,7 @@ public class Literal<T>: TypedNode {
         self.location = location
     }
 
+    /// The value of the literal.
     public let value: T
 
     // MARK: Annotations

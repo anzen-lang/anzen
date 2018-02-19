@@ -254,7 +254,7 @@ public struct Grammar {
             return FunSign(parameters: val.0 ?? [], codomain: val.1, location: loc)
         }
 
-    public static let paramSign: Parser<Node> =
+    public static let paramSign: Parser<ParamSign> =
         name.? ~~ (Lexer.character(":").amid(ws.?) ~~> typeAnnotation)
         ^^^ { (val, loc) in
             return ParamSign(label: val.0, typeAnnotation: val.1, location: loc)
