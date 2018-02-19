@@ -140,7 +140,7 @@ public class Block: ScopeNode {
 /// - Note: While the body of a funtion declaration is represented by a `Block` node, the node
 ///   itself also conforms to `ScopeNode`. This is because function declarations open two scopes:
 ///   the first is for the function's signature and the second is for its body.
-public class FunDecl: TypedNode, ScopeNode, NamedNode {
+public class FunDecl: ScopeNode, NamedNode {
 
     public init(
         name        : String,
@@ -186,7 +186,6 @@ public class FunDecl: TypedNode, ScopeNode, NamedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var type      : SemanticType? = nil
     public var scope     : Scope? = nil
     public var innerScope: Scope? = nil
 
