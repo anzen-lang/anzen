@@ -80,6 +80,9 @@ extension ParamDecl: CustomDebugStringConvertible {
         if let type = attrDesc(of: self.type) {
             result += "- type:\(type)"
         }
+        if let desc = attrDesc(of: self.qualifiers) {
+            result += "- qualifiers:\(desc)"
+        }
 
         if let desc = attrDesc(of: self.label) {
             result += "- label:\(desc)"
@@ -104,8 +107,11 @@ extension PropDecl: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.scope) {
             result += "- scope:\(desc)"
         }
-        if let type = attrDesc(of: self.type) {
-            result += "- type:\(type)"
+        if let desc = attrDesc(of: self.type) {
+            result += "- type:\(desc)"
+        }
+        if let desc = attrDesc(of: self.qualifiers) {
+            result += "- qualifiers:\(desc)"
         }
 
         result += "- name: \(self.name)\n"

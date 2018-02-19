@@ -27,8 +27,9 @@ public protocol Node: class {
 /// (e.g. whether the value is read-only).
 public protocol TypedNode: Node {
 
-    /// Stores the semantic type of the node.
+    /// The semantic type of the node.
     var type: SemanticType? { get set }
+
 }
 
 /// Common interface for nodes that introduce a new scope.
@@ -37,8 +38,43 @@ public protocol TypedNode: Node {
 /// the lifetime of variables.
 public protocol ScopeNode: Node {
 
-    /// Store a reference to the scope this node introduces.
+    /// A reference to the scope this node introduces.
     var innerScope: Scope? { get set }
+
+}
+
+/// Common interface for nodes associated with a name (symbol).
+public protocol NamedNode: TypedNode {
+
+    /// The name of symbol this node is associated with.
+    var name: String { get }
+
+    /// A reference to the scope defining the name of the symbol this node is associated with.
+    var scope: Scope? { get }
+
+    /// A reference to the symbol this node is associated with.
+    var symbol: Symbol? { get }
+
+}
+
+extension NamedNode {
+
+    public var symbol: Symbol? {
+        return self.scope?[self.name].first
+    }
+
+    public var type: SemanticType? {
+        get {
+            return self.symbol?.type
+        }
+
+        set {
+            if let newType = newValue {
+                self.symbol?.type = newType
+            }
+        }
+    }
+
 }
 
 // MARK: Scopes
@@ -104,7 +140,7 @@ public class Block: ScopeNode {
 /// - Note: While the body of a funtion declaration is represented by a `Block` node, the node
 ///   itself also conforms to `ScopeNode`. This is because function declarations open two scopes:
 ///   the first is for the function's signature and the second is for its body.
-public class FunDecl: TypedNode, ScopeNode {
+public class FunDecl: TypedNode, ScopeNode, NamedNode {
 
     public init(
         name        : String,
@@ -154,10 +190,16 @@ public class FunDecl: TypedNode, ScopeNode {
     public var scope     : Scope? = nil
     public var innerScope: Scope? = nil
 
+    /// The symbol associated with the name of this function declaration.
+    ///
+    /// As function names might be overloaded, their symbols can't be identified by simply looking
+    /// for that with the same name in the defining scope.
+    public var symbol: Symbol? = nil
+
 }
 
 /// A function parameter declaration.
-public class ParamDecl: TypedNode {
+public class ParamDecl: NamedNode {
 
     public init(
         label         : String?,
@@ -185,9 +227,9 @@ public class ParamDecl: TypedNode {
 
     // MARK: Annotations
 
-    public let location: SourceRange?
-    public var type    : SemanticType? = nil
-    public var scope   : Scope? = nil
+    public let location  : SourceRange?
+    public var scope     : Scope? = nil
+    public var qualifiers: Set<TypeQualifier> = []
 
 }
 
@@ -197,7 +239,7 @@ public class ParamDecl: TypedNode {
 ///   members, when declared within a type declaration (e.g. a structure). Unlike variables, type
 ///   members must be declared with either a type annotation or an initial binding value, so their
 ///   type can be inferred unambiguously.
-public class PropDecl: TypedNode {
+public class PropDecl: NamedNode {
 
     public init(
         name          : String,
@@ -230,9 +272,9 @@ public class PropDecl: TypedNode {
 
     // MARK: Annotations
 
-    public let location: SourceRange?
-    public var type    : SemanticType? = nil
-    public var scope   : Scope? = nil
+    public let location  : SourceRange?
+    public var scope     : Scope? = nil
+    public var qualifiers: Set<TypeQualifier> = []
 
 }
 
@@ -245,7 +287,7 @@ public class PropDecl: TypedNode {
 /// - Note: While the body of a structure declaration is represented by a `Block` node, the node
 ///   itself also conforms to `ScopeNode`. This is because structure declarations open two scopes:
 ///   the first is for the function's signature and the second is for its body.
-public class StructDecl: TypedNode, ScopeNode {
+public class StructDecl: ScopeNode, NamedNode {
 
     public init(
         name        : String,
@@ -273,7 +315,6 @@ public class StructDecl: TypedNode, ScopeNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var type      : SemanticType? = nil
     public var scope     : Scope? = nil
     public var innerScope: Scope? = nil
 
@@ -588,7 +629,7 @@ public class SelectExpr: TypedNode {
 }
 
 /// An identifier.
-public class Ident: TypedNode {
+public class Ident: NamedNode {
 
     public init(name: String, location: SourceRange? = nil) {
         self.name     = name
@@ -603,7 +644,6 @@ public class Ident: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
     public var scope   : Scope? = nil
 
 }
