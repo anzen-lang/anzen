@@ -99,7 +99,7 @@ extension PropDecl: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "PropDecl:\n"
 
-        result += "- reassignable: \(self.reassignable)"
+        result += "- reassignable: \(self.reassignable)\n"
 
         if let desc = attrDesc(of: self.scope) {
             result += "- scope:\(desc)"
