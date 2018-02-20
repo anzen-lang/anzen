@@ -37,23 +37,23 @@ public struct Grammar {
 
     public static let bindingOp =
           Lexer.character("=" ).amid(ws.?) ^^ { _ in Operator.cpy }
-        | Lexer.regex    ("&-").amid(ws.?) ^^ { _ in Operator.ref }
-        | Lexer.regex    ("<-").amid(ws.?) ^^ { _ in Operator.mov }
+        | Lexer.token    ("&-").amid(ws.?) ^^ { _ in Operator.ref }
+        | Lexer.token    ("<-").amid(ws.?) ^^ { _ in Operator.mov }
 
-    public static let notOp = Lexer.regex    ("not").amid(ws.?) ^^ { _ in Operator.not }
+    public static let notOp = Lexer.token    ("not").amid(ws.?) ^^ { _ in Operator.not }
     public static let mulOp = Lexer.character("*")  .amid(ws.?) ^^ { _ in Operator.mul }
     public static let divOp = Lexer.character("/")  .amid(ws.?) ^^ { _ in Operator.div }
     public static let modOp = Lexer.character("%")  .amid(ws.?) ^^ { _ in Operator.mod }
     public static let addOp = Lexer.character("+")  .amid(ws.?) ^^ { _ in Operator.add }
     public static let subOp = Lexer.character("-")  .amid(ws.?) ^^ { _ in Operator.sub }
     public static let ltOp  = Lexer.character("<")  .amid(ws.?) ^^ { _ in Operator.lt  }
-    public static let leOp  = Lexer.regex    ("<=") .amid(ws.?) ^^ { _ in Operator.le  }
+    public static let leOp  = Lexer.token    ("<=") .amid(ws.?) ^^ { _ in Operator.le  }
     public static let gtOp  = Lexer.character(">")  .amid(ws.?) ^^ { _ in Operator.lt  }
-    public static let geOp  = Lexer.regex    (">=") .amid(ws.?) ^^ { _ in Operator.le  }
-    public static let eqOp  = Lexer.regex    ("==") .amid(ws.?) ^^ { _ in Operator.eq  }
-    public static let neOp  = Lexer.regex    ("!=") .amid(ws.?) ^^ { _ in Operator.ne  }
-    public static let andOp = Lexer.regex    ("and").amid(ws.?) ^^ { _ in Operator.and }
-    public static let orOp  = Lexer.regex    ("or") .amid(ws.?) ^^ { _ in Operator.or  }
+    public static let geOp  = Lexer.token    (">=") .amid(ws.?) ^^ { _ in Operator.le  }
+    public static let eqOp  = Lexer.token    ("==") .amid(ws.?) ^^ { _ in Operator.eq  }
+    public static let neOp  = Lexer.token    ("!=") .amid(ws.?) ^^ { _ in Operator.ne  }
+    public static let andOp = Lexer.token    ("and").amid(ws.?) ^^ { _ in Operator.and }
+    public static let orOp  = Lexer.token    ("or") .amid(ws.?) ^^ { _ in Operator.or  }
 
     public static func infixOp(_ parser: Parser<Operator>)
         -> Parser<(Node, Node, SourceRange) -> Node>
@@ -74,7 +74,7 @@ public struct Grammar {
         ^^^ { (val, loc) in Literal(value: Int(val)!, location: loc) as Node }
 
     public static let boolLiteral =
-        (Lexer.regex("true") | Lexer.regex("false"))
+        (Lexer.token("true") | Lexer.token("false"))
         ^^^ { (val, loc) in Literal(value: val == "true", location: loc) as Node }
 
     public static let strLiteral =
@@ -164,7 +164,7 @@ public struct Grammar {
         "fun" ~~> ws ~~> name ~~
         placeholders.amid(ws.?).? ~~
         paramDecls.amid(ws.?) ~~
-        (Lexer.regex("->").amid(ws.?) ~~> typeAnnotation).amid(ws.?).? ~~
+        (Lexer.token("->").amid(ws.?) ~~> typeAnnotation).amid(ws.?).? ~~
         block
         ^^^ { (val, loc) in
             return FunDecl(
@@ -198,7 +198,7 @@ public struct Grammar {
 
     /// "let" name [":" type_sign] [assign_op expr]
     public static let propDecl: Parser<Node> =
-        (Lexer.regex("let") | Lexer.regex("var")) ~~
+        (Lexer.token("let") | Lexer.token("var")) ~~
         (ws ~~> name) ~~
         (Lexer.character(":").amid(ws.?) ~~> typeAnnotation).? ~~
         (bindingOp ~~ expr).?
@@ -242,7 +242,7 @@ public struct Grammar {
 
     /// "let" name ":" type_sign
     public static let propReq: Parser<Node> =
-        (Lexer.regex("let") | Lexer.regex("var")) ~~
+        (Lexer.token("let") | Lexer.token("var")) ~~
         (ws ~~> name) ~~
         (Lexer.character(":").amid(ws.?) ~~> typeAnnotation)
         ^^^ { (val, loc) in
@@ -260,7 +260,7 @@ public struct Grammar {
     public static let funReq: Parser<Node> =
         "fun" ~~> ws ~~> name ~~
         paramDecls.amid(ws.?) ~~
-        (Lexer.regex("->").amid(ws.?) ~~> typeAnnotation).amid(ws.?).?
+        (Lexer.token("->").amid(ws.?) ~~> typeAnnotation).amid(ws.?).?
         ^^^ { (val, loc) in
             return FunReq(
                 name        : val.0.0,
@@ -289,7 +289,7 @@ public struct Grammar {
 
     public static let funSign: Parser<Node> =
         "(" ~~> (paramSign.many(separatedBy: comma) <~~ comma.?).? <~~ ")" ~~
-        (Lexer.regex("->").amid(ws.?) ~~> typeAnnotation)
+        (Lexer.token("->").amid(ws.?) ~~> typeAnnotation)
         ^^^ { (val, loc) in
             return FunSign(parameters: val.0 ?? [], codomain: val.1, location: loc)
         }
