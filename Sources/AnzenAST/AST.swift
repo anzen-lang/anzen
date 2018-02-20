@@ -303,7 +303,7 @@ public class StructDecl: ScopeNode, NamedNode {
     /// The name of the type.
     public let name: String
 
-    /// The generic placeholders of the function.
+    /// The generic placeholders of the type.
     public let placeholders: [String]
 
     /// The body of the type.
@@ -330,17 +330,22 @@ public class StructDecl: ScopeNode, NamedNode {
 public class InterfaceDecl: ScopeNode, NamedNode {
 
     public init(
-        name    : String,
-        body    : Block,
-        location: SourceRange? = nil)
+        name        : String,
+        placeholders: [String] = [],
+        body        : Block,
+        location    : SourceRange? = nil)
     {
         self.name         = name
+        self.placeholders = placeholders
         self.body         = body
         self.location     = location
     }
 
     /// The name of the type.
     public let name: String
+
+    /// The generic placeholders of the type.
+    public let placeholders: [String]
 
     /// The body of the type.
     ///

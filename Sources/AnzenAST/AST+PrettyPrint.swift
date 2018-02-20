@@ -92,7 +92,11 @@ extension StructDecl: CustomStringConvertible {
 extension InterfaceDecl: CustomStringConvertible {
 
     public var description: String {
-        return "interface \(self.name) \(self.body)"
+        var result = "interface \(self.name)"
+        if !self.placeholders.isEmpty {
+            result += "<" + self.placeholders.joined(separator: ", ") + ">"
+        }
+        return result + " \(self.body)"
     }
 
 }

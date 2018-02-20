@@ -230,12 +230,15 @@ public struct Grammar {
                 location    : loc)
         }
 
-    /// "interface" name block
+    /// "interface" name [placeholders] block
     public static let interfaceDecl: Parser<Node> =
-        "interface" ~~> name.amid(ws.?) ~~ block
+        "interface" ~~> name.amid(ws.?) ~~
+        placeholders.amid(ws.?).? ~~
+        block
         ^^^ { (val, loc) in
             return InterfaceDecl(
-                name        : val.0,
+                name        : val.0.0,
+                placeholders: val.0.1 ?? [],
                 body        : val.1 as! Block,
                 location    : loc)
         }

@@ -169,6 +169,9 @@ extension InterfaceDecl: CustomDebugStringConvertible {
         }
 
         result += "- name: \(self.name)\n"
+        if let desc = attrDesc(of: self.placeholders) {
+            result += "- placeholders:\(desc)"
+        }
         if let desc = attrDesc(of: self.body) {
             result += "- body:\(desc)"
         }
