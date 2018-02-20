@@ -285,7 +285,7 @@ public class PropDecl: NamedNode {
 ///
 /// - Note: While the body of a structure declaration is represented by a `Block` node, the node
 ///   itself also conforms to `ScopeNode`. This is because structure declarations open two scopes:
-///   the first is for the function's signature and the second is for its body.
+///   the first is for the struct's signature and the second is for its body.
 public class StructDecl: ScopeNode, NamedNode {
 
     public init(
@@ -316,6 +316,117 @@ public class StructDecl: ScopeNode, NamedNode {
     public let location  : SourceRange?
     public var scope     : Scope? = nil
     public var innerScope: Scope? = nil
+
+}
+
+/// An interface declaration.
+///
+/// Interfaces are blueprint of requirements (properties and methods) specifying how one can
+/// interact with a type that conforms to (or implements) it.
+///
+/// - Note: While the body of an interface declaration is represented by a `Block` node, the node
+///   itself also conforms to `ScopeNode`. This is because structure declarations open two scopes:
+///   the first is for the interface's signature and the second is for its body.
+public class InterfaceDecl: ScopeNode, NamedNode {
+
+    public init(
+        name    : String,
+        body    : Block,
+        location: SourceRange? = nil)
+    {
+        self.name         = name
+        self.body         = body
+        self.location     = location
+    }
+
+    /// The name of the type.
+    public let name: String
+
+    /// The body of the type.
+    ///
+    /// - Note: The statements of an interface body can only be instances `PropReq` or `FunReq`.
+    public let body: Block
+
+    // MARK: Annotations
+
+    public let location  : SourceRange?
+    public var scope     : Scope? = nil
+    public var innerScope: Scope? = nil
+
+}
+
+/// A property requirement declaration.
+public class PropReq: NamedNode {
+
+    public init(
+        name          : String,
+        reassignable  : Bool = false,
+        typeAnnotation: Node,
+        location      : SourceRange? = nil)
+    {
+        self.name           = name
+        self.reassignable   = reassignable
+        self.typeAnnotation = typeAnnotation
+        self.location       = location
+    }
+
+    /// The name of the property.
+    public let name: String
+
+    /// Whether or not the property is reassignable (i.e. declared with `var` or `let`).
+    public let reassignable: Bool
+
+    /// The type annotation of the property.
+    ///
+    /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
+    ///   signature (i.e. an instance of `QualSign`, `FunSign` or `StructSign`).
+    public let typeAnnotation: Node
+
+    // MARK: Annotations
+
+    public let location  : SourceRange?
+    public var scope     : Scope? = nil
+    public var qualifiers: Set<TypeQualifier> = []
+
+}
+
+/// A method requirement declaration.
+public class FunReq: ScopeNode, NamedNode {
+
+    public init(
+        name        : String,
+        placeholders: [String] = [],
+        parameters  : [ParamDecl],
+        codomain    : Node? = nil,
+        location    : SourceRange? = nil)
+    {
+        self.name         = name
+        self.placeholders = placeholders
+        self.parameters   = parameters
+        self.codomain     = codomain
+        self.location     = location
+    }
+
+    /// The name of the function.
+    public let name: String
+
+    /// The generic placeholders of the function.
+    public let placeholders: [String]
+
+    /// The domain (i.e. parameters) of the function.
+    public let parameters: [ParamDecl]
+
+    /// The codomain of the function.
+    public let codomain: Node?
+
+    // MARK: Annotations
+
+    public let location  : SourceRange?
+    public var scope     : Scope? = nil
+    public var innerScope: Scope? = nil
+
+    /// The symbol associated with the name of this function declaration.
+    public var symbol: Symbol? = nil
 
 }
 

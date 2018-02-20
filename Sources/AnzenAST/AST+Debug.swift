@@ -102,8 +102,6 @@ extension PropDecl: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "PropDecl:\n"
 
-        result += "- reassignable: \(self.reassignable)\n"
-
         if let desc = attrDesc(of: self.scope) {
             result += "- scope:\(desc)"
         }
@@ -114,6 +112,7 @@ extension PropDecl: CustomDebugStringConvertible {
             result += "- qualifiers:\(desc)"
         }
 
+        result += "- reassignable: \(self.reassignable)\n"
         result += "- name: \(self.name)\n"
         if let desc = attrDesc(of: self.typeAnnotation) {
             result += "- typeAnnotation:\(desc)"
@@ -150,6 +149,82 @@ extension StructDecl: CustomDebugStringConvertible {
         }
         if let desc = attrDesc(of: self.body) {
             result += "- body:\(desc)"
+        }
+
+        return result
+    }
+
+}
+
+extension InterfaceDecl: CustomDebugStringConvertible {
+
+    public var debugDescription: String {
+        var result = "InterfaceDecl:\n"
+
+        if let desc = attrDesc(of: self.scope) {
+            result += "- scope:\(desc)"
+        }
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
+
+        result += "- name: \(self.name)\n"
+        if let desc = attrDesc(of: self.body) {
+            result += "- body:\(desc)"
+        }
+
+        return result
+    }
+
+}
+
+extension PropReq: CustomDebugStringConvertible {
+
+    public var debugDescription: String {
+        var result = "PropReq:\n"
+
+        if let desc = attrDesc(of: self.scope) {
+            result += "- scope:\(desc)"
+        }
+        if let desc = attrDesc(of: self.type) {
+            result += "- type:\(desc)"
+        }
+        if let desc = attrDesc(of: self.qualifiers) {
+            result += "- qualifiers:\(desc)"
+        }
+
+        result += "- reassignable: \(self.reassignable)\n"
+        result += "- name: \(self.name)\n"
+        if let desc = attrDesc(of: self.typeAnnotation) {
+            result += "- typeAnnotation:\(desc)"
+        }
+
+        return result
+    }
+
+}
+
+extension FunReq: CustomDebugStringConvertible {
+
+    public var debugDescription: String {
+        var result = "FunReq:\n"
+
+        if let desc = attrDesc(of: self.scope) {
+            result += "- scope:\(desc)"
+        }
+        if let type = attrDesc(of: self.type) {
+            result += "- type:\(type)"
+        }
+
+        result += "- name: \(self.name)\n"
+        if let desc = attrDesc(of: self.placeholders) {
+            result += "- placeholders:\(desc)"
+        }
+        if let desc = attrDesc(of: self.parameters) {
+            result += "- parameters:\(desc)"
+        }
+        if let desc = attrDesc(of: self.codomain) {
+            result += "- codomain:\(desc)"
         }
 
         return result

@@ -28,7 +28,7 @@ extension Block: CustomStringConvertible {
 extension FunDecl: CustomStringConvertible {
 
     public var description: String {
-        var result = "function \(self.name)"
+        var result = "fun \(self.name)"
         if !self.placeholders.isEmpty {
             result += "<" + self.placeholders.joined(separator: ", ") + ">"
         }
@@ -85,6 +85,43 @@ extension StructDecl: CustomStringConvertible {
             result += "<" + self.placeholders.joined(separator: ", ") + ">"
         }
         return result + " \(self.body)"
+    }
+
+}
+
+extension InterfaceDecl: CustomStringConvertible {
+
+    public var description: String {
+        return "interface \(self.name) \(self.body)"
+    }
+
+}
+
+extension PropReq: CustomStringConvertible {
+
+    public var description: String {
+        let result = self.reassignable
+            ? "var "
+            : "let "
+        return result + "\(self.name): \(self.typeAnnotation)"
+    }
+
+}
+
+extension FunReq: CustomStringConvertible {
+
+    public var description: String {
+        var result = "fun \(self.name)"
+        if !self.placeholders.isEmpty {
+            result += "<" + self.placeholders.joined(separator: ", ") + ">"
+        }
+        result += "("
+        result += self.parameters.map({ String(describing: $0) }).joined(separator: ", ")
+        result += ")"
+        if let annotation = self.codomain {
+            result += " -> \(annotation)"
+        }
+        return result
     }
 
 }

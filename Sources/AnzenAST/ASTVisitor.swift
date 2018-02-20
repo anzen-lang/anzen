@@ -9,6 +9,9 @@ public protocol ASTVisitor {
     mutating func visit(_ node: ParamDecl)       throws
     mutating func visit(_ node: PropDecl)        throws
     mutating func visit(_ node: StructDecl)      throws
+    mutating func visit(_ node: InterfaceDecl)   throws
+    mutating func visit(_ node: PropReq)         throws
+    mutating func visit(_ node: FunReq)          throws
 
     // MARK: Type signatures
 

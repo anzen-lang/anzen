@@ -26,6 +26,9 @@ public struct Grammar {
         | propDecl
         | funDecl
         | structDecl
+        | interfaceDecl
+        | propReq
+        | funReq
         | bindingStmt
         | returnStmt
         | expr
@@ -224,6 +227,45 @@ public struct Grammar {
                 name        : val.0.0,
                 placeholders: val.0.1 ?? [],
                 body        : val.1 as! Block,
+                location    : loc)
+        }
+
+    /// "interface" name block
+    public static let interfaceDecl: Parser<Node> =
+        "interface" ~~> name.amid(ws.?) ~~ block
+        ^^^ { (val, loc) in
+            return InterfaceDecl(
+                name        : val.0,
+                body        : val.1 as! Block,
+                location    : loc)
+        }
+
+    /// "let" name ":" type_sign
+    public static let propReq: Parser<Node> =
+        (Lexer.regex("let") | Lexer.regex("var")) ~~
+        (ws ~~> name) ~~
+        (Lexer.character(":").amid(ws.?) ~~> typeAnnotation)
+        ^^^ { (val, loc) in
+            let (declType, name) = val.0
+            let sign = val.1
+
+            return PropReq(
+                name          : name,
+                reassignable  : declType == "var",
+                typeAnnotation: sign,
+                location      : loc)
+        }
+
+    /// "function" name "(" [param_decls] ")" ["->" type_sign]
+    public static let funReq: Parser<Node> =
+        "fun" ~~> ws ~~> name ~~
+        paramDecls.amid(ws.?) ~~
+        (Lexer.regex("->").amid(ws.?) ~~> typeAnnotation).amid(ws.?).?
+        ^^^ { (val, loc) in
+            return FunReq(
+                name        : val.0.0,
+                parameters  : val.0.1?.map { $0 as! ParamDecl } ?? [],
+                codomain    : val.1,
                 location    : loc)
         }
 

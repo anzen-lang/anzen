@@ -8,6 +8,9 @@ public extension ASTVisitor {
         case let n as ParamDecl:       try self.visit(n)
         case let n as PropDecl:        try self.visit(n)
         case let n as StructDecl:      try self.visit(n)
+        case let n as InterfaceDecl:   try self.visit(n)
+        case let n as PropReq:         try self.visit(n)
+        case let n as FunReq:          try self.visit(n)
         case let n as QualSign:        try self.visit(n)
         case let n as FunSign:         try self.visit(n)
         case let n as ParamSign:       try self.visit(n)
@@ -92,6 +95,33 @@ public extension ASTVisitor {
     
     mutating func traverse(_ node: StructDecl) throws {
         try self.visit(node.body)
+    }
+
+    mutating func visit(_ node: InterfaceDecl) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: InterfaceDecl) throws {
+        try self.visit(node.body)
+    }
+
+    mutating func visit(_ node: PropReq) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: PropReq) throws {
+        try self.visit(node.typeAnnotation)
+    }
+
+    mutating func visit(_ node: FunReq) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: FunReq) throws {
+        try self.visit(node.parameters)
+        if let codomain = node.codomain {
+            try self.visit(codomain)
+        }
     }
 
     // MARK: Type signatures
