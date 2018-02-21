@@ -70,7 +70,7 @@ extension NamedNode {
 
         set {
             if let newType = newValue {
-                self.symbol?.type = newType
+                self.symbol!.type = newType
             }
         }
     }
