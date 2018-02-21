@@ -35,13 +35,24 @@ extension TypeVariable: CustomStringConvertible {
 
 }
 
+extension TypePlaceholder: CustomStringConvertible {
+
+    public var description: String {
+        return self.name
+    }
+
+}
+
 extension FunctionType: CustomStringConvertible {
 
     public var description: String {
+        let placeholders = self.isGeneric
+            ? "<" + self.placeholders.sorted().joined(separator: ", ") + ">"
+            : ""
         let params = self.domain
             .map   ({ ($0.label ?? "_") + ": \($0.type)" })
             .joined(separator: ",")
-        return "(\(params)) -> \(self.codomain)"
+        return "\(placeholders)(\(params)) -> \(self.codomain)"
     }
 
 }
