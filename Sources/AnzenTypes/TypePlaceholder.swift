@@ -1,4 +1,4 @@
-public struct TypePlaceholder: SemanticType {
+public class TypePlaceholder: SemanticType {
 
     public init(named name: String) {
         self.name = name
@@ -6,6 +6,11 @@ public struct TypePlaceholder: SemanticType {
 
     public let isGeneric = true
     public let name: String
+
+    public func equals(to other: SemanticType) -> Bool {
+        guard let rhs = other as? TypePlaceholder else { return false }
+        return self === rhs
+    }
 
 }
 

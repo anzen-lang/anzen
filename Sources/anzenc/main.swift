@@ -1,5 +1,6 @@
 import Foundation
 import AnzenLib
+import AnzenSema
 
 enum CommandError: Error {
     case missingInput
@@ -16,14 +17,15 @@ func main(args: [String] = CommandLine.arguments) throws {
 
     let source = try String(contentsOf: URL(fileURLWithPath: positionalArgs[0]))
     let module = try AnzenLib.parse(text: source)
-    print(module)
+    try performSema(on: module)
+    print(module.debugDescription)
 }
 
 do {
     try main()
-} catch AnzenLib.CompilerError.inferenceError(let file, let line) {
-    let basename = file.split(separator: "/").last!
-    print("inferenceError at \(basename):\(line)")
+} catch let e as SemanticError {
+    print(e)
+    exit(1)
 } catch let e {
     print(e)
     exit(1)

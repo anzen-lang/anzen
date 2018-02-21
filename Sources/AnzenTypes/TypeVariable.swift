@@ -13,6 +13,11 @@ public struct TypeVariable: SemanticType {
     // matching and unification harder.
     public let isGeneric = false
 
+    public func equals(to other: SemanticType) -> Bool {
+        guard let rhs = other as? TypeVariable else { return false }
+        return self.id == rhs.id
+    }
+
     // MARK: Internals
 
     var id: Int

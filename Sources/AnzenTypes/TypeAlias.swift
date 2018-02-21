@@ -1,6 +1,6 @@
 public struct TypeAlias: SemanticType {
 
-    init(name: String, aliasing type: SemanticType) {
+    public init(name: String, aliasing type: SemanticType) {
         self.name = name
         self.type = (type as? TypeAlias)?.type ?? type
     }
@@ -10,6 +10,11 @@ public struct TypeAlias: SemanticType {
 
     public var isGeneric: Bool {
         return self.type.isGeneric
+    }
+
+    public func equals(to other: SemanticType) -> Bool {
+        guard let rhs = other as? TypeAlias else { return false }
+        return self.type.equals(to: rhs.type)
     }
 
 }
