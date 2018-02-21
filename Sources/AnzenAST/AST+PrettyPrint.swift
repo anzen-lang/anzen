@@ -28,7 +28,10 @@ extension Block: CustomStringConvertible {
 extension FunDecl: CustomStringConvertible {
 
     public var description: String {
-        var result = "fun \(self.name)"
+        var result = self.attributes.isEmpty
+            ? ""
+            : self.attributes.map({ String(describing: $0) }).joined(separator: " ") + " "
+        result += "fun \(self.name)"
         if !self.placeholders.isEmpty {
             result += "<" + self.placeholders.joined(separator: ", ") + ">"
         }
@@ -115,7 +118,10 @@ extension PropReq: CustomStringConvertible {
 extension FunReq: CustomStringConvertible {
 
     public var description: String {
-        var result = "fun \(self.name)"
+        var result = self.attributes.isEmpty
+            ? ""
+            : self.attributes.map({ String(describing: $0) }).joined(separator: " ") + " "
+        result += "fun \(self.name)"
         if !self.placeholders.isEmpty {
             result += "<" + self.placeholders.joined(separator: ", ") + ">"
         }

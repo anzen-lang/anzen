@@ -1,8 +1,15 @@
+public enum FunctionAttribute {
+
+    case mutable
+    case `static`
+
+}
+
 public class FunctionType: SemanticType {
 
     public typealias ParameterDescription = (label: String?, type: QualifiedType)
 
-    init(
+    public init(
         placeholders: Set<String> = [],
         from domain : [ParameterDescription],
         to codomain : QualifiedType)

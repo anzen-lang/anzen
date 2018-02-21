@@ -159,22 +159,28 @@ public struct Grammar {
 
     // MARK: Declarations
 
-    /// "function" name [placeholders] "(" [param_decls] ")" ["->" type_sign] block
+    /// [attributes] "function" name [placeholders] "(" [param_decls] ")" ["->" type_sign] block
     public static let funDecl: Parser<Node> =
-        "fun" ~~> ws ~~> name ~~
+        (funAttr.many(separatedBy: ws) <~~ ws).? ~~
+        (Lexer.token("fun") ~~> ws ~~> name) ~~
         placeholders.amid(ws.?).? ~~
         paramDecls.amid(ws.?) ~~
         (Lexer.token("->").amid(ws.?) ~~> typeAnnotation).amid(ws.?).? ~~
         block
         ^^^ { (val, loc) in
             return FunDecl(
-                name        : val.0.0.0.0,
+                name        : val.0.0.0.0.1,
+                attributes  : val.0.0.0.0.0 ?? [],
                 placeholders: val.0.0.0.1 ?? [],
                 parameters  : val.0.0.1?.map { $0 as! ParamDecl } ?? [],
                 codomain    : val.0.1,
                 body        : val.1 as! Block,
                 location    : loc)
         }
+
+    public static let funAttr    = mutAttr | staticAttr
+    public static let mutAttr    = Lexer.token("mut")    ^^ { _ in FunctionAttribute.mutable }
+    public static let staticAttr = Lexer.token("static") ^^ { _ in FunctionAttribute.static }
 
     /// "<" name ("," name)* [","] ">"
     public static let placeholders =
@@ -259,14 +265,16 @@ public struct Grammar {
                 location      : loc)
         }
 
-    /// "function" name "(" [param_decls] ")" ["->" type_sign]
+    /// [attributes] "function" name "(" [param_decls] ")" ["->" type_sign]
     public static let funReq: Parser<Node> =
-        "fun" ~~> ws ~~> name ~~
+        (funAttr.many(separatedBy: ws) <~~ ws).? ~~
+        ("fun" ~~> ws ~~> name) ~~
         paramDecls.amid(ws.?) ~~
         (Lexer.token("->").amid(ws.?) ~~> typeAnnotation).amid(ws.?).?
         ^^^ { (val, loc) in
             return FunReq(
-                name        : val.0.0,
+                name        : val.0.0.1,
+                attributes  : val.0.0.0 ?? [],
                 parameters  : val.0.1?.map { $0 as! ParamDecl } ?? [],
                 codomain    : val.1,
                 location    : loc)

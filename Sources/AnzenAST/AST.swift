@@ -144,6 +144,7 @@ public class FunDecl: ScopeNode, NamedNode {
 
     public init(
         name        : String,
+        attributes  : [FunctionAttribute] = [],
         placeholders: [String] = [],
         parameters  : [ParamDecl],
         codomain    : Node? = nil,
@@ -151,6 +152,7 @@ public class FunDecl: ScopeNode, NamedNode {
         location    : SourceRange? = nil)
     {
         self.name         = name
+        self.attributes   = attributes
         self.placeholders = placeholders
         self.parameters   = parameters
         self.codomain     = codomain
@@ -160,6 +162,9 @@ public class FunDecl: ScopeNode, NamedNode {
 
     /// The name of the function.
     public let name: String
+
+    /// The attributes of the function.
+    public let attributes: [FunctionAttribute]
 
     /// The generic placeholders of the function.
     public let placeholders: [String]
@@ -400,12 +405,14 @@ public class FunReq: ScopeNode, NamedNode {
 
     public init(
         name        : String,
+        attributes  : [FunctionAttribute] = [],
         placeholders: [String] = [],
         parameters  : [ParamDecl],
         codomain    : Node? = nil,
         location    : SourceRange? = nil)
     {
         self.name         = name
+        self.attributes   = attributes
         self.placeholders = placeholders
         self.parameters   = parameters
         self.codomain     = codomain
@@ -414,6 +421,9 @@ public class FunReq: ScopeNode, NamedNode {
 
     /// The name of the function.
     public let name: String
+
+    /// The attributes of the function.
+    public let attributes: [FunctionAttribute]
 
     /// The generic placeholders of the function.
     public let placeholders: [String]
