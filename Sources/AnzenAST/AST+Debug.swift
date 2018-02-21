@@ -9,7 +9,7 @@ extension ModuleDecl: CustomDebugStringConvertible {
             result += "- innerScope:\(desc)"
         }
 
-        if let desc = attrDesc(of: self.statements) {
+        if let desc = attrDesc(of: self.statements as [Node]) {
             result += "- statements:\(desc)"
         }
 
@@ -27,7 +27,7 @@ extension Block: CustomDebugStringConvertible {
             result += "- innerScope:\(desc)"
         }
 
-        if let desc = attrDesc(of: self.statements) {
+        if let desc = attrDesc(of: self.statements as [Node]) {
             result += "- statements:\(desc)"
         }
 
@@ -54,7 +54,7 @@ extension FunDecl: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.placeholders) {
             result += "- placeholders:\(desc)"
         }
-        if let desc = attrDesc(of: self.parameters) {
+        if let desc = attrDesc(of: self.parameters as [Node]) {
             result += "- parameters:\(desc)"
         }
         if let desc = attrDesc(of: self.codomain) {
@@ -223,7 +223,7 @@ extension FunReq: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.placeholders) {
             result += "- placeholders:\(desc)"
         }
-        if let desc = attrDesc(of: self.parameters) {
+        if let desc = attrDesc(of: self.parameters as [Node]) {
             result += "- parameters:\(desc)"
         }
         if let desc = attrDesc(of: self.codomain) {
@@ -268,7 +268,7 @@ extension FunSign: CustomDebugStringConvertible {
             result += "- type:\(type)"
         }
 
-        if let desc = attrDesc(of: self.parameters) {
+        if let desc = attrDesc(of: self.parameters as [Node]) {
             result += "- parameters:\(desc)"
         }
         if let desc = attrDesc(of: self.codomain) {
@@ -414,7 +414,7 @@ extension CallExpr: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.callee) {
             result += "- callee:\(desc)"
         }
-        if let desc = attrDesc(of: self.arguments) {
+        if let desc = attrDesc(of: self.arguments as [Node]) {
             result += "- arguments:\(desc)"
         }
 
@@ -459,7 +459,7 @@ extension SubscriptExpr: CustomDebugStringConvertible {
         if let desc = attrDesc(of: self.callee) {
             result += "- callee:\(desc)"
         }
-        if let desc = attrDesc(of: self.arguments) {
+        if let desc = attrDesc(of: self.arguments as [Node]) {
             result += "- arguments:\(desc)"
         }
 
