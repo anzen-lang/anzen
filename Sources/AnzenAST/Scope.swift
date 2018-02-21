@@ -3,10 +3,16 @@ import AnzenTypes
 /// A named symbol.
 public class Symbol {
 
-    public init(name: String, type: SemanticType? = nil, overloadable: Bool = false) {
+    public init(
+        name        : String,
+        type        : SemanticType? = nil,
+        overloadable: Bool = false,
+        generic     : Bool = false)
+    {
         self.name           = name
         self.type           = type ?? TypeVariable()
         self.isOverloadable = overloadable
+        self.isGeneric      = generic
     }
 
     public let name: String
@@ -14,6 +20,9 @@ public class Symbol {
 
     /// Let function symbols be marked overloadable.
     public let isOverloadable: Bool
+
+    /// Let symbols be marked generic.
+    public let isGeneric: Bool
 
 }
 
