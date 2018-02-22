@@ -108,7 +108,7 @@ public class ConstraintSystem {
         // when a equality constraint is placed on a callee that represents a type initializer. In
         // that case, instead of unifying both types, we must look for the type's initializers and
         // try to unify each of them.
-        if let alias = a as? TypeAlias, let fun = b as? FunctionType {
+        if let fun = a as? FunctionType, let alias = b as? TypeAlias {
             guard let initializers = self.find(member: "__new__", in: alias.type) else {
                 self.constraints.insert(.equals(a, b), at: 0)
                 return
@@ -137,7 +137,7 @@ public class ConstraintSystem {
             throw InferenceError(reason: "'\(a)' is not a specialization of '\(b)'")
         }
 
-        try self.unify(a, specialized)
+        try self.solveEquality(between: a, and: specialized)
     }
 
     private func solveMembership(of symbol: Symbol, in type: SemanticType) throws {
