@@ -23,7 +23,7 @@ extension TypePlaceholder: Hashable {
     }
 
     public static func ==(lhs: TypePlaceholder, rhs: TypePlaceholder) -> Bool {
-        return lhs.name == rhs.name
+        return lhs === rhs
     }
 
 }
