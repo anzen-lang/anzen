@@ -145,16 +145,11 @@ public struct ConstraintExtractor: ASTVisitor {
         // Create a fresh variable for the node.
         node.type = TypeVariable()
 
-        // Retrieve the symbol(s) associated with the identifier and create a constraint for each
-        // one of them.
+        // Retrieve the symbol(s) associated with the identifier and create a specialization
+        // constraint for each one of them.
         let symbols = node.scope![node.name]
         assert(!symbols.isEmpty)
-        self.constraints.append(
-            .or(symbols.map({ symbol in
-                return symbol.isGeneric
-                    ? Constraint.specializes(node.type!, symbol.type)
-                    : Constraint.equals     (node.type!, symbol.type)
-            })))
+        self.constraints.append(.or(symbols.map({ Constraint.specializes(node.type!, $0.type) })))
     }
 
     public func visit(_ node: Literal<Int>) {

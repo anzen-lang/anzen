@@ -57,9 +57,7 @@ public struct SymbolsExtractor: ASTVisitor {
                 throw DuplicateDeclarationError(name: placeholder, location: node.location)
             }
             node.innerScope!.add(
-                symbol: Symbol(
-                    name: placeholder,
-                    type: TypeAlias(name: placeholder, aliasing: TypeVariable())))
+                symbol: Symbol(name: placeholder, type: TypePlaceholder(named: placeholder)))
         }
 
         // Note that parameters aren't bound to the same scope as that of the function's body,
@@ -121,9 +119,7 @@ public struct SymbolsExtractor: ASTVisitor {
                 throw DuplicateDeclarationError(name: placeholder, location: node.location)
             }
             node.innerScope!.add(
-                symbol: Symbol(
-                    name: placeholder,
-                    type: TypeAlias(name: placeholder, aliasing: TypeVariable())))
+                symbol: Symbol(name: placeholder, type: TypePlaceholder(named: placeholder)))
         }
 
         // Introduce a `Self` symbol in the type's scope, to handle the `Self` placeholder.
