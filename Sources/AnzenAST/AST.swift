@@ -756,15 +756,21 @@ public class SelectExpr: TypedNode {
 /// An identifier.
 public class Ident: NamedNode {
 
-    public init(name: String, location: SourceRange? = nil) {
-        self.name     = name
-        self.location = location
+    public init(
+        name           : String,
+        specializations: [String: Node] = [:],
+        location       : SourceRange? = nil)
+    {
+        self.name            = name
+        self.specializations = specializations
+        self.location        = location
     }
 
     /// The name of the identifier.
     public let name: String
 
-    // TODO: Implement generic specializers.
+    /// The specialization list of the identifier.
+    public let specializations: [String: Node]
 
     // MARK: Annotations
 

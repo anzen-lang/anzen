@@ -266,7 +266,14 @@ extension SelectExpr: CustomStringConvertible {
 extension Ident: CustomStringConvertible {
 
     public var description: String {
-        return self.name
+        var result = self.name
+        if !self.specializations.isEmpty {
+            let specializations = self.specializations
+                .map   ({ "\($0.key) = \($0.value)" })
+                .joined(separator: ", ")
+            result += "<" + specializations + ">"
+        }
+        return result
     }
 
 }

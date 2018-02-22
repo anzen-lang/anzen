@@ -243,6 +243,7 @@ public extension ASTVisitor {
     }
 
     mutating func visit(_ node: Ident) throws {
+        try self.visit(Array(node.specializations.values))
     }
 
     mutating func visit(_ node: Literal<Int>) throws {

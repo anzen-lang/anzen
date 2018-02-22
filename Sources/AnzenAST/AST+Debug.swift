@@ -502,6 +502,17 @@ extension Ident: CustomDebugStringConvertible {
         }
 
         result += "- name: \(self.name)\n"
+        if !self.specializations.isEmpty {
+            result += "- specializations:\n"
+            for specialization in self.specializations {
+                result += "  - \(specialization.key):\n"
+                if let value = attrDesc(of: specialization.value) {
+                    for line in value.split(separator: "\n") {
+                        result += "  \(line)\n"
+                    }
+                }
+            }
+        }
 
         return result
     }

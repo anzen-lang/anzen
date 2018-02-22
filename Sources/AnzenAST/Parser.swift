@@ -154,8 +154,18 @@ public struct Grammar {
         }
 
     public static let ident: Parser<Node> =
-        name
-        ^^^ { (val, loc) in Ident(name: val, location: loc) }
+        name ~~
+        ("<" ~~> specialization.many(separatedBy: comma) <~~ comma.? <~~ ">").?
+        ^^^ { (val, loc) in
+            return Ident(
+                name           : val.0,
+                specializations: Dictionary(
+                    val.1 ?? [], uniquingKeysWith: { (first, _) in first }),
+                location       : loc)
+        }
+
+    public static let specialization: Parser<(String, Node)> =
+        name <~~ Lexer.token("=").amid(ws.?) ~~ typeSign
 
     // MARK: Declarations
 
