@@ -27,9 +27,20 @@ public func performSema(on module: ModuleDecl) throws {
     try constraintExtractor.visit(module)
 
     let constraintSystem = ConstraintSystem(constraints: constraintExtractor.constraints)
-    if let solution = try constraintSystem.next() {
-        for (variable, type) in solution {
-            print("\(variable) => \(type)")
+
+    var i = 1
+    while let result = constraintSystem.next() {
+        print("solution #\(i):")
+        switch result {
+        case .solution(let solution):
+            for (variable, type) in solution {
+                print("\(variable) => \(type)")
+            }
+        case .error(let error):
+            print(error)
         }
+
+        print()
+        i += 1
     }
 }

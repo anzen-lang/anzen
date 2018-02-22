@@ -1,8 +1,14 @@
+import AnzenAST
 import AnzenTypes
 
 public class ConstraintSystem {
 
     public typealias Solution = [TypeVariable: SemanticType]
+
+    public enum Result {
+        case solution(Solution)
+        case error   (Error)
+    }
 
     public init<S>(constraints: S, partialSolution: Solution = [:])
         where S: Sequence, S.Element == Constraint
@@ -11,81 +17,48 @@ public class ConstraintSystem {
         self.solution    = partialSolution
     }
 
-    public func next() throws -> Solution? {
+    public func next() -> Result? {
         // If there's a non-depleted sub-system, first iterate through its solutions.
-        if let solution = try self.subSystem?.next() {
-            return solution
-        } else {
-            self.subSystem = nil
+        while let subSystem = self.subSystems.first {
+            if let result = subSystem.next() {
+                if case .error(_) = result {
+                    self.subSystems.removeFirst()
+                }
+                return result
+            } else {
+                self.subSystems.removeFirst()
+            }
         }
 
-        // Make sure we still have solutions to iterate over.
         guard !self.done else { return nil }
 
-        // Otherwise, try to solve as many constraints as possible before creating one.
-        while self.index < self.constraints.count {
-            let constraint = self.constraints[self.index]
+        // Try to solve as many constraints as possible before creating a sub-system.
+        while let constraint = self.constraints.popLast() {
             switch constraint {
-            // Equality constraints can generally be solved immediately, as they do not require
-            // any prior knowledge. They simply consist of a unification of both types.
             case .equals(let x, let y):
-                let a = self.walk(x)
-                let b = self.walk(y)
-
-                // Unifying a type alias with a function type isn't necessary inconsistent. It may
-                // happen when a equality constraint is placed on a callee that represents a type
-                // initializer. In that case, instead of unifying both types, we must look for the
-                // type's initializers and try to unify each of them.
-                if let alias = a as? TypeAlias, let fun = b as? FunctionType {
-                    guard let initializers = self.find(member: "__new__", in: alias.type) else {
-                        self.subSystem = self.deferringCurrentConstraint
-                        self.done      = true
-                        return try self.subSystem?.next()
-                    }
-
-                    switch initializers.count {
-                    case 0:
-                        let walked = self.walk(alias.type)
-                        throw InferenceError(reason: "'\(walked)' has no initializer")
-
-                    case 1:
-                        try self.unify(fun, initializers[0])
-
-                    default:
-                        let head = Constraint.or(initializers.map({ ty in
-                            Constraint.equals(fun, ty)
-                        }))
-                        let remaining  = self.constraints.dropFirst(self.index + 1)
-                        self.subSystem = ConstraintSystem(
-                            constraints    : [head] + remaining,
-                            partialSolution: self.solution)
-                        self.done = true
-                        return try self.subSystem!.next()
-                    }
-                } else {
-                    try self.unify(x, y)
+                do {
+                    try self.solveEquality(between: x, and: y)
+                } catch {
+                    return .error(error)
                 }
 
-            // TODO: For the time being, we process conformance constraint the same way we process
-            // equality constraints. However, when we'll implement interfaces, we'll have to use a
-            // different kind of unification. Moreover, this will probably require some knowledge
-            // on the type profiles to have already been inferred.
             case .conforms(let x, let y):
-                try self.unify(x, y)
+                // TODO: For the time being, we process conformance constraint the same way we
+                // process equality constraints. However, when we'll implement interfaces, we'll
+                // have to use a different kind of unification. Moreover, this will probably
+                // require some knowledge on the type profiles to have already been inferred.
+                do {
+                    try self.solveEquality(between: x, and: y)
+                } catch {
+                    return .error(error)
+                }
 
             case .specializes(let x, let y):
-                let wl = self.walk(x)
-                let wr = self.walk(y)
-                guard !(wr is TypeVariable) else {
-                    self.subSystem = self.deferringCurrentConstraint
-                    self.done      = true
-                    return try self.subSystem?.next()
+                do {
+                    try self.solveSpecialization(between: x, and: y)
+                } catch {
+                    return .error(error)
                 }
-                guard let specialized = self.specialize(wl, wr) else {
-                    throw InferenceError(reason: "'\(wl)' is not a specialization of '\(wr)'")
-                }
-
-                try self.unify(wl, specialized)
 
             // Membership constraints require the profile of the owning type to have already been
             // inferred. When that's the case, it can be solved immediately, unless the targetted
@@ -93,52 +66,26 @@ public class ConstraintSystem {
             // of constraints for each of the overloads. If the owning type hasn't been inferred
             // yet, the constraint is deferred.
             case .belongs(let symbol, let type):
-                // FIXME: Deep walk the type.
-                guard let members = self.find(member: symbol.name, in: type) else {
-                    self.subSystem = self.deferringCurrentConstraint
-                    self.done      = true
-                    return try self.subSystem?.next()
-                }
-
-                switch members.count {
-                case 0:
-                    let walked = self.walk(type)
-                    throw InferenceError(reason: "'\(walked)' has no member '\(symbol.name)'")
-
-                case 1:
-                    try self.unify(symbol.type, members[0])
-
-                default:
-                    let head = Constraint.or(members.map({ ty in
-                        Constraint.equals(symbol.type, ty)
-                    }))
-                    let remaining  = self.constraints.dropFirst(self.index + 1)
-                    self.subSystem = ConstraintSystem(
-                        constraints    : [head] + remaining,
-                        partialSolution: self.solution)
-                    self.done = true
-                    return try self.subSystem!.next()
+                do {
+                    try self.solveMembership(of: symbol, in: type)
+                } catch {
+                    return .error(error)
                 }
 
             // A disjunction of constraints represents possible backtracking points. Whenever we
-            // encounter one, we explore all solutions that can be produced for each choice,
-            // backtracking whenever there we've iterated through all.
+            // encounter one, we explore all solutions that can be produced for each choice in
+            // sub-systems containing that should solve the remaining constraints.
             case .disjunction(let choices):
-                guard self.disjunctionIndex < choices.count else {
-                    self.done = true
-                    return nil
+                self.subSystems = choices.map {
+                    ConstraintSystem(
+                        constraints    : self.constraints + [$0],
+                        partialSolution: self.solution)
                 }
 
-                let head       = choices[self.disjunctionIndex]
-                let remaining  = self.constraints.dropFirst(self.index + 1)
-                self.subSystem = ConstraintSystem(
-                    constraints    : [head] + remaining,
-                    partialSolution: self.solution)
-                self.disjunctionIndex += 1
-                return try self.subSystem!.next()
+                self.constraints = []
+                self.done        = true
+                return self.subSystems.first?.next()
             }
-
-            self.index += 1
         }
 
         let memo = Memo()
@@ -148,12 +95,65 @@ public class ConstraintSystem {
         }
 
         self.done = true
-        return reified
+        return .solution(reified)
     }
 
-    public var constraints: [Constraint]
-
     // MARK: Internals
+
+    private func solveEquality(between x: SemanticType, and y: SemanticType) throws {
+        let a = self.walk(x)
+        let b = self.walk(y)
+
+        // Unifying a type alias with a function type isn't necessary inconsistent. It may happen
+        // when a equality constraint is placed on a callee that represents a type initializer. In
+        // that case, instead of unifying both types, we must look for the type's initializers and
+        // try to unify each of them.
+        if let alias = a as? TypeAlias, let fun = b as? FunctionType {
+            guard let initializers = self.find(member: "__new__", in: alias.type) else {
+                self.constraints.insert(.equals(a, b), at: 0)
+                return
+            }
+            guard !initializers.isEmpty else {
+                let walked = self.walk(alias.type)
+                throw InferenceError(reason: "'\(walked)' has no initializer")
+            }
+
+            self.constraints.append(.or(initializers.map({ Constraint.equals(fun, $0) })))
+            return
+        }
+
+        try self.unify(x, y)
+    }
+
+    private func solveSpecialization(between x: SemanticType, and y: SemanticType) throws {
+        let a = self.walk(x)
+        let b = self.walk(y)
+
+        guard !(b is TypeVariable) else {
+            self.constraints.insert(.specializes(a, b), at: 0)
+            return
+        }
+        guard let specialized = self.specialize(a, b) else {
+            throw InferenceError(reason: "'\(a)' is not a specialization of '\(b)'")
+        }
+
+        try self.unify(a, specialized)
+    }
+
+    private func solveMembership(of symbol: Symbol, in type: SemanticType) throws {
+        // FIXME: Deep walk the type.
+        guard let members = self.find(member: symbol.name, in: type) else {
+            self.constraints.insert(.belongs(symbol, type), at: 0)
+            return
+        }
+        guard !members.isEmpty else {
+            let walked = self.walk(type)
+            throw InferenceError(reason: "'\(walked)' has no member '\(symbol.name)'")
+        }
+
+        self.constraints.append(.or(members.map({ Constraint.equals(symbol.type, $0) })))
+        return
+    }
 
     /// Unifies two types.
     ///
@@ -261,7 +261,9 @@ public class ConstraintSystem {
                 to  : codomain.qualified(
                     by: fnl.codomain.qualifiers.union(fnr.codomain.qualifiers)))
 
-        case (_ as StructType, _ as StructType):
+        case (let sl as StructType, let sr as StructType):
+            guard sl.name == sr.name else { return b }
+
             // TODO: Specialize struct types.
             fatalError("TODO")
 
@@ -350,19 +352,15 @@ public class ConstraintSystem {
 
     /// A sub-system that defers the current constraint.
     private var deferringCurrentConstraint: ConstraintSystem {
-        let constraint = self.constraints[self.index]
-        let head       = self.constraints.dropFirst(self.index + 1)
         return ConstraintSystem(
-            constraints    : head + [constraint],
+            constraints    : self.constraints.dropFirst() + [self.constraints.first!],
             partialSolution: self.solution)
     }
 
-    private var subSystem: ConstraintSystem? = nil
-    private var solution : Solution
-
-    private var index           : Int = 0
-    private var disjunctionIndex: Int = 0
-    private var done            : Bool = false
+    private var constraints: [Constraint]
+    private var subSystems : [ConstraintSystem] = []
+    private var solution   : Solution
+    private var done       : Bool = false
 
 }
 
