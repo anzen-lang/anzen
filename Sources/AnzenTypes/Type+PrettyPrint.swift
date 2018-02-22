@@ -60,7 +60,10 @@ extension FunctionType: CustomStringConvertible {
 extension StructType: CustomStringConvertible {
 
     public var description: String {
-        return "struct \(self.name) {}"
+        let placeholders = self.isGeneric
+            ? "<" + self.placeholders.sorted().joined(separator: ", ") + ">"
+            : ""
+        return "struct \(self.name)\(placeholders) {}"
     }
 
 }
