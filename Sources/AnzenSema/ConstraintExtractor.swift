@@ -27,7 +27,7 @@ public struct ConstraintExtractor: ASTVisitor {
         try self.visit(node.body)
 
         // Add an equality constraint on the symbol's type.
-        self.constraints.append(.equals(node.type!, functionType))
+        self.constraints.append(.equals(type: node.type!, to: functionType))
     }
 
     public mutating func visit(_ node: ParamDecl) throws {
@@ -36,7 +36,7 @@ public struct ConstraintExtractor: ASTVisitor {
         node.qualifiers = annotation.qualifiers
 
         // Add an equality constraint on the symbol's type.
-        self.constraints.append(.equals(node.type!, annotation.type))
+        self.constraints.append(.equals(type: node.type!, to: annotation.type))
     }
 
     public mutating func visit(_ node: PropDecl) throws {
@@ -46,7 +46,7 @@ public struct ConstraintExtractor: ASTVisitor {
             node.qualifiers = annotation.qualifiers
 
             // Add an equality constraint on the symbol's type.
-            self.constraints.append(.equals(node.type!, annotation.type))
+            self.constraints.append(.equals(type: node.type!, to: annotation.type))
         } else {
             node.qualifiers = [.cst]
         }
@@ -60,9 +60,9 @@ public struct ConstraintExtractor: ASTVisitor {
             // be declared as a super type of its initial value. Otherwise, add an equality
             // constraint.
             if node.typeAnnotation != nil {
-                self.constraints.append(.conforms(node.type!, valueTy))
+                self.constraints.append(.conforms(type: node.type!, to: valueTy))
             } else {
-                self.constraints.append(.equals(node.type!, valueTy))
+                self.constraints.append(.equals(type: node.type!, to: valueTy))
             }
         }
     }
@@ -89,14 +89,16 @@ public struct ConstraintExtractor: ASTVisitor {
         }
 
         let alias = node.type as? TypeAlias
-        self.constraints.append(.equals(alias!.type, structType))
+        self.constraints.append(.equals(type: alias!.type, to: structType))
     }
 
     public mutating func visit(_ node: BindingStmt) throws {
         try self.visit(node.lvalue)
         try self.visit(node.rvalue)
         self.constraints.append(
-            .conforms((node.lvalue as! TypedNode).type!, (node.rvalue as! TypedNode).type!))
+            .conforms(
+                type: (node.lvalue as! TypedNode).type!,
+                to  :(node.rvalue as! TypedNode).type!))
     }
 
     public mutating func visit(_ node: CallExpr) throws {
@@ -117,7 +119,9 @@ public struct ConstraintExtractor: ASTVisitor {
         // Infer the type of the callee, and create an equality constraint with the function we
         // just created.
         try self.visit(node.callee)
-        self.constraints.append(.equals((node.callee as! TypedNode).type!, functionType))
+        self.constraints.append(.equals(
+            type: (node.callee as! TypedNode).type!,
+            to  : functionType))
     }
 
     public mutating func visit(_ node: SelectExpr) throws {
@@ -130,9 +134,10 @@ public struct ConstraintExtractor: ASTVisitor {
         // itself, so as to handle implicit select exressions (i.e. Swift-like enum cases).
         if let owner = node.owner {
             try self.visit(owner)
-            self.constraints.append(.belongs(node.ownee.symbol!, (owner as! TypedNode).type!))
+            self.constraints.append(
+                .belongs(symbol: node.ownee.symbol!, to: (node.owner as! TypedNode).type!))
         } else {
-            self.constraints.append(.belongs(node.ownee.symbol!, node.type!))
+            self.constraints.append(.belongs(symbol: node.ownee.symbol!, to: node.type!))
         }
     }
 
@@ -149,7 +154,9 @@ public struct ConstraintExtractor: ASTVisitor {
         // constraint for each one of them.
         let symbols = node.scope![node.name]
         assert(!symbols.isEmpty)
-        self.constraints.append(.or(symbols.map({ Constraint.specializes(node.type!, $0.type) })))
+        self.constraints.append(.or(symbols.map({
+            Constraint.specializes(type: $0.type, with: node.type!)
+        })))
     }
 
     public func visit(_ node: Literal<Int>) {

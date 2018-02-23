@@ -55,7 +55,7 @@ public class ConstraintSystem {
 
             case .specializes(let x, let y):
                 do {
-                    try self.solveSpecialization(between: x, and: y)
+                    try self.solveSpecialization(of: x, with: y)
                 } catch {
                     return .error(error)
                 }
@@ -110,7 +110,7 @@ public class ConstraintSystem {
         // try to unify each of them.
         if let fun = a as? FunctionType, let alias = b as? TypeAlias {
             guard let initializers = self.find(member: "__new__", in: alias.type) else {
-                self.constraints.insert(.equals(a, b), at: 0)
+                self.constraints.insert(.equals(type: a, to: b), at: 0)
                 return
             }
             guard !initializers.isEmpty else {
@@ -118,32 +118,34 @@ public class ConstraintSystem {
                 throw InferenceError(reason: "'\(walked)' has no initializer")
             }
 
-            self.constraints.append(.or(initializers.map({ Constraint.equals(fun, $0) })))
+            self.constraints.append(.or(initializers.map({
+                Constraint.equals(type: fun, to: $0)
+            })))
             return
         }
 
         try self.unify(x, y)
     }
 
-    private func solveSpecialization(between x: SemanticType, and y: SemanticType) throws {
+    private func solveSpecialization(of x: SemanticType, with y: SemanticType) throws {
         let a = self.walk(x)
         let b = self.walk(y)
 
-        guard !(b is TypeVariable) else {
-            self.constraints.insert(.specializes(a, b), at: 0)
+        guard !(a is TypeVariable) else {
+            self.constraints.insert(.specializes(type: a, with: b), at: 0)
             return
         }
-        guard let specialized = self.specialize(a, b) else {
+        guard let specialized = self.specialize(type: a, with: b) else {
             throw InferenceError(reason: "'\(a)' is not a specialization of '\(b)'")
         }
 
-        try self.solveEquality(between: a, and: specialized)
+        try self.solveEquality(between: b, and: specialized)
     }
 
     private func solveMembership(of symbol: Symbol, in type: SemanticType) throws {
         // FIXME: Deep walk the type.
         guard let members = self.find(member: symbol.name, in: type) else {
-            self.constraints.insert(.belongs(symbol, type), at: 0)
+            self.constraints.insert(.belongs(symbol: symbol, to: type), at: 0)
             return
         }
         guard !members.isEmpty else {
@@ -151,7 +153,9 @@ public class ConstraintSystem {
             throw InferenceError(reason: "'\(walked)' has no member '\(symbol.name)'")
         }
 
-        self.constraints.append(.or(members.map({ Constraint.equals(symbol.type, $0) })))
+        self.constraints.append(.or(members.map({
+            Constraint.equals(type: symbol.type, to: $0)
+        })))
         return
     }
 
@@ -204,7 +208,7 @@ public class ConstraintSystem {
     }
 
     /// Attempts to specialize `y` so that it is compatible with `x`.
-    private func specialize(_ x: SemanticType, _ y: SemanticType, memo: Memo = Memo())
+    private func specialize(type x: SemanticType, with y: SemanticType, memo: Memo = Memo())
         -> SemanticType?
     {
         let a = self.walk(x)
@@ -223,7 +227,7 @@ public class ConstraintSystem {
             }
 
         case (_, _ as TypePlaceholder):
-            return self.specialize(b, a, memo: memo)
+            return self.specialize(type: b, with: a, memo: memo)
 
         case (let fnl as FunctionType, let fnr as FunctionType):
             // Make sure the domain of both functions agree.
@@ -240,8 +244,8 @@ public class ConstraintSystem {
                     || dl.type.qualifiers == dr.type.qualifiers else { return nil }
 
                 // Specialize the parameter.
-                guard let specialized = self.specialize(dl.type.type, dr.type.type, memo: memo)
-                    else { return nil }
+                guard let specialized = self.specialize(
+                    type: dl.type.type, with: dr.type.type, memo: memo) else { return nil }
                 domain.append((
                     dl.label,
                     specialized.qualified(by: dl.type.qualifiers.union(dr.type.qualifiers))))
@@ -249,12 +253,12 @@ public class ConstraintSystem {
 
             // Make sure the codomains' qualifiers are identical (if any)
             guard  fnl.codomain.qualifiers.isEmpty
-                || fnl.codomain.qualifiers.isEmpty
+                || fnr.codomain.qualifiers.isEmpty
                 || fnl.codomain.qualifiers == fnr.codomain.qualifiers else { return nil }
 
             // Specialize the codomain
-            guard let codomain = self.specialize(fnl.codomain.type, fnr.codomain.type, memo: memo)
-                else { return nil }
+            guard let codomain = self.specialize(
+                type: fnl.codomain.type, with: fnr.codomain.type, memo: memo) else { return nil }
 
             return FunctionType(
                 from: domain,
@@ -262,15 +266,15 @@ public class ConstraintSystem {
                     by: fnl.codomain.qualifiers.union(fnr.codomain.qualifiers)))
 
         case (let sl as StructType, let sr as StructType):
-            guard sl.name == sr.name else { return b }
+            guard sl.name == sr.name else { return nil }
 
             // TODO: Specialize struct types.
             fatalError("TODO")
 
         // Other pairs either are incompatible types or involve type variables. In both cases,
-        // unification should decide how to proceed, so we return the right type, unchanged.
+        // unification will decide how to proceed, so we return the unspecialized type unchanged.
         default:
-            return b
+            return a
         }
     }
 

@@ -5,13 +5,13 @@ public enum Constraint {
 
     // MARK: Type constraints
 
-    case equals     (SemanticType, SemanticType)
-    case conforms   (SemanticType, SemanticType)
-    case specializes(SemanticType, SemanticType)
+    case equals     (type: SemanticType, to  : SemanticType)
+    case conforms   (type: SemanticType, to  : SemanticType)
+    case specializes(type: SemanticType, with: SemanticType)
 
     // MARK: Membership constraints
 
-    case belongs    (Symbol, SemanticType)
+    case belongs(symbol: Symbol, to: SemanticType)
 
     // MARK: Disjunctions
 
