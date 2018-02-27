@@ -5,6 +5,10 @@ public protocol SemanticType {
     /// Returns this type qualified with the given qualifier.
     func qualified(by qualifier: TypeQualifier) -> QualifiedType
 
+    /// Returns whether two semantic types are equal.
+    ///
+    /// - Note: We purposely do not require `SemanticType` to conform to `Equatable`, so that we
+    /// can create heterogeneous collections of types.
     func equals(to other: SemanticType) -> Bool
 
 }
@@ -26,31 +30,3 @@ public protocol GenericType: SemanticType {
     var placeholders: Set<TypePlaceholder> { get }
 
 }
-
-public enum TypeQualifier {
-
-    case cst
-    case mut
-
-}
-
-public struct QualifiedType {
-
-    public init(type: SemanticType, qualifiedBy qualifiers: Set<TypeQualifier>) {
-        self.type       = type
-        self.qualifiers = qualifiers
-    }
-
-    public let type      : SemanticType
-    public let qualifiers: Set<TypeQualifier>
-
-}
-
-extension QualifiedType: Equatable {
-
-    public static func ==(lhs: QualifiedType, rhs: QualifiedType) -> Bool {
-        return lhs.qualifiers == rhs.qualifiers && lhs.type.equals(to: rhs.type)
-    }
-
-}
-
