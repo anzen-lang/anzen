@@ -22,7 +22,7 @@ public struct ScopeBinder: ASTVisitor {
     }
 
     public mutating func visit(_ node: FunDecl) throws {
-        // FIXME: When we'll implement parameter default values, we'll also have to make sure that
+        // TODO: When we'll implement parameter default values, we'll also have to make sure that
         // the identifiers in the default value don't get bound to other parameters. For instance,
         // the following should throw an `UndefinedSymbolError`:
         //
@@ -96,4 +96,3 @@ public struct ScopeBinder: ASTVisitor {
     private var underDeclaration: [Scope: String] = [:]
 
 }
-

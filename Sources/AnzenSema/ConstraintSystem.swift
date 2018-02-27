@@ -1,3 +1,5 @@
+// swiftlint:disable cyclomatic_complexity
+
 import AnzenAST
 import AnzenTypes
 
@@ -34,58 +36,15 @@ public class ConstraintSystem {
 
         // Try to solve as many constraints as possible before creating a sub-system.
         while let constraint = self.constraints.popLast() {
-            switch constraint {
-            case .equals(type: let x, to: let y):
-                do {
-                    try self.solveEquality(between: x, and: y)
-                } catch {
-                    return .error(error)
-                }
-
-            case .conforms(type: let x, to: let y):
-                // TODO: For the time being, we process conformance constraint the same way we
-                // process equality constraints. However, when we'll implement interfaces, we'll
-                // have to use a different kind of unification. Moreover, this will probably
-                // require some knowledge on the type profiles to have already been inferred.
-                do {
-                    try self.solveEquality(between: x, and: y)
-                } catch {
-                    return .error(error)
-                }
-
-            case .specializes(type: let x, with: let y, using: let z):
-                do {
-                    try self.solveSpecialization(of: x, with: y, using: z)
-                } catch {
-                    return .error(error)
-                }
-
-            // Membership constraints require the profile of the owning type to have already been
-            // inferred. When that's the case, it can be solved immediately, unless the targetted
-            // member is overloaded, in which case a sub-system will be created with a disjunction
-            // of constraints for each of the overloads. If the owning type hasn't been inferred
-            // yet, the constraint is deferred.
-            case .belongs(symbol: let symbol, to: let type):
-                do {
-                    try self.solveMembership(of: symbol, in: type)
-                } catch {
-                    return .error(error)
-                }
-
-            // A disjunction of constraints represents possible backtracking points. Whenever we
-            // encounter one, we explore all solutions that can be produced for each choice in
-            // sub-systems containing that should solve the remaining constraints.
-            case .disjunction(let choices):
-                self.subSystems = choices.map {
-                    ConstraintSystem(
-                        constraints    : self.constraints + [$0],
-                        partialSolution: self.solution)
-                }
-
-                self.constraints = []
-                self.done        = true
-                return self.subSystems.first?.next()
+            do {
+                try self.solveConstraint(constraint)
+            } catch {
+                return .error(error)
             }
+        }
+
+        if let subSystem = self.subSystems.first {
+            return subSystem.next()
         }
 
         let memo = Memo()
@@ -100,21 +59,59 @@ public class ConstraintSystem {
 
     // MARK: Internals
 
+    private func solveConstraint(_ constraint: Constraint) throws {
+        switch constraint {
+        case .equals(type: let x, to: let y):
+            try self.solveEquality(between: x, and: y)
+
+        case .conforms(type: let x, to: let y):
+            // TODO: For the time being, we process conformance constraint the same way we
+            // process equality constraints. However, when we'll implement interfaces, we'll
+            // have to use a different kind of unification. Moreover, this will probably
+            // require some knowledge on the type profiles to have already been inferred.
+            try self.solveEquality(between: x, and: y)
+
+        case .specializes(type: let x, with: let y, using: let z):
+            try self.solveSpecialization(of: x, with: y, using: z)
+
+        case .belongs(symbol: let symbol, to: let type):
+            // Membership constraints require the profile of the owning type to have already been
+            // inferred. When that's the case, it can be solved immediately, unless the targetted
+            // member is overloaded, in which case a sub-system will be created with a disjunction
+            // of constraints for each of the overloads. If the owning type hasn't been inferred
+            // yet, the constraint is deferred.
+            try self.solveMembership(of: symbol, in: type)
+
+        case .disjunction(let choices):
+            // A disjunction of constraints represents possible backtracking points. Whenever we
+            // encounter one, we explore all solutions that can be produced for each choice in
+            // sub-systems containing that should solve the remaining constraints.
+            self.subSystems = choices.map {
+                ConstraintSystem(
+                    constraints    : self.constraints + [$0],
+                    partialSolution: self.solution)
+            }
+
+            self.constraints = []
+            self.done        = true
+        }
+    }
+
     private func solveEquality(between x: SemanticType, and y: SemanticType) throws {
         try self.unify(x, y)
     }
 
     private func solveSpecialization(
-        of    x: SemanticType,
-        with  y: SemanticType,
-        using z: [String: SemanticType]) throws
+        of    type   : SemanticType,
+        with  pattern: SemanticType,
+        using args   : [String: SemanticType]) throws
     {
-        let a = self.walk(x)
-        let b = self.walk(y)
+        let a = self.walk(type)
+        let b = self.walk(pattern)
 
         // Defer the constraint if the unspecialized type is as yet unknown.
         guard !(a is TypeVariable) else {
-            self.constraints.insert(.specializes(type: a, with: b, using: z), at: 0)
+            self.constraints.insert(.specializes(type: a, with: b, using: args), at: 0)
             return
         }
 
@@ -122,49 +119,8 @@ public class ConstraintSystem {
         // happen when the former is used as a callee to represent a type initializer. In this
         // case, we must look for the type's initializers and try to specialize each one of them.
         if let alias = a as? TypeAlias, let fun = b as? FunctionType {
-            // Get the list of initializers of the aliased type.
-            let type = self.walk(alias.type)
-            guard var initializers = self.find(member: "__new__", in: type) else {
-                self.constraints.insert(.specializes(type: a, with: b, using: z), at: 0)
-                return
-            }
-
-            // All types should have at least one default initializer.
-            assert(!initializers.isEmpty)
-
-            // If the type is generic, we attempt to specialize its initializers up front, but we
-            // link the explicity defined placheolders to that of the type rather than that of the
-            // initializer (if any).
-            if let generic = type as? GenericType {
-                // Make sure no undefined specialization argument was supplied.
-                let unspecified = Set(z.keys).subtracting(generic.placeholders.map({ $0.name }))
-                guard unspecified.isEmpty else {
-                    throw InferenceError(
-                        reason: "Superfluous explicit specializations: \(unspecified)")
-                }
-
-                // Specialize the compatible initializers.
-                initializers = initializers.map {
-                    let memo = Memo()
-                    for ph in generic.placeholders {
-                        if let type = z[ph.name] {
-                            memo[ph] = type
-                        }
-                    }
-
-                    guard let specialized = self.specialize(type: $0, with: b, memo: memo) else {
-                        // Note: Notice that initilizers that can't be specialized are put back
-                        // into the list unchanged. This allows us to handle failure to specialize
-                        // the usual behavior once we'll attempt to solve their constraint.
-                        return $0
-                    }
-                    return self.replaceGenericReferences(in: specialized, memo: memo)
-                }
-            }
-
-            self.constraints.append(.or(initializers.map({
-                Constraint.specializes(type: $0, with: fun, using: [:])
-            })))
+            try self.solveInitializerSpecialization(
+                of: alias, with: fun, using: args)
             return
         }
 
@@ -175,7 +131,7 @@ public class ConstraintSystem {
         }
 
         // Make sure no undefined specialization argument was supplied.
-        let unspecified = Set(z.keys).subtracting(unspecialized.placeholders.map({ $0.name }))
+        let unspecified = Set(args.keys).subtracting(unspecialized.placeholders.map({ $0.name }))
         guard unspecified.isEmpty else {
             throw InferenceError(
                 reason: "Superfluous explicit specializations: \(unspecified)")
@@ -184,8 +140,8 @@ public class ConstraintSystem {
         // Initialize the specialization memo with the arguments provided explicitly.
         let memo = Memo()
         for ph in unspecialized.placeholders {
-            if let type = z[ph.name] {
-                memo[ph] = type
+            if let specialization = args[ph.name] {
+                memo[ph] = specialization
             }
         }
 
@@ -195,6 +151,56 @@ public class ConstraintSystem {
         }
         specialized = self.replaceGenericReferences(in: specialized, memo: memo)
         try self.solveEquality(between: specialized, and: b)
+    }
+
+    private func solveInitializerSpecialization(
+        of    alias  : TypeAlias,
+        with  pattern: SemanticType,
+        using args   :[String: SemanticType]) throws
+    {
+        let type = self.walk(alias.type)
+
+        // Get the list of initializers of the aliased type.
+        guard var initializers = self.find(member: "__new__", in: type) else {
+            self.constraints.insert(.specializes(type: alias, with: pattern, using: args), at: 0)
+            return
+        }
+
+        // All types should have at least one default initializer.
+        assert(!initializers.isEmpty)
+
+        // If the type is generic, we attempt to specialize its initializers up front, but we
+        // link the explicity defined placheolders to that of the type rather than that of the
+        // initializer (if any).
+        if let generic = type as? GenericType {
+            // Make sure no undefined specialization argument was supplied.
+            let unspecified = Set(args.keys).subtracting(generic.placeholders.map({ $0.name }))
+            guard unspecified.isEmpty else {
+                throw InferenceError(
+                    reason: "Superfluous explicit specializations: \(unspecified)")
+            }
+
+            // Specialize the compatible initializers.
+            initializers = initializers.map {
+                let memo = Memo()
+                for ph in generic.placeholders {
+                    if let type = args[ph.name] {
+                        memo[ph] = type
+                    }
+                }
+
+                // Note: Notice that initilizers that can't be specialized are put back
+                // into the list unchanged. This allows us to handle failure to specialize
+                // the usual behavior once we'll attempt to solve their constraint.
+                guard let specialized = self.specialize(type: $0, with: pattern, memo: memo)
+                    else { return $0 }
+                return self.replaceGenericReferences(in: specialized, memo: memo)
+            }
+        }
+
+        self.constraints.append(.or(initializers.map({
+            Constraint.specializes(type: $0, with: pattern, using: [:])
+        })))
     }
 
     private func solveMembership(of symbol: Symbol, in type: SemanticType) throws {
@@ -523,7 +529,7 @@ public class ConstraintSystem {
 
 }
 
-fileprivate class Memo: Sequence {
+private class Memo: Sequence {
 
     typealias Element = (key: AnyObject, value: SemanticType)
 

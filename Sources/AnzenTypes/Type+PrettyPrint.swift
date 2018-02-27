@@ -39,7 +39,6 @@ extension TypeSpecialization: CustomStringConvertible {
 
 }
 
-
 extension TypeVariable: CustomStringConvertible {
 
     public var description: String {
@@ -80,7 +79,6 @@ extension SelfType: CustomStringConvertible {
     }
 
 }
-
 
 extension StructType: CustomStringConvertible {
 

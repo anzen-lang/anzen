@@ -21,7 +21,7 @@ extension TypePlaceholder: Hashable {
         return self.name.hashValue
     }
 
-    public static func ==(lhs: TypePlaceholder, rhs: TypePlaceholder) -> Bool {
+    public static func == (lhs: TypePlaceholder, rhs: TypePlaceholder) -> Bool {
         return lhs === rhs
     }
 

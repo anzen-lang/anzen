@@ -57,7 +57,7 @@ public class Scope {
 
     /// Returns the first scope in the hierarchy for which a symbol with the given name exists.
     public func findScopeDefining(name: String) -> Scope? {
-        if let _ = self.symbols[name] {
+        if self.symbols[name] != nil {
             return self
         } else if let parent = self.parent {
             return parent.findScopeDefining(name: name)
@@ -141,7 +141,7 @@ extension Scope: Hashable {
         return self.id
     }
 
-    public static func ==(lhs: Scope, rhs: Scope) -> Bool {
+    public static func == (lhs: Scope, rhs: Scope) -> Bool {
         return lhs.id == rhs.id
     }
 

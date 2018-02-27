@@ -12,7 +12,7 @@ public struct QualifiedType {
 
 extension QualifiedType: Equatable {
 
-    public static func ==(lhs: QualifiedType, rhs: QualifiedType) -> Bool {
+    public static func == (lhs: QualifiedType, rhs: QualifiedType) -> Bool {
         return lhs.qualifiers == rhs.qualifiers && lhs.type.equals(to: rhs.type)
     }
 

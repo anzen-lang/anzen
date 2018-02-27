@@ -1,5 +1,6 @@
 public extension ASTVisitor {
 
+    // swiftlint:disable cyclomatic_complexity
     mutating func visit(_ node: Node) throws {
         switch node {
         case let n as ModuleDecl:      try self.visit(n)
@@ -31,7 +32,8 @@ public extension ASTVisitor {
             assertionFailure("unexpected node during generic visit")
         }
     }
-    
+    // swiftlint:enable cyclomatic_complexity
+
     mutating func visit(_ nodes: [Node]) throws {
         for node in nodes {
             try self.visit(node)
@@ -92,7 +94,7 @@ public extension ASTVisitor {
     mutating func visit(_ node: StructDecl) throws {
         try self.traverse(node)
     }
-    
+
     mutating func traverse(_ node: StructDecl) throws {
         try self.visit(node.body)
     }
@@ -129,7 +131,7 @@ public extension ASTVisitor {
     mutating func visit(_ node: QualSign) throws {
         try self.traverse(node)
     }
-    
+
     mutating func traverse(_ node: QualSign) throws {
         if let signature = node.signature {
             try self.visit(signature)
@@ -191,7 +193,7 @@ public extension ASTVisitor {
     mutating func visit(_ node: BinExpr) throws {
         try self.traverse(node)
     }
-    
+
     mutating func traverse(_ node: BinExpr) throws {
         try self.visit(node.left)
         try self.visit(node.right)
@@ -208,7 +210,7 @@ public extension ASTVisitor {
     mutating func visit(_ node: CallExpr) throws {
         try self.traverse(node)
     }
-    
+
     mutating func traverse(_ node: CallExpr) throws {
         try self.visit(node.callee)
         try self.visit(node.arguments)
@@ -217,7 +219,7 @@ public extension ASTVisitor {
     mutating func visit(_ node: CallArg) throws {
         try self.traverse(node)
     }
-    
+
     mutating func traverse(_ node: CallArg) throws {
         try self.visit(node.value)
     }
@@ -225,7 +227,7 @@ public extension ASTVisitor {
     mutating func visit(_ node: SubscriptExpr) throws {
         try self.traverse(node)
     }
-    
+
     mutating func traverse(_ node: SubscriptExpr) throws {
         try self.visit(node.callee)
         try self.visit(node.arguments)

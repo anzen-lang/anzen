@@ -95,7 +95,7 @@ public class ModuleDecl: ScopeNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var innerScope: Scope? = nil
+    public var innerScope: Scope?
 
 }
 
@@ -115,7 +115,7 @@ public class Block: ScopeNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var innerScope: Scope? = nil
+    public var innerScope: Scope?
 
 }
 
@@ -191,14 +191,14 @@ public class FunDecl: ScopeNode, NamedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var scope     : Scope? = nil
-    public var innerScope: Scope? = nil
+    public var scope     : Scope?
+    public var innerScope: Scope?
 
     /// The symbol associated with the name of this function declaration.
     ///
     /// As function names might be overloaded, their symbols can't be identified by simply looking
     /// for that with the same name in the defining scope.
-    public var symbol: Symbol? = nil
+    public var symbol: Symbol?
 
 }
 
@@ -232,7 +232,7 @@ public class ParamDecl: NamedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var scope     : Scope? = nil
+    public var scope     : Scope?
     public var qualifiers: Set<TypeQualifier> = []
 
 }
@@ -277,7 +277,7 @@ public class PropDecl: NamedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var scope     : Scope? = nil
+    public var scope     : Scope?
     public var qualifiers: Set<TypeQualifier> = []
 
 }
@@ -319,8 +319,8 @@ public class StructDecl: ScopeNode, NamedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var scope     : Scope? = nil
-    public var innerScope: Scope? = nil
+    public var scope     : Scope?
+    public var innerScope: Scope?
 
 }
 
@@ -360,8 +360,8 @@ public class InterfaceDecl: ScopeNode, NamedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var scope     : Scope? = nil
-    public var innerScope: Scope? = nil
+    public var scope     : Scope?
+    public var innerScope: Scope?
 
 }
 
@@ -395,7 +395,7 @@ public class PropReq: NamedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var scope     : Scope? = nil
+    public var scope     : Scope?
     public var qualifiers: Set<TypeQualifier> = []
 
 }
@@ -437,11 +437,11 @@ public class FunReq: ScopeNode, NamedNode {
     // MARK: Annotations
 
     public let location  : SourceRange?
-    public var scope     : Scope? = nil
-    public var innerScope: Scope? = nil
+    public var scope     : Scope?
+    public var innerScope: Scope?
 
     /// The symbol associated with the name of this function declaration.
-    public var symbol: Symbol? = nil
+    public var symbol: Symbol?
 
 }
 
@@ -473,7 +473,7 @@ public class QualSign: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -500,7 +500,7 @@ public class FunSign: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -525,7 +525,7 @@ public class ParamSign: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -604,7 +604,7 @@ public class IfExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -630,7 +630,7 @@ public class BinExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -652,7 +652,7 @@ public class UnExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -674,7 +674,7 @@ public class CallExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -705,7 +705,7 @@ public class CallArg: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -727,7 +727,7 @@ public class SubscriptExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -749,7 +749,7 @@ public class SelectExpr: TypedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
 
 }
 
@@ -775,19 +775,19 @@ public class Ident: NamedNode {
     // MARK: Annotations
 
     public let location: SourceRange?
-    public var scope   : Scope? = nil
+    public var scope   : Scope?
 
     /// The semantic type of this identifier.
     ///
     /// As an identifier might refer to an overloaded function, its type must be inferred before
     /// it can be associated with the correct symbol, once static dispatching has been performed.
-    public var type: SemanticType? = nil
+    public var type: SemanticType?
 
     /// The symbol associated with the name of this identifier.
     ///
     /// As identifiers might refer to overloaded function names, their symbols can't be identified
     /// by simply looking for that with the same name in the defining scope.
-    public var symbol: Symbol? = nil
+    public var symbol: Symbol?
 
 }
 
@@ -804,7 +804,7 @@ public class Literal<T>: TypedNode {
 
     // MARK: Annotations
 
-    public var type    : SemanticType? = nil
+    public var type    : SemanticType?
     public let location: SourceRange?
 
 }

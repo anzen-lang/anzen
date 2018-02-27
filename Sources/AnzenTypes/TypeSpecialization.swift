@@ -21,7 +21,7 @@ public struct TypeSpecialization: SemanticType {
 
 fileprivate extension Dictionary where Key == TypePlaceholder, Value == SemanticType {
 
-    static func ==(lhs: Dictionary, rhs: Dictionary) -> Bool {
+    static func == (lhs: Dictionary, rhs: Dictionary) -> Bool {
         guard lhs.count == rhs.count else { return false }
         for (key, lvalue) in lhs {
             guard let rvalue = rhs[key]     else { return false }

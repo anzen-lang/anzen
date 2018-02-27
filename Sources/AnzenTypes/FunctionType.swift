@@ -34,7 +34,7 @@ public class FunctionType: GenericType, SemanticType {
 
 // MARK: Internals
 
-func ==(
+func == (
     lhs: [FunctionType.ParameterDescription], rhs: [FunctionType.ParameterDescription]) -> Bool {
     guard lhs.count == rhs.count else { return false }
     for (lp, rp) in zip(lhs, rhs) {

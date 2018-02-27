@@ -23,7 +23,7 @@ extension TypeVariable: Hashable {
         return self.id
     }
 
-    public static func ==(lhs: TypeVariable, rhs: TypeVariable) -> Bool {
+    public static func == (lhs: TypeVariable, rhs: TypeVariable) -> Bool {
         return lhs.id == rhs.id
     }
 

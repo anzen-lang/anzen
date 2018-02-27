@@ -87,7 +87,8 @@ public struct ConstraintExtractor: ASTVisitor {
                 }
                 structType.methods[method.name]?.append(method.type!)
 
-            case _ as StructDecl: fallthrough
+            case _ as StructDecl:
+                fatalError("TODO")
             case _ as InterfaceDecl:
                 fatalError("TODO")
 
@@ -192,7 +193,7 @@ public struct ConstraintExtractor: ASTVisitor {
 // MARK: Internals
 
 /// Returns the type denoted by a type annotation.
-fileprivate func analyzeTypeAnnotation(_ node: Node) throws -> QualifiedType {
+private func analyzeTypeAnnotation(_ node: Node) throws -> QualifiedType {
     switch node {
     case let qualifiedSignature as QualSign:
         return try! analyzeQualifiedSignature(qualifiedSignature)
@@ -213,7 +214,7 @@ fileprivate func analyzeTypeAnnotation(_ node: Node) throws -> QualifiedType {
 ///
 /// In the case of complete signature, this function uses the type identified by the unqualified
 /// part of the signature. In the case of incomplete signatures, a fresh variable is created.
-fileprivate func analyzeQualifiedSignature(_ node: QualSign) throws -> QualifiedType {
+private func analyzeQualifiedSignature(_ node: QualSign) throws -> QualifiedType {
     // Make sure the signature isn't qualified by incompatible qualifiers.
     guard !node.qualifiers.contains(.cst) || !node.qualifiers.contains(.mut) else {
         throw InferenceError(reason: "incompatible qualifiers", location: node.location)
@@ -232,7 +233,7 @@ fileprivate func analyzeQualifiedSignature(_ node: QualSign) throws -> Qualified
 }
 
 /// Returns the type denoted by a type identifier.
-fileprivate func analyzeIdentifier(_ node: Ident) throws -> SemanticType {
+private func analyzeIdentifier(_ node: Ident) throws -> SemanticType {
     // The symbol should be associated a type alias or type placeholder. Obviously, it shouldn't
     // be overloaded neither, as we can't type expressions with function names.
     let symbols = node.scope![node.name]

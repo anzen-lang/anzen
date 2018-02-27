@@ -24,7 +24,7 @@ public enum Constraint {
         return a.count == 1 ? a.first! : .disjunction(a)
     }
 
-    public static func ||(lhs: Constraint, rhs: Constraint) -> Constraint {
+    public static func || (lhs: Constraint, rhs: Constraint) -> Constraint {
         switch (lhs, rhs) {
         case (.disjunction(let ld), .disjunction(let rd)): return .or(ld + rd)
         case (.disjunction(let ld), _)                   : return .disjunction(ld + [rhs])

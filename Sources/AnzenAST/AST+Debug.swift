@@ -537,7 +537,7 @@ extension Literal: CustomDebugStringConvertible {
 
 // MARK: Helpers
 
-fileprivate func attrDesc(of attribute: [Node]) -> String? {
+private func attrDesc(of attribute: [Node]) -> String? {
     guard !attribute.isEmpty else {
         return nil
     }
@@ -553,7 +553,7 @@ fileprivate func attrDesc(of attribute: [Node]) -> String? {
     return result
 }
 
-fileprivate func attrDesc(of attribute: Node?) -> String? {
+private func attrDesc(of attribute: Node?) -> String? {
     guard attribute != nil else {
         return nil
     }
@@ -571,7 +571,7 @@ fileprivate func attrDesc(of attribute: Node?) -> String? {
     }
 }
 
-fileprivate func attrDesc<T>(of attribute: T?) -> String? {
+private func attrDesc<T>(of attribute: T?) -> String? {
     guard attribute != nil else {
         return nil
     }
