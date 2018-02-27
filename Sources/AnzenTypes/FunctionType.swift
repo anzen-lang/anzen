@@ -30,12 +30,6 @@ public class FunctionType: GenericType, SemanticType {
             && self.codomain     == rhs.codomain
     }
 
-    /// Returns the bounded version of the function.
-    public var bounded: FunctionType {
-        precondition(self.domain.count > 0)
-        return FunctionType(from: Array(self.domain.dropFirst()), to: self.codomain)
-    }
-
 }
 
 // MARK: Internals
