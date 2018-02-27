@@ -71,6 +71,11 @@ public struct ScopeBinder: ASTVisitor {
         } else {
             node.scope = scope
         }
+
+        // Visit the specializations.
+        for specialization in node.specializations {
+            try self.visit(specialization.value)
+        }
     }
 
     /// A stack of scopes.

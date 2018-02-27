@@ -7,7 +7,7 @@ public enum Constraint {
 
     case equals     (type: SemanticType, to  : SemanticType)
     case conforms   (type: SemanticType, to  : SemanticType)
-    case specializes(type: SemanticType, with: SemanticType)
+    case specializes(type: SemanticType, with: SemanticType, using: [String: SemanticType])
 
     // MARK: Membership constraints
 

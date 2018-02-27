@@ -5,12 +5,12 @@ public enum FunctionAttribute {
 
 }
 
-public class FunctionType: SemanticType {
+public class FunctionType: GenericType, SemanticType {
 
     public typealias ParameterDescription = (label: String?, type: QualifiedType)
 
     public init(
-        placeholders: Set<String> = [],
+        placeholders: Set<TypePlaceholder> = [],
         from domain : [ParameterDescription],
         to codomain : QualifiedType)
     {
@@ -19,9 +19,9 @@ public class FunctionType: SemanticType {
         self.codomain     = codomain
     }
 
-    public let placeholders: Set<String>
+    public let placeholders: Set<TypePlaceholder>
     public let domain      : [ParameterDescription]
-    public var codomain    : QualifiedType
+    public let codomain    : QualifiedType
 
     public var isGeneric: Bool {
         return !self.placeholders.isEmpty

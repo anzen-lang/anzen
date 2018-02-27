@@ -27,6 +27,19 @@ extension TypeAlias: CustomStringConvertible {
 
 }
 
+extension TypeSpecialization: CustomStringConvertible {
+
+    public var description: String {
+        let placeholders = self.specializations
+            .sorted(by: { a, b in a.key.name < b.key.name })
+            .map { "\($0.key.name) = \($0.value)" }
+            .joined(separator: ", ")
+        return "<\(placeholders)>(\(self.genericType))"
+    }
+
+}
+
+
 extension TypeVariable: CustomStringConvertible {
 
     public var description: String {
@@ -47,7 +60,10 @@ extension FunctionType: CustomStringConvertible {
 
     public var description: String {
         let placeholders = self.isGeneric
-            ? "<" + self.placeholders.sorted().joined(separator: ", ") + ">"
+            ? "<" + self.placeholders
+                .map   ({ $0.description })
+                .sorted()
+                .joined(separator: ", ") + ">"
             : ""
         let params = self.domain
             .map   ({ ($0.label ?? "_") + ": \($0.type)" })
@@ -57,13 +73,25 @@ extension FunctionType: CustomStringConvertible {
 
 }
 
+extension SelfType: CustomStringConvertible {
+
+    public var description: String {
+        return "Self(\(self.type))"
+    }
+
+}
+
+
 extension StructType: CustomStringConvertible {
 
     public var description: String {
         let placeholders = self.isGeneric
-            ? "<" + self.placeholders.sorted().joined(separator: ", ") + ">"
+            ? "<" + self.placeholders
+                .map   ({ $0.description })
+                .sorted()
+                .joined(separator: ", ") + ">"
             : ""
-        return "struct \(self.name)\(placeholders) {}"
+        return "\(self.name)\(placeholders)"
     }
 
 }

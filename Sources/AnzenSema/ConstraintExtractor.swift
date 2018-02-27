@@ -20,8 +20,9 @@ public struct ConstraintExtractor: ASTVisitor {
 
         // Once we've computed the domain and codomain of the function's signature, we can create
         // a type for the function itself.
+        let placeholders = Set(node.innerScope!.flatMap({ $0.symbol.type as? TypePlaceholder }))
         let functionType = FunctionType(
-            placeholders: Set(node.placeholders), from: domain, to: codomain)
+            placeholders: placeholders, from: domain, to: codomain)
 
         // Visit the body of the function.
         try self.visit(node.body)
@@ -69,7 +70,8 @@ public struct ConstraintExtractor: ASTVisitor {
 
     public mutating func visit(_ node: StructDecl) throws {
         // Create a new type for the struct.
-        let structType = StructType(name: node.name, placeholders: Set(node.placeholders))
+        let placeholders = Set(node.innerScope!.flatMap({ $0.symbol.type as? TypePlaceholder }))
+        let structType   = StructType(name: node.name, placeholders: placeholders)
 
         // Infer the type of all members of the struct.
         for child in node.body.statements {
@@ -78,11 +80,17 @@ public struct ConstraintExtractor: ASTVisitor {
             case let property as PropDecl:
                 structType.properties[property.name] =
                     property.type!.qualified(by: property.qualifiers)
+
             case let method as FunDecl:
                 if structType.methods[method.name] == nil {
                     structType.methods[method.name] = []
                 }
                 structType.methods[method.name]?.append(method.type!)
+
+            case _ as StructDecl: fallthrough
+            case _ as InterfaceDecl:
+                fatalError("TODO")
+
             default:
                 assertionFailure("unreachable")
             }
@@ -150,12 +158,18 @@ public struct ConstraintExtractor: ASTVisitor {
         // Create a fresh variable for the node.
         node.type = TypeVariable()
 
+        // Analyze the specialization arguments (if any).
+        var specializationArgs: [String: SemanticType] = [:]
+        for argument in node.specializations {
+            specializationArgs[argument.key] = try analyzeTypeAnnotation(argument.value).type
+        }
+
         // Retrieve the symbol(s) associated with the identifier and create a specialization
         // constraint for each one of them.
         let symbols = node.scope![node.name]
         assert(!symbols.isEmpty)
         self.constraints.append(.or(symbols.map({
-            Constraint.specializes(type: $0.type, with: node.type!)
+            Constraint.specializes(type: $0.type, with: node.type!, using: specializationArgs)
         })))
     }
 
@@ -228,9 +242,10 @@ fileprivate func analyzeIdentifier(_ node: Ident) throws -> SemanticType {
     case let alias as TypeAlias:
         node.type = alias
         return alias.type
-    case let placeholder as TypePlaceholder:
-        node.type = placeholder
-        return placeholder
+    case _ as TypePlaceholder: fallthrough
+    case _ as SelfType:
+        node.type = symbols[0].type
+        return symbols[0].type
     default:
         throw InferenceError(reason: "'\(node.name)' is not a type", location: node.location)
     }

@@ -24,6 +24,12 @@ extension SemanticType {
 
 }
 
+public protocol GenericType: SemanticType {
+
+    var placeholders: Set<TypePlaceholder> { get }
+
+}
+
 public enum TypeQualifier {
 
     case cst

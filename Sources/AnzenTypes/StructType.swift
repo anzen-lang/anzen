@@ -1,8 +1,8 @@
-public class StructType: SemanticType {
+public class StructType: GenericType, SemanticType {
 
     public init(
         name        : String,
-        placeholders: Set<String> = [],
+        placeholders: Set<TypePlaceholder> = [],
         properties  : [String: QualifiedType] = [:],
         methods     : [String: [SemanticType]] = [:])
     {
@@ -13,7 +13,7 @@ public class StructType: SemanticType {
     }
 
     public let name        : String
-    public let placeholders: Set<String>
+    public let placeholders: Set<TypePlaceholder>
     public var properties  : [String: QualifiedType]
     public var methods     : [String: [SemanticType]]
 

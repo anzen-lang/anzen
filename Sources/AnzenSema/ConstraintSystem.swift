@@ -35,14 +35,14 @@ public class ConstraintSystem {
         // Try to solve as many constraints as possible before creating a sub-system.
         while let constraint = self.constraints.popLast() {
             switch constraint {
-            case .equals(let x, let y):
+            case .equals(type: let x, to: let y):
                 do {
                     try self.solveEquality(between: x, and: y)
                 } catch {
                     return .error(error)
                 }
 
-            case .conforms(let x, let y):
+            case .conforms(type: let x, to: let y):
                 // TODO: For the time being, we process conformance constraint the same way we
                 // process equality constraints. However, when we'll implement interfaces, we'll
                 // have to use a different kind of unification. Moreover, this will probably
@@ -53,9 +53,9 @@ public class ConstraintSystem {
                     return .error(error)
                 }
 
-            case .specializes(let x, let y):
+            case .specializes(type: let x, with: let y, using: let z):
                 do {
-                    try self.solveSpecialization(of: x, with: y)
+                    try self.solveSpecialization(of: x, with: y, using: z)
                 } catch {
                     return .error(error)
                 }
@@ -65,7 +65,7 @@ public class ConstraintSystem {
             // member is overloaded, in which case a sub-system will be created with a disjunction
             // of constraints for each of the overloads. If the owning type hasn't been inferred
             // yet, the constraint is deferred.
-            case .belongs(let symbol, let type):
+            case .belongs(symbol: let symbol, to: let type):
                 do {
                     try self.solveMembership(of: symbol, in: type)
                 } catch {
@@ -101,49 +101,103 @@ public class ConstraintSystem {
     // MARK: Internals
 
     private func solveEquality(between x: SemanticType, and y: SemanticType) throws {
+        try self.unify(x, y)
+    }
+
+    private func solveSpecialization(
+        of    x: SemanticType,
+        with  y: SemanticType,
+        using z: [String: SemanticType]) throws
+    {
         let a = self.walk(x)
         let b = self.walk(y)
 
-        // Unifying a type alias with a function type isn't necessary inconsistent. It may happen
-        // when a equality constraint is placed on a callee that represents a type initializer. In
-        // that case, instead of unifying both types, we must look for the type's initializers and
-        // try to unify each of them.
-        if let fun = a as? FunctionType, let alias = b as? TypeAlias {
-            guard let initializers = self.find(member: "__new__", in: alias.type) else {
-                self.constraints.insert(.equals(type: a, to: b), at: 0)
+        // Defer the constraint if the unspecialized type is as yet unknown.
+        guard !(a is TypeVariable) else {
+            self.constraints.insert(.specializes(type: a, with: b, using: z), at: 0)
+            return
+        }
+
+        // Specializing a type alias with a function type isn't necessary inconsistent. It may
+        // happen when the former is used as a callee to represent a type initializer. In this
+        // case, we must look for the type's initializers and try to specialize each one of them.
+        if let alias = a as? TypeAlias, let fun = b as? FunctionType {
+            // Get the list of initializers of the aliased type.
+            let type = self.walk(alias.type)
+            guard var initializers = self.find(member: "__new__", in: type) else {
+                self.constraints.insert(.specializes(type: a, with: b, using: z), at: 0)
                 return
             }
-            guard !initializers.isEmpty else {
-                let walked = self.walk(alias.type)
-                throw InferenceError(reason: "'\(walked)' has no initializer")
+
+            // All types should have at least one default initializer.
+            assert(!initializers.isEmpty)
+
+            // If the type is generic, we attempt to specialize its initializers up front, but we
+            // link the explicity defined placheolders to that of the type rather than that of the
+            // initializer (if any).
+            if let generic = type as? GenericType {
+                // Make sure no undefined specialization argument was supplied.
+                let unspecified = Set(z.keys).subtracting(generic.placeholders.map({ $0.name }))
+                guard unspecified.isEmpty else {
+                    throw InferenceError(
+                        reason: "Superfluous explicit specializations: \(unspecified)")
+                }
+
+                // Specialize the compatible initializers.
+                initializers = initializers.map {
+                    let memo = Memo()
+                    for ph in generic.placeholders {
+                        if let type = z[ph.name] {
+                            memo[ph] = type
+                        }
+                    }
+
+                    guard let specialized = self.specialize(type: $0, with: b, memo: memo) else {
+                        // Note: Notice that initilizers that can't be specialized are put back
+                        // into the list unchanged. This allows us to handle failure to specialize
+                        // the usual behavior once we'll attempt to solve their constraint.
+                        return $0
+                    }
+                    return self.replaceGenericReferences(in: specialized, memo: memo)
+                }
             }
 
             self.constraints.append(.or(initializers.map({
-                Constraint.equals(type: fun, to: $0)
+                Constraint.specializes(type: $0, with: fun, using: [:])
             })))
             return
         }
 
-        try self.unify(x, y)
-    }
-
-    private func solveSpecialization(of x: SemanticType, with y: SemanticType) throws {
-        let a = self.walk(x)
-        let b = self.walk(y)
-
-        guard !(a is TypeVariable) else {
-            self.constraints.insert(.specializes(type: a, with: b), at: 0)
+        // If the unspecialized type isn't generic, this boils down to an equality constraint.
+        guard let unspecialized = a as? GenericType, !unspecialized.placeholders.isEmpty else {
+            try self.solveEquality(between: a, and: b)
             return
         }
-        guard let specialized = self.specialize(type: a, with: b) else {
-            throw InferenceError(reason: "'\(a)' is not a specialization of '\(b)'")
+
+        // Make sure no undefined specialization argument was supplied.
+        let unspecified = Set(z.keys).subtracting(unspecialized.placeholders.map({ $0.name }))
+        guard unspecified.isEmpty else {
+            throw InferenceError(
+                reason: "Superfluous explicit specializations: \(unspecified)")
         }
 
-        try self.solveEquality(between: b, and: specialized)
+        // Initialize the specialization memo with the arguments provided explicitly.
+        let memo = Memo()
+        for ph in unspecialized.placeholders {
+            if let type = z[ph.name] {
+                memo[ph] = type
+            }
+        }
+
+        // Specialize the function.
+        guard var specialized = self.specialize(type: unspecialized, with: b, memo: memo) else {
+            throw InferenceError(reason: "'\(b)' is not a specialization of '\(a)'")
+        }
+        specialized = self.replaceGenericReferences(in: specialized, memo: memo)
+        try self.solveEquality(between: specialized, and: b)
     }
 
     private func solveMembership(of symbol: Symbol, in type: SemanticType) throws {
-        // FIXME: Deep walk the type.
         guard let members = self.find(member: symbol.name, in: type) else {
             self.constraints.insert(.belongs(symbol: symbol, to: type), at: 0)
             return
@@ -207,12 +261,12 @@ public class ConstraintSystem {
         }
     }
 
-    /// Attempts to specialize `y` so that it is compatible with `x`.
-    private func specialize(type x: SemanticType, with y: SemanticType, memo: Memo = Memo())
-        -> SemanticType?
+    /// Attempts to specialize `type` so that it matches `pattern`.
+    private func specialize(
+        type: SemanticType, with pattern: SemanticType, memo: Memo = Memo()) -> SemanticType?
     {
-        let a = self.walk(x)
-        let b = self.walk(y)
+        let a = self.walk(type)
+        let b = self.walk(pattern)
 
         // Nothing to specialize if the types are already equivalent.
         guard !a.equals(to: b) else { return a }
@@ -238,32 +292,19 @@ public class ConstraintSystem {
                 // Make sure the labels are identical.
                 guard dl.label == dr.label else { return nil }
 
-                // Make sure the parameters' qualifiers are identical (if any).
-                guard  dl.type.qualifiers.isEmpty
-                    || dr.type.qualifiers.isEmpty
-                    || dl.type.qualifiers == dr.type.qualifiers else { return nil }
-
                 // Specialize the parameter.
-                guard let specialized = self.specialize(
-                    type: dl.type.type, with: dr.type.type, memo: memo) else { return nil }
-                domain.append((
-                    dl.label,
-                    specialized.qualified(by: dl.type.qualifiers.union(dr.type.qualifiers))))
+                guard let specialized = self.specialize(type: dl.type, with: dr.type, memo: memo)
+                    else { return nil }
+                domain.append((label: dl.label, type: specialized))
             }
 
-            // Make sure the codomains' qualifiers are identical (if any)
-            guard  fnl.codomain.qualifiers.isEmpty
-                || fnr.codomain.qualifiers.isEmpty
-                || fnl.codomain.qualifiers == fnr.codomain.qualifiers else { return nil }
-
-            // Specialize the codomain
+            // Specialize the codomain.
             guard let codomain = self.specialize(
-                type: fnl.codomain.type, with: fnr.codomain.type, memo: memo) else { return nil }
+                type: fnl.codomain, with: fnr.codomain, memo: memo)
+                else { return nil }
 
-            return FunctionType(
-                from: domain,
-                to  : codomain.qualified(
-                    by: fnl.codomain.qualifiers.union(fnr.codomain.qualifiers)))
+            // Return the specialized function.
+            return FunctionType(from: domain, to: codomain)
 
         case (let sl as StructType, let sr as StructType):
             guard sl.name == sr.name else { return nil }
@@ -271,11 +312,108 @@ public class ConstraintSystem {
             // TODO: Specialize struct types.
             fatalError("TODO")
 
-        // Other pairs either are incompatible types or involve type variables. In both cases,
+            // Other pairs either are incompatible types or involve type variables. In both cases,
         // unification will decide how to proceed, so we return the unspecialized type unchanged.
         default:
             return a
         }
+    }
+
+    private func specialize(
+        type: QualifiedType, with pattern : QualifiedType, memo: Memo) -> QualifiedType?
+    {
+        guard type.qualifiers.isEmpty
+            || pattern.qualifiers.isEmpty
+            || (type.qualifiers == pattern.qualifiers)
+            else { return nil }
+        return self.specialize(type: type.type, with: pattern.type, memo: memo)?
+            .qualified(by: type.qualifiers.union(pattern.qualifiers))
+    }
+
+    private func specialize(
+        type: SemanticType, with mapping: [TypePlaceholder: SemanticType], memo: Memo = Memo())
+        -> SemanticType
+    {
+        switch self.walk(type) {
+        case let p as TypePlaceholder:
+            return mapping[p] ?? p
+
+        case let f as FunctionType:
+            return FunctionType(
+                placeholders: f.placeholders.subtracting(mapping.keys),
+                from: f.domain.map({
+                    ($0.label, self.specialize(type: $0.type, with: mapping, memo: memo))
+                }),
+                to: self.specialize(type: f.codomain, with: mapping, memo: memo))
+
+        case let s as StructType:
+            if let specialized = memo[s] { return specialized }
+            let specialized = StructType(
+                name: s.name, placeholders: s.placeholders.subtracting(mapping.keys))
+            memo[s] = specialized
+
+            for (key, value) in s.properties {
+                specialized.properties[key] = self.specialize(
+                    type: value, with: mapping, memo: memo)
+            }
+            for (key, values) in s.methods {
+                specialized.methods[key] = values.map {
+                    self.specialize(type: $0, with: mapping, memo: memo)
+                }
+            }
+
+            return specialized
+
+        case let other:
+            return other
+        }
+    }
+
+    private func specialize(
+        type: QualifiedType, with mapping: [TypePlaceholder: SemanticType], memo: Memo)
+        -> QualifiedType
+    {
+        return self.specialize(type: type.type, with: mapping).qualified(by: type.qualifiers)
+    }
+
+    private func replaceGenericReferences(in type: SemanticType, memo: Memo) -> SemanticType {
+        switch self.walk(type) {
+        case let f as FunctionType:
+            return FunctionType(
+                placeholders: f.placeholders,
+                from: f.domain.map({
+                    ($0.label, self.replaceGenericReferences(in: $0.type, memo: memo))
+                }),
+                to: self.replaceGenericReferences(in: f.codomain, memo: memo))
+
+        case let s as SelfType:
+            // The type pointed by the self container shouldn't be a variable, as we should have
+            // already inferred the type it is defined in. Self types can only appear in method
+            // signatures, and identifying the type associated with a method requires its owning
+            // type to be known (so as to call `find(member:in:)`).
+            let walked = self.walk(s.type)
+            assert(!(walked is TypeVariable))
+
+            // Make sure the pointed type is generic, otherwise there's nothing to specialize.
+            guard let generic = walked as? GenericType else { return walked }
+
+            // Return the type specialization.
+            var mapping: [TypePlaceholder: SemanticType] = [:]
+            for ph in generic.placeholders {
+                if let type = memo[ph] {
+                    mapping[ph] = type
+                }
+            }
+            return TypeSpecialization(specializing: generic, with: mapping)
+
+        case let other:
+            return other
+        }
+    }
+
+    private func replaceGenericReferences(in type: QualifiedType, memo: Memo) -> QualifiedType {
+        return self.replaceGenericReferences(in: type.type, memo: memo)
+            .qualified(by: type.qualifiers)
     }
 
     private func walk(_ x: SemanticType) -> SemanticType {
@@ -324,6 +462,15 @@ public class ConstraintSystem {
 
             return walked
 
+        case let s as SelfType:
+            return SelfType(aliasing: self.deepWalk(s.type, memo: memo))
+
+        case let s as TypeSpecialization:
+            // TODO: Specialize here!
+            return TypeSpecialization(
+                specializing: self.deepWalk(s.genericType, memo: memo) as! GenericType,
+                with: s.specializations)
+
         default:
             return x
         }
@@ -333,11 +480,15 @@ public class ConstraintSystem {
     private func find(member: String, in type: SemanticType) -> [SemanticType]? {
         switch self.walk(type) {
         case let alias as TypeAlias:
-            guard let members = self.find(member: member, in: alias.type) else { return nil }
-            return members.map { ty in
-                FunctionType(
-                    from: [(nil, alias.type.qualified(by: .mut))],
-                    to  : ty.qualified(by: .cst))
+            let members = self.find(member: member, in: alias.type)
+            if member == "__new__" {
+                return members
+            } else {
+                return members?.map { ty in
+                    FunctionType(
+                        from: [(nil, alias.type.qualified(by: .mut))],
+                        to  : ty.qualified(by: .cst))
+                }
             }
 
         case let structType as StructType:
@@ -348,6 +499,10 @@ public class ConstraintSystem {
             } else {
                 return []
             }
+
+        case let s as TypeSpecialization:
+            return self.find(
+                member: member, in: self.specialize(type: s.genericType, with: s.specializations))
 
         default:
             return nil
@@ -372,7 +527,13 @@ fileprivate class Memo: Sequence {
 
     typealias Element = (key: AnyObject, value: SemanticType)
 
-    var content: [Element] = []
+    init() {
+        self.content = []
+    }
+
+    init<S>(uniqueKeysWithValues elements: S) where S: Sequence, S.Element == Element {
+        self.content = Array(elements)
+    }
 
     func makeIterator() -> Array<Element>.Iterator {
         return self.content.makeIterator()
@@ -395,5 +556,7 @@ fileprivate class Memo: Sequence {
             }
         }
     }
+
+    var content: [Element]
 
 }

@@ -28,6 +28,9 @@ public func performSema(on module: ModuleDecl) throws {
 
     let constraintSystem = ConstraintSystem(constraints: constraintExtractor.constraints)
 
+    // MARK: Debugging
+
+    // print(module.debugDescription)
     var i = 1
     while let result = constraintSystem.next() {
         print("solution #\(i):")
