@@ -23,10 +23,6 @@ public class FunctionType: GenericType, SemanticType {
     public let domain      : [ParameterDescription]
     public let codomain    : QualifiedType
 
-    public var isGeneric: Bool {
-        return !self.placeholders.isEmpty
-    }
-
     public func equals(to other: SemanticType) -> Bool {
         guard let rhs = other as? FunctionType else { return false }
         return self.placeholders == rhs.placeholders

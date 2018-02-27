@@ -1,8 +1,5 @@
 public protocol SemanticType {
 
-    /// Indicates whether or not the type is generic.
-    var isGeneric: Bool { get }
-
     /// Returns this type qualified with the given qualifiers.
     func qualified(by qualifiers: Set<TypeQualifier>) -> QualifiedType
     /// Returns this type qualified with the given qualifier.

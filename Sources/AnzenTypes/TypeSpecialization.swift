@@ -17,8 +17,6 @@ public struct TypeSpecialization: SemanticType {
     public let genericType    : GenericType
     public let specializations: [TypePlaceholder: SemanticType]
 
-    public var isGeneric = false
-
 }
 
 fileprivate extension Dictionary where Key == TypePlaceholder, Value == SemanticType {

@@ -59,7 +59,7 @@ extension TypePlaceholder: CustomStringConvertible {
 extension FunctionType: CustomStringConvertible {
 
     public var description: String {
-        let placeholders = self.isGeneric
+        let placeholders = !self.placeholders.isEmpty
             ? "<" + self.placeholders
                 .map   ({ $0.description })
                 .sorted()
@@ -85,7 +85,7 @@ extension SelfType: CustomStringConvertible {
 extension StructType: CustomStringConvertible {
 
     public var description: String {
-        let placeholders = self.isGeneric
+        let placeholders = !self.placeholders.isEmpty
             ? "<" + self.placeholders
                 .map   ({ $0.description })
                 .sorted()

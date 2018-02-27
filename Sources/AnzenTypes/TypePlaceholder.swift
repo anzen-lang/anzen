@@ -4,7 +4,6 @@ public class TypePlaceholder: SemanticType {
         self.name = name
     }
 
-    public let isGeneric = true
     public let name: String
 
     public func equals(to other: SemanticType) -> Bool {
