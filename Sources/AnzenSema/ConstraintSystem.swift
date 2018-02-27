@@ -537,10 +537,6 @@ private class Memo: Sequence {
         self.content = []
     }
 
-    init<S>(uniqueKeysWithValues elements: S) where S: Sequence, S.Element == Element {
-        self.content = Array(elements)
-    }
-
     func makeIterator() -> Array<Element>.Iterator {
         return self.content.makeIterator()
     }
