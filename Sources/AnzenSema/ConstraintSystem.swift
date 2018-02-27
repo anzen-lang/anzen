@@ -119,13 +119,45 @@ public class ConstraintSystem {
         // happen when the former is used as a callee to represent a type initializer. In this
         // case, we must look for the type's initializers and try to specialize each one of them.
         if let alias = a as? TypeAlias, let fun = b as? FunctionType {
-            try self.solveInitializerSpecialization(
-                of: alias, with: fun, using: args)
+            let aliasedType = self.walk(alias.type)
+            guard !(aliasedType is TypeVariable) else {
+                self.constraints.insert(
+                    .specializes(type: alias, with: pattern, using: args), at: 0)
+                return
+            }
+
+            let initializer = Symbol(name: "__new__")
+            self.constraints.append(.specializes(type: initializer.type, with: fun, using: [:]))
+
+            if let unspecialized = aliasedType as? GenericType {
+                // Make sure no undefined specialization argument was supplied.
+                let unspecified = Set(args.keys)
+                    .subtracting(unspecialized.placeholders.map({ $0.name }))
+                guard unspecified.isEmpty else {
+                    throw InferenceError(
+                        reason: "Superfluous explicit specializations: \(unspecified)")
+                }
+
+                var mapping: [TypePlaceholder: SemanticType] = [:]
+                for ph in unspecialized.placeholders {
+                    if let specialized = args[ph.name] {
+                        mapping[ph] = specialized
+                    }
+                }
+
+                self.constraints.append(
+                    .belongs(
+                        symbol: initializer,
+                        to: TypeSpecialization(specializing: unspecialized, with: mapping)))
+            } else {
+                self.constraints.append(.belongs(symbol: initializer, to: aliasedType))
+            }
+
             return
         }
 
         // If the unspecialized type isn't generic, this boils down to an equality constraint.
-        guard let unspecialized = a as? GenericType, !unspecialized.placeholders.isEmpty else {
+        guard let unspecialized = a as? GenericType else {
             try self.solveEquality(between: a, and: b)
             return
         }
@@ -151,56 +183,6 @@ public class ConstraintSystem {
         }
         specialized = self.replaceGenericReferences(in: specialized, memo: memo)
         try self.solveEquality(between: specialized, and: b)
-    }
-
-    private func solveInitializerSpecialization(
-        of    alias  : TypeAlias,
-        with  pattern: SemanticType,
-        using args   :[String: SemanticType]) throws
-    {
-        let type = self.walk(alias.type)
-
-        // Get the list of initializers of the aliased type.
-        guard var initializers = self.find(member: "__new__", in: type) else {
-            self.constraints.insert(.specializes(type: alias, with: pattern, using: args), at: 0)
-            return
-        }
-
-        // All types should have at least one default initializer.
-        assert(!initializers.isEmpty)
-
-        // If the type is generic, we attempt to specialize its initializers up front, but we
-        // link the explicity defined placheolders to that of the type rather than that of the
-        // initializer (if any).
-        if let generic = type as? GenericType {
-            // Make sure no undefined specialization argument was supplied.
-            let unspecified = Set(args.keys).subtracting(generic.placeholders.map({ $0.name }))
-            guard unspecified.isEmpty else {
-                throw InferenceError(
-                    reason: "Superfluous explicit specializations: \(unspecified)")
-            }
-
-            // Specialize the compatible initializers.
-            initializers = initializers.map {
-                let memo = Memo()
-                for ph in generic.placeholders {
-                    if let type = args[ph.name] {
-                        memo[ph] = type
-                    }
-                }
-
-                // Note: Notice that initilizers that can't be specialized are put back
-                // into the list unchanged. This allows us to handle failure to specialize
-                // the usual behavior once we'll attempt to solve their constraint.
-                guard let specialized = self.specialize(type: $0, with: pattern, memo: memo)
-                    else { return $0 }
-                return self.replaceGenericReferences(in: specialized, memo: memo)
-            }
-        }
-
-        self.constraints.append(.or(initializers.map({
-            Constraint.specializes(type: $0, with: pattern, using: [:])
-        })))
     }
 
     private func solveMembership(of symbol: Symbol, in type: SemanticType) throws {
@@ -379,7 +361,8 @@ public class ConstraintSystem {
         type: QualifiedType, with mapping: [TypePlaceholder: SemanticType], memo: Memo)
         -> QualifiedType
     {
-        return self.specialize(type: type.type, with: mapping).qualified(by: type.qualifiers)
+        return self.specialize(type: type.type, with: mapping, memo: memo)
+            .qualified(by: type.qualifiers)
     }
 
     private func replaceGenericReferences(in type: SemanticType, memo: Memo) -> SemanticType {
