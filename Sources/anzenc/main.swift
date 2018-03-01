@@ -1,33 +1,61 @@
-import Foundation
+#if os(Linux)
+    import Glibc
+#else
+    import Darwin.C
+#endif
+import AnzenAST
 import AnzenLib
 import AnzenSema
+import Commander
+import IO
 
-enum CommandError: Error {
-    case missingInput
-}
+let main = command(
+    Argument<String>("input", description: "Input source"),
+    Flag("print-src", default: false, description: "Pretty-print the source as it was parsed."),
+    Flag("print-ast", default: false, description: "Print the AST of the input after type-check.")
+) { input, printSRC, printAST in
 
-func main(args: [String] = CommandLine.arguments) throws {
-    // let programName    = args[0]
-    let positionalArgs = args.dropFirst().filter { !$0.starts(with: "-") }
-    // let optionalArgs   = args.dropFirst().filter { $0.starts(with: "-") }
-
-    if positionalArgs.isEmpty {
-        throw CommandError.missingInput
+    // Read the source file.
+    let source: String
+    do {
+        source = try File(path: input).read()
+    } catch let error as IOError {
+        Console.err.print("error: ", in: [.bold, .red], terminator: "")
+        switch error {
+        case .fileNotFound(let path):
+            Console.err.print("no such file or directory: '\(path)'", in: .bold)
+        default:
+            Console.err.print("I/O error: '\(error.number)'", in: .bold)
+        }
+        exit(-1)
     }
 
-    let source = try String(contentsOf: URL(fileURLWithPath: positionalArgs[0]))
-    let module = try AnzenLib.parse(text: source)
-    try performSema(on: module)
-    print(module.debugDescription)
+    // Parse the source file.
+    let ast: AnzenAST.ModuleDecl
+    do {
+        ast = try AnzenLib.parse(text: source)
+    } catch {
+        exit(-1)
+    }
+
+    // Pretty-print the source if instructed to
+    if printSRC { print(ast) }
+
+    // Run the static semantic analysis.
+    let semaErrors = AnzenLib.performSema(on: ast)
+    guard semaErrors.isEmpty else {
+        // Pretty-print each error found during semantic analysis.
+        for error in semaErrors {
+            Console.err.print("error: ", in: [.bold, .red], terminator: "")
+            Console.err.print(error, in: [.bold])
+            Console.err.print()
+        }
+        exit(-1)
+    }
+
+    // Print the AST if instructed to.
+    if printAST { debugPrint(ast) }
+
 }
 
-do {
-    try main()
-} catch let e as SemanticError {
-    print(e)
-    exit(1)
-} catch let e {
-    print(e)
-    exit(1)
-}
-exit(0)
+main.run()

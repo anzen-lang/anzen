@@ -1,49 +1,22 @@
 import AnzenAST
 import AnzenSema
+import IO
 
 /// Parses the input and produces an AST without any type annotation.
 public func parse(text: String) throws -> ModuleDecl {
     return try Grammar.module.parse(text)
 }
 
-public func performSema(on module: ModuleDecl) throws {
-    var pass: ASTVisitor
+public func performSema(on module: ModuleDecl) -> [Error] {
+    var passes: [Pass] = [
+        SymbolsExtractor(),
+        ScopeBinder(),
+        ConstraintSolver(),
+    ]
 
-    // This pass associates scope-opening nodes (e.g. Block, FunDecl, ...) with scope instances,
-    // and identify the symbols that are declared within those scopes.
-    pass = SymbolsExtractor()
-    try pass.visit(module)
-
-    // This pass binds value and type identifiers to the scope where they are declared.
-    pass = ScopeBinder()
-    try pass.visit(module)
-
-    // This pass builds the type of named types and functions.
-    // pass = TypeCreator()
-    // try pass.visit(module)
-
-    // This pass infers the type of the nodes of the AST.
-    var constraintExtractor = ConstraintExtractor()
-    try constraintExtractor.visit(module)
-
-    let constraintSystem = ConstraintSystem(constraints: constraintExtractor.constraints)
-
-    // MARK: Debugging
-
-    // print(module.debugDescription)
-    var i = 1
-    while let result = constraintSystem.next() {
-        print("solution #\(i):")
-        switch result {
-        case .solution(let solution):
-            for (variable, type) in solution {
-                print("\(variable) => \(type)")
-            }
-        case .error(let error):
-            print(error)
-        }
-
-        print()
-        i += 1
+    var errors: [Error] = []
+    for i in 0 ..< passes.count {
+        errors.append(contentsOf: passes[i].run(on: module))
     }
+    return errors
 }

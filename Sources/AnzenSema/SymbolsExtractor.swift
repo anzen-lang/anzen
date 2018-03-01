@@ -9,9 +9,20 @@ import AnzenTypes
 ///
 /// This step is indispensable for lexical scoping (perfomed by the `ScopeBinder`). It's what's
 /// let us bind identifiers to the appropriate declaration (i.e. to the appropriate scope).
-public struct SymbolsExtractor: ASTVisitor {
+public struct SymbolsExtractor: ASTVisitor, Pass {
+
+    public let name: String = "symbol extraction"
 
     public init() {}
+
+    public mutating func run(on module: ModuleDecl) -> [Error] {
+        do {
+            try self.visit(module)
+            return self.errors
+        } catch {
+            return [error]
+        }
+    }
 
     public mutating func visit(_ node: ModuleDecl) throws {
         // Create a new scope for the module.
@@ -37,8 +48,8 @@ public struct SymbolsExtractor: ASTVisitor {
         // If there already are symbols with the same name in the current scope, make sure they
         // all are overloadable (i.e. they correspond to other function declarations).
         let symbols = self.stack.last.innerScope![node.name]
-        guard symbols.forAll({ $0.isOverloadable }) else {
-            throw DuplicateDeclarationError(name: node.name, location: node.location)
+        if !symbols.forAll({ $0.isOverloadable }) {
+            self.errors.append(DuplicateDeclaration(name: node.name, at: node.location))
         }
 
         // Create a symbol for the function's name within the currently visited scope.
@@ -53,8 +64,9 @@ public struct SymbolsExtractor: ASTVisitor {
         self.stack.push(node)
         for placeholder in node.placeholders {
             // Catch duplicate placeholder declarations.
-            guard !node.innerScope!.defines(name: placeholder) else {
-                throw DuplicateDeclarationError(name: placeholder, location: node.location)
+            if node.innerScope!.defines(name: placeholder) {
+                self.errors.append(
+                    DuplicateDeclaration(name: placeholder, at: node.location))
             }
             node.innerScope!.add(
                 symbol: Symbol(name: placeholder, type: TypePlaceholder(named: placeholder)))
@@ -74,8 +86,8 @@ public struct SymbolsExtractor: ASTVisitor {
 
     public mutating func visit(_ node: ParamDecl) throws {
         // Make sure the parameter's name wasn't already declared.
-        guard !self.stack.last.innerScope!.defines(name: node.name) else {
-            throw DuplicateDeclarationError(name: node.name, location: node.location)
+        if self.stack.last.innerScope!.defines(name: node.name) {
+            self.errors.append(DuplicateDeclaration(name: node.name, at: node.location))
         }
 
         // Create a new symbol for the parameter, and visit the node's declaration.
@@ -86,8 +98,8 @@ public struct SymbolsExtractor: ASTVisitor {
 
     public mutating func visit(_ node: PropDecl) throws {
         // Make sure the property's name wasn't already declared.
-        guard !self.stack.last.innerScope!.defines(name: node.name) else {
-            throw DuplicateDeclarationError(name: node.name, location: node.location)
+        if self.stack.last.innerScope!.defines(name: node.name) {
+            self.errors.append(DuplicateDeclaration(name: node.name, at: node.location))
         }
 
         // Create a new symbol for the property, and visit the node's declaration.
@@ -98,8 +110,8 @@ public struct SymbolsExtractor: ASTVisitor {
 
     public mutating func visit(_ node: StructDecl) throws {
         // Make sure the struct's name wasn't already declared.
-        guard !self.stack.last.innerScope!.defines(name: node.name) else {
-            throw DuplicateDeclarationError(name: node.name, location: node.location)
+        if self.stack.last.innerScope!.defines(name: node.name) {
+            self.errors.append(DuplicateDeclaration(name: node.name, at: node.location))
         }
 
         // Create a type alias for the node's symbol.
@@ -115,8 +127,9 @@ public struct SymbolsExtractor: ASTVisitor {
         self.stack.push(node)
         for placeholder in node.placeholders {
             // Catch duplicate placeholder declarations.
-            guard !node.innerScope!.defines(name: placeholder) else {
-                throw DuplicateDeclarationError(name: placeholder, location: node.location)
+            if node.innerScope!.defines(name: placeholder) {
+                self.errors.append(
+                    DuplicateDeclaration(name: placeholder, at: node.location))
             }
             node.innerScope!.add(
                 symbol: Symbol(name: placeholder, type: TypePlaceholder(named: placeholder)))
@@ -132,6 +145,7 @@ public struct SymbolsExtractor: ASTVisitor {
 
     // MARK: Internals
 
-    var stack: Stack<ScopeNode> = []
+    private var stack: Stack<ScopeNode> = []
+    private var errors: [Error] = []
 
 }

@@ -1,9 +1,41 @@
 import AnzenAST
 import AnzenTypes
 
-public struct ConstraintExtractor: ASTVisitor {
+public struct ConstraintSolver: ASTVisitor, Pass {
+
+    public let name = "semantic type solving"
 
     public init() {}
+
+    public mutating func run(on module: ModuleDecl) -> [Error] {
+        // Extract the type constraints from the AST.
+        do {
+            try self.visit(module)
+        } catch {
+            return [error]
+        }
+
+        // Solve the type system we built.
+        let constraintSystem = ConstraintSystem(constraints: self.constraints)
+
+        var i = 1
+        while let result = constraintSystem.next() {
+            print("solution #\(i):")
+            switch result {
+            case .solution(let solution):
+                for (variable, type) in solution {
+                    print("\(variable) => \(type)")
+                }
+            case .error(let error):
+                print(error)
+            }
+
+            print()
+            i += 1
+        }
+
+        return self.errors
+    }
 
     public mutating func visit(_ node: FunDecl) throws {
         // Extract the function's domain.
@@ -187,6 +219,10 @@ public struct ConstraintExtractor: ASTVisitor {
     }
 
     public var constraints: [Constraint] = []
+
+    // MARK: Internals
+
+    private var errors: [Error] = []
 
 }
 

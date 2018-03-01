@@ -1,8 +1,19 @@
 import AnzenAST
 
-public struct ScopeBinder: ASTVisitor {
+public struct ScopeBinder: ASTVisitor, Pass {
+
+    public let name: String = "scope binding"
 
     public init() {}
+
+    public mutating func run(on module: ModuleDecl) -> [Error] {
+        do {
+            try self.visit(module)
+            return self.errors
+        } catch {
+            return [error]
+        }
+    }
 
     public mutating func visit(_ node: ModuleDecl) throws {
         // NOTE: We choose to make all module scopes descend from Anzen's built-in scope. This
@@ -58,14 +69,16 @@ public struct ScopeBinder: ASTVisitor {
     public mutating func visit(_ node: Ident) throws {
         // Find the scope that defines the visited identifier.
         guard let scope = self.scopes.last.findScopeDefining(name: node.name) else {
-            throw UndefinedSymbolError(name: node.name, location: node.location)
+            self.errors.append(UndefinedSymbolError(name: node.name, at: node.location))
+            return
         }
 
         // If we're visiting the initial value of the identifier's declaration (e.g. as part of a
         // property declaration), we should bind it to an enclosing scope.
         if self.underDeclaration[scope] == node.name {
             guard let parentScope = scope.parent?.findScopeDefining(name: node.name) else {
-                throw UndefinedSymbolError(name: node.name, location: node.location)
+                self.errors.append(UndefinedSymbolError(name: node.name, at: node.location))
+                return
             }
             node.scope = parentScope
         } else {
@@ -94,5 +107,7 @@ public struct ScopeBinder: ASTVisitor {
     ///     fun f() { let x = x }
     ///
     private var underDeclaration: [Scope: String] = [:]
+
+    private var errors: [Error] = []
 
 }
