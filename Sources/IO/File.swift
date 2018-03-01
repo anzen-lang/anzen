@@ -13,7 +13,7 @@ public enum IOError: Error {
 
     public var number: Int32 {
         switch self {
-        case .fileNotFound(_):      return ENOENT
+        case .fileNotFound:         return ENOENT
         case .permissionDenied:     return EACCES
         case .readOnly:             return EROFS
         case .other(errno: let no): return no
