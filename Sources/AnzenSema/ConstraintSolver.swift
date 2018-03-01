@@ -60,7 +60,8 @@ public struct ConstraintSolver: ASTVisitor, Pass {
         try self.visit(node.body)
 
         // Add an equality constraint on the symbol's type.
-        self.constraints.append(.equals(type: node.type!, to: functionType))
+        self.constraints.append(
+            .equals(type: node.type!, to: functionType, at: node.location))
     }
 
     public mutating func visit(_ node: ParamDecl) throws {
@@ -69,7 +70,8 @@ public struct ConstraintSolver: ASTVisitor, Pass {
         node.qualifiers = annotation.qualifiers
 
         // Add an equality constraint on the symbol's type.
-        self.constraints.append(.equals(type: node.type!, to: annotation.type))
+        self.constraints.append(
+            .equals(type: node.type!, to: annotation.type, at: node.location))
     }
 
     public mutating func visit(_ node: PropDecl) throws {
@@ -79,7 +81,8 @@ public struct ConstraintSolver: ASTVisitor, Pass {
             node.qualifiers = annotation.qualifiers
 
             // Add an equality constraint on the symbol's type.
-            self.constraints.append(.equals(type: node.type!, to: annotation.type))
+            self.constraints.append(
+                .equals(type: node.type!, to: annotation.type, at: node.location))
         } else {
             node.qualifiers = [.cst]
         }
@@ -93,9 +96,11 @@ public struct ConstraintSolver: ASTVisitor, Pass {
             // be declared as a super type of its initial value. Otherwise, add an equality
             // constraint.
             if node.typeAnnotation != nil {
-                self.constraints.append(.conforms(type: node.type!, to: valueTy))
+                self.constraints.append(
+                    .conforms(type: node.type!, to: valueTy, at: node.location))
             } else {
-                self.constraints.append(.equals(type: node.type!, to: valueTy))
+                self.constraints.append(
+                    .equals(type: node.type!, to: valueTy, at: node.location))
             }
         }
     }
@@ -130,7 +135,8 @@ public struct ConstraintSolver: ASTVisitor, Pass {
         }
 
         let alias = node.type as? TypeAlias
-        self.constraints.append(.equals(type: alias!.type, to: structType))
+        self.constraints.append(
+            .equals(type: alias!.type, to: structType, at: node.location))
     }
 
     public mutating func visit(_ node: BindingStmt) throws {
@@ -139,7 +145,8 @@ public struct ConstraintSolver: ASTVisitor, Pass {
         self.constraints.append(
             .conforms(
                 type: (node.lvalue as! TypedNode).type!,
-                to  :(node.rvalue as! TypedNode).type!))
+                to  :(node.rvalue as! TypedNode).type!,
+                at  : node.location))
     }
 
     public mutating func visit(_ node: CallExpr) throws {
@@ -162,7 +169,8 @@ public struct ConstraintSolver: ASTVisitor, Pass {
         try self.visit(node.callee)
         self.constraints.append(.equals(
             type: (node.callee as! TypedNode).type!,
-            to  : functionType))
+            to  : functionType,
+            at  : node.location))
     }
 
     public mutating func visit(_ node: SelectExpr) throws {
@@ -176,9 +184,13 @@ public struct ConstraintSolver: ASTVisitor, Pass {
         if let owner = node.owner {
             try self.visit(owner)
             self.constraints.append(
-                .belongs(symbol: node.ownee.symbol!, to: (node.owner as! TypedNode).type!))
+                .belongs(
+                    symbol: node.ownee.symbol!,
+                    to    : (node.owner as! TypedNode).type!,
+                    at    : node.location))
         } else {
-            self.constraints.append(.belongs(symbol: node.ownee.symbol!, to: node.type!))
+            self.constraints.append(
+                .belongs(symbol: node.ownee.symbol!, to: node.type!, at: node.location))
         }
     }
 
@@ -202,7 +214,8 @@ public struct ConstraintSolver: ASTVisitor, Pass {
         let symbols = node.scope![node.name]
         assert(!symbols.isEmpty)
         self.constraints.append(.or(symbols.map({
-            Constraint.specializes(type: $0.type, with: node.type!, using: specializationArgs)
+            Constraint.specializes(
+                type: $0.type, with: node.type!, using: specializationArgs, at: node.location)
         })))
     }
 

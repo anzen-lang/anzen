@@ -1,17 +1,32 @@
 import AnzenAST
 import AnzenTypes
+import Parsey
 
 public enum Constraint {
 
     // MARK: Type constraints
 
-    case equals     (type: SemanticType, to  : SemanticType)
-    case conforms   (type: SemanticType, to  : SemanticType)
-    case specializes(type: SemanticType, with: SemanticType, using: [String: SemanticType])
+    /// An equality constraint.
+    case equals(type: SemanticType, to: SemanticType, at: SourceRange?)
+
+    /// A conformance constraint.
+    ///
+    /// Conformance can be seen as a weaker equivalence relationship between two types, stating
+    /// that they should be equivalent with respect to their interface, but not necessarily their
+    /// semantics.
+    case conforms(type: SemanticType, to: SemanticType, at: SourceRange?)
+
+    /// A specialization constraint.
+    ///
+    /// Specilization can be seen as a weaker conformance relationship between two types, stating
+    /// that one should conform to the other for a given binding of type placeholders.
+    case specializes(
+        type: SemanticType, with: SemanticType, using: [String: SemanticType],
+        at: SourceRange?)
 
     // MARK: Membership constraints
 
-    case belongs(symbol: Symbol, to: SemanticType)
+    case belongs(symbol: Symbol, to: SemanticType, at: SourceRange?)
 
     // MARK: Disjunctions
 

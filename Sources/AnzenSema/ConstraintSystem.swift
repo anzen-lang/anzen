@@ -2,6 +2,7 @@
 
 import AnzenAST
 import AnzenTypes
+import Parsey
 
 public class ConstraintSystem {
 
@@ -61,26 +62,26 @@ public class ConstraintSystem {
 
     private func solveConstraint(_ constraint: Constraint) throws {
         switch constraint {
-        case .equals(type: let x, to: let y):
-            try self.solveEquality(between: x, and: y)
+        case .equals(type: let x, to: let y, at: let loc):
+            try self.solveEquality(between: x, and: y, at: loc)
 
-        case .conforms(type: let x, to: let y):
+        case .conforms(type: let x, to: let y, at: let loc):
             // TODO: For the time being, we process conformance constraint the same way we
             // process equality constraints. However, when we'll implement interfaces, we'll
             // have to use a different kind of unification. Moreover, this will probably
             // require some knowledge on the type profiles to have already been inferred.
-            try self.solveEquality(between: x, and: y)
+            try self.solveEquality(between: x, and: y, at: loc)
 
-        case .specializes(type: let x, with: let y, using: let z):
-            try self.solveSpecialization(of: x, with: y, using: z)
+        case .specializes(type: let x, with: let y, using: let z, at: let loc):
+            try self.solveSpecialization(of: x, with: y, using: z, at: loc)
 
-        case .belongs(symbol: let symbol, to: let type):
+        case .belongs(symbol: let symbol, to: let type, at: let loc):
             // Membership constraints require the profile of the owning type to have already been
             // inferred. When that's the case, it can be solved immediately, unless the targetted
             // member is overloaded, in which case a sub-system will be created with a disjunction
             // of constraints for each of the overloads. If the owning type hasn't been inferred
             // yet, the constraint is deferred.
-            try self.solveMembership(of: symbol, in: type)
+            try self.solveMembership(of: symbol, in: type, at: loc)
 
         case .disjunction(let choices):
             // A disjunction of constraints represents possible backtracking points. Whenever we
@@ -97,21 +98,25 @@ public class ConstraintSystem {
         }
     }
 
-    private func solveEquality(between x: SemanticType, and y: SemanticType) throws {
+    private func solveEquality(
+        between x: SemanticType, and y: SemanticType, at loc: SourceRange?) throws
+    {
         try self.unify(x, y)
     }
 
     private func solveSpecialization(
         of    type   : SemanticType,
         with  pattern: SemanticType,
-        using args   : [String: SemanticType]) throws
+        using args   : [String: SemanticType],
+        at   loc     : SourceRange?) throws
     {
         let a = self.walk(type)
         let b = self.walk(pattern)
 
         // Defer the constraint if the unspecialized type is as yet unknown.
         guard !(a is TypeVariable) else {
-            self.constraints.insert(.specializes(type: a, with: b, using: args), at: 0)
+            self.constraints.insert(
+                .specializes(type: a, with: b, using: args, at: loc), at: 0)
             return
         }
 
@@ -122,12 +127,13 @@ public class ConstraintSystem {
             let aliasedType = self.walk(alias.type)
             guard !(aliasedType is TypeVariable) else {
                 self.constraints.insert(
-                    .specializes(type: alias, with: pattern, using: args), at: 0)
+                    .specializes(type: alias, with: pattern, using: args, at: loc), at: 0)
                 return
             }
 
             let initializer = Symbol(name: "__new__")
-            self.constraints.append(.specializes(type: initializer.type, with: fun, using: [:]))
+            self.constraints.append(
+                .specializes(type: initializer.type, with: fun, using: [:], at: loc))
 
             if let unspecialized = aliasedType as? GenericType {
                 // Make sure no undefined specialization argument was supplied.
@@ -148,9 +154,10 @@ public class ConstraintSystem {
                 self.constraints.append(
                     .belongs(
                         symbol: initializer,
-                        to: TypeSpecialization(specializing: unspecialized, with: mapping)))
+                        to: TypeSpecialization(specializing: unspecialized, with: mapping),
+                        at: loc))
             } else {
-                self.constraints.append(.belongs(symbol: initializer, to: aliasedType))
+                self.constraints.append(.belongs(symbol: initializer, to: aliasedType, at: loc))
             }
 
             return
@@ -158,7 +165,7 @@ public class ConstraintSystem {
 
         // If the unspecialized type isn't generic, this boils down to an equality constraint.
         guard let unspecialized = a as? GenericType else {
-            try self.solveEquality(between: a, and: b)
+            try self.solveEquality(between: a, and: b, at: loc)
             return
         }
 
@@ -182,12 +189,14 @@ public class ConstraintSystem {
             throw InferenceError(reason: "'\(b)' is not a specialization of '\(a)'")
         }
         specialized = self.replaceGenericReferences(in: specialized, memo: memo)
-        try self.solveEquality(between: specialized, and: b)
+        try self.solveEquality(between: specialized, and: b, at: loc)
     }
 
-    private func solveMembership(of symbol: Symbol, in type: SemanticType) throws {
+    private func solveMembership(
+        of symbol: Symbol, in type: SemanticType, at loc: SourceRange?) throws
+    {
         guard let members = self.find(member: symbol.name, in: type) else {
-            self.constraints.insert(.belongs(symbol: symbol, to: type), at: 0)
+            self.constraints.insert(.belongs(symbol: symbol, to: type, at: loc), at: 0)
             return
         }
         guard !members.isEmpty else {
@@ -196,7 +205,7 @@ public class ConstraintSystem {
         }
 
         self.constraints.append(.or(members.map({
-            Constraint.equals(type: symbol.type, to: $0)
+            Constraint.equals(type: symbol.type, to: $0, at: loc)
         })))
         return
     }
