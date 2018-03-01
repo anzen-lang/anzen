@@ -1,3 +1,9 @@
+/// Placeholder for generic types.
+///
+/// A generic type describes a family of types that conform to each other, modulo the respective
+/// binding of their type placholders. More formally, a plachoder can be seen as a type variable
+/// bound to an universal quantifier. For instance, the type `<T>(x: T) -> T` describes the set
+/// of functions from a type `T` to the same type `T` (e.g. the identity).
 public class TypePlaceholder: SemanticType {
 
     public init(named name: String) {
