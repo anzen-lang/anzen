@@ -46,9 +46,15 @@ public struct ConstraintSolver: ASTVisitor, Pass {
         }
 
         // The codomain is either a signature we've to read, or `Nothing`.
-        let codomain = node.codomain != nil
-            ? try analyzeTypeAnnotation(node.codomain!)
-            : Builtins.instance.Nothing.qualified(by: .cst)
+        let codomain: QualifiedType
+        do {
+            codomain = node.codomain != nil
+                ? try analyzeTypeAnnotation(node.codomain!)
+                : Builtins.instance.Nothing.qualified(by: .cst)
+        } catch {
+            self.errors.append(error)
+            codomain = TypeError().qualified(by: [])
+        }
 
         // Once we've computed the domain and codomain of the function's signature, we can create
         // a type for the function itself.
@@ -66,8 +72,14 @@ public struct ConstraintSolver: ASTVisitor, Pass {
 
     public mutating func visit(_ node: ParamDecl) throws {
         // Extract the type of the parameter from its annotation.
-        let annotation  = try analyzeTypeAnnotation(node.typeAnnotation)
-        node.qualifiers = annotation.qualifiers
+        let annotation: QualifiedType
+        do {
+            annotation = try analyzeTypeAnnotation(node.typeAnnotation)
+            node.qualifiers = annotation.qualifiers
+        } catch {
+            self.errors.append(error)
+            annotation = TypeError().qualified(by: [])
+        }
 
         // Add an equality constraint on the symbol's type.
         self.constraints.append(
@@ -77,8 +89,14 @@ public struct ConstraintSolver: ASTVisitor, Pass {
     public mutating func visit(_ node: PropDecl) throws {
         // Infer the type of the property from its annotation (if any).
         if let typeAnnotation = node.typeAnnotation {
-            let annotation  = try analyzeTypeAnnotation(typeAnnotation)
-            node.qualifiers = annotation.qualifiers
+            let annotation: QualifiedType
+            do {
+                annotation = try analyzeTypeAnnotation(typeAnnotation)
+                node.qualifiers = annotation.qualifiers
+            } catch {
+                self.errors.append(error)
+                annotation = TypeError().qualified(by: [])
+            }
 
             // Add an equality constraint on the symbol's type.
             self.constraints.append(
@@ -206,7 +224,12 @@ public struct ConstraintSolver: ASTVisitor, Pass {
         // Analyze the specialization arguments (if any).
         var specializationArgs: [String: SemanticType] = [:]
         for argument in node.specializations {
-            specializationArgs[argument.key] = try analyzeTypeAnnotation(argument.value).type
+            do {
+                specializationArgs[argument.key] = try analyzeTypeAnnotation(argument.value).type
+            } catch {
+                self.errors.append(error)
+                specializationArgs[argument.key] = TypeError()
+            }
         }
 
         // Retrieve the symbol(s) associated with the identifier and create a specialization
