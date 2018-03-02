@@ -10,7 +10,7 @@ import Parsey
 /// construction (e.g. the name of the variable being declared). The term "abstract" denotes the
 /// fact that concrete syntactic details such as line returns, extra parenthesis, etc. are
 /// *abstracted* away.
-public protocol Node: class {
+public protocol Node: class, CustomStringConvertible {
 
     /// Stores the location in the source file of the concrete syntax this node represents.
     var location: SourceRange? { get }

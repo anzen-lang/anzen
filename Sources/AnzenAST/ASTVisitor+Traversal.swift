@@ -245,6 +245,10 @@ public extension ASTVisitor {
     }
 
     mutating func visit(_ node: Ident) throws {
+        try self.traverse(node)
+    }
+
+    mutating func traverse(_ node: Ident) throws {
         try self.visit(Array(node.specializations.values))
     }
 

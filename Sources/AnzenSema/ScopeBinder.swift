@@ -35,7 +35,7 @@ public struct ScopeBinder: ASTVisitor, Pass {
     public mutating func visit(_ node: FunDecl) throws {
         // TODO: When we'll implement parameter default values, we'll also have to make sure that
         // the identifiers in the default value don't get bound to other parameters. For instance,
-        // the following should throw an `UndefinedSymbolError`:
+        // the following should throw an `UndefinedSymbol`:
         //
         //     fun f(x: Int = y, y: Int) {}
         //
@@ -69,7 +69,7 @@ public struct ScopeBinder: ASTVisitor, Pass {
     public mutating func visit(_ node: Ident) throws {
         // Find the scope that defines the visited identifier.
         guard let scope = self.scopes.last.findScopeDefining(name: node.name) else {
-            self.errors.append(UndefinedSymbolError(name: node.name, at: node.location))
+            self.errors.append(UndefinedSymbol(name: node.name, at: node.location))
             return
         }
 
@@ -77,7 +77,7 @@ public struct ScopeBinder: ASTVisitor, Pass {
         // property declaration), we should bind it to an enclosing scope.
         if self.underDeclaration[scope] == node.name {
             guard let parentScope = scope.parent?.findScopeDefining(name: node.name) else {
-                self.errors.append(UndefinedSymbolError(name: node.name, at: node.location))
+                self.errors.append(UndefinedSymbol(name: node.name, at: node.location))
                 return
             }
             node.scope = parentScope
