@@ -28,6 +28,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "Commander::Commander"
+               BuildableName = "Commander.framework"
+               BlueprintName = "Commander"
+               ReferencedContainer = "container:anzen.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "anzen::AnzenLib"
                BuildableName = "AnzenLib.framework"
                BlueprintName = "AnzenLib"
@@ -42,9 +56,37 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "anzen::AnzenSema"
-               BuildableName = "AnzenSema.framework"
-               BlueprintName = "AnzenSema"
+               BlueprintIdentifier = "anzen::Sema"
+               BuildableName = "Sema.framework"
+               BlueprintName = "Sema"
+               ReferencedContainer = "container:anzen.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "anzen::IRGen"
+               BuildableName = "IRGen.framework"
+               BlueprintName = "IRGen"
+               ReferencedContainer = "container:anzen.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "LLVM::LLVM"
+               BuildableName = "LLVM.framework"
+               BlueprintName = "LLVM"
                ReferencedContainer = "container:anzen.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -101,6 +143,34 @@
                BlueprintIdentifier = "anzen::AnzenTypes"
                BuildableName = "AnzenTypes.framework"
                BlueprintName = "AnzenTypes"
+               ReferencedContainer = "container:anzen.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "anzen::Utils"
+               BuildableName = "Utils.framework"
+               BlueprintName = "Utils"
+               ReferencedContainer = "container:anzen.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "anzen::IO"
+               BuildableName = "IO.framework"
+               BlueprintName = "IO"
                ReferencedContainer = "container:anzen.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

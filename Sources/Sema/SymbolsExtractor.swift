@@ -1,5 +1,6 @@
 import AnzenAST
 import AnzenTypes
+import Utils
 
 /// A visitor that extracts the symbols declared in the AST's scopes.
 ///

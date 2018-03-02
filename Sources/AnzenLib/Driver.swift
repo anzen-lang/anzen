@@ -1,6 +1,6 @@
 import AnzenAST
-import AnzenSema
 import IO
+import Sema
 
 /// Parses the input and produces an AST without any type annotation.
 public func parse(text: String) throws -> ModuleDecl {

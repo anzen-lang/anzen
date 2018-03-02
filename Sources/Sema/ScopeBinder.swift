@@ -1,4 +1,5 @@
 import AnzenAST
+import Utils
 
 public struct ScopeBinder: ASTVisitor, Pass {
 

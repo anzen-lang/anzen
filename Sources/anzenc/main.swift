@@ -5,9 +5,9 @@
 #endif
 import AnzenAST
 import AnzenLib
-import AnzenSema
 import Commander
 import IO
+import Sema
 
 let main = command(
     Argument<String>("input", description: "Input source"),
@@ -55,6 +55,8 @@ let main = command(
 
     // Print the AST if instructed to.
     if printAST { debugPrint(ast) }
+
+    // Run the LLVM IR code generation.
 
 }
 
