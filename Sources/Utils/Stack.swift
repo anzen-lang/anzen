@@ -14,13 +14,14 @@ public struct Stack<T> {
         return self.storage.popLast()
     }
 
-    public var last: T {
-        get {
-            return self.storage.last!
-        }
-
+    public var top: T? {
+        get { return self.storage.last }
         set {
-            self.storage[self.storage.count - 1] = newValue
+            if newValue != nil {
+                self.storage[self.storage.count - 1] = newValue!
+            } else {
+                self.storage.removeLast()
+            }
         }
     }
 
@@ -28,9 +29,36 @@ public struct Stack<T> {
         return self.storage.isEmpty
     }
 
+    public var count: Int {
+        return self.storage.count
+    }
+
     // MARK: Internals
 
-    var storage: [T]
+    private var storage: [T]
+
+}
+
+extension Stack: Collection {
+
+    public typealias Index   = Array<T>.Index
+    public typealias Element = Array<T>.Element
+
+    public var startIndex: Index {
+        return self.storage.startIndex
+    }
+
+    public var endIndex: Index {
+        return self.storage.endIndex
+    }
+
+    public func index(after i: Index) -> Index {
+        return self.storage.index(after: i)
+    }
+
+    public subscript(index: Index) -> Element {
+        return self.storage[index]
+    }
 
 }
 

@@ -20,7 +20,7 @@ public struct ScopeBinder: ASTVisitor, Pass {
         // NOTE: We choose to make all module scopes descend from Anzen's built-in scope. This
         // way, built-in symbols (e.g. `Int`) can be refered "as-is" within source code, yet we
         // don't loose the ability to shadow them.
-        node.innerScope?.parent = self.scopes.last
+        node.innerScope?.parent = self.scopes.top!
 
         self.scopes.push(node.innerScope!)
         try self.visit(node.statements)
@@ -69,7 +69,7 @@ public struct ScopeBinder: ASTVisitor, Pass {
 
     public mutating func visit(_ node: Ident) throws {
         // Find the scope that defines the visited identifier.
-        guard let scope = self.scopes.last.findScopeDefining(name: node.name) else {
+        guard let scope = self.scopes.top!.findScopeDefining(name: node.name) else {
             self.errors.append(UndefinedSymbol(name: node.name, at: node.location))
             return
         }

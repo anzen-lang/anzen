@@ -37,7 +37,7 @@ public struct SymbolsExtractor: ASTVisitor, Pass {
 
     public mutating func visit(_ node: Block) throws {
         // Create a new scope for the block.
-        node.innerScope = Scope(parent: self.stack.last.innerScope)
+        node.innerScope = Scope(parent: self.stack.top!.innerScope)
 
         // Visit the block's statements.
         self.stack.push(node)
@@ -48,7 +48,7 @@ public struct SymbolsExtractor: ASTVisitor, Pass {
     public mutating func visit(_ node: FunDecl) throws {
         // If there already are symbols with the same name in the current scope, make sure they
         // all are overloadable (i.e. they correspond to other function declarations).
-        let symbols = self.stack.last.innerScope![node.name]
+        let symbols = self.stack.top!.innerScope![node.name]
         if !symbols.forAll({ $0.isOverloadable }) {
             self.errors.append(DuplicateDeclaration(name: node.name, at: node.location))
         }
@@ -56,12 +56,12 @@ public struct SymbolsExtractor: ASTVisitor, Pass {
         // Create a symbol for the function's name within the currently visited scope.
         let functionSymbol = Symbol(
             name: node.name, overloadable: true, generic: !node.placeholders.isEmpty)
-        self.stack.last.innerScope!.add(symbol: functionSymbol)
-        node.scope  = self.stack.last.innerScope
+        self.stack.top!.innerScope!.add(symbol: functionSymbol)
+        node.scope  = self.stack.top!.innerScope
         node.symbol = functionSymbol
 
         // Create a new scope for the function's parameters and generic placeholders.
-        node.innerScope = Scope(name: node.name, parent: self.stack.last.innerScope)
+        node.innerScope = Scope(name: node.name, parent: self.stack.top!.innerScope)
         self.stack.push(node)
         for placeholder in node.placeholders {
             // Catch duplicate placeholder declarations.
@@ -87,31 +87,31 @@ public struct SymbolsExtractor: ASTVisitor, Pass {
 
     public mutating func visit(_ node: ParamDecl) throws {
         // Make sure the parameter's name wasn't already declared.
-        if self.stack.last.innerScope!.defines(name: node.name) {
+        if self.stack.top!.innerScope!.defines(name: node.name) {
             self.errors.append(DuplicateDeclaration(name: node.name, at: node.location))
         }
 
         // Create a new symbol for the parameter, and visit the node's declaration.
-        self.stack.last.innerScope!.add(symbol: Symbol(name: node.name))
-        node.scope = self.stack.last.innerScope
+        self.stack.top!.innerScope!.add(symbol: Symbol(name: node.name))
+        node.scope = self.stack.top!.innerScope
         try self.traverse(node)
     }
 
     public mutating func visit(_ node: PropDecl) throws {
         // Make sure the property's name wasn't already declared.
-        if self.stack.last.innerScope!.defines(name: node.name) {
+        if self.stack.top!.innerScope!.defines(name: node.name) {
             self.errors.append(DuplicateDeclaration(name: node.name, at: node.location))
         }
 
         // Create a new symbol for the property, and visit the node's declaration.
-        self.stack.last.innerScope!.add(symbol: Symbol(name: node.name))
-        node.scope = self.stack.last.innerScope
+        self.stack.top!.innerScope!.add(symbol: Symbol(name: node.name))
+        node.scope = self.stack.top!.innerScope
         try self.traverse(node)
     }
 
     public mutating func visit(_ node: StructDecl) throws {
         // Make sure the struct's name wasn't already declared.
-        if self.stack.last.innerScope!.defines(name: node.name) {
+        if self.stack.top!.innerScope!.defines(name: node.name) {
             self.errors.append(DuplicateDeclaration(name: node.name, at: node.location))
         }
 
@@ -119,12 +119,12 @@ public struct SymbolsExtractor: ASTVisitor, Pass {
         let alias = TypeAlias(name: node.name, aliasing: TypeVariable())
         let structSymbol = Symbol(
             name: node.name, type: alias, generic: !node.placeholders.isEmpty)
-        self.stack.last.innerScope!.add(symbol: structSymbol)
-        node.scope = self.stack.last.innerScope
+        self.stack.top!.innerScope!.add(symbol: structSymbol)
+        node.scope = self.stack.top!.innerScope
         node.type  = alias
 
         // Create a new scope for the struct's generic placeholders.
-        node.innerScope = Scope(name: node.name, parent: self.stack.last.innerScope)
+        node.innerScope = Scope(name: node.name, parent: self.stack.top!.innerScope)
         self.stack.push(node)
         for placeholder in node.placeholders {
             // Catch duplicate placeholder declarations.
