@@ -706,7 +706,8 @@
 				OBJ_23 /* TypeSpecialization.swift */,
 				OBJ_24 /* TypeVariable.swift */,
 			);
-			path = AnzenTypes;
+			name = AnzenTypes;
+			path = Sources/AnzenTypes;
 			sourceTree = SOURCE_ROOT;
 		};
 		OBJ_25 /* AnzenAST */ = {
