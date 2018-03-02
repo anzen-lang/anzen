@@ -20,9 +20,9 @@ let package = Package(
         // test suite. Targets can depend on other targets in this package, and on products in
         // packages which this package depends on.
         .target(name: "anzenc"    , dependencies: ["AnzenLib", "Commander", "IO"]),
-        .target(name: "AnzenLib"  , dependencies: ["AnzenAST", "AnzenSema", "IO"]),
+        .target(name: "AnzenLib"  , dependencies: ["AnzenSema", "IO"]),
+        .target(name: "AnzenSema" , dependencies: ["AnzenAST"]),
         .target(name: "AnzenAST"  , dependencies: ["AnzenTypes", "Parsey"]),
-        .target(name: "AnzenSema" , dependencies: ["AnzenAST", "AnzenTypes"]),
         .target(name: "AnzenTypes"),
         .target(name: "IO"),
     ]
