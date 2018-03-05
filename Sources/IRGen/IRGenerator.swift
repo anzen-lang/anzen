@@ -72,11 +72,8 @@ public struct IRGenerator: ASTVisitor {
 
         switch op {
         case .cpy:
-            var (rvalue, storage) = self.stack.pop()!
-            if storage == .reference {
-                rvalue = self.builder.buildLoad(rvalue)
-            }
-            self.builder.buildStore(rvalue, to: property.ref)
+            let value = self.stack.pop()!
+            property.bind(to: value, by: .copy)
 
         default:
             fatalError("Unexpected binding operator: '\(op)'")
@@ -97,10 +94,10 @@ public struct IRGenerator: ASTVisitor {
 
     /// A stack that lets us accumulate the LLVM values of expressions, before they are consumed
     /// by a statement.
-    var stack: Stack<(IRValue, ValueStorage)> = []
+    var stack: Stack<Emittable> = []
 
     /// A stack of maps of local symbols.
-    var locals: Stack<[String: Property]> = []
+    var locals: Stack<[String: Emittable]> = []
 
     /// A map of global symbols.
     var globals: [String: IRGlobal] = [:]

@@ -12,6 +12,18 @@ public class StructType: GenericType, SemanticType {
         self.methods      = methods
     }
 
+    public init(
+        name        : String,
+        placeholders: Set<String>,
+        properties  : [String: QualifiedType] = [:],
+        methods     : [String: [SemanticType]] = [:])
+    {
+        self.name         = name
+        self.placeholders = Set(placeholders.map(TypePlaceholder.init))
+        self.properties   = properties
+        self.methods      = methods
+    }
+
     public let name        : String
     public let placeholders: Set<TypePlaceholder>
     public var properties  : [String: QualifiedType]

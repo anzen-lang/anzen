@@ -19,22 +19,14 @@ protocol Emittable {
 
 }
 
-/// Protocol for LLVM IR emittable and mutable values.
-protocol MutableEmittable: EmittableValue {
-
-    var ref: IRValue? { get set }
-    var val: IRValue { get set }
-
-}
-
 /// Represents a value on the stack (i.e. not wrapped within a managed object).
 struct StackValue: Emittable {
 
     init(anzenType: SemanticType, llvmType: IRType, ref: IRValue? = nil, val: IRValue) {
         self.anzenType = anzenType
-        self.llvmType  = llvmType
-        self.ref       = ref
-        self.val       = val
+        self.llvmType = llvmType
+        self.ref = ref
+        self.val = val
     }
 
     let anzenType: SemanticType

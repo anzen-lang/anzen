@@ -18,6 +18,12 @@ public class Builtins {
     public let Bool     = StructType(name: "Bool")
     public let String   = StructType(name: "String")
 
+    public let Int8     = StructType(name: "Int8")
+    public let Int32    = StructType(name: "Int32")
+    public let Int64    = StructType(name: "Int64")
+
+    public let Pointer  = StructType(name: "Pointer", placeholders: ["T"])
+
     // MARK: Builtin functions
 
     public let print    : FunctionType

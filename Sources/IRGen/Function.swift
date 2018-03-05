@@ -10,14 +10,11 @@ extension IRGenerator {
 
         // Generate the IR for the argument's value.
         try self.visit(node.arguments[0])
-        var (value, storage) = self.stack.pop()!
-        if storage == .reference {
-            value = self.builder.buildLoad(value)
-        }
+        let value = self.stack.pop()!
 
         // Generate the IR for the function call.
-        let rv = self.builder.buildCall(self.printf, args: [format, value])
-        self.stack.push((rv, .value))
+        // Note that we discard the result of calling `printf`.
+        _ = self.builder.buildCall(self.printf, args: [format, value.val])
     }
 
     public mutating func visit(_ node: CallArg) throws {
@@ -25,4 +22,3 @@ extension IRGenerator {
     }
 
 }
-
