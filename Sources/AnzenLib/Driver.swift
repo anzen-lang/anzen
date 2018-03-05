@@ -22,7 +22,7 @@ public func performSema(on module: ModuleDecl) -> [Error] {
     return errors
 }
 
-public func generateLLVM(of module: ModuleDecl) -> String {
-    var generator = IRGenerator(moduleName: "main")
+public func generateLLVM(of module: ModuleDecl, withOptimizations: Bool = false) -> String {
+    var generator = IRGenerator(moduleName: "main", withOptimizations: withOptimizations)
     return generator.transform(module, asEntryPoint: true)
 }

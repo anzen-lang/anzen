@@ -5,13 +5,22 @@ import Utils
 
 public struct IRGenerator: ASTVisitor {
 
-    public init(moduleName: String) {
+    public init(moduleName: String, withOptimizations: Bool = false) {
         self.module  = Module(name: moduleName, context: self.context)
         self.builder = IRBuilder(module: self.module)
         self.layout  = self.module.dataLayout
 
-        // TODO: Add relevant optimization passes.
-        self.functionVerifier = FunctionPassManager(module: self.module)
+        self.passManager = FunctionPassManager(module: self.module)
+        if withOptimizations {
+            self.passManager.add(.basicAliasAnalysis)
+            self.passManager.add(.instructionCombining)
+            self.passManager.add(.reassociate)
+            self.passManager.add(.gvn)
+            self.passManager.add(.cfgSimplification)
+            self.passManager.add(.promoteMemoryToRegister)
+            self.passManager.add(.tailCallElimination)
+            self.passManager.add(.loopUnroll)
+        }
     }
 
     public mutating func transform(_ module: ModuleDecl, asEntryPoint: Bool = false) -> String {
@@ -29,7 +38,7 @@ public struct IRGenerator: ASTVisitor {
         if let fn = self.module.function(named: "main") {
             self.builder.positionAtEnd(of: fn.lastBlock!)
             self.builder.buildRet(IntType.int32.constant(0))
-            self.functionVerifier.run(on: fn)
+            self.passManager.run(on: fn)
         }
 
         return self.module.description
@@ -96,8 +105,8 @@ public struct IRGenerator: ASTVisitor {
     /// A map of global symbols.
     var globals: [String: IRGlobal] = [:]
 
-    /// LLVM sanity checker.
-    let functionVerifier: FunctionPassManager
+    /// The function pass manager that performs optimizations.
+    let passManager: FunctionPassManager
 
     // MARK: Runtime types and functions
 
@@ -147,4 +156,3 @@ enum ValueStorage {
     case value
 
 }
-

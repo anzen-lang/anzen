@@ -12,8 +12,9 @@ import Sema
 let main = command(
     Argument<String>("input", description: "Input source"),
     Flag("print-src", default: false, description: "Pretty-print the source as it was parsed."),
-    Flag("print-ast", default: false, description: "Print the AST of the input after type-check.")
-) { input, printSRC, printAST in
+    Flag("print-ast", default: false, description: "Print the AST of the input after type-check."),
+    Flag("optimized", default: false, description: "Compile with optimizations.")
+) { input, printSRC, printAST, optimized in
 
     // Read the source file.
     let source: String
@@ -57,7 +58,7 @@ let main = command(
     if printAST { debugPrint(ast) }
 
     // Run the LLVM IR code generation.
-    let llvmModule = AnzenLib.generateLLVM(of: ast)
+    let llvmModule = AnzenLib.generateLLVM(of: ast, withOptimizations: optimized)
     print(llvmModule)
 
 }
