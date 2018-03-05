@@ -18,7 +18,22 @@ public class Builtins {
     public let Bool     = StructType(name: "Bool")
     public let String   = StructType(name: "String")
 
+    // MARK: Builtin functions
+
+    public let print    : FunctionType
+
     private init() {
+        self.print = FunctionType(from: [(nil, self.Int.cst)], to: self.Int.cst)
+
+        self.registerAlias(for: self.Anything)
+        self.registerAlias(for: self.Nothing)
+        self.registerAlias(for: self.Int)
+        self.registerAlias(for: self.Double)
+        self.registerAlias(for: self.Bool)
+        self.registerAlias(for: self.String)
+
+        self.scope.add(symbol: Symbol(name: "print", type: self.print))
+
         self.Int.methods["+"] = [
             FunctionType(
                 from: [(label: nil, type: self.Int.qualified(by: .cst))],
@@ -29,16 +44,9 @@ public class Builtins {
                 from: [(label: nil, type: self.Int.qualified(by: .cst))],
                 to  : self.Int.qualified(by: .cst)),
         ]
-
-        self.addSymbol(for: self.Anything)
-        self.addSymbol(for: self.Nothing)
-        self.addSymbol(for: self.Int)
-        self.addSymbol(for: self.Double)
-        self.addSymbol(for: self.Bool)
-        self.addSymbol(for: self.String)
     }
 
-    private func addSymbol(for type: StructType) {
+    private func registerAlias(for type: StructType) {
         self.scope.add(
             symbol: Symbol(
                 name: type.name,
