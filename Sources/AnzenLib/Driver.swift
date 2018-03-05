@@ -1,5 +1,6 @@
 import AnzenAST
 import IO
+import IRGen
 import Sema
 
 /// Parses the input and produces an AST without any type annotation.
@@ -19,4 +20,9 @@ public func performSema(on module: ModuleDecl) -> [Error] {
         errors.append(contentsOf: passes[i].run(on: module))
     }
     return errors
+}
+
+public func generateLLVM(of module: ModuleDecl) -> String {
+    var generator = IRGenerator(moduleName: "main")
+    return generator.transform(module, asEntryPoint: true)
 }

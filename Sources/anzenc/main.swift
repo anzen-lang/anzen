@@ -57,6 +57,8 @@ let main = command(
     if printAST { debugPrint(ast) }
 
     // Run the LLVM IR code generation.
+    let llvmModule = AnzenLib.generateLLVM(of: ast)
+    print(llvmModule)
 
 }
 

@@ -23,6 +23,26 @@ extension QualifiedType: Equatable {
 
 }
 
+extension SemanticType {
+
+    public func qualified(by qualifiers: Set<TypeQualifier>) -> QualifiedType {
+        return QualifiedType(type: self, qualifiedBy: qualifiers)
+    }
+
+    public func qualified(by qualifier: TypeQualifier) -> QualifiedType {
+        return QualifiedType(type: self, qualifiedBy: [qualifier])
+    }
+
+    public var cst: QualifiedType {
+        return QualifiedType(type: self, qualifiedBy: [.cst])
+    }
+
+    public var mut: QualifiedType {
+        return QualifiedType(type: self, qualifiedBy: [.mut])
+    }
+
+}
+
 public enum TypeQualifier {
 
     case cst, mut

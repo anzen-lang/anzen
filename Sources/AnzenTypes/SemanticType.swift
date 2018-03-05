@@ -17,14 +17,6 @@ public protocol SemanticType: class {
 
 extension SemanticType {
 
-    public func qualified(by qualifiers: Set<TypeQualifier>) -> QualifiedType {
-        return QualifiedType(type: self, qualifiedBy: qualifiers)
-    }
-
-    public func qualified(by qualifier: TypeQualifier) -> QualifiedType {
-        return QualifiedType(type: self, qualifiedBy: [qualifier])
-    }
-
     public func equals(to other: SemanticType) -> Bool {
         return self.equals(to: other, table: EqualityTableRef(to: [:]))
     }
