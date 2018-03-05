@@ -12,9 +12,8 @@ public class TypePlaceholder: SemanticType {
 
     public let name: String
 
-    public func equals(to other: SemanticType) -> Bool {
-        guard let rhs = other as? TypePlaceholder else { return false }
-        return self === rhs
+    public func equals(to other: SemanticType, table: EqualityTableRef) -> Bool {
+        return self === other
     }
 
 }

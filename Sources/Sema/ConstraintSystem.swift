@@ -284,7 +284,7 @@ public class ConstraintSystem {
             // Make sure the domain of both functions agree.
             guard fnl.domain.count == fnr.domain.count else { return nil }
 
-            var domain: [FunctionType.ParameterDescription] = []
+            var domain: [ParameterDescription] = []
             for (dl, dr) in zip(fnl.domain, fnr.domain) {
                 // Make sure the labels are identical.
                 guard dl.label == dr.label else { return nil }
@@ -521,9 +521,9 @@ public class ConstraintSystem {
 
 }
 
-private class Memo: Sequence {
+class Memo: Sequence {
 
-    typealias Element = (key: AnyObject, value: SemanticType)
+    typealias Element = (key: SemanticType, value: SemanticType)
 
     init() {
         self.content = []
@@ -533,7 +533,7 @@ private class Memo: Sequence {
         return self.content.makeIterator()
     }
 
-    subscript(object: AnyObject) -> SemanticType? {
+    subscript(object: SemanticType) -> SemanticType? {
         get {
             return self.content.first(where: { $0.key === object })?.value
         }

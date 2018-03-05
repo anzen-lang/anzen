@@ -12,6 +12,11 @@ public struct QualifiedType {
 
 extension QualifiedType: Equatable {
 
+    public func equals(to other: QualifiedType, table: EqualityTableRef) -> Bool {
+        return self.qualifiers == other.qualifiers
+            && self.type.equals(to: other.type, table: table)
+    }
+
     public static func == (lhs: QualifiedType, rhs: QualifiedType) -> Bool {
         return lhs.qualifiers == rhs.qualifiers && lhs.type.equals(to: rhs.type)
     }

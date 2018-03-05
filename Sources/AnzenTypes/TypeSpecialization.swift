@@ -1,4 +1,4 @@
-public struct TypeSpecialization: SemanticType {
+public class TypeSpecialization: SemanticType {
 
     public init(
         specializing type   : GenericType,
@@ -8,26 +8,45 @@ public struct TypeSpecialization: SemanticType {
         self.specializations = specializations
     }
 
-    public func equals(to other: SemanticType) -> Bool {
-        guard let rhs = other as? TypeSpecialization else { return false }
-        return self.genericType.equals(to: rhs.genericType)
-            && self.specializations == rhs.specializations
+    public func equals(to other: SemanticType, table: EqualityTableRef) -> Bool {
+        if self === other {
+            return true
+        }
+
+        let pair = TypePair(self, other)
+        if let result = table.wrapped[pair] {
+            return result
+        }
+
+        guard let rhs = other as? TypeSpecialization,
+            self.genericType.equals(to: rhs.genericType, table: table),
+            _equals(args: self.specializations, to: rhs.specializations, table: table)
+        else {
+            table.wrapped[pair] = false
+            return false
+        }
+
+        table.wrapped[pair] = true
+        return true
     }
+
 
     public let genericType    : GenericType
     public let specializations: [TypePlaceholder: SemanticType]
 
 }
 
-fileprivate extension Dictionary where Key == TypePlaceholder, Value == SemanticType {
+// MARK: Internal
 
-    static func == (lhs: Dictionary, rhs: Dictionary) -> Bool {
-        guard lhs.count == rhs.count else { return false }
-        for (key, lvalue) in lhs {
-            guard let rvalue = rhs[key]     else { return false }
-            guard lvalue.equals(to: rvalue) else { return false }
-        }
-        return true
+private func _equals(
+    args  lhs: [TypePlaceholder: SemanticType],
+    to    rhs: [TypePlaceholder: SemanticType],
+    table    : EqualityTableRef) -> Bool
+{
+    guard lhs.count == rhs.count else { return false }
+    for (key, lvalue) in lhs {
+        guard let rvalue = rhs[key]                   else { return false }
+        guard lvalue.equals(to: rvalue, table: table) else { return false }
     }
-
+    return true
 }

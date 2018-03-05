@@ -5,9 +5,9 @@ public enum FunctionAttribute {
 
 }
 
-public class FunctionType: GenericType, SemanticType {
+public typealias ParameterDescription = (label: String?, type: QualifiedType)
 
-    public typealias ParameterDescription = (label: String?, type: QualifiedType)
+public class FunctionType: GenericType, SemanticType {
 
     public init(
         placeholders: Set<TypePlaceholder> = [],
@@ -23,22 +23,42 @@ public class FunctionType: GenericType, SemanticType {
     public let domain      : [ParameterDescription]
     public let codomain    : QualifiedType
 
-    public func equals(to other: SemanticType) -> Bool {
-        guard let rhs = other as? FunctionType else { return false }
-        return self.placeholders == rhs.placeholders
-            && self.domain       == rhs.domain
-            && self.codomain     == rhs.codomain
+    public func equals(to other: SemanticType, table: EqualityTableRef) -> Bool {
+        if self === other {
+            return true
+        }
+
+        let pair = TypePair(self, other)
+        if let result = table.wrapped[pair] {
+            return result
+        }
+
+        guard let rhs = other as? FunctionType,
+            self.placeholders == rhs.placeholders,
+            _equals(domain: self.domain, to: rhs.domain, table: table),
+            self.codomain.equals(to: rhs.codomain, table: table)
+        else {
+            table.wrapped[pair] = false
+            return false
+        }
+
+        table.wrapped[pair] = true
+        return true
     }
 
 }
 
 // MARK: Internals
 
-func == (
-    lhs: [FunctionType.ParameterDescription], rhs: [FunctionType.ParameterDescription]) -> Bool {
+private func _equals(
+    domain lhs: [ParameterDescription],
+    to     rhs: [ParameterDescription],
+    table     : EqualityTableRef) -> Bool
+{
     guard lhs.count == rhs.count else { return false }
     for (lp, rp) in zip(lhs, rhs) {
-        guard lp.label == rp.label && lp.type == rp.type else { return false }
+        guard lp.label == rp.label && lp.type.equals(to: rp.type, table: table)
+            else { return false }
     }
     return true
 }

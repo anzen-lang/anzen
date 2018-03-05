@@ -1,11 +1,11 @@
-public struct TypeVariable: SemanticType {
+public class TypeVariable: SemanticType {
 
     public init() {
         self.id = TypeVariable.nextID
         TypeVariable.nextID += 1
     }
 
-    public func equals(to other: SemanticType) -> Bool {
+    public func equals(to other: SemanticType, table: EqualityTableRef) -> Bool {
         guard let rhs = other as? TypeVariable else { return false }
         return self.id == rhs.id
     }

@@ -135,7 +135,7 @@ struct ConstraintExtractor: ASTVisitor {
 
     mutating func visit(_ node: CallExpr) throws {
         // Infer the type of all arguments and build the domain of the function being called.
-        var domain: [FunctionType.ParameterDescription] = []
+        var domain: [ParameterDescription] = []
         for argument in node.arguments {
             try self.visit(argument)
             domain.append((label: argument.label, type: argument.type!.qualified(by: [])))
