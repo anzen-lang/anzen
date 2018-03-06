@@ -19,11 +19,10 @@ let package = Package(
         // Targets are the basic building blocks of a package. A target can define a module or a
         // test suite. Targets can depend on other targets in this package, and on products in
         // packages which this package depends on.
-        .target(name: "anzenc"    , dependencies: ["AnzenLib", "Commander", "IO"]),
-        .target(name: "AnzenLib"  , dependencies: ["AnzenAST", "IO", "IRGen", "Sema"]),
+        .target(name: "anzenc"    , dependencies: ["AnzenLib", "Commander", "Utils"]),
+        .target(name: "AnzenLib"  , dependencies: ["AnzenAST", "IRGen", "Sema", "Utils"]),
         .target(name: "AnzenAST"  , dependencies: ["AnzenTypes", "Parsey"]),
         .target(name: "AnzenTypes", dependencies: ["Utils"]),
-        .target(name: "IO"),
         .target(name: "IRGen"     , dependencies: ["AnzenAST", "LLVM", "Sema", "Utils"]),
         .target(name: "Sema"      , dependencies: ["AnzenAST", "Utils"]),
         .target(name: "Utils"),

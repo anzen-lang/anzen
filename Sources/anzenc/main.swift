@@ -6,8 +6,8 @@
 import AnzenAST
 import AnzenLib
 import Commander
-import IO
 import Sema
+import Utils
 
 let main = command(
     Argument<String>("input", description: "Input source"),
