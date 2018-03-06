@@ -161,16 +161,16 @@ public class FunDecl: ScopeNode, NamedNode {
     }
 
     /// The name of the function.
-    public let name: String
+    public var name: String
 
     /// The attributes of the function.
-    public let attributes: [FunctionAttribute]
+    public var attributes: [FunctionAttribute]
 
     /// The generic placeholders of the function.
-    public let placeholders: [String]
+    public var placeholders: [String]
 
     /// The domain (i.e. parameters) of the function.
-    public let parameters: [ParamDecl]
+    public var parameters: [ParamDecl]
 
     /// The codomain of the function.
     ///
@@ -183,10 +183,10 @@ public class FunDecl: ScopeNode, NamedNode {
     ///     }
     ///
     /// Here the codomain is an instance of `BinExpr`.
-    public let codomain: Node?
+    public var codomain: Node?
 
     /// The body of the function.
-    public let body: Block
+    public var body: Block
 
     // MARK: Annotations
 
@@ -218,16 +218,16 @@ public class ParamDecl: NamedNode {
     }
 
     /// The label of the parameter.
-    public let label: String?
+    public var label: String?
 
     /// The name of the parameter.
-    public let name: String
+    public var name: String
 
     /// The type annotation of the parameter.
     ///
     /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
     ///   signature (i.e. an instance of `FunSign` or `StructSign`).
-    public let typeAnnotation: Node
+    public var typeAnnotation: Node
 
     // MARK: Annotations
 
@@ -260,19 +260,19 @@ public class PropDecl: NamedNode {
     }
 
     /// The name of the property.
-    public let name: String
+    public var name: String
 
     /// Whether or not the property is reassignable (i.e. declared with `var` or `let`).
-    public let reassignable: Bool
+    public var reassignable: Bool
 
     /// The type annotation of the property.
     ///
     /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
     ///   signature (i.e. an instance of `QualSign`, `FunSign` or `StructSign`).
-    public let typeAnnotation: Node?
+    public var typeAnnotation: Node?
 
     /// The initial binding value of the property.
-    public let initialBinding: (op: Operator, value: Node)?
+    public var initialBinding: (op: Operator, value: Node)?
 
     // MARK: Annotations
 
@@ -306,15 +306,15 @@ public class StructDecl: ScopeNode, NamedNode {
     }
 
     /// The name of the type.
-    public let name: String
+    public var name: String
 
     /// The generic placeholders of the type.
-    public let placeholders: [String]
+    public var placeholders: [String]
 
     /// The body of the type.
     ///
     /// - Note: The statements of a structure's body can only be instances `PropDecl` or `FunDecl`.
-    public let body: Block
+    public var body: Block
 
     // MARK: Annotations
 
@@ -347,15 +347,15 @@ public class InterfaceDecl: ScopeNode, NamedNode {
     }
 
     /// The name of the type.
-    public let name: String
+    public var name: String
 
     /// The generic placeholders of the type.
-    public let placeholders: [String]
+    public var placeholders: [String]
 
     /// The body of the type.
     ///
     /// - Note: The statements of an interface body can only be instances `PropReq` or `FunReq`.
-    public let body: Block
+    public var body: Block
 
     // MARK: Annotations
 
@@ -381,16 +381,16 @@ public class PropReq: NamedNode {
     }
 
     /// The name of the property.
-    public let name: String
+    public var name: String
 
     /// Whether or not the property is reassignable (i.e. declared with `var` or `let`).
-    public let reassignable: Bool
+    public var reassignable: Bool
 
     /// The type annotation of the property.
     ///
     /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
     ///   signature (i.e. an instance of `QualSign`, `FunSign` or `StructSign`).
-    public let typeAnnotation: Node
+    public var typeAnnotation: Node
 
     // MARK: Annotations
 
@@ -420,19 +420,19 @@ public class FunReq: ScopeNode, NamedNode {
     }
 
     /// The name of the function.
-    public let name: String
+    public var name: String
 
     /// The attributes of the function.
-    public let attributes: [FunctionAttribute]
+    public var attributes: [FunctionAttribute]
 
     /// The generic placeholders of the function.
-    public let placeholders: [String]
+    public var placeholders: [String]
 
     /// The domain (i.e. parameters) of the function.
-    public let parameters: [ParamDecl]
+    public var parameters: [ParamDecl]
 
     /// The codomain of the function.
-    public let codomain: Node?
+    public var codomain: Node?
 
     // MARK: Annotations
 
@@ -462,13 +462,13 @@ public class QualSign: TypedNode {
     }
 
     /// The qualifiers of the signature.
-    public let qualifiers: Set<TypeQualifier>
+    public var qualifiers: Set<TypeQualifier>
 
     /// The semantic type definition of the signature.
     ///
     /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a semantic
     ///   type signature (i.e. an instance of `FunSign` or `StructSign`).
-    public let signature : Node?
+    public var signature : Node?
 
     // MARK: Annotations
 
@@ -487,7 +487,7 @@ public class FunSign: TypedNode {
     }
 
     /// The parameters of the signature.
-    public let parameters: [ParamSign]
+    public var parameters: [ParamSign]
 
     /// The codomain of the signature.
     ///
@@ -495,7 +495,7 @@ public class FunSign: TypedNode {
     ///   feature expressions on their codomain, but only type defintiions. Hence this property
     ///   should be either a type identifier (i.e. an instance of `Ident`), or a semantic type
     ///   signature (i.e. an instance of `FunSign` or `StructSign`).
-    public let codomain: Node
+    public var codomain: Node
 
     // MARK: Annotations
 
@@ -514,13 +514,13 @@ public class ParamSign: TypedNode {
     }
 
     /// The label of the parameter.
-    public let label: String?
+    public var label: String?
 
     /// The type annotation of the property.
     ///
     /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
     ///   signature (i.e. an instance of `QualSign`, `FunSign` or `StructSign`).
-    public let typeAnnotation: Node
+    public var typeAnnotation: Node
 
     // MARK: Annotations
 
@@ -544,13 +544,13 @@ public class BindingStmt: Node {
     }
 
     /// The lvalue of the binding.
-    public let lvalue: Node
+    public var lvalue: Node
 
     /// The binding operator.
-    public let op: Operator
+    public var op: Operator
 
     /// The rvalue of the binding.
-    public let rvalue: Node
+    public var rvalue: Node
 
     // MARK: Annotations
 
@@ -567,7 +567,7 @@ public class ReturnStmt: Node {
     }
 
     /// The value of the return statement.
-    public let value: Node?
+    public var value: Node?
 
     // MARK: Annotations
 
@@ -593,13 +593,13 @@ public class IfExpr: TypedNode {
     }
 
     /// The condition of the expression.
-    public let condition: Node
+    public var condition: Node
 
     /// The block of statements to execute if the condition is statisfied.
-    public let thenBlock: Node
+    public var thenBlock: Node
 
     /// The block of statements to execute if the condition isn't statisfied.
-    public let elseBlock: Node?
+    public var elseBlock: Node?
 
     // MARK: Annotations
 
@@ -619,13 +619,13 @@ public class BinExpr: TypedNode {
     }
 
     /// The left operand of the expression.
-    public let left : Node
+    public var left : Node
 
     /// The operator of the expression.
-    public let op: Operator
+    public var op: Operator
 
     /// The right operand of the expression.
-    public let right: Node
+    public var right: Node
 
     // MARK: Annotations
 
@@ -644,10 +644,10 @@ public class UnExpr: TypedNode {
     }
 
     /// The operator of the expression.
-    public let op: Operator
+    public var op: Operator
 
     /// The left operand of the expression.
-    public let operand: Node
+    public var operand: Node
 
     // MARK: Annotations
 
@@ -666,10 +666,10 @@ public class CallExpr: TypedNode {
     }
 
     /// The callee.
-    public let callee: Node
+    public var callee: Node
 
     /// The arguments of the call.
-    public let arguments: [CallArg]
+    public var arguments: [CallArg]
 
     // MARK: Annotations
 
@@ -694,13 +694,13 @@ public class CallArg: TypedNode {
     }
 
     /// The label of the argument.
-    public let label: String?
+    public var label: String?
 
     /// The binding operator of the argument.
-    public let bindingOp: Operator?
+    public var bindingOp: Operator?
 
     /// The value of the argument.
-    public let value: Node
+    public var value: Node
 
     // MARK: Annotations
 
@@ -719,10 +719,10 @@ public class SubscriptExpr: TypedNode {
     }
 
     /// The callee.
-    public let callee: Node
+    public var callee: Node
 
     /// The arguments of the subscript.
-    public let arguments: [CallArg]
+    public var arguments: [CallArg]
 
     // MARK: Annotations
 
@@ -741,10 +741,10 @@ public class SelectExpr: TypedNode {
     }
 
     /// The owner.
-    public let owner: Node?
+    public var owner: Node?
 
     /// The ownee.
-    public let ownee: Ident
+    public var ownee: Ident
 
     // MARK: Annotations
 
@@ -767,10 +767,10 @@ public class Ident: NamedNode {
     }
 
     /// The name of the identifier.
-    public let name: String
+    public var name: String
 
     /// The specialization list of the identifier.
-    public let specializations: [String: Node]
+    public var specializations: [String: Node]
 
     // MARK: Annotations
 
@@ -800,7 +800,7 @@ public class Literal<T>: TypedNode {
     }
 
     /// The value of the literal.
-    public let value: T
+    public var value: T
 
     // MARK: Annotations
 
