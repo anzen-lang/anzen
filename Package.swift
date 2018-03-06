@@ -8,6 +8,7 @@ let package = Package(
     products: [
         .executable(name: "anzenc", targets: ["anzenc"]),
         .library(name: "AnzenLib", type: .static, targets: ["AnzenLib"]),
+        .library(name: "anzen-runtime", type: .static, targets: ["Runtime"]),
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
