@@ -17,49 +17,101 @@ enum BindingPolicy {
 }
 
 /// A local property.
-struct LocalProperty: Property {
+class LocalProperty: Property {
 
     init(function: Function, anzenType: SemanticType, generator: IRGenerator, name: String) {
-        // Create an alloca in the function for an instance of `managed_object`.
-        self.pointer = generator.buildEntryAlloca(
-            in: function, typed: generator.managed_object, named: name)
-
-        // Store other properties.
+        // Store the property's type.
         self.anzenType = anzenType
         self.llvmType = anzenType.llvmType(context: generator.context)
+
+        // Store the IR generation objects.
         self.builder = generator.builder
+        self.runtime = generator.runtime
 
-        // Initialize the memory for the property's value.
-        let llvmType = anzenType.llvmType(context: generator.context)
-        let size = generator.layout.sizeOfTypeInBits(llvmType) / 8
-        generator.builder.buildStore(
-            generator.builder.buildCall(generator.malloc, args: [IntType.int64.constant(size)]),
-            to: generator.builder.buildStructGEP(self.pointer, index: 0))
-
-        // Initialize the reference counter to 1.
-        generator.builder.buildStore(
-            IntType.int64.constant(1),
-            to: generator.builder.buildStructGEP(self.pointer, index: 1))
+        // Create an alloca in the function for an instance of `gc_object`.
+        self.pointer = generator.builder.buildEntryAlloca(
+            in: function, type: generator.runtime.gc_object, name: name)
     }
 
     func bind(to value: Emittable, by bindingPolicy: BindingPolicy) {
-        guard bindingPolicy == .copy else { fatalError() }
+        switch bindingPolicy {
+        case .copy:
+            // If the property isn't bound to any value, we need to initialize the `gc_object`.
+            if !isBounded {
+                let size = builder.module.dataLayout.abiSize(of: llvmType)
+                _ = builder.buildCall(
+                    runtime.gc_object_init,
+                    args: [
+                        pointer,
+                        NativeInt.constant(size),
+                        (Runtime.destructorType*).null(),
+                    ])
+                isBounded = true
+            }
 
-        // Binding a property by copy doesn't update any refcounter.
-        self.builder.buildStore(value.val, to: self.ref!)
+            // Copying a property doesn't modify its ref-counter, so we can emit a single store
+            // instruction, no matter what the rvalue is.
+            builder.buildStore(value.val, to: ref!)
+
+        case .reference:
+            guard let prop = value as? LocalProperty else {
+                fatalError("Cannot emit reference binding to non-local property.")
+            }
+
+            // Binding a property by reference decrements own its ref-counter.
+            if isBounded { emitRelease() }
+
+            for i in 0 ... 2 {
+                builder.buildStore(
+                    builder.buildLoad(builder.buildStructGEP(prop.pointer, index: i)),
+                    to: builder.buildStructGEP(pointer, index: i))
+            }
+            isBounded = true
+            emitRetain()
+
+        case .move:
+            // Binding a property by move decrements its own ref-counter.
+            if isBounded { emitRelease() }
+
+            // If the r-value isn't a `gc_object`, a move binding is equivalent to a copy.
+            guard let prop = value as? LocalProperty else {
+                self.bind(to: value, by: .copy)
+                return
+            }
+
+            // If the r-value is a gc_object, we "steal" all its pointers and leave it unbounded.
+            for i in 0 ... 2 {
+                builder.buildStore(
+                    builder.buildLoad(builder.buildStructGEP(prop.pointer, index: i)),
+                    to: builder.buildStructGEP(pointer, index: i))
+            }
+            prop.isBounded = false
+        }
     }
 
+    func emitRetain() {
+        assert(self.isBounded)
+        _ = self.builder.buildCall(self.runtime.gc_object_retain, args: [ self.pointer ])
+    }
+
+    func emitRelease() {
+        assert(self.isBounded)
+        _ = self.builder.buildCall(self.runtime.gc_object_release, args: [ self.pointer ])
+    }
+
+    /// Whether or not the property is bound to a value.
+    var isBounded: Bool = false
     /// A pointer to the property's allocation.
     let pointer: IRValue
-
     /// The Anzen semantic type of the property.
     let anzenType: SemanticType
-
     /// The LLVM IR type of the property.
     let llvmType: IRType
 
-    /// A reference to the LLVM module builder (to emit IR for load instructions).
+    /// A reference to the IR builder.
     unowned let builder: IRBuilder
+    /// A copy of the runtime wrapper.
+    let runtime: Runtime
 
     /// The LLVM IR value representing a reference (pointer) to the property.
     var ref: IRValue? {

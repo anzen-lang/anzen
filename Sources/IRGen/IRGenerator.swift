@@ -3,6 +3,10 @@ import AnzenTypes
 import LLVM
 import Utils
 
+/// The native `Int` type for the generated IR.
+public let NativeInt = IntType.int64
+
+/// LLVM IR generator.
 public struct IRGenerator: ASTVisitor {
 
     public init(moduleName: String, withOptimizations: Bool = false) {
@@ -21,6 +25,8 @@ public struct IRGenerator: ASTVisitor {
             self.passManager.add(.tailCallElimination)
             self.passManager.add(.loopUnroll)
         }
+
+        self.runtime = Runtime(module: self.module, builder: self.builder)
     }
 
     public mutating func transform(_ module: ModuleDecl, asEntryPoint: Bool = false) -> String {
@@ -44,37 +50,15 @@ public struct IRGenerator: ASTVisitor {
         return self.module.description
     }
 
-    func buildEntryAlloca(
-        in function: Function, typed llvmType: IRType, named name: String? = nil)
-        -> IRValue
-    {
-        let currentBlock = self.builder.insertBlock
-        let entryBlock   = function.entryBlock!
-
-        if let firstInst = entryBlock.firstInstruction {
-            self.builder.position(firstInst, block: entryBlock)
-        }
-
-        let alloca = name != nil
-            ? self.builder.buildAlloca(type: llvmType, name: name!)
-            : self.builder.buildAlloca(type: llvmType)
-
-        if let block = currentBlock {
-            self.builder.positionAtEnd(of: block)
-        }
-
-        return alloca
-    }
-
     mutating func buildBinding(to property: Property, op: Operator, valueOf node: Node) throws {
         // Generate the rvalue.
         try self.visit(node)
+        let value = self.stack.pop()!
 
         switch op {
-        case .cpy:
-            let value = self.stack.pop()!
-            property.bind(to: value, by: .copy)
-
+        case .cpy: property.bind(to: value, by: .copy)
+        case .ref: property.bind(to: value, by: .reference)
+        case .mov: property.bind(to: value, by: .move)
         default:
             fatalError("Unexpected binding operator: '\(op)'")
         }
@@ -107,28 +91,23 @@ public struct IRGenerator: ASTVisitor {
 
     // MARK: Runtime types and functions
 
-    /// Returns a pointer to `managed_object`.
-    var managed_object: LLVM.IRType {
-        if let ty = self.module.type(named: "managed_object") {
+    /// The runtime wrapper.
+    let runtime: Runtime
+
+    /// Returns a pointer to `gc_object`.
+    ///
+    /// A `gc_object` represents a grabage collected object. Each instance of a `gc_object`
+    /// comprises a pointer to the managed object, as well as a pointer to a counter that keeps
+    /// track of the number of references being made on that object. If this number reaches zero,
+    /// the managed object can be garbage collected.
+    var gc_object: LLVM.IRType {
+        if let ty = self.module.type(named: "struct.gc_object") {
             return ty
         }
 
-        let ty = self.builder.createStruct(name: "managed_object")
-        ty.setBody([ IntType.int8*, IntType.int64 ])
+        let ty = self.builder.createStruct(name: "struct.gc_object")
+        ty.setBody([ IntType.int8*, IntType.int64* ])
         return ty
-    }
-
-    /// Returns a pointer to the C's `malloc` function, declaring it if necessary.
-    var malloc: Function {
-        if let fn = self.module.function(named: "malloc") {
-            return fn
-        }
-
-        let fnTy = LLVM.FunctionType(argTypes: [IntType.int64], returnType: IntType.int8*)
-        var fn = self.builder.addFunction("malloc", type: fnTy)
-        fn.linkage = .external
-        fn.callingConvention = .c
-        return fn
     }
 
     /// Returns a pointer to the C's `printf` function, declaring it if necessary.
@@ -147,9 +126,25 @@ public struct IRGenerator: ASTVisitor {
 
 }
 
-enum ValueStorage {
+extension IRBuilder {
 
-    case reference
-    case value
+    func buildEntryAlloca(in function: Function, type: IRType, name: String? = nil) -> IRValue {
+        let currentBlock = self.insertBlock
+        let entryBlock = function.entryBlock!
+
+        if let firstInst = entryBlock.firstInstruction {
+            self.position(firstInst, block: entryBlock)
+        }
+
+        let alloca = name != nil
+            ? self.buildAlloca(type: type, name: name!)
+            : self.buildAlloca(type: type)
+
+        if let block = currentBlock {
+            self.positionAtEnd(of: block)
+        }
+
+        return alloca
+    }
 
 }

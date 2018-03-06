@@ -22,10 +22,12 @@ let package = Package(
         .target(name: "anzenc"    , dependencies: ["AnzenLib", "Commander", "IO"]),
         .target(name: "AnzenLib"  , dependencies: ["AnzenAST", "IO", "IRGen", "Sema"]),
         .target(name: "AnzenAST"  , dependencies: ["AnzenTypes", "Parsey"]),
-        .target(name: "AnzenTypes"),
+        .target(name: "AnzenTypes", dependencies: ["Utils"]),
         .target(name: "IO"),
-        .target(name: "IRGen"     , dependencies: ["AnzenAST", "LLVM"]),
+        .target(name: "IRGen"     , dependencies: ["AnzenAST", "LLVM", "Sema", "Utils"]),
         .target(name: "Sema"      , dependencies: ["AnzenAST", "Utils"]),
         .target(name: "Utils"),
-    ]
+        .target(name: "Runtime"),
+    ],
+    cxxLanguageStandard: .cxx14
 )
