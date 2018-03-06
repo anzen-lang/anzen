@@ -29,5 +29,4 @@ public class TypeAlias: SemanticType {
         return true
     }
 
-
 }

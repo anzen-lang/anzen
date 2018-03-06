@@ -30,7 +30,6 @@ public class TypeSpecialization: SemanticType {
         return true
     }
 
-
     public let genericType    : GenericType
     public let specializations: [TypePlaceholder: SemanticType]
 
