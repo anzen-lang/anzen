@@ -137,6 +137,18 @@ extension IRGenerator {
         }
     }
 
+    public mutating func visit(_ node: BindingStmt) throws {
+        // Generate the IR for the l-value.
+        try self.visit(node.lvalue)
+
+        switch self.stack.pop()! {
+        case let prop as LocalProperty:
+            try self.buildBinding(to: prop, op: node.op, valueOf: node.rvalue)
+        default:
+            fatalError("unexpected l-value")
+        }
+    }
+
     private mutating func createLocal(_ node: PropDecl, in function: Function) throws {
         // Create the local property.
         let property = LocalProperty(
