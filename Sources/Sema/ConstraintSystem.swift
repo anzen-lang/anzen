@@ -185,8 +185,10 @@ public class ConstraintSystem {
         }
 
         // Specialize the function.
-        guard var specialized = self.specialize(type: unspecialized, with: b, memo: memo) else {
-            throw InferenceError(reason: "'\(b)' is not a specialization of '\(a)'")
+        let type = self.deepWalk(a)
+        let pattern = self.deepWalk(b)
+        guard var specialized = self.specialize(type: type, with: pattern, memo: memo) else {
+            throw InferenceError(reason: "'\(pattern)' is not a specialization of '\(a)'")
         }
         specialized = self.replaceGenericReferences(in: specialized, memo: memo)
         try self.solveEquality(between: specialized, and: b, at: loc)
@@ -262,23 +264,20 @@ public class ConstraintSystem {
     private func specialize(
         type: SemanticType, with pattern: SemanticType, memo: Memo = Memo()) -> SemanticType?
     {
-        let a = self.walk(type)
-        let b = self.walk(pattern)
-
         // Nothing to specialize if the types are already equivalent.
-        guard !a.equals(to: b) else { return a }
+        guard !type.equals(to: pattern) else { return type }
 
-        switch (a, b) {
+        switch (type, pattern) {
         case (let p as TypePlaceholder, _):
             if let specialization = memo[p] {
                 return specialization
             } else {
-                memo[p] = b
-                return b
+                memo[p] = pattern
+                return pattern
             }
 
         case (_, _ as TypePlaceholder):
-            return self.specialize(type: b, with: a, memo: memo)
+            return self.specialize(type: pattern, with: type, memo: memo)
 
         case (let fnl as FunctionType, let fnr as FunctionType):
             // Make sure the domain of both functions agree.
@@ -309,10 +308,10 @@ public class ConstraintSystem {
             // TODO: Specialize struct types.
             fatalError("TODO")
 
-            // Other pairs either are incompatible types or involve type variables. In both cases,
+        // Other pairs either are incompatible types or involve type variables. In both cases,
         // unification will decide how to proceed, so we return the unspecialized type unchanged.
         default:
-            return a
+            return type
         }
     }
 
@@ -331,7 +330,7 @@ public class ConstraintSystem {
         type: SemanticType, with mapping: [TypePlaceholder: SemanticType], memo: Memo = Memo())
         -> SemanticType
     {
-        switch self.walk(type) {
+        switch type {
         case let p as TypePlaceholder:
             return mapping[p] ?? p
 
@@ -423,7 +422,7 @@ public class ConstraintSystem {
         }
     }
 
-    private func deepWalk(_ x: SemanticType, memo: Memo) -> SemanticType {
+    private func deepWalk(_ x: SemanticType, memo: Memo = Memo()) -> SemanticType {
         switch x {
         case let v as TypeVariable:
             if let walked = self.solution[v] {
@@ -500,7 +499,9 @@ public class ConstraintSystem {
 
         case let s as TypeSpecialization:
             return self.find(
-                member: member, in: self.specialize(type: s.genericType, with: s.specializations))
+                member: member, in: self.specialize(
+                    type: self.deepWalk(s.genericType),
+                    with: s.specializations))
 
         default:
             return nil
