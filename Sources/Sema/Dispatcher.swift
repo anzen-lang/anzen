@@ -16,20 +16,47 @@ public struct Dispatcher: ASTVisitor, Pass {
         }
     }
 
-    public func visit(_ node: Ident) throws {
+    public mutating func visit(_ node: Ident) throws {
         if node.symbol == nil {
             let symbols = node.scope?[node.name] ?? []
             assert(symbols.count > 0)
 
+            var perfectMatch: Symbol? = nil
+            var otherMatches: [Symbol] = []
+
             for symbol in symbols {
-                // Associate the node with the symbol if their type is a perfect match.
+                // Functions should be compared without any regards for the qualifiers of their
+                // domain/codomain, as those aren't inferred during type solving.
+                if let fn = symbol.type as? FunctionType {
+                    if fn.matches(with: node.type!) {
+                        perfectMatch = symbol
+                        break
+                    }
+                }
                 if symbol.type.equals(to: node.type!) {
-                    node.symbol = symbol
+                    perfectMatch = symbol
                     break
                 }
+
+                if let specialized = symbol.type.specialized(with: node.type!) {
+                    if specialized.equals(to: node.type!) {
+                        otherMatches.append(symbol)
+                    }
+                }
+            }
+
+            // Perfect matches are prioritized over specialized matches.
+            if otherMatches.count > 1 {
+                self.errors.append(
+                    AmbiguousType(
+                        expr: node.name,
+                        candidates: otherMatches.map({ $0.type }),
+                        location: node.location))
+            } else {
+                node.symbol = perfectMatch ?? otherMatches.first
+                assert(node.symbol != nil)
             }
         }
-        print(node.name)
     }
 
     private var errors: [Error] = []

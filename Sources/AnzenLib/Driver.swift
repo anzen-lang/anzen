@@ -14,6 +14,7 @@ public func performSema(on module: ModuleDecl) -> [Error] {
         SymbolsExtractor(),
         ScopeBinder(),
         ConstraintSolver(),
+        Dispatcher(),
     ]
 
     var errors: [Error] = []
