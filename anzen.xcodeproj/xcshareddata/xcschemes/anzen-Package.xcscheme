@@ -42,6 +42,20 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SwiftShell::SwiftShell"
+               BuildableName = "SwiftShell.framework"
+               BlueprintName = "SwiftShell"
+               ReferencedContainer = "container:anzen.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "Commander::Commander"
                BuildableName = "Commander.framework"
                BlueprintName = "Commander"
@@ -157,20 +171,6 @@
                BlueprintIdentifier = "anzen::AnzenTypes"
                BuildableName = "AnzenTypes.framework"
                BlueprintName = "AnzenTypes"
-               ReferencedContainer = "container:anzen.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "anzen::IO"
-               BuildableName = "IO.framework"
-               BlueprintName = "IO"
                ReferencedContainer = "container:anzen.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

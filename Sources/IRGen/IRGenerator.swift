@@ -29,7 +29,7 @@ public struct IRGenerator: ASTVisitor {
         self.runtime = Runtime(module: self.module, builder: self.builder)
     }
 
-    public mutating func transform(_ module: ModuleDecl, asEntryPoint: Bool = false) -> String {
+    public mutating func transform(_ module: ModuleDecl, asEntryPoint: Bool = false) -> Module {
         // If the module's the entry point, we implicitly enclose it in a "main" function.
         if asEntryPoint {
             let fn = self.builder.addFunction(
@@ -47,7 +47,7 @@ public struct IRGenerator: ASTVisitor {
             self.passManager.run(on: fn)
         }
 
-        return self.module.description
+        return self.module
     }
 
     mutating func buildBinding(to property: Property, op: Operator, valueOf node: Node) throws {

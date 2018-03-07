@@ -14,13 +14,14 @@ let package = Package(
         // Dependencies declare other packages that this package depends on.
         .package(url: "https://github.com/kyouko-taiga/Parsey.git", .branch("master")),
         .package(url: "https://github.com/kylef/Commander", from: "0.8.0"),
+        .package(url: "https://github.com/kareman/SwiftShell.git", from: "4.0.2"),
         .package(url: "https://github.com/trill-lang/LLVMSwift.git", .branch("master")),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a
         // test suite. Targets can depend on other targets in this package, and on products in
         // packages which this package depends on.
-        .target(name: "anzenc"    , dependencies: ["AnzenLib", "Commander", "Utils"]),
+        .target(name: "anzenc"    , dependencies: ["AnzenLib", "Commander", "SwiftShell", "Utils"]),
         .target(name: "AnzenLib"  , dependencies: ["AnzenAST", "IRGen", "Sema", "Utils"]),
         .target(name: "AnzenAST"  , dependencies: ["AnzenTypes", "Parsey"]),
         .target(name: "AnzenTypes", dependencies: ["Utils"]),

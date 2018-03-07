@@ -1,5 +1,6 @@
 import AnzenAST
 import IRGen
+import LLVM
 import Sema
 import Utils
 
@@ -22,7 +23,7 @@ public func performSema(on module: ModuleDecl) -> [Error] {
     return errors
 }
 
-public func generateLLVM(of module: ModuleDecl, withOptimizations: Bool = false) -> String {
+public func generateLLVM(of module: ModuleDecl, withOptimizations: Bool = false) -> Module {
     var generator = IRGenerator(moduleName: "main", withOptimizations: withOptimizations)
     return generator.transform(module, asEntryPoint: true)
 }

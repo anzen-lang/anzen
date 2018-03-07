@@ -6,15 +6,19 @@
 import AnzenAST
 import AnzenLib
 import Commander
+import LLVM
 import Sema
+import SwiftShell
 import Utils
 
 let main = command(
     Argument<String>("input", description: "Input source"),
+    Option("lib", default: "", description: "Library search path(s)"),
     Flag("print-src", default: false, description: "Pretty-print the source as it was parsed."),
     Flag("print-ast", default: false, description: "Print the AST of the input after type-check."),
+    Flag("emit-llvm", default: false, description: "Emit the LLVM IR."),
     Flag("optimized", default: false, description: "Compile with optimizations.")
-) { input, printSRC, printAST, optimized in
+) { input, lib, printSRC, printAST, emitLLVM, optimized in
 
     // Read the source file.
     let source: String
@@ -59,7 +63,20 @@ let main = command(
 
     // Run the LLVM IR code generation.
     let llvmModule = AnzenLib.generateLLVM(of: ast, withOptimizations: optimized)
-    print(llvmModule)
+    if emitLLVM {
+        Console.out.print(llvmModule)
+    }
+
+    // Compile the module.
+    let object = input + ".o"
+    let targetMachine = try TargetMachine()
+    try targetMachine.emitToFile(module: llvmModule, type: .object, path: object)
+
+    let clangInvocationResult = SwiftShell.run("clang", "-L", lib, "-lanzen-runtime", object)
+    if !clangInvocationResult.succeeded {
+        Console.err.print(clangInvocationResult.stderror)
+    }
+    exit(Int32(clangInvocationResult.exitcode))
 
 }
 
