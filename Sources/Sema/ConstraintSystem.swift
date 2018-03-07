@@ -48,7 +48,7 @@ public class ConstraintSystem {
             return subSystem.next()
         }
 
-        let memo = Memo()
+        let memo = TypeMap()
         var reified: Solution = [:]
         for (key, value) in self.solution {
             reified[key] = self.deepWalk(value, memo: memo)
@@ -177,20 +177,23 @@ public class ConstraintSystem {
         }
 
         // Initialize the specialization memo with the arguments provided explicitly.
-        let memo = Memo()
+        let mapping = TypeMap()
         for ph in unspecialized.placeholders {
             if let specialization = args[ph.name] {
-                memo[ph] = specialization
+                mapping[ph] = specialization
             }
         }
 
         // Specialize the function.
         let type = self.deepWalk(a)
         let pattern = self.deepWalk(b)
-        guard var specialized = self.specialize(type: type, with: pattern, memo: memo) else {
-            throw InferenceError(reason: "'\(pattern)' is not a specialization of '\(a)'")
+        guard var specialized = type.specialized(with: pattern, mapping: mapping) else {
+            throw InferenceError(reason: "'\(pattern)' is not a specialization of '\(type)'")
         }
-        specialized = self.replaceGenericReferences(in: specialized, memo: memo)
+
+        // Because typing with a pattern is a non-linear process, we need to re-apply one
+        // specialization pass so to properly bind all inferred generic placeholders.
+        specialized = specialized.specialized(with: mapping)
         try self.solveEquality(between: specialized, and: b, at: loc)
     }
 
@@ -218,7 +221,7 @@ public class ConstraintSystem {
     /// concept is that given two types (possibly aggregates of multiple subtypes), we try to find
     /// one possible binding for which the types are equivalent. If such binding can't be found,
     /// then the constraints are unsatisfiable, meaning that the program is type-inconsistent.
-    private func unify(_ x: SemanticType, _ y: SemanticType, memo: Memo = Memo()) throws {
+    private func unify(_ x: SemanticType, _ y: SemanticType, memo: TypeMap = TypeMap()) throws {
         let a = self.walk(x)
         let b = self.walk(y)
 
@@ -260,165 +263,6 @@ public class ConstraintSystem {
         }
     }
 
-    /// Attempts to specialize `type` so that it matches `pattern`.
-    private func specialize(
-        type: SemanticType, with pattern: SemanticType, memo: Memo = Memo()) -> SemanticType?
-    {
-        // Nothing to specialize if the types are already equivalent.
-        guard !type.equals(to: pattern) else { return type }
-
-        // Check if we already chose a specialization for `type`.
-        if let specialization = memo[type] {
-            return specialization
-        }
-
-        switch (type, pattern) {
-        case (let p as TypePlaceholder, _):
-            memo[p] = pattern
-            return pattern
-
-        case (_, _ as TypePlaceholder):
-            return self.specialize(type: pattern, with: type, memo: memo)
-
-        case (let fnl as FunctionType, let fnr as FunctionType):
-            // Make sure the domain of both functions agree.
-            guard fnl.domain.count == fnr.domain.count else { return nil }
-
-            var domain: [ParameterDescription] = []
-            for (dl, dr) in zip(fnl.domain, fnr.domain) {
-                // Make sure the labels are identical.
-                guard dl.label == dr.label else { return nil }
-
-                // Specialize the parameter.
-                guard let specialized = self.specialize(type: dl.type, with: dr.type, memo: memo)
-                    else { return nil }
-                domain.append((label: dl.label, type: specialized))
-            }
-
-            // Specialize the codomain.
-            guard let codomain = self.specialize(
-                type: fnl.codomain, with: fnr.codomain, memo: memo)
-                else { return nil }
-
-            // Return the specialized function.
-            return FunctionType(from: domain, to: codomain)
-
-        case (let sl as StructType, let sr as StructType):
-            guard sl.name == sr.name else { return nil }
-
-            // TODO: Specialize struct types.
-            fatalError("TODO")
-
-        // Other pairs either are incompatible types or involve type variables. In both cases,
-        // unification will decide how to proceed, so we return the unspecialized type unchanged.
-        default:
-            return type
-        }
-    }
-
-    private func specialize(
-        type: QualifiedType, with pattern : QualifiedType, memo: Memo) -> QualifiedType?
-    {
-        guard type.qualifiers.isEmpty
-            || pattern.qualifiers.isEmpty
-            || (type.qualifiers == pattern.qualifiers)
-            else { return nil }
-        return self.specialize(type: type.type, with: pattern.type, memo: memo)?
-            .qualified(by: type.qualifiers.union(pattern.qualifiers))
-    }
-
-    private func specialize(
-        type: SemanticType, with mapping: [TypePlaceholder: SemanticType], memo: Memo = Memo())
-        -> SemanticType
-    {
-        // Check if we already chose a specialization for `type`.
-        if let specialization = memo[type] {
-            return specialization
-        }
-
-        switch type {
-        case let p as TypePlaceholder:
-            return mapping[p] ?? p
-
-        case let f as FunctionType:
-            return FunctionType(
-                placeholders: f.placeholders.subtracting(mapping.keys),
-                from: f.domain.map({
-                    ($0.label, self.specialize(type: $0.type, with: mapping, memo: memo))
-                }),
-                to: self.specialize(type: f.codomain, with: mapping, memo: memo))
-
-        case let s as StructType:
-            if let specialized = memo[s] { return specialized }
-            let specialized = StructType(
-                name: s.name, placeholders: s.placeholders.subtracting(mapping.keys))
-            memo[s] = specialized
-
-            for (key, value) in s.properties {
-                specialized.properties[key] = self.specialize(
-                    type: value, with: mapping, memo: memo)
-            }
-            for (key, values) in s.methods {
-                specialized.methods[key] = values.map {
-                    self.specialize(type: $0, with: mapping, memo: memo)
-                }
-            }
-
-            return specialized
-
-        case let other:
-            return other
-        }
-    }
-
-    private func specialize(
-        type: QualifiedType, with mapping: [TypePlaceholder: SemanticType], memo: Memo)
-        -> QualifiedType
-    {
-        return self.specialize(type: type.type, with: mapping, memo: memo)
-            .qualified(by: type.qualifiers)
-    }
-
-    private func replaceGenericReferences(in type: SemanticType, memo: Memo) -> SemanticType {
-        switch self.walk(type) {
-        case let f as FunctionType:
-            return FunctionType(
-                placeholders: f.placeholders,
-                from: f.domain.map({
-                    ($0.label, self.replaceGenericReferences(in: $0.type, memo: memo))
-                }),
-                to: self.replaceGenericReferences(in: f.codomain, memo: memo))
-
-        case let s as SelfType:
-            // The type pointed by the self container shouldn't be a variable, as we should have
-            // already inferred the type it is defined in. Self types can only appear in method
-            // signatures, and identifying the type associated with a method requires its owning
-            // type to be known (so as to call `find(member:in:)`).
-            let walked = self.walk(s.type)
-            assert(!(walked is TypeVariable))
-
-            // Make sure the pointed type is generic, otherwise there's nothing to specialize.
-            guard let generic = walked as? GenericType else { return walked }
-
-            // Return the type specialization.
-            var mapping: [TypePlaceholder: SemanticType] = [:]
-            for ph in generic.placeholders {
-                if let type = memo[ph] {
-                    mapping[ph] = type
-                }
-            }
-            return TypeSpecialization(specializing: generic, with: mapping)
-
-        case let other:
-            return other
-        }
-    }
-
-    private func replaceGenericReferences(in type: QualifiedType, memo: Memo) -> QualifiedType {
-        return self.replaceGenericReferences(in: type.type, memo: memo)
-            .qualified(by: type.qualifiers)
-    }
-
     private func walk(_ x: SemanticType) -> SemanticType {
         guard let v = x as? TypeVariable else { return x }
         if let walked = self.solution[v] {
@@ -428,7 +272,7 @@ public class ConstraintSystem {
         }
     }
 
-    private func deepWalk(_ x: SemanticType, memo: Memo = Memo()) -> SemanticType {
+    private func deepWalk(_ x: SemanticType, memo: TypeMap = TypeMap()) -> SemanticType {
         switch x {
         case let v as TypeVariable:
             if let walked = self.solution[v] {
@@ -464,9 +308,6 @@ public class ConstraintSystem {
             }
 
             return walked
-
-        case let s as SelfType:
-            return SelfType(aliasing: self.deepWalk(s.type, memo: memo))
 
         case let s as TypeSpecialization:
             // TODO: Specialize here!
@@ -504,10 +345,10 @@ public class ConstraintSystem {
             }
 
         case let s as TypeSpecialization:
+            let mapping = TypeMap(s.specializations.map { ($0.key as SemanticType, $0.value) })
             return self.find(
-                member: member, in: self.specialize(
-                    type: self.deepWalk(s.genericType),
-                    with: s.specializations))
+                member: member,
+                in: self.deepWalk(s.genericType).specialized(with: mapping))
 
         default:
             return nil
@@ -525,39 +366,5 @@ public class ConstraintSystem {
     private var subSystems : [ConstraintSystem] = []
     private var solution   : Solution
     private var done       : Bool = false
-
-}
-
-class Memo: Sequence {
-
-    typealias Element = (key: SemanticType, value: SemanticType)
-
-    init() {
-        self.content = []
-    }
-
-    func makeIterator() -> Array<Element>.Iterator {
-        return self.content.makeIterator()
-    }
-
-    subscript(object: SemanticType) -> SemanticType? {
-        get {
-            return self.content.first(where: { $0.key === object })?.value
-        }
-
-        set {
-            if let index = self.content.index(where: { $0.key === object }) {
-                if let value = newValue {
-                    self.content[index] = (key: object, value: value)
-                } else {
-                    self.content.remove(at: index)
-                }
-            } else if let value = newValue {
-                self.content.append((key: object, value: value))
-            }
-        }
-    }
-
-    var content: [Element]
 
 }

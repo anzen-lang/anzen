@@ -278,8 +278,7 @@ private func analyzeIdentifier(_ node: Ident) throws -> SemanticType {
     case let alias as TypeAlias:
         node.type = alias
         return alias.type
-    case _ as TypePlaceholder: fallthrough
-    case _ as SelfType:
+    case _ as TypePlaceholder:
         node.type = symbols[0].type
         return symbols[0].type
     default:

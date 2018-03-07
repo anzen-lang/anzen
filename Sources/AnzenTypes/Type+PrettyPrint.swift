@@ -72,14 +72,6 @@ extension FunctionType: CustomStringConvertible {
 
 }
 
-extension SelfType: CustomStringConvertible {
-
-    public var description: String {
-        return "Self(\(self.type))"
-    }
-
-}
-
 extension StructType: CustomStringConvertible {
 
     public var description: String {

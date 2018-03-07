@@ -137,7 +137,7 @@ public struct SymbolsExtractor: ASTVisitor, Pass {
         }
 
         // Introduce a `Self` symbol in the type's scope, to handle the `Self` placeholder.
-        node.innerScope!.add(symbol: Symbol(name: "Self", type: SelfType(aliasing: alias.type)))
+        node.innerScope!.add(symbol: Symbol(name: "Self", type: alias))
 
         // Visit the struct's members.
         try self.traverse(node)
