@@ -267,14 +267,15 @@ public class ConstraintSystem {
         // Nothing to specialize if the types are already equivalent.
         guard !type.equals(to: pattern) else { return type }
 
+        // Check if we already chose a specialization for `type`.
+        if let specialization = memo[type] {
+            return specialization
+        }
+
         switch (type, pattern) {
         case (let p as TypePlaceholder, _):
-            if let specialization = memo[p] {
-                return specialization
-            } else {
-                memo[p] = pattern
-                return pattern
-            }
+            memo[p] = pattern
+            return pattern
 
         case (_, _ as TypePlaceholder):
             return self.specialize(type: pattern, with: type, memo: memo)
@@ -330,6 +331,11 @@ public class ConstraintSystem {
         type: SemanticType, with mapping: [TypePlaceholder: SemanticType], memo: Memo = Memo())
         -> SemanticType
     {
+        // Check if we already chose a specialization for `type`.
+        if let specialization = memo[type] {
+            return specialization
+        }
+
         switch type {
         case let p as TypePlaceholder:
             return mapping[p] ?? p
