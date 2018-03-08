@@ -19,10 +19,10 @@ enum BindingPolicy {
 /// A local property.
 class LocalProperty: Property {
 
-    init(function: Function, anzenType: SemanticType, generator: IRGenerator, name: String) {
+    init(in function: Function, type: SemanticType, generator: IRGenerator, name: String? = nil) {
         // Store the property's type.
-        self.anzenType = anzenType
-        self.llvmType = anzenType.llvmType(context: generator.context)
+        self.anzenType = type
+        self.llvmType = generator.buildType(of: anzenType)
 
         // Store the IR generation objects.
         self.builder = generator.builder
@@ -115,14 +115,14 @@ class LocalProperty: Property {
 
     /// The LLVM IR value representing a reference (pointer) to the property.
     var ref: IRValue? {
-        let fieldPtr = self.builder.buildStructGEP(self.pointer, index: 0)
-        let field = self.builder.buildLoad(fieldPtr)
-        return self.builder.buildBitCast(field, type: self.llvmType)
+        let fieldPtr = builder.buildStructGEP(self.pointer, index: 0)
+        let field = builder.buildLoad(fieldPtr)
+        return builder.buildBitCast(field, type: self.llvmType*)
     }
 
     /// The LLVM IR value representing the value of the property.
     var val: IRValue {
-        return self.builder.buildLoad(self.ref!)
+        return builder.buildLoad(ref!)
     }
 
 }
@@ -131,7 +131,7 @@ extension IRGenerator {
 
     public mutating func visit(_ node: PropDecl) throws {
         if let function = self.builder.insertBlock?.parent {
-            try self.createLocal(node, in: function)
+            try self.buildLocalProperty(node, in: function)
         } else {
             fatalError("Gloabl variables aren't supported")
         }
@@ -149,10 +149,10 @@ extension IRGenerator {
         }
     }
 
-    private mutating func createLocal(_ node: PropDecl, in function: Function) throws {
+    private mutating func buildLocalProperty(_ node: PropDecl, in function: Function) throws {
         // Create the local property.
         let property = LocalProperty(
-            function: function, anzenType: node.type!, generator: self, name: node.name)
+            in: function, type: node.type!, generator: self, name: node.name)
         self.locals.top?[node.name] = property
 
         // Generate the IR for optional the initial value.

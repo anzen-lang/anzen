@@ -2,23 +2,29 @@ import AnzenTypes
 import LLVM
 import Sema
 
-extension SemanticType {
+extension IRGenerator {
 
-    func llvmType(context: Context) -> IRType {
-        let ty: IRType
-
-        switch self {
+    func buildType(of anzenType: AnzenTypes.SemanticType) -> IRType {
+        switch anzenType {
         case Sema.Builtins.instance.Int:
-            ty = IntType.int64
+            return IntType.int64
         case Sema.Builtins.instance.Double:
-            ty = FloatType.fp128
+            return FloatType.fp128
         case Sema.Builtins.instance.Bool:
-            ty = IntType.int1
+            return IntType.int1
+
+        case let ty as AnzenTypes.FunctionType:
+            return self.buildType(of: ty)
+
         default:
             fatalError("Cannot emit LLVM type for \(self)")
         }
+    }
 
-        return ty*
+    func buildType(of anzenType: AnzenTypes.FunctionType) -> LLVM.FunctionType {
+        return LLVM.FunctionType(
+            argTypes: anzenType.domain.map({ _ in self.runtime.gc_object }),
+            returnType: runtime.gc_object)
     }
 
 }
