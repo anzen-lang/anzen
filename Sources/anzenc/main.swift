@@ -42,6 +42,7 @@ let main = command(
     } catch {
         exit(-1)
     }
+    ast.name = "main"
 
     // Pretty-print the source if instructed to
     if printSRC { print(ast) }
