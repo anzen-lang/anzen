@@ -27,7 +27,7 @@ public struct SymbolsExtractor: ASTVisitor, Pass {
 
     public mutating func visit(_ node: ModuleDecl) throws {
         // Create a new scope for the module.
-        node.innerScope = Scope()
+        node.innerScope = Scope(name: node.name)
 
         // Visit the module's statements.
         self.stack.push(node)

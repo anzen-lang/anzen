@@ -94,6 +94,7 @@ public class ModuleDecl: ScopeNode {
 
     // MARK: Annotations
 
+    public var name      : String?
     public let location  : SourceRange?
     public var innerScope: Scope?
 
