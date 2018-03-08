@@ -22,6 +22,7 @@
 
 /* Begin PBXBuildFile section */
 		75398D62205024F2006D8C13 /* Dispatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75398D61205024F2006D8C13 /* Dispatcher.swift */; };
+		75398D6420506F72006D8C13 /* Mangler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75398D6320506F72006D8C13 /* Mangler.swift */; };
 		OBJ_173 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_6 /* Package.swift */; };
 		OBJ_179 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_107 /* Package.swift */; };
 		OBJ_185 /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_121 /* Package.swift */; };
@@ -453,6 +454,7 @@
 
 /* Begin PBXFileReference section */
 		75398D61205024F2006D8C13 /* Dispatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dispatcher.swift; sourceTree = "<group>"; };
+		75398D6320506F72006D8C13 /* Mangler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mangler.swift; sourceTree = "<group>"; };
 		"Commander::Commander::Product" /* Commander.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Commander.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"Funky::Funky::Product" /* Funky.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Funky.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		"LLVM::LLVM::Product" /* LLVM.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LLVM.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -908,6 +910,7 @@
 				OBJ_48 /* IRGenerator.swift */,
 				OBJ_49 /* Identifier.swift */,
 				OBJ_50 /* Literal.swift */,
+				75398D6320506F72006D8C13 /* Mangler.swift */,
 				OBJ_51 /* Property.swift */,
 				OBJ_52 /* Runtime.swift */,
 				OBJ_53 /* SemanticType+LLVM.swift */,
@@ -1575,6 +1578,7 @@
 				OBJ_308 /* Identifier.swift in Sources */,
 				OBJ_309 /* Literal.swift in Sources */,
 				OBJ_310 /* Property.swift in Sources */,
+				75398D6420506F72006D8C13 /* Mangler.swift in Sources */,
 				OBJ_311 /* Runtime.swift in Sources */,
 				OBJ_312 /* SemanticType+LLVM.swift in Sources */,
 			);
