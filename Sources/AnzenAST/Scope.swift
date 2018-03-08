@@ -24,6 +24,8 @@ public class Symbol {
     /// Let symbols be marked generic.
     public let isGeneric: Bool
 
+    public weak var scope: Scope?
+
 }
 
 /// A mapping from names to symbols.
@@ -53,6 +55,7 @@ public class Scope {
     public func add(symbol: Symbol) {
         precondition(self[symbol.name].forAll({ $0.isOverloadable }))
         self[symbol.name].append(symbol)
+        symbol.scope = self
     }
 
     /// Returns the first scope in the hierarchy for which a symbol with the given name exists.
