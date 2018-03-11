@@ -11,27 +11,51 @@ extension IRGenerator {
             fatalError("\(node.name) doesn't have a function type")
         }
         let name = Mangler.mangle(symbol: node.symbol!)
-        let fn = builder.addFunction(name, type: buildType(of: ty))
+        let fn = builder.addFunction(name, type: builder.buildFunctionType(of: ty))
+
+        // Setup function attributes.
+        fn.addAttribute(.nounwind, to: .function)
+        if !ty.codomain.type.equals(to: Builtins.instance.Nothing) {
+            fn.addAttribute(.sret, to: .argument(0))
+            fn.addAttribute(.noalias, to: .argument(0))
+        }
 
         // Create the entry point of the function.
         let entry = fn.appendBasicBlock(named: "entry", in: context)
         let currentBlock = builder.insertBlock
         builder.positionAtEnd(of: entry)
 
-        // Create an alloca for the return value of the function, and store its parameters in its
-        // local symbol table.
-        let rv = LocalProperty(in: fn, type: ty.codomain.type, generator: self)
-        locals.push(["__rv__": rv])
-        for (param, decl) in zip(fn.parameters, node.parameters) {
-            let prop = LocalProperty(in: fn, type: decl.type!, generator: self, name: decl.name)
-            builder.buildStore(param, to: prop.pointer)
+        var local: [String: Emittable] = [:]
+
+        // Unless the function's codomain is `Nothing`, allocate the inout return value.
+        var parameters = fn.parameters
+        if !ty.codomain.type.equals(to: Builtins.instance.Nothing) {
+            let rvPointer = parameters.removeFirst()
+            let rv = LocalProperty(in: fn, anzenType: ty.codomain.type, builder: builder)
+            rv.managedValue = ManagedValue(
+                anzenType: rv.anzenType, llvmType: rv.llvmType, builder: builder,
+                alloca: rvPointer)
+            builder.buildStore(rvPointer, to: rv.alloca)
+            local["__rv"] = rv
+        }
+
+        // Allocate the function's parameters.
+        for (param, decl) in zip(parameters, node.parameters) {
+            let prop = LocalProperty(in: fn, anzenType: decl.type!, builder: builder)
+            builder.buildStore(param, to: prop.alloca)
             locals.top![param.name] = prop
         }
 
+        // Allocate the function's closure.
+        let closure = builder.buildEntryAlloca(in: fn, type: IntType.int8*)
+        builder.buildStore(parameters.last!, to: closure)
+
         // Emit the body of the function.
+        locals.push(local)
         try visit(node.body)
-        builder.buildRet(builder.buildLoad(rv.pointer))
         locals.pop()
+        builder.buildRetVoid()
+        passManager.run(on: fn)
 
         // Reset the insertion point.
         if currentBlock != nil {
@@ -42,7 +66,7 @@ extension IRGenerator {
     }
 
     public mutating func visit(_ node: ReturnStmt) throws {
-        let rv = (locals.top?["__rv__"] as? LocalProperty)!
+        let rv = locals.top?["__rv"] as! LocalProperty
         try buildBinding(to: rv, op: .cpy, valueOf: node.value!)
     }
 

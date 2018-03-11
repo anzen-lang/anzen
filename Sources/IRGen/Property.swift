@@ -5,124 +5,87 @@ import LLVM
 /// The protocol for local and global properties.
 protocol Property: Emittable {
 
-    func bind(to value: Emittable, by bindingPolicy: BindingPolicy)
-
-}
-
-/// An enumeration of the possible property binding policies.
-enum BindingPolicy {
-
-    case copy, reference, move
+    func bindByCopy(to value: Emittable)
+    func bindByReference(to value: Emittable)
+    func bindByMove(to value: Emittable)
 
 }
 
 /// A local property.
 class LocalProperty: Property {
 
-    init(in function: Function, type: SemanticType, generator: IRGenerator, name: String? = nil) {
-        // Store the property's type.
-        self.anzenType = type
-        self.llvmType = generator.buildType(of: anzenType)
-
-        // Store the IR generation objects.
-        self.builder = generator.builder
-        self.runtime = generator.runtime
-
-        // Create an alloca in the function for an instance of `gc_object`.
-        self.pointer = generator.builder.buildEntryAlloca(
-            in: function, type: generator.runtime.gc_object, name: name)
+    init(anzenType: SemanticType, llvmType: IRType? = nil, builder: IRBuilder, alloca: IRValue) {
+        self.anzenType = anzenType
+        self.llvmType = llvmType ?? builder.buildValueType(of: anzenType)
+        self.builder = builder
+        self.alloca = alloca
     }
 
-    func bind(to value: Emittable, by bindingPolicy: BindingPolicy) {
-        switch bindingPolicy {
-        case .copy:
-            // If the property isn't bound to any value, we need to initialize the `gc_object`.
-            if !isBounded {
-                let size = builder.module.dataLayout.abiSize(of: llvmType)
-                _ = builder.buildCall(
-                    runtime.gc_object_init,
-                    args: [
-                        pointer,
-                        NativeInt.constant(size),
-                        (Runtime.destructorType*).null(),
-                    ])
-                isBounded = true
-            }
+    init(in function: Function, anzenType: SemanticType, builder: IRBuilder) {
+        self.anzenType = anzenType
+        self.llvmType = builder.buildValueType(of: anzenType)
+        self.builder = builder
+        self.alloca = builder.buildEntryAlloca(in: function, type: self.llvmType*)
+    }
 
-            // Copying a property doesn't modify its ref-counter, so we can emit a single store
-            // instruction, no matter what the rvalue is.
-            builder.buildStore(value.val, to: ref!)
-
-        case .reference:
-            guard let prop = value as? LocalProperty else {
-                fatalError("Cannot emit reference binding to non-local property.")
-            }
-
-            // Binding a property by reference decrements own its ref-counter.
-            if isBounded { emitRelease() }
-
-            for i in 0 ... 2 {
-                builder.buildStore(
-                    builder.buildLoad(builder.buildStructGEP(prop.pointer, index: i)),
-                    to: builder.buildStructGEP(pointer, index: i))
-            }
-            isBounded = true
-            emitRetain()
-
-        case .move:
-            // Binding a property by move decrements its own ref-counter.
-            if isBounded { emitRelease() }
-
-            // If the r-value isn't a `gc_object`, a move binding is equivalent to a copy.
-            guard let prop = value as? LocalProperty else {
-                self.bind(to: value, by: .copy)
-                return
-            }
-
-            // If the r-value is a gc_object, we "steal" all its pointers and leave it unbounded.
-            for i in 0 ... 2 {
-                builder.buildStore(
-                    builder.buildLoad(builder.buildStructGEP(prop.pointer, index: i)),
-                    to: builder.buildStructGEP(pointer, index: i))
-            }
-            prop.isBounded = false
+    func bindByCopy(to value: Emittable) {
+        if managedValue == nil {
+            managedValue = ManagedValue.allocate(anzenType: anzenType, builder: builder)
+            builder.buildStore(managedValue!.alloca, to: alloca)
         }
+        managedValue!.val = value.val
     }
 
-    func emitRetain() {
-        assert(self.isBounded)
-        _ = self.builder.buildCall(self.runtime.gc_object_retain, args: [ self.pointer ])
+    func bindByReference(to value: Emittable) {
+        guard let prop = value as? LocalProperty else {
+            fatalError("Cannot emit reference binding to non-local property.")
+        }
+
+        // Binding a property by reference decrements its reference count.
+        managedValue?.release()
+
+        // Rebind the property.
+        managedValue = prop.managedValue
+        builder.buildStore(managedValue!.alloca, to: alloca)
+        managedValue!.retain()
     }
 
-    func emitRelease() {
-        assert(self.isBounded)
-        _ = self.builder.buildCall(self.runtime.gc_object_release, args: [ self.pointer ])
+    func bindByMove(to value: Emittable) {
+        // Binding a property by move decrements its own ref-counter.
+        managedValue?.release()
+
+        // If the r-value isn't a managed value, a move binding is equivalent to a copy.
+        guard let prop = value as? LocalProperty else {
+            self.bindByCopy(to: value)
+            return
+        }
+
+        // If the r-value is a managed value, we "steal" its pointer and leave it unbounded.
+        builder.buildStore(prop.managedValue!.alloca, to: alloca)
+        managedValue = prop.managedValue
+        prop.managedValue = nil
     }
 
-    /// Whether or not the property is bound to a value.
-    var isBounded: Bool = false
-    /// A pointer to the property's allocation.
-    let pointer: IRValue
+    /// The managed value bounded to the property.
+    var managedValue: ManagedValue?
+
+    // Reference to the IRBuilder associated with the module in which this property's defined.
+    let builder: IRBuilder
+
+    /// The alloca of the pointer to the managed value.
+    let alloca: IRValue
+
     /// The Anzen semantic type of the property.
     let anzenType: SemanticType
+
     /// The LLVM IR type of the property.
     let llvmType: IRType
 
-    /// A reference to the IR builder.
-    unowned let builder: IRBuilder
-    /// A copy of the runtime wrapper.
-    let runtime: Runtime
-
-    /// The LLVM IR value representing a reference (pointer) to the property.
-    var ref: IRValue? {
-        let fieldPtr = builder.buildStructGEP(self.pointer, index: 0)
-        let field = builder.buildLoad(fieldPtr)
-        return builder.buildBitCast(field, type: self.llvmType*)
-    }
-
-    /// The LLVM IR value representing the value of the property.
+    /// The LLVM IR value representing the property.
     var val: IRValue {
-        return builder.buildLoad(ref!)
+        guard let value = managedValue
+            else { return llvmType.null() }
+        return value.val
     }
 
 }
@@ -151,8 +114,7 @@ extension IRGenerator {
 
     private mutating func buildLocalProperty(_ node: PropDecl, in function: Function) throws {
         // Create the local property.
-        let property = LocalProperty(
-            in: function, type: node.type!, generator: self, name: node.name)
+        let property = LocalProperty(in: function, anzenType: node.type!, builder: builder)
         self.locals.top?[node.name] = property
 
         // Generate the IR for optional the initial value.

@@ -25,8 +25,6 @@ public struct IRGenerator: ASTVisitor {
             self.passManager.add(.tailCallElimination)
             self.passManager.add(.loopUnroll)
         }
-
-        self.runtime = Runtime(module: self.module, builder: self.builder)
     }
 
     public mutating func transform(_ module: ModuleDecl, asEntryPoint: Bool = false) -> Module {
@@ -56,9 +54,9 @@ public struct IRGenerator: ASTVisitor {
         let value = self.stack.pop()!
 
         switch op {
-        case .cpy: property.bind(to: value, by: .copy)
-        case .ref: property.bind(to: value, by: .reference)
-        case .mov: property.bind(to: value, by: .move)
+        case .cpy: property.bindByCopy(to: value)
+        case .ref: property.bindByReference(to: value)
+        case .mov: property.bindByMove(to: value)
         default:
             fatalError("Unexpected binding operator: '\(op)'")
         }
@@ -90,25 +88,6 @@ public struct IRGenerator: ASTVisitor {
     let passManager: FunctionPassManager
 
     // MARK: Runtime types and functions
-
-    /// The runtime wrapper.
-    let runtime: Runtime
-
-    /// Returns a pointer to `gc_object`.
-    ///
-    /// A `gc_object` represents a grabage collected object. Each instance of a `gc_object`
-    /// comprises a pointer to the managed object, as well as a pointer to a counter that keeps
-    /// track of the number of references being made on that object. If this number reaches zero,
-    /// the managed object can be garbage collected.
-    var gc_object: LLVM.IRType {
-        if let ty = self.module.type(named: "struct.gc_object") {
-            return ty
-        }
-
-        let ty = self.builder.createStruct(name: "struct.gc_object")
-        ty.setBody([ IntType.int8*, IntType.int64* ])
-        return ty
-    }
 
     /// Returns a pointer to the C's `printf` function, declaring it if necessary.
     var printf: Function {
@@ -145,6 +124,16 @@ extension IRBuilder {
         }
 
         return alloca
+    }
+
+    func buildCallToMalloc(_ size: Int) -> IRValue {
+        var fn = self.module.function(named: "malloc")
+        if fn == nil {
+            let ty = FunctionType(argTypes: [NativeInt], returnType: IntType.int8*)
+            fn = self.addFunction("malloc", type: ty)
+            fn!.callingConvention = .c
+        }
+        return self.buildCall(fn!, args: [NativeInt.constant(size)])
     }
 
 }

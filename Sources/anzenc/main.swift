@@ -73,7 +73,8 @@ let main = command(
     let targetMachine = try TargetMachine()
     try targetMachine.emitToFile(module: llvmModule, type: .object, path: object)
 
-    let clangInvocationResult = SwiftShell.run("clang", "-L", lib, "-lanzen-runtime", object)
+    // let clangInvocationResult = SwiftShell.run("clang", "-L", lib, "-lanzen-runtime", object)
+    let clangInvocationResult = SwiftShell.run("clang", object)
     if !clangInvocationResult.succeeded {
         Console.err.print(clangInvocationResult.stderror)
     }

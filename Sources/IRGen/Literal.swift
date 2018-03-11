@@ -3,10 +3,10 @@ import AnzenTypes
 import LLVM
 import Sema
 
-extension StackValue {
+extension UnmanagedValue {
 
-    static func literal(_ value: Int) -> StackValue {
-        return StackValue(
+    static func literal(_ value: Int) -> UnmanagedValue {
+        return UnmanagedValue(
             anzenType: Builtins.instance.Int,
             llvmType : IntType.int64,
             val      : IntType.int64.constant(value))
@@ -17,7 +17,7 @@ extension StackValue {
 extension IRGenerator {
 
     public mutating func visit(_ node: Literal<Int>) throws {
-        self.stack.push(StackValue.literal(node.value))
+        stack.push(UnmanagedValue.literal(node.value))
     }
 
 }
