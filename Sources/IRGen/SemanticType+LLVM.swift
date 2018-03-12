@@ -51,7 +51,7 @@ extension IRBuilder {
     /// - TODO: Implement type creation of functions with C linkage.
     func buildFunctionType(of anzenType: AnzenTypes.FunctionType) -> LLVM.FunctionType {
         // Create the "regular" argument types.
-        var argTypes = anzenType.domain.map { self.buildValueType(of: $0.type.type)* }
+        var argTypes = anzenType.domain.map { buildValueType(of: $0.type.type)* }
 
         // Prepend the return type unless it's `Nothing`.
         if !anzenType.codomain.type.equals(to: Builtins.instance.Nothing) {

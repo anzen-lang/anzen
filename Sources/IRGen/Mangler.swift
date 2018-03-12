@@ -2,9 +2,10 @@ import AnzenAST
 import AnzenTypes
 import Sema
 
+/// Name mangler.
 struct Mangler {
 
-    /// Mangle a symbol according to its scope and type.
+    /// Mangles a symbol according to its scope and type.
     static func mangle(symbol: Symbol) -> String {
         // All mangled symbols start with `_Z`
         var result = "_Z"
@@ -32,6 +33,7 @@ struct Mangler {
         return result
     }
 
+    /// Mangles a semantic type.
     static func mangle(type: SemanticType) -> String {
         switch type {
         case Builtins.instance.Anything : return "a"
@@ -49,10 +51,12 @@ struct Mangler {
         }
     }
 
+    /// Mangles a struct type.
     static func mangle(type: StructType) -> String {
         return "S" + String(type.name.count) + type.name
     }
 
+    /// Mangles a function type.
     static func mangle(type: FunctionType) -> String {
         var result = "F"
         for param in type.domain {
@@ -66,6 +70,7 @@ struct Mangler {
         return result + "__" + Mangler.mangle(qualified: type.codomain)
     }
 
+    /// Mangles a qualified type.
     static func mangle(qualified: QualifiedType) -> String {
         var result = ""
         if qualified.qualifiers.contains(.cst) {
