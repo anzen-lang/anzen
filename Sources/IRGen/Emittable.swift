@@ -36,7 +36,7 @@ struct UnmanagedValue: Emittable {
 }
 
 /// Represents a managed (i.e. garbage collected) value.
-struct ManagedValue: Emittable {
+class ManagedValue: Emittable {
 
     init(anzenType: SemanticType, llvmType: IRType, builder: IRBuilder, alloca: IRValue) {
         self.anzenType = anzenType
@@ -46,12 +46,12 @@ struct ManagedValue: Emittable {
     }
 
     /// Emit a retain.
-    mutating func retain() {
+    func retain() {
         referenceCount = builder.buildAdd(referenceCount, NativeInt.constant(1))
     }
 
     /// Emit a release.
-    mutating func release() {
+    func release() {
         referenceCount = builder.buildSub(referenceCount, NativeInt.constant(1))
     }
 
@@ -93,7 +93,7 @@ struct ManagedValue: Emittable {
         let size     = builder.module.dataLayout.abiSize(of: llvmType)
         let memory   = builder.buildCallToMalloc(size)
         let alloca   = builder.buildBitCast(memory, type: llvmType*)
-        var value    = ManagedValue(
+        let value    = ManagedValue(
             anzenType: anzenType, llvmType: llvmType, builder: builder, alloca: alloca)
 
         value.referenceCount = NativeInt.constant(1)

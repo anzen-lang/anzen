@@ -51,15 +51,17 @@ public struct IRGenerator: ASTVisitor {
     mutating func buildBinding(to property: Property, op: Operator, valueOf node: Node) throws {
         // Generate the rvalue.
         try self.visit(node)
-        let value = self.stack.pop()!
+        let val = self.stack.pop()!
 
         switch op {
-        case .cpy: property.bindByCopy(to: value)
-        case .ref: property.bindByReference(to: value)
-        case .mov: property.bindByMove(to: value)
+        case .cpy: property.bindByCopy(to: val)
+        case .ref: property.bindByReference(to: val)
+        case .mov: property.bindByMove(to: val)
         default:
-            fatalError("Unexpected binding operator: '\(op)'")
+            fatalError("unexpected binding operator: '\(op)'")
         }
+
+        (val as? CallResult)?.managedValue.release()
     }
 
     /// The LLVM module currently being generated.
