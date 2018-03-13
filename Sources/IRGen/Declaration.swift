@@ -40,7 +40,7 @@ extension IRGenerator {
 
         // Allocate the function parameters.
         var params = fn.parameters
-        var local: [String: Emittable] = [:]
+        var fnLocals: [String: Emittable] = [:]
 
         // Unless the function's codomain is `Nothing`, allocate the inout return value.
         if !fnTy.codomain.type.equals(to: Builtins.instance.Nothing) {
@@ -49,7 +49,7 @@ extension IRGenerator {
             rv.managedValue = ManagedValue(
                 anzenType: rv.anzenType, llvmType: rv.llvmType,
                 builder: builder, alloca: alloca)
-            local["__rv"] = rv
+            fnLocals["__rv"] = rv
         }
 
         // Allocate the function's parameters.
@@ -58,7 +58,7 @@ extension IRGenerator {
             prop.managedValue = ManagedValue(
                 anzenType: prop.anzenType, llvmType: prop.llvmType,
                 builder: builder, alloca: alloca)
-            local[decl.name] = prop
+            fnLocals[decl.name] = prop
         }
 
         // Allocate the function's closure.
@@ -66,7 +66,7 @@ extension IRGenerator {
         builder.buildStore(params.last!, to: closure)
 
         // Emit the body of the function.
-        locals.push(local)
+        locals.push(fnLocals)
         try visit(node.body)
         locals.pop()
         builder.buildRetVoid()
