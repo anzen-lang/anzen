@@ -37,7 +37,7 @@ public struct IRGenerator: ASTVisitor {
                 "main", type: LLVM.FunctionType(argTypes: [], returnType: IntType.int32))
             let entry = fn.appendBasicBlock(named: "entry", in: context)
             builder.positionAtEnd(of: entry)
-            locals.push([:])
+            symbolMaps.push([:])
         }
 
         try! visit(module)
@@ -64,11 +64,16 @@ public struct IRGenerator: ASTVisitor {
     /// by a statement.
     var stack: Stack<Emittable> = []
 
-    /// A stack of maps of local symbols.
-    var locals: Stack<[String: Emittable]> = []
+    /// A stack of maps associating symbols to emittable values.
+    var symbolMaps: Stack<[AnzenAST.Symbol: Emittable]> = []
 
-    /// A map of global symbols.
-    var globals: [String: IRGlobal] = [:]
+    /// A stack of return properties.
+    ///
+    /// Anzen functions return their value by binding a value to their first parameter (see copy
+    /// elision). Because this virtual parameter isn't bound to a symbol of the module, we can't
+    /// retrieve it from the symbol map. Hence, we need an additional register to keep track of
+    /// the property to which bind return values.
+    var returnProps: Stack<Property> = []
 
     /// The function pass manager that performs optimizations.
     let passManager: FunctionPassManager

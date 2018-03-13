@@ -9,8 +9,15 @@ import Sema
 /// takes place.
 struct ForwardDeclarator: ASTVisitor {
 
+    init(builder: IRBuilder) {
+        self.builder = builder
+    }
+
     /// Forward-declares a function, but doesn't emit its body.
-    public mutating func visit(_ node: FunDecl) throws {
+    mutating func visit(_ node: FunDecl) throws {
+        // Register the function declaration.
+        functions.append(node)
+
         // Create the function object.
         guard let fnTy = node.type! as? AnzenTypes.FunctionType else {
             fatalError("\(node.name) doesn't have a function type")
@@ -28,5 +35,8 @@ struct ForwardDeclarator: ASTVisitor {
 
     /// The LLVM builder that will build instructions.
     let builder: IRBuilder
+
+    /// A collection of the functions declared in the module.
+    var functions: [FunDecl] = []
 
 }

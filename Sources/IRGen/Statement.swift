@@ -22,8 +22,7 @@ extension IRGenerator {
 
     /// Emits the IR for return statements.
     public mutating func visit(_ node: ReturnStmt) throws {
-        guard let rv = locals.top?["__rv"] else { return }
-        guard let prop = rv as? Property else {
+        guard let prop = returnProps.top else {
             fatalError("unexpected return value")
         }
 

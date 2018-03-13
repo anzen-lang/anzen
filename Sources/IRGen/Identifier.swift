@@ -5,7 +5,8 @@ extension IRGenerator {
 
     /// Emits the IR of an identifier.
     public mutating func visit(_ node: Ident) throws {
-        guard let prop = locals.top?[node.name] else { fatalError() }
+        guard let prop = symbolMaps.top?[node.symbol!]
+            else { fatalError("unbound identifier") }
         stack.push(prop)
     }
 

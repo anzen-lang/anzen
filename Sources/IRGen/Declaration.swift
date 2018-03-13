@@ -10,7 +10,7 @@ extension IRGenerator {
         if let fn = builder.insertBlock?.parent {
             // Create the local property
             let prop = LocalProperty(in: fn, anzenType: node.type!, builder: builder)
-            locals.top?[node.name] = prop
+            symbolMaps.top![node.symbol!] = prop
 
             // Generate the IR for optional the initial value.
             if let (op, value) = node.initialBinding {
@@ -40,7 +40,6 @@ extension IRGenerator {
 
         // Allocate the function parameters.
         var params = fn.parameters
-        var fnLocals: [String: Emittable] = [:]
 
         // Unless the function's codomain is `Nothing`, allocate the inout return value.
         if !fnTy.codomain.type.equals(to: Builtins.instance.Nothing) {
@@ -49,16 +48,17 @@ extension IRGenerator {
             rv.managedValue = ManagedValue(
                 anzenType: rv.anzenType, llvmType: rv.llvmType,
                 builder: builder, alloca: alloca)
-            fnLocals["__rv"] = rv
+            returnProps.push(rv)
         }
 
         // Allocate the function's parameters.
+        symbolMaps.push([:])
         for (alloca, decl) in zip(params, node.parameters) {
             let prop = LocalProperty(in: fn, anzenType: decl.type!, builder: builder)
             prop.managedValue = ManagedValue(
                 anzenType: prop.anzenType, llvmType: prop.llvmType,
                 builder: builder, alloca: alloca)
-            fnLocals[decl.name] = prop
+            symbolMaps.top![decl.symbol!] = prop
         }
 
         // Allocate the function's closure.
@@ -66,11 +66,15 @@ extension IRGenerator {
         builder.buildStore(params.last!, to: closure)
 
         // Emit the body of the function.
-        locals.push(fnLocals)
         try visit(node.body)
-        locals.pop()
         builder.buildRetVoid()
         passManager.run(on: fn)
+
+        // Clean the symbol map and return register.
+        symbolMaps.pop()
+        if !fnTy.codomain.type.equals(to: Builtins.instance.Nothing) {
+            returnProps.pop()
+        }
 
         // Reset the insertion point.
         if currentBlock != nil {
