@@ -40,6 +40,7 @@ public struct Grammar {
         | Lexer.character("+")  .amid(ws.?) ^^ { _ in PrefixOperator.add }
         | Lexer.character("-")  .amid(ws.?) ^^ { _ in PrefixOperator.sub }
 
+    public static let asOp  = Lexer.token    ("as") .amid(ws.?) ^^ { _ in InfixOperator.as  }
     public static let mulOp = Lexer.character("*")  .amid(ws.?) ^^ { _ in InfixOperator.mul }
     public static let divOp = Lexer.character("/")  .amid(ws.?) ^^ { _ in InfixOperator.div }
     public static let modOp = Lexer.character("%")  .amid(ws.?) ^^ { _ in InfixOperator.mod }
@@ -94,7 +95,8 @@ public struct Grammar {
     public static let eqExpr   = cmpExpr .infixedLeft(by: infixOp(eqOp  | neOp  | isOp))
     public static let cmpExpr  = addExpr .infixedLeft(by: infixOp(ltOp  | leOp  | gtOp  | geOp))
     public static let addExpr  = mulExpr .infixedLeft(by: infixOp(addOp | subOp))
-    public static let mulExpr  = termExpr.infixedLeft(by: infixOp(mulOp | divOp | modOp))
+    public static let mulExpr  = castExpr.infixedLeft(by: infixOp(mulOp | divOp | modOp))
+    public static let castExpr = termExpr.infixedLeft(by: infixOp(asOp))
     public static let termExpr = prefixExpr | atomExpr
 
     public static let prefixExpr: Parser<Node> =

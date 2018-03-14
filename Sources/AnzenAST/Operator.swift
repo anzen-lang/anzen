@@ -10,6 +10,10 @@ public enum PrefixOperator: String {
 /// Enumeration of the prefix operators.
 public enum InfixOperator: String {
 
+    // MARK: Casting precedence
+
+    case `as`
+
     // MARK: Multiplication precedence
 
     case mul  = "*"
