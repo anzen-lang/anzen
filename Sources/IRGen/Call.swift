@@ -77,13 +77,12 @@ extension IRGenerator {
         }
         argsVal.append(contentsOf: args.map { ($0 as? LocalProperty)!.managedValue!.alloca })
 
-        // FIXME: Create capture objects.
-        argsVal.append(IntType.int8*.null())
-
         // Generate the IR for the function call.
         try visit(node.callee)
         let calleeFn = stack.pop()!.val
-        assert(calleeFn is Function)
+
+        // FIXME: extract the closure
+        argsVal.append(IntType.int8*.null())
 
         _ = builder.buildCall(calleeFn, args: argsVal)
         if returnVal != nil {
