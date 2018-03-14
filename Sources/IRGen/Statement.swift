@@ -27,10 +27,13 @@ extension IRGenerator {
         }
 
         // Generate the IR for the return value and bind it to the property.
-        // FIXME: support other return semantics.
         try visit(node.value!)
         let val = stack.pop()!
-        prop.bindByCopy(to: val)
+        switch node.bindingOp {
+        case .none, .copy?: prop.bindByCopy(to: val)
+        case .ref?        : prop.bindByReference(to: val)
+        case .move?       : prop.bindByMove(to: val)
+        }
 
         // If the r-value is the result of a call expression, it should be released.
         (val as? CallResult)?.managedValue?.release()
