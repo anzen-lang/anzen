@@ -166,8 +166,7 @@ public struct Grammar {
         ^^^ { (val, loc) in
             return Ident(
                 name           : val.0,
-                specializations: Dictionary(
-                    val.1 ?? [], uniquingKeysWith: { (first, _) in first }),
+                specializations: Dictionary(val.1 ?? [], uniquingKeysWith: { (fst, _) in fst }),
                 location       : loc)
         }
 
@@ -290,11 +289,11 @@ public struct Grammar {
         (Lexer.token("->").amid(ws.?) ~~> typeAnnotation).amid(ws.?).?
         ^^^ { (val, loc) in
             return FunReq(
-                name        : val.0.0.1,
-                attributes  : val.0.0.0 ?? [],
-                parameters  : val.0.1?.map { $0 as! ParamDecl } ?? [],
-                codomain    : val.1,
-                location    : loc)
+                name      : val.0.0.1,
+                attributes: val.0.0.0 ?? [],
+                parameters: val.0.1?.map { $0 as! ParamDecl } ?? [],
+                codomain  : val.1,
+                location  : loc)
         }
 
     // MARK: Type signatures
