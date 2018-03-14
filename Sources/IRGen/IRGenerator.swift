@@ -31,6 +31,16 @@ public struct IRGenerator: ASTVisitor {
         var declarator = ForwardDeclarator(builder: builder)
         try! declarator.visit(module)
 
+        // Register all global and hoisted symbols.
+        // FIXME: register global variables
+        // FIXME: skip functions that aren't capture-less?
+        for (symbol, fn) in declarator.functions {
+            hoistedSymbolMap[symbol] = UnmanagedValue(
+                anzenType: symbol.type,
+                llvmType: builder.buildValueType(of: symbol.type),
+                val: fn)
+        }
+
         // If the module's the entry point, we implicitly enclose it in a "main" function.
         if asEntryPoint {
             let fn = builder.addFunction(
@@ -66,6 +76,12 @@ public struct IRGenerator: ASTVisitor {
 
     /// A stack of maps associating symbols to emittable values.
     var symbolMaps: Stack<[AnzenAST.Symbol: Emittable]> = []
+
+    /// A map associating global and hoisted symbols to emittable values.
+    ///
+    /// Global variables and functions are hoisted, i.e. available before their declaration. This
+    /// mapping lets IR generation access such symbols.
+    var hoistedSymbolMap: [AnzenAST.Symbol: Emittable] = [:]
 
     /// A stack of return properties.
     ///

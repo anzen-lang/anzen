@@ -81,13 +81,10 @@ extension IRGenerator {
         argsVal.append(IntType.int8*.null())
 
         // Generate the IR for the function call.
-        guard let calleeIdent = node.callee as? Ident else {
-            fatalError("FIXME: implement non-ident callees")
-        }
-        let calleeName = Mangler.mangle(symbol: calleeIdent.symbol!)
-        guard let calleeFn = llvmModule.function(named: calleeName) else {
-            fatalError("undefined function: '\(calleeName)'")
-        }
+        try visit(node.callee)
+        let calleeFn = stack.pop()!.val
+        assert(calleeFn is Function)
+
         _ = builder.buildCall(calleeFn, args: argsVal)
         if returnVal != nil {
             stack.push(returnVal!)

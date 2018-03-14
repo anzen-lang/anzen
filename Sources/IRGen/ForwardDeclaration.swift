@@ -15,9 +15,6 @@ struct ForwardDeclarator: ASTVisitor {
 
     /// Forward-declares a function, but doesn't emit its body.
     mutating func visit(_ node: FunDecl) throws {
-        // Register the function declaration.
-        functions.append(node)
-
         // Create the function object.
         guard let fnTy = node.type! as? AnzenTypes.FunctionType else {
             fatalError("\(node.name) doesn't have a function type")
@@ -31,12 +28,15 @@ struct ForwardDeclarator: ASTVisitor {
             fn.addAttribute(.sret, to: .argument(0))
             fn.addAttribute(.noalias, to: .argument(0))
         }
+
+        // Register the function.
+        functions[node.symbol!] = fn
     }
 
     /// The LLVM builder that will build instructions.
     let builder: IRBuilder
 
     /// A collection of the functions declared in the module.
-    var functions: [FunDecl] = []
+    var functions: [AnzenAST.Symbol: LLVM.Function] = [:]
 
 }
