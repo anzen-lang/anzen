@@ -348,7 +348,7 @@ public struct Grammar {
 
     public static let comment  = Lexer.regex("\\/\\/[^\\n]*")
     public static let ws       = Lexer.whitespaces
-    public static let newlines = (Lexer.newLine | ws.? ~~> comment).+
+    public static let newlines = (ws.? ~~> comment.? ~~> Lexer.newLine).+
     public static let name     = Lexer.regex("[a-zA-Z_]\\w*")
     public static let comma    = Lexer.character(",").amid(ws.?)
 
