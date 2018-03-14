@@ -326,6 +326,9 @@ extension ReturnStmt: CustomDebugStringConvertible {
     public var debugDescription: String {
         var result = "ReturnStmt:\n"
 
+        if let desc = attrDesc(of: self.bindingOp) {
+            result += "- bindingOp:\(desc)"
+        }
         if let desc = attrDesc(of: self.value) {
             result += "- value:\(desc)"
         }

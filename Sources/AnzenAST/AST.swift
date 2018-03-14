@@ -562,10 +562,14 @@ public class BindingStmt: Node {
 /// A return statement.
 public class ReturnStmt: Node {
 
-    public init(value: Node? = nil, location: SourceRange? = nil) {
+    public init(bindingOp: Operator? = nil, value: Node? = nil, location: SourceRange? = nil) {
+        self.bindingOp = bindingOp
         self.value     = value
-        self.location = location
+        self.location  = location
     }
+
+    /// The binding operator of the return statement.
+    public let bindingOp: Operator?
 
     /// The value of the return statement.
     public let value: Node?

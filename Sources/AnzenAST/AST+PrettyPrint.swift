@@ -183,8 +183,14 @@ extension BindingStmt: CustomStringConvertible {
 extension ReturnStmt: CustomStringConvertible {
 
     public var description: String {
+        let op: String
+        if let bindingOp = self.bindingOp {
+            op = bindingOp.description + " "
+        } else {
+            op = ""
+        }
         return self.value != nil
-            ? "return \(self.value!)"
+            ? "return \(op)\(self.value!)"
             : "return"
     }
 

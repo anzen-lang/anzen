@@ -330,9 +330,12 @@ public struct Grammar {
         }
 
     public static let returnStmt: Parser<Node> =
-        "return" ~~> expr.amid(ws.?).?
+        "return" ~~> (bindingOp ~~ expr.amid(ws.?)).?
         ^^^ { (val, loc) in
-            return ReturnStmt(value: val, location: loc)
+            if let (op, value) = val {
+                return ReturnStmt(bindingOp: op, value: value, location: loc)
+            }
+            return ReturnStmt(location: loc)
         }
 
     // MARK: Other terminal symbols
