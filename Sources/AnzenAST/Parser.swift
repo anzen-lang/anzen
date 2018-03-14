@@ -29,8 +29,8 @@ public struct Grammar {
         | interfaceDecl
         | propReq
         | funReq
-        | bindingStmt
         | returnStmt
+        | bindingStmt
         | expr
 
     // MARK: Operators
@@ -329,19 +329,19 @@ public struct Grammar {
 
     // MARK: Statements
 
-    public static let bindingStmt: Parser<Node> =
-        expr ~~ bindingOp ~~ expr
-        ^^^ { (val, loc) in
-            return BindingStmt(lvalue: val.0.0, op: val.0.1, rvalue: val.1, location: loc)
-        }
-
     public static let returnStmt: Parser<Node> =
-        "return" ~~> (bindingOp ~~ expr.amid(ws.?)).?
+        "return" ~~> (bindingOp.? ~~ expr.amid(ws.?)).?
         ^^^ { (val, loc) in
             if let (op, value) = val {
                 return ReturnStmt(bindingOp: op, value: value, location: loc)
             }
             return ReturnStmt(location: loc)
+        }
+
+    public static let bindingStmt: Parser<Node> =
+        expr ~~ bindingOp ~~ expr
+        ^^^ { (val, loc) in
+            return BindingStmt(lvalue: val.0.0, op: val.0.1, rvalue: val.1, location: loc)
         }
 
     // MARK: Other terminal symbols

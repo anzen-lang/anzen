@@ -40,6 +40,8 @@ let main = command(
     do {
         ast = try AnzenLib.parse(text: source)
     } catch {
+        Console.err.print("error: ", in: [.bold, .red], terminator: "")
+        Console.err.print(error)
         exit(-1)
     }
     ast.name = "main"
