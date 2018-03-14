@@ -9,7 +9,7 @@ protocol Property: Referenceable {
 
     /// Emits the instructions to bind this property to the given emittable, with the semantics
     /// associated with the given binding operator.
-    func bind(to expr: Emittable, by op: Operator)
+    func bind(to expr: Emittable, by op: BindingOperator)
 
     /// Emits the instructions to bind this property to a copy of the given emittable.
     func bindByCopy(to expr: Emittable)
@@ -27,13 +27,11 @@ extension Property {
 
     /// Emits the instructions to bind this property to the given emittable, with the semantics
     /// associated with the given binding operator.
-    func bind(to expr: Emittable, by op: Operator) {
+    func bind(to expr: Emittable, by op: BindingOperator) {
         switch op {
-        case .cpy: bindByCopy(to: expr)
-        case .ref: bindByReference(to: expr)
-        case .mov: bindByMove(to: expr)
-        default:
-            fatalError("unexpected binding operator: '\(op)'")
+        case .copy: bindByCopy(to: expr)
+        case .ref : bindByReference(to: expr)
+        case .move: bindByMove(to: expr)
         }
     }
 

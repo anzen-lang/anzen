@@ -106,11 +106,9 @@ extension IRGenerator {
         let arg = LocalProperty(in: currentFn, anzenType: node.type!, builder: builder)
 
         switch node.bindingOp {
-        case .none, .cpy?: arg.bindByCopy(to: val)
-        case .ref?       : arg.bindByReference(to: val)
-        case .mov?       : arg.bindByMove(to: val)
-        default:
-            fatalError("unexpected binding operator")
+        case .none, .copy?: arg.bindByCopy(to: val)
+        case .ref?        : arg.bindByReference(to: val)
+        case .move?       : arg.bindByMove(to: val)
         }
 
         // If the argument's value is the result of a call expression, it should be released.

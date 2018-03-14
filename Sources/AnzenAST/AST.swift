@@ -250,7 +250,7 @@ public class PropDecl: NamedNode {
         name          : String,
         reassignable  : Bool = false,
         typeAnnotation: Node? = nil,
-        initialBinding: (op: Operator, value: Node)? = nil,
+        initialBinding: (op: BindingOperator, value: Node)? = nil,
         location      : SourceRange? = nil)
     {
         self.name           = name
@@ -273,7 +273,7 @@ public class PropDecl: NamedNode {
     public let typeAnnotation: Node?
 
     /// The initial binding value of the property.
-    public let initialBinding: (op: Operator, value: Node)?
+    public let initialBinding: (op: BindingOperator, value: Node)?
 
     // MARK: Annotations
 
@@ -537,7 +537,7 @@ public class ParamSign: TypedNode {
 /// - Note: Binding statements are also sometimes referred to as assignments.
 public class BindingStmt: Node {
 
-    public init(lvalue: Node, op: Operator, rvalue: Node, location: SourceRange? = nil) {
+    public init(lvalue: Node, op: BindingOperator, rvalue: Node, location: SourceRange? = nil) {
         self.lvalue   = lvalue
         self.op       = op
         self.rvalue   = rvalue
@@ -548,7 +548,7 @@ public class BindingStmt: Node {
     public let lvalue: Node
 
     /// The binding operator.
-    public let op: Operator
+    public let op: BindingOperator
 
     /// The rvalue of the binding.
     public let rvalue: Node
@@ -562,14 +562,16 @@ public class BindingStmt: Node {
 /// A return statement.
 public class ReturnStmt: Node {
 
-    public init(bindingOp: Operator? = nil, value: Node? = nil, location: SourceRange? = nil) {
+    public init(
+        bindingOp: BindingOperator? = nil, value: Node? = nil, location: SourceRange? = nil)
+    {
         self.bindingOp = bindingOp
         self.value     = value
         self.location  = location
     }
 
     /// The binding operator of the return statement.
-    public let bindingOp: Operator?
+    public let bindingOp: BindingOperator?
 
     /// The value of the return statement.
     public let value: Node?
@@ -616,7 +618,7 @@ public class IfExpr: TypedNode {
 /// A binary expression.
 public class BinExpr: TypedNode {
 
-    public init(left: Node, op: Operator, right: Node, location: SourceRange? = nil) {
+    public init(left: Node, op: InfixOperator, right: Node, location: SourceRange? = nil) {
         self.left     = left
         self.op       = op
         self.right    = right
@@ -627,7 +629,7 @@ public class BinExpr: TypedNode {
     public let left : Node
 
     /// The operator of the expression.
-    public let op: Operator
+    public let op: InfixOperator
 
     /// The right operand of the expression.
     public let right: Node
@@ -642,14 +644,14 @@ public class BinExpr: TypedNode {
 /// An unary expression.
 public class UnExpr: TypedNode {
 
-    public init(op: Operator, operand: Node, location: SourceRange? = nil) {
+    public init(op: PrefixOperator, operand: Node, location: SourceRange? = nil) {
         self.op       = op
         self.operand  = operand
         self.location = location
     }
 
     /// The operator of the expression.
-    public let op: Operator
+    public let op: PrefixOperator
 
     /// The left operand of the expression.
     public let operand: Node
@@ -688,7 +690,7 @@ public class CallArg: TypedNode {
 
     public init(
         label    : String? = nil,
-        bindingOp: Operator? = nil,
+        bindingOp: BindingOperator? = nil,
         value    : Node,
         location : SourceRange? = nil)
     {
@@ -702,7 +704,7 @@ public class CallArg: TypedNode {
     public let label: String?
 
     /// The binding operator of the argument.
-    public let bindingOp: Operator?
+    public let bindingOp: BindingOperator?
 
     /// The value of the argument.
     public let value: Node

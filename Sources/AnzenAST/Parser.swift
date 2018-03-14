@@ -35,27 +35,27 @@ public struct Grammar {
 
     // MARK: Operators
 
-    public static let bindingOp =
-          Lexer.character("=" ).amid(ws.?) ^^ { _ in Operator.cpy }
-        | Lexer.token    ("&-").amid(ws.?) ^^ { _ in Operator.ref }
-        | Lexer.token    ("<-").amid(ws.?) ^^ { _ in Operator.mov }
+    public static let prefixOp =
+          Lexer.token    ("not").amid(ws.?) ^^ { _ in PrefixOperator.not }
+        | Lexer.character("+")  .amid(ws.?) ^^ { _ in PrefixOperator.add }
+        | Lexer.character("-")  .amid(ws.?) ^^ { _ in PrefixOperator.sub }
 
-    public static let notOp = Lexer.token    ("not").amid(ws.?) ^^ { _ in Operator.not }
-    public static let mulOp = Lexer.character("*")  .amid(ws.?) ^^ { _ in Operator.mul }
-    public static let divOp = Lexer.character("/")  .amid(ws.?) ^^ { _ in Operator.div }
-    public static let modOp = Lexer.character("%")  .amid(ws.?) ^^ { _ in Operator.mod }
-    public static let addOp = Lexer.character("+")  .amid(ws.?) ^^ { _ in Operator.add }
-    public static let subOp = Lexer.character("-")  .amid(ws.?) ^^ { _ in Operator.sub }
-    public static let ltOp  = Lexer.character("<")  .amid(ws.?) ^^ { _ in Operator.lt  }
-    public static let leOp  = Lexer.token    ("<=") .amid(ws.?) ^^ { _ in Operator.le  }
-    public static let gtOp  = Lexer.character(">")  .amid(ws.?) ^^ { _ in Operator.lt  }
-    public static let geOp  = Lexer.token    (">=") .amid(ws.?) ^^ { _ in Operator.le  }
-    public static let eqOp  = Lexer.token    ("==") .amid(ws.?) ^^ { _ in Operator.eq  }
-    public static let neOp  = Lexer.token    ("!=") .amid(ws.?) ^^ { _ in Operator.ne  }
-    public static let andOp = Lexer.token    ("and").amid(ws.?) ^^ { _ in Operator.and }
-    public static let orOp  = Lexer.token    ("or") .amid(ws.?) ^^ { _ in Operator.or  }
+    public static let mulOp = Lexer.character("*")  .amid(ws.?) ^^ { _ in InfixOperator.mul }
+    public static let divOp = Lexer.character("/")  .amid(ws.?) ^^ { _ in InfixOperator.div }
+    public static let modOp = Lexer.character("%")  .amid(ws.?) ^^ { _ in InfixOperator.mod }
+    public static let addOp = Lexer.character("+")  .amid(ws.?) ^^ { _ in InfixOperator.add }
+    public static let subOp = Lexer.character("-")  .amid(ws.?) ^^ { _ in InfixOperator.sub }
+    public static let ltOp  = Lexer.character("<")  .amid(ws.?) ^^ { _ in InfixOperator.lt  }
+    public static let leOp  = Lexer.token    ("<=") .amid(ws.?) ^^ { _ in InfixOperator.le  }
+    public static let gtOp  = Lexer.character(">")  .amid(ws.?) ^^ { _ in InfixOperator.lt  }
+    public static let geOp  = Lexer.token    (">=") .amid(ws.?) ^^ { _ in InfixOperator.le  }
+    public static let eqOp  = Lexer.token    ("==") .amid(ws.?) ^^ { _ in InfixOperator.eq  }
+    public static let neOp  = Lexer.token    ("!=") .amid(ws.?) ^^ { _ in InfixOperator.ne  }
+    public static let isOp  = Lexer.token    ("is") .amid(ws.?) ^^ { _ in InfixOperator.is  }
+    public static let andOp = Lexer.token    ("and").amid(ws.?) ^^ { _ in InfixOperator.and }
+    public static let orOp  = Lexer.token    ("or") .amid(ws.?) ^^ { _ in InfixOperator.or  }
 
-    public static func infixOp(_ parser: Parser<Operator>)
+    public static func infixOp(_ parser: Parser<InfixOperator>)
         -> Parser<(Node, Node, SourceRange) -> Node>
     {
         return parser ^^ { op -> (Node, Node, SourceRange) -> Node in
@@ -64,6 +64,11 @@ public struct Grammar {
             }
         }
     }
+
+    public static let bindingOp =
+          Lexer.character("=" ).amid(ws.?) ^^ { _ in BindingOperator.copy }
+        | Lexer.token    ("&-").amid(ws.?) ^^ { _ in BindingOperator.ref  }
+        | Lexer.token    ("<-").amid(ws.?) ^^ { _ in BindingOperator.move }
 
     // MARK: Literals
 
@@ -86,14 +91,14 @@ public struct Grammar {
     public static let expr     = orExpr
     public static let orExpr   = andExpr .infixedLeft(by: infixOp(orOp))
     public static let andExpr  = eqExpr  .infixedLeft(by: infixOp(andOp))
-    public static let eqExpr   = cmpExpr .infixedLeft(by: infixOp(eqOp  | neOp))
+    public static let eqExpr   = cmpExpr .infixedLeft(by: infixOp(eqOp  | neOp  | isOp))
     public static let cmpExpr  = addExpr .infixedLeft(by: infixOp(ltOp  | leOp  | gtOp  | geOp))
     public static let addExpr  = mulExpr .infixedLeft(by: infixOp(addOp | subOp))
     public static let mulExpr  = termExpr.infixedLeft(by: infixOp(mulOp | divOp | modOp))
     public static let termExpr = prefixExpr | atomExpr
 
     public static let prefixExpr: Parser<Node> =
-        (notOp | addOp | subOp) ~~ atomExpr
+        prefixOp ~~ atomExpr
         ^^^ { (val, loc) in
             let (op, operand) = val
             return UnExpr(op: op, operand: operand, location: loc)

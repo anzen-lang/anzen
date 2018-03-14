@@ -291,3 +291,23 @@ extension Literal: CustomStringConvertible {
     }
 
 }
+
+// MARK: Operators
+
+extension PrefixOperator: CustomStringConvertible {
+
+    public var description: String { return rawValue }
+
+}
+
+extension InfixOperator: CustomStringConvertible {
+
+    public var description: String { return rawValue }
+
+}
+
+extension BindingOperator: CustomStringConvertible {
+
+    public var description: String { return rawValue }
+
+}
