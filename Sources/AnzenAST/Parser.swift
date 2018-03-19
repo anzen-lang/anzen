@@ -48,8 +48,8 @@ public struct Grammar {
     public static let subOp = Lexer.character("-")  .amid(ws.?) ^^ { _ in Operator.sub }
     public static let ltOp  = Lexer.character("<")  .amid(ws.?) ^^ { _ in Operator.lt  }
     public static let leOp  = Lexer.token    ("<=") .amid(ws.?) ^^ { _ in Operator.le  }
-    public static let gtOp  = Lexer.character(">")  .amid(ws.?) ^^ { _ in Operator.lt  }
-    public static let geOp  = Lexer.token    (">=") .amid(ws.?) ^^ { _ in Operator.le  }
+    public static let gtOp  = Lexer.character(">")  .amid(ws.?) ^^ { _ in Operator.gt  }
+    public static let geOp  = Lexer.token    (">=") .amid(ws.?) ^^ { _ in Operator.ge  }
     public static let eqOp  = Lexer.token    ("==") .amid(ws.?) ^^ { _ in Operator.eq  }
     public static let neOp  = Lexer.token    ("!=") .amid(ws.?) ^^ { _ in Operator.ne  }
     public static let andOp = Lexer.token    ("and").amid(ws.?) ^^ { _ in Operator.and }
@@ -87,7 +87,7 @@ public struct Grammar {
     public static let orExpr   = andExpr .infixedLeft(by: infixOp(orOp))
     public static let andExpr  = eqExpr  .infixedLeft(by: infixOp(andOp))
     public static let eqExpr   = cmpExpr .infixedLeft(by: infixOp(eqOp  | neOp))
-    public static let cmpExpr  = addExpr .infixedLeft(by: infixOp(ltOp  | leOp  | gtOp  | geOp))
+    public static let cmpExpr  = addExpr .infixedLeft(by: infixOp(leOp  | ltOp  | geOp  | gtOp))
     public static let addExpr  = mulExpr .infixedLeft(by: infixOp(addOp | subOp))
     public static let mulExpr  = termExpr.infixedLeft(by: infixOp(mulOp | divOp | modOp))
     public static let termExpr = prefixExpr | atomExpr
