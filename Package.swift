@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
-        .package(url: "https://github.com/kyouko-taiga/Parsey.git", .branch("master")),
+        .package(url: "https://github.com/kyouko-taiga/Parsey", .branch("master")),
         .package(url: "https://github.com/kylef/Commander", from: "0.8.0")
         // .package(url: "https://github.com/trill-lang/LLVMSwift.git", .branch("master")),
     ],
