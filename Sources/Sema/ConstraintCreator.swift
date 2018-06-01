@@ -86,21 +86,6 @@ public struct ConstraintCreator: ASTVisitor, SAPass {
         .conformance(t: argument.type!, u: parameter.type, at: location + .parameter(i)))
     }
 
-    // FIXME: By directly using the type of the parameters to build the function type, we constrain
-    // the type of the function (i.e.) to be an exact match with the argument list. This will
-    // prevent polymorphic functions to properly compute the join of their arguments, e.g.:
-    //
-    //     fun poly<T>(x: T, y: T) -> T { ... }
-    //     let a = poly(x = 0, y = true)
-    //
-    // Using conformance rather than equality would relax this constrain, but make any polymorphic
-    // function compatible with the callee (module the lenght and labels of their domain), as one
-    // could always eventually solve `(x: A) -> B ≤ (x: Anything) -> Anything`.
-    //
-    // A better way to tackle this issue might be to create the function type with fresh variables
-    // for its parameters, on which a conformance constraint would bind them to the arguments. In
-    // other words, the same way the codomain is handled.
-
     // FIXME: Create a disjunction with a construction constraint?
   }
 
