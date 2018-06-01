@@ -3,15 +3,17 @@ import Utils
 /// Cass that holds metadata to be associated with an AST.
 public final class ASTContext {
 
-  public init(moduleLoader: ModuleLoader) {
-    self.moduleLoader = moduleLoader
+  public typealias ModuleLoader = (ModuleIdentifier, ASTContext) throws -> ModuleDecl
+
+  public init(loadModule: @escaping ModuleLoader) {
+    self.loadModule = loadModule
   }
 
   public func add(error: ASTError) {
     errors.append(error)
   }
 
-  public func add(error: Error, on node: Node) {
+  public func add(error: Any, on node: Node) {
     errors.append(ASTError(cause: error, node: node))
   }
 
@@ -26,13 +28,13 @@ public final class ASTContext {
     if let module = loadedModules[moduleID] {
       return module
     }
-    let module = try moduleLoader.load(moduleID, in: self)
+    let module = try loadModule(moduleID, self)
     loadedModules[moduleID] = module
     return module
   }
 
   /// The module loader.
-  public let moduleLoader: ModuleLoader
+  public let loadModule: ModuleLoader
   /// The loaded already loaded in the context.
   public private(set) var loadedModules: [ModuleIdentifier: ModuleDecl] = [:]
 
@@ -125,12 +127,12 @@ public final class ASTContext {
 /// An error associated with an AST node.
 public struct ASTError {
 
-  public init(cause: Error, node: Node) {
+  public init(cause: Any, node: Node) {
     self.cause = cause
     self.node = node
   }
 
-  public let cause: Error
+  public let cause: Any
   public let node: Node
 
 }

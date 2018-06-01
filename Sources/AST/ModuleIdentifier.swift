@@ -1,10 +1,3 @@
-/// Protocol for module loaders.
-public protocol ModuleLoader {
-
-  func load(_ moduleID: ModuleIdentifier, in context: ASTContext) throws -> ModuleDecl
-
-}
-
 /// Enum representing a module identifier.
 public enum ModuleIdentifier: Hashable {
 
@@ -19,7 +12,7 @@ public enum ModuleIdentifier: Hashable {
       return "Anzen"
     case .stdlib:
       return "Anzen.stdlib"
-    case .local(name: let name):
+    case .local(let name):
       return name
     }
   }

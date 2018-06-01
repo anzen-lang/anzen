@@ -14,7 +14,9 @@ let package = Package(
         .target(name: "AST"         , dependencies: ["Utils"]),
         .target(name: "Interpreter" , dependencies: ["AST", "Utils"]),
         .target(name: "Parser"      , dependencies: ["AST", "Utils"]),
-        .target(name: "Sema"        , dependencies: ["AST", "Utils"]),
+        .target(name: "Sema"        , dependencies: ["AST", "Parser", "Utils"]),
         .target(name: "Utils"),
+
+        .testTarget(name: "SemaTests", dependencies: ["Parser", "Sema"]),
     ]
 )

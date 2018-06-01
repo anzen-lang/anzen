@@ -9,4 +9,6 @@ public protocol SAPass {
 
   var context: ASTContext { get }
 
+  static var title: String { get }
+
 }

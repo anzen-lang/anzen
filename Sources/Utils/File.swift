@@ -82,6 +82,10 @@ public class File {
 
   private let fp: UnsafeMutablePointer<FILE>?
 
+  public static func exists(path: String) -> Bool {
+    return access(path, F_OK) != -1
+  }
+
 }
 
 extension File: Equatable {

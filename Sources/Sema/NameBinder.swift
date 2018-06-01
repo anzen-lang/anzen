@@ -3,6 +3,8 @@ import Utils
 
 public struct NameBinder: ASTVisitor, SAPass {
 
+  public static let title = "Name binding"
+
   public init(context: ASTContext) {
     self.context = context
   }
@@ -62,7 +64,7 @@ public struct NameBinder: ASTVisitor, SAPass {
 
   public mutating func visit(_ node: Ident) throws {
     // Find the scope that defines the visited identifier.
-    guard let scope = scopes.top!.findScope(declaring: node.name) else {
+    guard let scope = scopes.top?.findScope(declaring: node.name) else {
       context.add(error: SAError.undefinedSymbol(name: node.name), on: node)
       return
     }

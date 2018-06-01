@@ -3,6 +3,8 @@ import Utils
 
 public struct ConstraintCreator: ASTVisitor, SAPass {
 
+  public static let title = "Constraint creation"
+
   public init(context: ASTContext) {
     self.context = context
   }
@@ -152,16 +154,20 @@ public struct ConstraintCreator: ASTVisitor, SAPass {
       return sign.signature.map { typeFromAnnotation(annotation: $0) } ?? TypeVariable()
 
     case let ident as Ident:
-      // If the annotation is an identifier, its symbol should be the metatype of a possibly
-      // incomplete nominal type.
-      let symbols = ident.scope!.symbols[ident.name]!
+      guard let symbols = ident.scope?.symbols[ident.name] else {
+        // The symbols of an identifier couldn't be linked; we use an error type.
+        return ErrorType.get
+      }
+
+      // When the annotation is an identifier, it should be associated with a unique symbol that
+      // must be typed with a metatype.
       guard
         symbols.count == 1,
         let meta = symbols[0].type as? Metatype,
         let type = meta.type as? NominalType else
       {
         context.add(error: SAError.invalidTypeIdentifier(name: ident.name), on: ident)
-        return TypeBase.error
+        return ErrorType.get
       }
       ident.type = type.metatype
       return type

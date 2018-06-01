@@ -11,7 +11,5 @@ public enum SAError: Error {
   case invalidTypeIdentifier(name: String)
   /// Occurs when a symbol appears to be not declared in any accessible scope.
   case undefinedSymbol(name: String)
-  /// Occurs when a declaration is found outside of any scope.
-  case unscopedDeclaration
 
 }

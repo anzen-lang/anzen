@@ -24,9 +24,6 @@ public class TypeBase: Equatable {
   /// The built-in `Nothing` type, which represents the bottom of the lattice.
   public static let nothing = StructType(name: "Nothing")
 
-  /// A special type that's used to represent a typing failure.
-  public static let error = TypeBase()
-
 }
 
 /// Class to represent the description of a type.
@@ -40,6 +37,17 @@ public final class Metatype: TypeBase, CustomStringConvertible {
 
   public var description: String {
     return "\(type).metatype"
+  }
+
+}
+
+/// A special type that's used to represent a typing failure.
+public final class ErrorType: TypeBase, CustomStringConvertible {
+
+  public static let get = ErrorType()
+
+  public var description: String {
+    return "<error type>"
   }
 
 }

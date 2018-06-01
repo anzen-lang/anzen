@@ -11,6 +11,8 @@ import Utils
 /// This pass must be ran before name binding can take place.
 public struct SymbolCreator: ASTVisitor, SAPass {
 
+  public static let title = "Symbol creation"
+
   public init(context: ASTContext) {
     self.context = context
   }
@@ -19,6 +21,8 @@ public struct SymbolCreator: ASTVisitor, SAPass {
   public let context: ASTContext
   /// A stack of nodes that keeps track of which scope a new symbol should be created in.
   private var stack: Stack<ScopeDelimiter> = []
+  /// The error.
+  private var errorSymbol: Symbol?
   /// Whether or not the built-in module is being visited.
   private var isBuiltinVisited: Bool = false
 
@@ -30,6 +34,9 @@ public struct SymbolCreator: ASTVisitor, SAPass {
       node.innerScope?.create(name: "Anything", type: TypeBase.anything.metatype)
       node.innerScope?.create(name: "Nothing", type: TypeBase.nothing.metatype)
     }
+
+    // Create the module's error symbol.
+    errorSymbol = node.innerScope?.create(name: "<error>", type: ErrorType.get)
 
     // We need to set whether or not we're visiting the built-in module, so that built-in types can
     // be properly marked as such.
@@ -56,7 +63,10 @@ public struct SymbolCreator: ASTVisitor, SAPass {
 
   public mutating func visit(_ node: PropDecl) throws {
     // Make sure the property's name can be declared in the current scope.
-    guard canBeDeclared(node: node) else { return }
+    guard canBeDeclared(node: node) else {
+      node.symbol = errorSymbol
+      return
+    }
 
     // Create a new symbol for the property, and visit the node's declaration.
     let scope = stack.top!.innerScope!
@@ -66,7 +76,10 @@ public struct SymbolCreator: ASTVisitor, SAPass {
 
   public mutating func visit(_ node: FunDecl) throws {
     // Make sure the function's name can be declared in the current scope.
-    guard canBeDeclared(node: node) else { return }
+    guard canBeDeclared(node: node) else {
+      node.symbol = errorSymbol
+      return
+    }
 
     // Create the inner scope of the function.
     let scope = stack.top!.innerScope!
@@ -107,7 +120,10 @@ public struct SymbolCreator: ASTVisitor, SAPass {
 
   public mutating func visit(_ node: ParamDecl) throws {
     // Make sure the parameter's name can be declared in the current scope.
-    guard canBeDeclared(node: node) else { return }
+    guard canBeDeclared(node: node) else {
+      node.symbol = errorSymbol
+      return
+    }
 
     // Create a new symbol for the parameter, and visit the node's declaration.
     let scope = stack.top!.innerScope!
@@ -117,7 +133,10 @@ public struct SymbolCreator: ASTVisitor, SAPass {
 
   public mutating func visit(_ node: StructDecl) throws {
     // Make sure the struct's name can be declared in the current scope.
-    guard canBeDeclared(node: node) else { return }
+    guard canBeDeclared(node: node) else {
+      node.symbol = errorSymbol
+      return
+    }
 
     // Create the inner scope of the struct.
     let scope = stack.top!.innerScope!
@@ -165,12 +184,10 @@ public struct SymbolCreator: ASTVisitor, SAPass {
   }
 
   private func canBeDeclared(node: NamedDecl) -> Bool {
-    guard let scope = stack.top?.innerScope else {
-      context.add(error: SAError.unscopedDeclaration, on: node)
-      return false
-    }
+    let scope = stack.top?.innerScope
+    assert(scope != nil, "unscoped declaration")
 
-    let symbols = scope.symbols[node.name]
+    let symbols = scope!.symbols[node.name]
     if node is FunDecl {
       guard symbols?.all(satisfy: { $0.overloadable }) ?? true else {
         context.add(error: SAError.invalidRedeclaration(name: node.name), on: node)
