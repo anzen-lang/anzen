@@ -11,9 +11,9 @@ public class Parser {
     assert((self.stream.count > 0) && (self.stream.last!.kind == .eof), "invalid token stream")
   }
 
-  /// Initializes a parser from a source file.
-  convenience public init(file: File) {
-    self.init(Lexer(file: file))
+  /// Initializes a parser from a text input.
+  public convenience init(source: ASTSource, sourceName: String? = nil) {
+    self.init(Lexer(source: source))
   }
 
   /// Parses the token stream into a module declaration.
@@ -30,7 +30,7 @@ public class Parser {
     }
 
     let range = statements.isEmpty
-      ? SourceRange(at: SourceLocation())
+      ? self.stream.last!.range
       : SourceRange(from: statements.first!.range.start, to: statements.last!.range.end)
     return ModuleDecl(statements: statements, range: range)
   }

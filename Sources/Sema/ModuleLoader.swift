@@ -50,10 +50,10 @@ open class LocalModuleLoader: ModuleLoader {
     var stopwatch = Stopwatch()
 
     // Locate and parse the module.
-    guard let filepath = locate(moduleID: moduleID)
+    guard let file = locate(moduleID: moduleID)
       else { throw LoadingError.moduleNotFound(moduleID: moduleID) }
-    let source = try File(path: filepath)
-    let module = try Parser(file: source).parse()
+    let source = ASTSource.file(stream: file)
+    let module = try Parser(source: source).parse()
     module.id = moduleID
     let parseTime = stopwatch.elapsed
 
@@ -106,22 +106,22 @@ open class LocalModuleLoader: ModuleLoader {
     return module
   }
 
-  public func locate(moduleID: ModuleIdentifier) -> String? {
+  public func locate(moduleID: ModuleIdentifier) -> TextFileStream? {
     // Determine the filename of the module.
-    let filename: String
+    let basename: String
     switch moduleID {
     case .builtin:
-      filename = "builtin.anzen"
+      basename = "builtin.anzen"
     case .stdlib:
-      filename = "stdlib.anzen"
+      basename = "stdlib.anzen"
     case .local(name: let name):
-      filename = "\(name).anzen"
+      basename = "\(name).anzen"
     }
 
     for directory in searchPaths {
-      let filepath = directory + filename
-      if File.exists(path: filepath) {
-        return filepath
+      let filename = directory + basename
+      if TextFileStream.exists(filename: filename) {
+        return TextFileStream(filename: filename)
       }
     }
     return nil

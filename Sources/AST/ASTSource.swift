@@ -1,17 +1,57 @@
 import Utils
 
+public enum ASTSource: Equatable, TextInputStream {
+
+  case file(stream: TextFileStream)
+  case buffer(name: String, stream: TextInputStream)
+
+  public var name: String {
+    switch self {
+    case .file(stream: let file):
+      return file.filename
+    case .buffer(name: let name, _):
+      return name
+    }
+  }
+
+  public func read(characters count: Int?) -> String {
+    switch self {
+    case .file(stream: let inputStream):
+      return inputStream.read(characters: count)
+    case .buffer(name: _, stream: let inputStream):
+      return inputStream.read(characters: count)
+    }
+  }
+
+  public static func == (lhs: ASTSource, rhs: ASTSource) -> Bool {
+    switch (lhs, rhs) {
+    case (.file(let fl), .file(let fr)):
+      return fl.filename == fr.filename
+    case (.buffer(let nl, _), .buffer(name: let nr, stream: _)):
+      return nl == nr
+    default:
+      return false
+    }
+  }
+
+}
+
 public struct SourceLocation {
 
-  public init(file: File? = nil, line: Int = 1, column: Int = 1, offset: Int = 0) {
-    self.file = file
+  public init(source: ASTSource, line: Int = 1, column: Int = 1, offset: Int = 0) {
+    self.source = source
     self.line = line
     self.column = column
     self.offset = offset
   }
 
-  public let file: File?
+  /// The source in which the location refers to.
+  public let source: ASTSource
+  /// The 1-indexed line number in the source text of the location.
   public var line: Int
+  /// The column number in the source text of the location.
   public var column: Int
+  /// The character offset in the source text of the location.
   public var offset: Int
 
 }
@@ -19,11 +59,12 @@ public struct SourceLocation {
 extension SourceLocation: Comparable {
 
   public static func == (lhs: SourceLocation, rhs: SourceLocation) -> Bool {
-    return lhs.file == rhs.file && lhs.offset == rhs.offset
+    return lhs.source == rhs.source
+        && lhs.offset == rhs.offset
   }
 
   public static func < (lhs: SourceLocation, rhs: SourceLocation) -> Bool {
-    precondition(lhs.file == rhs.file, "cannot compare location accress different files")
+    precondition(lhs.source == rhs.source)
     return lhs.offset < rhs.offset
   }
 
@@ -32,7 +73,7 @@ extension SourceLocation: Comparable {
 extension SourceLocation: CustomStringConvertible {
 
   public var description: String {
-    return "\(file?.basename ?? ""):\(line):\(column)"
+    return "\(line):\(column)"
   }
 
 }
@@ -40,7 +81,6 @@ extension SourceLocation: CustomStringConvertible {
 public struct SourceRange: RangeExpression {
 
   public init(from start: SourceLocation, to end: SourceLocation) {
-    precondition(start.file == end.file, "must contain locations from the same file")
     self.start = start
     self.end = end
   }
@@ -64,17 +104,6 @@ public struct SourceRange: RangeExpression {
     return end.offset - start.offset
   }
 
-  public var file: File? {
-    return start.file
-  }
-
-  public var content: Substring? {
-    guard let fileContent = start.file?.read() else { return nil }
-    let startIndex = fileContent.index(fileContent.startIndex, offsetBy: start.offset)
-    let endIndex = fileContent.index(fileContent.startIndex, offsetBy: end.offset)
-    return fileContent[startIndex ... endIndex]
-  }
-
   public let start: SourceLocation
   public let end: SourceLocation
 
@@ -89,22 +118,6 @@ extension SourceRange: Equatable {
 }
 
 extension SourceRange: CustomStringConvertible {
-
-  public var preview: String? {
-    guard let source = file else { return nil }
-    var result = ""
-
-    let lines = source.read().split(
-      separator: "\n", maxSplits: start.line, omittingEmptySubsequences: false)
-    result += lines[start.line - 1] + "\n"
-
-    result += String(repeating: " ", count: start.column - 1) + "^"
-    if (start.line == end.line) && (end.column - start.column > 1) {
-      result += String(repeating: "~", count: end.column - start.column - 1)
-    }
-
-    return result
-  }
 
   public var description: String {
     return "\(start) ... \(end)"
