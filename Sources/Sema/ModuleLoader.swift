@@ -52,8 +52,7 @@ open class LocalModuleLoader: ModuleLoader {
     // Locate and parse the module.
     guard let file = locate(moduleID: moduleID)
       else { throw LoadingError.moduleNotFound(moduleID: moduleID) }
-    let source = ASTSource.file(stream: file)
-    let module = try Parser(source: source).parse()
+    let module = try Parser(source: file).parse()
     module.id = moduleID
     let parseTime = stopwatch.elapsed
 
@@ -74,7 +73,6 @@ open class LocalModuleLoader: ModuleLoader {
     var solver = ConstraintSolver(constraints: context.typeConstraints, in: context)
     let result = solver.solve()
     let solvingTime = stopwatch.elapsed
-    context.typeConstraints.removeAll()
 
     // Apply the solution of the solver (if any) and dispatch identifiers to their symbol.
     stopwatch.reset()
@@ -90,7 +88,7 @@ open class LocalModuleLoader: ModuleLoader {
 
     // Output verbose informations.
     if verbosity >= .verbose {
-      Console.err.print("Loading module '\(moduleID.qualifiedName)' ...", in: .bold)
+      Console.err.print("Loading module '\(moduleID.qualifiedName)' ...".styled("bold"))
       Console.err.print("- Parsed in \(parseTime.humanFormat)")
       Console.err.print("- Created type constraints in \(constraintCreationTime.humanFormat)")
       if verbosity >= .debug {
@@ -103,10 +101,11 @@ open class LocalModuleLoader: ModuleLoader {
       Console.err.print()
     }
 
+    context.typeConstraints.removeAll()
     return module
   }
 
-  public func locate(moduleID: ModuleIdentifier) -> TextFileStream? {
+  public func locate(moduleID: ModuleIdentifier) -> TextFile? {
     // Determine the filename of the module.
     let basename: String
     switch moduleID {
@@ -120,8 +119,8 @@ open class LocalModuleLoader: ModuleLoader {
 
     for directory in searchPaths {
       let filename = directory + basename
-      if TextFileStream.exists(filename: filename) {
-        return TextFileStream(filename: filename)
+      if TextFile.exists(filename: filename) {
+        return TextFile(filename: filename)
       }
     }
     return nil

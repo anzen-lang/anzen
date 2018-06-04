@@ -1,44 +1,8 @@
 import Utils
 
-public enum ASTSource: Equatable, TextInputStream {
-
-  case file(stream: TextFileStream)
-  case buffer(name: String, stream: TextInputStream)
-
-  public var name: String {
-    switch self {
-    case .file(stream: let file):
-      return file.filename
-    case .buffer(name: let name, _):
-      return name
-    }
-  }
-
-  public func read(characters count: Int?) -> String {
-    switch self {
-    case .file(stream: let inputStream):
-      return inputStream.read(characters: count)
-    case .buffer(name: _, stream: let inputStream):
-      return inputStream.read(characters: count)
-    }
-  }
-
-  public static func == (lhs: ASTSource, rhs: ASTSource) -> Bool {
-    switch (lhs, rhs) {
-    case (.file(let fl), .file(let fr)):
-      return fl.filename == fr.filename
-    case (.buffer(let nl, _), .buffer(name: let nr, stream: _)):
-      return nl == nr
-    default:
-      return false
-    }
-  }
-
-}
-
 public struct SourceLocation {
 
-  public init(source: ASTSource, line: Int = 1, column: Int = 1, offset: Int = 0) {
+  public init(source: TextInputBuffer, line: Int = 1, column: Int = 1, offset: Int = 0) {
     self.source = source
     self.line = line
     self.column = column
@@ -46,7 +10,7 @@ public struct SourceLocation {
   }
 
   /// The source in which the location refers to.
-  public let source: ASTSource
+  public let source: TextInputBuffer
   /// The 1-indexed line number in the source text of the location.
   public var line: Int
   /// The column number in the source text of the location.
@@ -59,12 +23,10 @@ public struct SourceLocation {
 extension SourceLocation: Comparable {
 
   public static func == (lhs: SourceLocation, rhs: SourceLocation) -> Bool {
-    return lhs.source == rhs.source
-        && lhs.offset == rhs.offset
+    return lhs.offset == rhs.offset
   }
 
   public static func < (lhs: SourceLocation, rhs: SourceLocation) -> Bool {
-    precondition(lhs.source == rhs.source)
     return lhs.offset < rhs.offset
   }
 

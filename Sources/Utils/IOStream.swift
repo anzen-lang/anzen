@@ -6,31 +6,33 @@ import Darwin.C
 
 public protocol TextInputStream {
 
-  /// Reads and returns at most `count` characters from the stream as a single string.
-  ///
-  /// If `count` is `nil`, reads until the end of the stream.
-  func read(characters count: Int?) -> String
+  /// Reads and returns at most `count` characters from the stream.
+  mutating func read(count: Int) -> String
 
 }
 
 extension TextInputStream {
 
-  /// Reads and returns the characters until the end of the stream.
-  public func read() -> String {
-    return read(characters: nil)
+  /// Reads and returns all characters until the end of the stream.
+  public mutating func read() -> String {
+    var result: String = ""
+    while true {
+      let buffer = read(count: 1024)
+      guard !buffer.isEmpty else { return result }
+      result += buffer
+    }
   }
 
   /// Reads and returns at most `count` lines from the stream.
-  public func read(lines count: Int) -> [String] {
+  public mutating func read(lines count: Int) -> [String] {
     var lines: [String] = []
     var line = ""
     while lines.count < count {
-      let char = read(characters: 1)
+      let char = read(count: 1)
       if char == "" {
         lines.append(line)
         break
-      }
-      if char == "\n" {
+      } else if char == "\n" {
         lines.append(line)
         line = ""
       } else {
@@ -42,7 +44,41 @@ extension TextInputStream {
 
 }
 
-public class TextFileStream: TextInputStream, TextOutputStream {
+public protocol TextInputBuffer {
+
+  /// Reads and return at most `count` characters from the buffer, offset by `offset`.
+  func read(count: Int, from offset: Int) -> String
+
+}
+
+extension TextInputBuffer {
+
+  /// Reads and return all characters from the buffer, offset by `offset`.
+  public func read(from offset: Int) -> String {
+    return read(count: Int.max - offset, from: offset)
+  }
+
+  /// Reads and return at most `count` characters from the buffer.
+  func read(count: Int) -> String {
+    return read(count: count, from: 0)
+  }
+
+  /// Reads and returns all characters from the buffer.
+  public func read() -> String {
+    return read(count: Int.max, from: 0)
+  }
+
+  /// Reads and returns at most `count` lines from the buffer.
+  public func read(lines count: Int) -> [String] {
+    return read()
+      .split(separator: "\n", maxSplits: count + 1, omittingEmptySubsequences: false)
+      .prefix(count)
+      .map({ String($0) })
+  }
+
+}
+
+public struct TextFile: TextInputBuffer, TextOutputStream {
 
   public init(filename: String) {
     self.filename = filename
@@ -50,51 +86,26 @@ public class TextFileStream: TextInputStream, TextOutputStream {
 
   /// A string representing the name of the file to open.
   public let filename: String
-  /// The offset from which read the stream.
-  private var offset: Int = 0
 
   /// The basename of the file.
   public var basename: String {
     return filename.split(separator: "/").last.map(String.init) ?? ""
   }
 
-  /// Reads and returns at most `count` characters from the stream as a single string.
-  ///
-  /// If `count` is `nil`, reads until EOF.
-  public func read(characters count: Int?) -> String {
+  /// Reads and return at most `count` characters from the buffer, offset by `offset`.
+  public func read(count: Int, from offset: Int) -> String {
     guard let pointer = fopen(filename, "r") else { return "" }
     defer { fclose(pointer) }
-    fseek(pointer, offset, SEEK_SET)
 
     setlocale(LC_ALL, "")
     var buffer: [wint_t] = []
-    while (count == nil) || buffer.count < count! {
+    while buffer.count < (count + offset) {
       let char = fgetwc(pointer)
       guard char != WEOF else { break }
       buffer.append(char)
     }
 
-    let result = String(buffer.map({ Character(Unicode.Scalar(UInt32($0))!) }))
-    result.withCString { offset += strlen($0) }
-    return result
-  }
-
-  /// Reads and returns the characters from the stream until EOF.
-  public func read() -> String {
-    guard let pointer = fopen(filename, "r") else { return "" }
-    defer { fclose(pointer) }
-    fseek(pointer, 0, SEEK_END)
-    let size = ftell(pointer)
-    fseek(pointer, offset, SEEK_SET)
-
-    let buffer = [CChar](repeating: 0, count: size - offset + 1)
-    fread(UnsafeMutablePointer(mutating: buffer), MemoryLayout<CChar>.size, size - offset, pointer)
-    offset = size
-    return String(cString: buffer)
-  }
-
-  public func rewind() {
-    offset = 0
+    return String(buffer.dropFirst(offset).map({ Character(Unicode.Scalar(UInt32($0))!) }))
   }
 
   /// Appends the given string to the stream.
@@ -110,7 +121,7 @@ public class TextFileStream: TextInputStream, TextOutputStream {
 
   public static func withTemporary<Result>(
     prefix: String = "org.anzen-lang.",
-    body: (TextFileStream) throws -> Result) rethrows -> Result
+    body: (TextFile) throws -> Result) rethrows -> Result
   {
     let template = String(cString: getenv("TMPDIR")) + prefix + "XXXXXX"
     var buffer = template.utf8CString
@@ -119,17 +130,15 @@ public class TextFileStream: TextInputStream, TextOutputStream {
     }
     let path = String(cString: buffer.withUnsafeBufferPointer { $0.baseAddress! })
     defer { remove(path) }
-    return try body(TextFileStream(filename: path))
+    return try body(TextFile(filename: path))
   }
 
 }
 
-extension String: TextInputStream {
+extension String: TextInputBuffer {
 
-  public func read(characters count: Int?) -> String {
-    return count != nil
-      ? String(prefix(count!))
-      : self
+  public func read(count: Int, from offset: Int) -> String {
+    return String(dropFirst(offset).prefix(count))
   }
 
 }

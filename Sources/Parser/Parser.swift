@@ -12,7 +12,7 @@ public class Parser {
   }
 
   /// Initializes a parser from a text input.
-  public convenience init(source: ASTSource, sourceName: String? = nil) {
+  public convenience init(source: TextInputBuffer, sourceName: String? = nil) {
     self.init(Lexer(source: source))
   }
 

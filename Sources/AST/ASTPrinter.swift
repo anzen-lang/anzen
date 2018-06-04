@@ -12,316 +12,338 @@ public struct ASTPrinter: ASTVisitor {
   /// Whether or not include the type of the nodes in the output.
   public let includeType: Bool
 
-  /// The indentation level of the printer.
-  private var indent: Int = 0
-  /// The "newline" value.
-  private var newline: String { return "\n" + String(repeating: " ", count: indent) }
+  private var stack: Stack<String> = []
+  private var isVisitingAnnotation: Bool = false
+  private var isVisitingCallee: Bool = false
 
   public mutating func visit(_ node: ModuleDecl) throws {
     for statement in node.statements {
       try visit(statement)
-      writeln("")
+      console.print(stack.pop()!)
     }
+    assert(stack.isEmpty)
   }
 
   public mutating func visit(_ node: Block) throws {
-    indent += 2
-    writeln("{")
-    for statement in node.statements {
-      write(String(repeating: " ", count: indent))
+    let statements = try node.statements.map { (statement) -> String in
       try visit(statement)
-      writeln("")
+      return indent(stack.pop()!)
     }
-    indent -= 2
-    writeln("}")
+    stack.push("{\n\(str(items: statements, separator: "\n"))\n}")
   }
 
   public mutating func visit(_ node: PropDecl) throws {
+    var repr = ""
     if !node.attributes.isEmpty {
-      write(str(items: node.attributes, separator: " ") + " ")
+      repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
+      repr += " "
     }
-    write(node.reassignable ? "var " : "let ", in: .magenta)
-    write(node.name)
+    repr += (node.reassignable ? "var " : "let ").styled("magenta")
+    repr += node.name
 
-    if includeType { comment(":\(str(node.type))") }
+    if includeType {
+      repr += ":\(str(node.type))".styled("dimmed")
+    }
 
     if let annotation = node.typeAnnotation {
-      write(": ")
+      isVisitingAnnotation = true
       try visit(annotation)
+      repr += ": \(stack.pop()!)"
+      isVisitingAnnotation = false
     }
     if let (op, value) = node.initialBinding {
-      write(" \(op) ")
       try visit(value)
+      repr += " \(op) \(stack.pop()!)"
     }
+
+    stack.push(repr)
   }
 
   public mutating func visit(_ node: FunDecl) throws {
+    var repr = ""
     if !node.attributes.isEmpty {
-      write(str(items: node.attributes, separator: " ") + " ")
+      repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
+      repr += " "
     }
-    write("fun ", in: .magenta)
-    write(node.name, in: .cyan)
+    repr += try StyledString("{fun:magenta} {\(node.name):cyan}")
 
-    if includeType { comment(":\(str(node.type)) ") }
+    if includeType {
+      repr += ":\(str(node.type))".styled("dimmed")
+    }
 
     if !node.placeholders.isEmpty {
-      write("<\(str(items: node.placeholders))>")
+      let placeholders = node.placeholders.map({ $0.styled("yellow") })
+      repr += "<\(str(items: placeholders))>"
     }
-    write("(")
-    for parameter in node.parameters {
+
+    let parameters = try node.parameters.map { (parameter) -> String in
       try visit(parameter)
-      if parameter != node.parameters.last {
-        write(", ")
-      }
+      return stack.pop()!
     }
-    write(")")
+    repr += "(\(str(items: parameters)))"
+
     if let codomain = node.codomain {
-      write(" -> ")
+      isVisitingAnnotation = true
       try visit(codomain)
+      repr += " -> \(stack.pop()!)"
+      isVisitingAnnotation = false
     }
+
     if let body = node.body {
-      write(" ")
       try visit(body)
+      repr += " \(stack.pop()!)"
     }
+
+    stack.push(repr)
   }
 
   public mutating func visit(_ node: ParamDecl) throws {
-    write(str(node.label))
+    var repr = str(node.label)
     if node.label != node.name {
-      write(" \(node.name)")
+      repr += " \(node.name)"
     }
 
-    if includeType { comment(":\(str(node.type))") }
+    if includeType {
+      repr += ":\(str(node.type))".styled("dimmed")
+    }
 
     if let annotation = node.typeAnnotation {
-      write(": ")
+      isVisitingAnnotation = true
       try visit(annotation)
+      repr += ": \(stack.pop()!)"
+      isVisitingAnnotation = false
     }
     if let value = node.defaultValue {
-      write(" = ")
       try visit(value)
+      repr += " = \(stack.pop()!)"
     }
+
+    stack.push(repr)
   }
 
-  public mutating func visit(_ node: StructDecl) throws {
-    write("struct ", in: .magenta)
-    write(node.name, in: .yellow)
-
-    if includeType { comment(":\(str(node.type))") }
-
-    if !node.placeholders.isEmpty {
-      write("<\(str(items: node.placeholders))>")
-    }
-    write(" ")
-    try visit(node.body)
-  }
-
-  public mutating func visit(_ node: InterfaceDecl) throws {
-    write("interface ", in: .magenta)
-    write(node.name, in: .yellow)
-
-    if includeType { comment(":\(str(node.type))") }
-
-    if !node.placeholders.isEmpty {
-      write("<\(str(items: node.placeholders))>")
-    }
-    write(" ")
-    try visit(node.body)
-  }
-
-  public mutating func visit(_ node: QualSign) throws {
-    write(str(items: node.qualifiers, separator: " "))
-    if let signature = node.signature {
-      if !node.qualifiers.isEmpty {
-        write(" ")
-      }
-      try visit(signature)
-    }
-  }
-
-  public mutating func visit(_ node: FunSign) throws {
-    write("(")
-    for parameter in node.parameters {
-      try visit(parameter)
-      if parameter != node.parameters.last {
-        write(", ")
-      }
-    }
-    write(") -> ")
-    try visit(node.codomain)
-  }
-
-  public mutating func visit(_ node: ParamSign) throws {
-    write(str(node.label) + " ")
-    try visit(node.typeAnnotation)
-  }
+//  public mutating func visit(_ node: StructDecl) throws {
+//    write("struct ", styled: "magenta")
+//    write(node.name, styled: "yellow")
+//
+//    if includeType { comment(":\(str(node.type))") }
+//
+//    if !node.placeholders.isEmpty {
+//      write("<\(str(items: node.placeholders))>")
+//    }
+//    write(" ")
+//    try visit(node.body)
+//  }
+//
+//  public mutating func visit(_ node: InterfaceDecl) throws {
+//    write("interface ", styled: "magenta")
+//    write(node.name, styled: "yellow")
+//
+//    if includeType { comment(":\(str(node.type))") }
+//
+//    if !node.placeholders.isEmpty {
+//      write("<\(str(items: node.placeholders))>")
+//    }
+//    write(" ")
+//    try visit(node.body)
+//  }
+//
+//  public mutating func visit(_ node: QualSign) throws {
+//    write(str(items: node.qualifiers, separator: " "))
+//    if let signature = node.signature {
+//      if !node.qualifiers.isEmpty {
+//        write(" ")
+//      }
+//      try visit(signature)
+//    }
+//  }
+//
+//  public mutating func visit(_ node: FunSign) throws {
+//    write("(")
+//    for parameter in node.parameters {
+//      try visit(parameter)
+//      if parameter != node.parameters.last {
+//        write(", ")
+//      }
+//    }
+//    write(") -> ")
+//    try visit(node.codomain)
+//  }
+//
+//  public mutating func visit(_ node: ParamSign) throws {
+//    write(str(node.label) + " ")
+//    try visit(node.typeAnnotation)
+//  }
 
   public mutating func visit(_ node: BindingStmt) throws {
-    write(node.lvalue)
-    write(" \(node.op) ")
-    write(node.rvalue)
+    try visit(node.rvalue)
+    try visit(node.lvalue)
+    stack.push("\(stack.pop()!) \(node.op) \(stack.pop()!)")
   }
 
   public mutating func visit(_ node: ReturnStmt) throws {
-    write("return", in: .magenta)
+    var repr = "return".styled("magenta")
     if let value = node.value {
-      write(" ")
       try visit(value)
+      repr += " \(stack.pop()!)"
     }
+    stack.push(repr)
   }
 
-  public mutating func visit(_ node: IfExpr) throws {
-    write("if ", in: .magenta)
-    try visit(node.condition)
-    write(" ")
-    try visit(node.thenBlock)
-    if let elseBlock = node.elseBlock {
-      write(" else ")
-      try visit(elseBlock)
-    }
-  }
-
-  public mutating func visit(_ node: BinExpr) throws {
-    try visit(node.left)
-    write(" \(node.op) ")
-    try visit(node.right)
-  }
-
-  public mutating func visit(_ node: UnExpr) throws {
-    write("\(node.op) ")
-    try visit(node.operand)
-  }
+//  public mutating func visit(_ node: IfExpr) throws {
+//    write("if ", styled: "magenta")
+//    try visit(node.condition)
+//    write(" ")
+//    try visit(node.thenBlock)
+//    if let elseBlock = node.elseBlock {
+//      write(" else ")
+//      try visit(elseBlock)
+//    }
+//  }
+//
+//  public mutating func visit(_ node: BinExpr) throws {
+//    try visit(node.left)
+//    write(" \(node.op) ")
+//    try visit(node.right)
+//  }
+//
+//  public mutating func visit(_ node: UnExpr) throws {
+//    write("\(node.op) ")
+//    try visit(node.operand)
+//  }
 
   public mutating func visit(_ node: CallExpr) throws {
+    let wasVisitinCallee = isVisitingCallee
+    isVisitingCallee = true
     try visit(node.callee)
-    write("(")
-    for argument in node.arguments {
+    var repr = stack.pop()!
+    isVisitingCallee = wasVisitinCallee
+
+    let arguments = try node.arguments.map { (argument) -> String in
       try visit(argument)
-      if argument != node.arguments.last {
-        write(", ")
-      }
+      return stack.pop()!
     }
-    write(")")
+    repr += "(\(str(items: arguments)))"
+
+    stack.push(repr)
   }
 
   public mutating func visit(_ node: CallArg) throws {
-    if let label = node.label {
-      write("\(label) \(node.bindingOp) ")
-    }
     try visit(node.value)
+    if let label = node.label {
+      stack.push("\(label) \(node.bindingOp) \(stack.pop()!)")
+    }
   }
 
-  public mutating func visit(_ node: SubscriptExpr) throws {
-    try visit(node.callee)
-    write("[")
-    for argument in node.arguments {
-      try visit(argument)
-      if argument != node.arguments.last {
-        write(", ")
-      }
-    }
-    write("]")
-  }
-
-  public mutating func visit(_ node: SelectExpr) throws {
-    if let owner = node.owner {
-      try visit(owner)
-    }
-    write(".")
-    try visit(node.ownee)
-  }
-
-  public mutating func visit(_ node: LambdaExpr) throws {
-    write("fun (")
-    for parameter in node.parameters {
-      try visit(parameter)
-      if parameter != node.parameters.last {
-        write(", ")
-      }
-    }
-    write(")")
-    if let codomain = node.codomain {
-      write(" -> ")
-      try visit(codomain)
-    }
-    write(" ")
-    try visit(node.body)
-  }
+//  public mutating func visit(_ node: SubscriptExpr) throws {
+//    try visit(node.callee)
+//    write("[")
+//    for argument in node.arguments {
+//      try visit(argument)
+//      if argument != node.arguments.last {
+//        write(", ")
+//      }
+//    }
+//    write("]")
+//  }
+//
+//  public mutating func visit(_ node: SelectExpr) throws {
+//    if let owner = node.owner {
+//      try visit(owner)
+//    }
+//    write(".")
+//    try visit(node.ownee)
+//  }
+//
+//  public mutating func visit(_ node: LambdaExpr) throws {
+//    write("fun (")
+//    for parameter in node.parameters {
+//      try visit(parameter)
+//      if parameter != node.parameters.last {
+//        write(", ")
+//      }
+//    }
+//    write(")")
+//    if let codomain = node.codomain {
+//      write(" -> ")
+//      try visit(codomain)
+//    }
+//    write(" ")
+//    try visit(node.body)
+//  }
 
   public mutating func visit(_ node: Ident) throws {
-    write(node.name)
+    var repr = node.name
+    if isVisitingAnnotation {
+      repr = repr.styled("yellow")
+    } else if isVisitingCallee {
+      repr = repr.styled("cyan")
+    }
 
-    if includeType { comment(":\(str(node.type))") }
+    if includeType {
+      repr += ":\(str(node.type))".styled("dimmed")
+    }
 
     if !node.specializations.isEmpty {
-      write("<")
+      var args: [String] = []
       for (key, value) in node.specializations {
-        write("\(key) = ")
+        let wasParsingAnnotation = isVisitingAnnotation
+        isVisitingAnnotation = true
         try visit(value)
-        write(", ")
+        args.append("\(key) = \(stack.pop()!)")
+        isVisitingAnnotation = wasParsingAnnotation
       }
-      write(">")
+      repr += "<\(str(items: args))>"
     }
+
+    stack.push(repr)
   }
 
-  public mutating func visit(_ node: ArrayLiteral) throws {
-    write("[")
-    for element in node.elements {
-      try visit(element)
-      writeln(",")
-    }
-    write("]")
+//  public mutating func visit(_ node: ArrayLiteral) throws {
+//    write("[")
+//    for element in node.elements {
+//      try visit(element)
+//      writeln(",")
+//    }
+//    write("]")
+//  }
+//
+//  public mutating func visit(_ node: SetLiteral) throws {
+//    write("{")
+//    for element in node.elements {
+//      try visit(element)
+//      writeln(",")
+//    }
+//    write("}")
+//  }
+//
+//  public mutating func visit(_ node: MapLiteral) throws {
+//    write("{")
+//    for (key, value) in node.elements {
+//      write("\(key): ")
+//      try visit(value)
+//      writeln(",")
+//    }
+//    write("}")
+//  }
+
+  public mutating func visit(_ node: Literal<Bool>) {
+    stack.push(String(node.value).styled("green"))
   }
 
-  public mutating func visit(_ node: SetLiteral) throws {
-    write("{")
-    for element in node.elements {
-      try visit(element)
-      writeln(",")
-    }
-    write("}")
+  public mutating func visit(_ node: Literal<Int>) {
+    stack.push(String(node.value).styled("green"))
   }
 
-  public mutating func visit(_ node: MapLiteral) throws {
-    write("{")
-    for (key, value) in node.elements {
-      write("\(key): ")
-      try visit(value)
-      writeln(",")
-    }
-    write("}")
+  public mutating func visit(_ node: Literal<Double>) {
+    stack.push(String(node.value).styled("green"))
   }
 
-  public func visit(_ node: Literal<Bool>) {
-    write(node.value, in: .green)
+  public mutating func visit(_ node: Literal<String>) {
+    stack.push("\"\(node.value)\"".styled("green"))
   }
 
-  public func visit(_ node: Literal<Int>) {
-    write(node.value, in: .green)
-  }
-
-  public func visit(_ node: Literal<Double>) {
-    write(node.value, in: .green)
-  }
-
-  public func visit(_ node: Literal<String>) {
-    write("\"\(node.value)\"", in: .green)
-  }
-
-  private func write(
-    _ item: Any,
-    in style: Console.Style = .default,
-    terminator: String = "")
-  {
-    console.print(item, in: style, terminator: terminator)
-  }
-
-  private func writeln(_ item: Any, in style: Console.Style = .default) {
-    console.print(item, in: style)
-  }
-
-  private func comment(_ text: String, terminator: String = "") {
-    console.print("\(text)", in: .dimmed, terminator: terminator)
+  private func comment(_ text: String) -> String {
+    return "\(text)".styled("dimmed")
   }
 
 }
@@ -336,4 +358,11 @@ private func str<S>(items: S, separator: String = ", ") -> String where S: Seque
 
 private func str<T>(_ item: T?) -> String {
   return item.map { String(describing: $0) } ?? "_"
+}
+
+private func indent(_ string: String) -> String {
+  return string
+    .split(separator: "\n")
+    .map  ({ "  " + $0 })
+    .joined(separator: "\n")
 }

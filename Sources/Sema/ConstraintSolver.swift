@@ -94,14 +94,6 @@ public struct ConstraintSolver {
             return .success(solution: candidates[i], penalties: lowestPenalties + penalties)
           }
 
-//          // FIXME: This is for debug purpose only!
-//          for (i, candidate) in candidates.enumerated() {
-//            print("\n-- solution #\(i) -----")
-//            for (k, v) in candidate {
-//              print("\(k) => \(v)")
-//            }
-//          }
-
           // There's still equivalent solutions; the constraint system is ambiguous.
           return .failure(cause: [(reify(constraint: constraint), .ambiguousExpression)])
         }

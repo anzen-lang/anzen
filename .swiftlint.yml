@@ -9,8 +9,8 @@ disabled_rules: # rule identifiers to exclude from running
   - force_try
   - function_body_length
   - opening_brace
-  - todo # To enable when we'll release
   - trailing_comma
   - type_body_length
 excluded: # paths to ignore during linting
   - .build
+  - Sources/Interpreter

@@ -6,7 +6,7 @@ import Utils
 /// Lexer for the tokens of the Anzen language.
 public struct Lexer {
 
-  public init(source: ASTSource) {
+  public init(source: TextInputBuffer) {
     currentLocation = SourceLocation(source: source)
     characters = source.read().unicodeScalars
     charIndex = characters.startIndex

@@ -21,6 +21,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		75285A7020C184BA007E436B /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75285A6F20C184BA007E436B /* Diagnostic.swift */; };
+		75285A7220C18A49007E436B /* Parser.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::Parser::Product" /* Parser.framework */; };
+		75285A7620C54108007E436B /* StyledString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75285A7520C54108007E436B /* StyledString.swift */; };
 		75ED04F320C0405000305579 /* ModuleLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_58 /* ModuleLoader.swift */; };
 		75ED04F520C0409E00305579 /* ModuleIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ED04F420C0409E00305579 /* ModuleIdentifier.swift */; };
 		75ED04F720C05EB100305579 /* Stopwatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ED04F620C05EB100305579 /* Stopwatch.swift */; };
@@ -63,12 +66,11 @@
 		OBJ_165 /* AST.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::AST::Product" /* AST.framework */; };
 		OBJ_166 /* Utils.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::Utils::Product" /* Utils.framework */; };
 		OBJ_175 /* Console.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_9 /* Console.swift */; };
-		OBJ_176 /* File.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* File.swift */; };
+		OBJ_176 /* IOStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_10 /* IOStream.swift */; };
 		OBJ_177 /* OrderedMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_11 /* OrderedMap.swift */; };
 		OBJ_178 /* Sequence+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_12 /* Sequence+Extensions.swift */; };
 		OBJ_179 /* SortedArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_13 /* SortedArray.swift */; };
 		OBJ_180 /* Stack.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_14 /* Stack.swift */; };
-		OBJ_181 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_15 /* String+Extensions.swift */; };
 		OBJ_182 /* Unreachable.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_16 /* Unreachable.swift */; };
 		OBJ_190 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_40 /* main.swift */; };
 		OBJ_192 /* Sema.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::Sema::Product" /* Sema.framework */; };
@@ -86,7 +88,7 @@
 		OBJ_88 /* Constraint.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_57 /* Constraint.swift */; };
 		OBJ_90 /* Operator.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_59 /* Operator.swift */; };
 		OBJ_91 /* Scope.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_60 /* Scope.swift */; };
-		OBJ_92 /* Source.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_61 /* Source.swift */; };
+		OBJ_92 /* ASTSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_61 /* ASTSource.swift */; };
 		OBJ_93 /* Symbol.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_62 /* Symbol.swift */; };
 		OBJ_94 /* Type.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_63 /* Type.swift */; };
 		OBJ_96 /* Utils.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::Utils::Product" /* Utils.framework */; };
@@ -215,14 +217,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		75285A6F20C184BA007E436B /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
+		75285A7520C54108007E436B /* StyledString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyledString.swift; sourceTree = "<group>"; };
 		75ED04F420C0409E00305579 /* ModuleIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleIdentifier.swift; sourceTree = "<group>"; };
 		75ED04F620C05EB100305579 /* Stopwatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stopwatch.swift; sourceTree = "<group>"; };
-		OBJ_10 /* File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = File.swift; sourceTree = "<group>"; };
+		OBJ_10 /* IOStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOStream.swift; sourceTree = "<group>"; };
 		OBJ_11 /* OrderedMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrderedMap.swift; sourceTree = "<group>"; };
 		OBJ_12 /* Sequence+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sequence+Extensions.swift"; sourceTree = "<group>"; };
 		OBJ_13 /* SortedArray.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortedArray.swift; sourceTree = "<group>"; };
 		OBJ_14 /* Stack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stack.swift; sourceTree = "<group>"; };
-		OBJ_15 /* String+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
 		OBJ_16 /* Unreachable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Unreachable.swift; sourceTree = "<group>"; };
 		OBJ_18 /* Lexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lexer.swift; sourceTree = "<group>"; };
 		OBJ_19 /* ParseError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParseError.swift; sourceTree = "<group>"; };
@@ -263,7 +266,7 @@
 		OBJ_59 /* Operator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operator.swift; sourceTree = "<group>"; };
 		OBJ_6 /* Package.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		OBJ_60 /* Scope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scope.swift; sourceTree = "<group>"; };
-		OBJ_61 /* Source.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Source.swift; sourceTree = "<group>"; };
+		OBJ_61 /* ASTSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ASTSource.swift; sourceTree = "<group>"; };
 		OBJ_62 /* Symbol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Symbol.swift; sourceTree = "<group>"; };
 		OBJ_63 /* Type.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Type.swift; sourceTree = "<group>"; };
 		OBJ_66 /* SemaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SemaTests.swift; sourceTree = "<group>"; };
@@ -302,6 +305,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 0;
 			files = (
+				75285A7220C18A49007E436B /* Parser.framework in Frameworks */,
 				OBJ_152 /* AST.framework in Frameworks */,
 				OBJ_153 /* Utils.framework in Frameworks */,
 			);
@@ -348,6 +352,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		75285A7120C18A49007E436B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		OBJ_17 /* Parser */ = {
 			isa = PBXGroup;
 			children = (
@@ -387,6 +398,7 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_40 /* main.swift */,
+				75285A6F20C184BA007E436B /* Diagnostic.swift */,
 			);
 			name = anzen;
 			path = Sources/anzen;
@@ -418,6 +430,7 @@
 				OBJ_67 /* InputSamples */,
 				OBJ_68 /* docs */,
 				OBJ_69 /* Products */,
+				75285A7120C18A49007E436B /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -427,6 +440,7 @@
 				OBJ_51 /* AST.swift */,
 				OBJ_52 /* ASTContext.swift */,
 				OBJ_53 /* ASTPrinter.swift */,
+				OBJ_61 /* ASTSource.swift */,
 				OBJ_54 /* ASTVisitor+Traversal.swift */,
 				OBJ_55 /* ASTVisitor.swift */,
 				OBJ_56 /* Constraint+PrettyPrint.swift */,
@@ -434,7 +448,6 @@
 				75ED04F420C0409E00305579 /* ModuleIdentifier.swift */,
 				OBJ_59 /* Operator.swift */,
 				OBJ_60 /* Scope.swift */,
-				OBJ_61 /* Source.swift */,
 				OBJ_62 /* Symbol.swift */,
 				OBJ_63 /* Type.swift */,
 			);
@@ -490,13 +503,13 @@
 			isa = PBXGroup;
 			children = (
 				OBJ_9 /* Console.swift */,
-				OBJ_10 /* File.swift */,
+				OBJ_10 /* IOStream.swift */,
 				OBJ_11 /* OrderedMap.swift */,
 				OBJ_12 /* Sequence+Extensions.swift */,
 				OBJ_13 /* SortedArray.swift */,
 				OBJ_14 /* Stack.swift */,
-				OBJ_15 /* String+Extensions.swift */,
 				75ED04F620C05EB100305579 /* Stopwatch.swift */,
+				75285A7520C54108007E436B /* StyledString.swift */,
 				OBJ_16 /* Unreachable.swift */,
 			);
 			name = Utils;
@@ -761,13 +774,13 @@
 			buildActionMask = 0;
 			files = (
 				OBJ_175 /* Console.swift in Sources */,
-				OBJ_176 /* File.swift in Sources */,
+				OBJ_176 /* IOStream.swift in Sources */,
 				OBJ_177 /* OrderedMap.swift in Sources */,
+				75285A7620C54108007E436B /* StyledString.swift in Sources */,
 				OBJ_178 /* Sequence+Extensions.swift in Sources */,
 				75ED04F720C05EB100305579 /* Stopwatch.swift in Sources */,
 				OBJ_179 /* SortedArray.swift in Sources */,
 				OBJ_180 /* Stack.swift in Sources */,
-				OBJ_181 /* String+Extensions.swift in Sources */,
 				OBJ_182 /* Unreachable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -776,6 +789,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 0;
 			files = (
+				75285A7020C184BA007E436B /* Diagnostic.swift in Sources */,
 				OBJ_190 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -802,7 +816,7 @@
 				OBJ_88 /* Constraint.swift in Sources */,
 				OBJ_90 /* Operator.swift in Sources */,
 				OBJ_91 /* Scope.swift in Sources */,
-				OBJ_92 /* Source.swift in Sources */,
+				OBJ_92 /* ASTSource.swift in Sources */,
 				OBJ_93 /* Symbol.swift in Sources */,
 				OBJ_94 /* Type.swift in Sources */,
 			);
