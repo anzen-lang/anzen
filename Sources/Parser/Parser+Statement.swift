@@ -82,6 +82,7 @@ extension Parser {
     let endToken = consume(.rightBrace)!
     return Block(
       statements: statements,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: endToken.range.end))
   }
 
@@ -94,10 +95,13 @@ extension Parser {
     if let value = attempt(parseExpression) {
       return ReturnStmt(
         value: value,
+        module: module,
         range: SourceRange(from: startToken.range.start, to: value.range.end))
+    } else {
+      return ReturnStmt(
+        module: module,
+        range: startToken.range)
     }
-
-    return ReturnStmt(range: startToken.range)
   }
 
   /// Parses a binding statement.
@@ -115,7 +119,10 @@ extension Parser {
     consumeNewlines()
     let right = try parseExpression()
     return BindingStmt(
-      lvalue: left, op: op, rvalue: right,
+      lvalue: left,
+      op: op,
+      rvalue: right,
+      module: module,
       range: SourceRange(from: left.range.start, to: right.range.end))
   }
 

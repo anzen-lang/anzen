@@ -45,7 +45,9 @@ extension Parser {
     let start = firstQualifier?.range.start ?? sign!.range.start
     let end = sign?.range.end ?? firstQualifier!.range.end
     return QualSign(
-      qualifiers: qualifiers, signature: sign,
+      qualifiers: qualifiers,
+      signature: sign,
+      module: module,
       range: SourceRange(from: start, to: end))
   }
 
@@ -91,7 +93,9 @@ extension Parser {
     consumeNewlines()
     let codomain = try parseQualSign()
     return FunSign(
-      parameters: parameters, codomain: codomain,
+      parameters: parameters,
+      codomain: codomain,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: codomain.range.end))
   }
 
@@ -112,7 +116,9 @@ extension Parser {
     consumeNewlines()
     let sign = try parseQualSign()
     return ParamSign(
-      label: label.value, typeAnnotation: sign,
+      label: label.value,
+      typeAnnotation: sign,
+      module: module,
       range: SourceRange(from: label.range.start, to: sign.range.end))
   }
 

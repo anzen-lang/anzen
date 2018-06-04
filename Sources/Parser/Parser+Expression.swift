@@ -33,14 +33,23 @@ extension Parser {
       if let binExpr = expression as? BinExpr, binExpr.op.precedence < op.precedence {
         let left = binExpr.left
         let right = BinExpr(
-          left: binExpr.right, op: op, right: rightOperand,
+          left: binExpr.right,
+          op: op,
+          right: rightOperand,
+          module: module,
           range: SourceRange(from: binExpr.right.range.start, to: rightOperand.range.end))
         expression = BinExpr(
-          left: left, op: binExpr.op, right: right,
+          left: left,
+          op: binExpr.op,
+          right: right,
+          module: module,
           range: SourceRange(from: left.range.start, to: right.range.end))
       } else {
         expression = BinExpr(
-          left: expression, op: op, right: rightOperand,
+          left: expression,
+          op: op,
+          right: rightOperand,
+          module: module,
           range: SourceRange(from: expression.range.start, to: rightOperand.range.end))
       }
     }
@@ -57,16 +66,16 @@ extension Parser {
     switch token.kind {
     case .integer:
       consume()
-      expression = Literal(value: Int(token.value!)!, range: token.range)
+      expression = Literal(value: Int(token.value!)!, module: module, range: token.range)
     case .float:
       consume()
-      expression = Literal(value: Double(token.value!)!, range: token.range)
+      expression = Literal(value: Double(token.value!)!, module: module, range: token.range)
     case .string:
       consume()
-      expression = Literal(value: token.value!, range: token.range)
+      expression = Literal(value: token.value!, module: module, range: token.range)
     case .bool:
       consume()
-      expression = Literal(value: token.value == "true", range: token.range)
+      expression = Literal(value: token.value == "true", module: module, range: token.range)
 
     case _ where token.isPrefixOperator:
       expression = try parseUnExpr()
@@ -86,6 +95,7 @@ extension Parser {
       let ident = try parseIdentifier()
       expression = SelectExpr(
         ownee: ident,
+        module: module,
         range: SourceRange(from: token.range.start, to: ident.range.end))
 
     case .leftParen:
@@ -96,6 +106,7 @@ extension Parser {
         else { throw unexpectedToken(expected: ")") }
       expression = EnclosedExpr(
         enclosing: enclosed,
+        module: module,
         range: SourceRange(from: startLocation, to: delimiter.range.end))
 
     default:
@@ -115,7 +126,9 @@ extension Parser {
           else { throw unexpectedToken(expected: ")") }
 
         expression = CallExpr(
-          callee: expression, arguments: args,
+          callee: expression,
+          arguments: args,
+          module: module,
           range: SourceRange(from: expression.range.start, to: endToken.range.end))
         continue trailer
       } else if consume(.leftBracket) != nil {
@@ -126,7 +139,9 @@ extension Parser {
           else { throw unexpectedToken(expected: ")") }
 
         expression = SubscriptExpr(
-          callee: expression, arguments: args,
+          callee: expression,
+          arguments: args,
+          module: module,
           range: SourceRange(from: expression.range.start, to: endToken.range.end))
         continue trailer
       }
@@ -143,7 +158,9 @@ extension Parser {
 
         let ident = try parseIdentifier()
         expression = SelectExpr(
-          owner: expression, ownee: ident,
+          owner: expression,
+          ownee: ident,
+          module: module,
           range: SourceRange(from: expression.range.start, to: ident.range.end))
         continue trailer
       }
@@ -163,7 +180,9 @@ extension Parser {
 
     let operand = try parseExpression()
     return UnExpr(
-      op: op.asPrefixOperator!, operand: operand,
+      op: op.asPrefixOperator!,
+      operand: operand,
+      module: module,
       range: SourceRange(from: op.range.start, to: operand.range.end))
   }
 
@@ -171,7 +190,7 @@ extension Parser {
   func parseIdentifier() throws -> Ident {
     guard let token = consume(.identifier)
       else { throw unexpectedToken(expected: "identifier") }
-    let ident = Ident(name: token.value!, range: token.range)
+    let ident = Ident(name: token.value!, module: module, range: token.range)
 
     // Attempt to parse the specialization list.
     let backtrackPosition = streamPosition
@@ -231,7 +250,10 @@ extension Parser {
 
     let end = elseBlock?.range.end ?? thenBlock.range.end
     return IfExpr(
-      condition: condition, thenBlock: thenBlock, elseBlock: elseBlock,
+      condition: condition,
+      thenBlock: thenBlock,
+      elseBlock: elseBlock,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: end))
   }
 
@@ -260,7 +282,10 @@ extension Parser {
     let block = try parseStatementBlock()
 
     return LambdaExpr(
-      parameters: parameters, codomain: codomain, body: block,
+      parameters: parameters,
+      codomain: codomain,
+      body: block,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: block.range.end))
   }
 
@@ -287,7 +312,10 @@ extension Parser {
     let value = try parseExpression()
     let start = label?.range.start ?? value.range.start
     let arg = CallArg(
-      label: label?.value, bindingOp: bindingOperator ?? .copy, value: value,
+      label: label?.value,
+      bindingOp: bindingOperator ?? .copy,
+      value: value,
+      module: module,
       range: SourceRange(from: start, to: value.range.end))
     return arg
   }
@@ -302,6 +330,7 @@ extension Parser {
 
     return ArrayLiteral(
       elements: elements,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: endToken.range.end))
   }
 
@@ -315,6 +344,7 @@ extension Parser {
 
     return SetLiteral(
       elements: elements,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: endToken.range.end))
   }
 
@@ -338,6 +368,7 @@ extension Parser {
     return MapLiteral(
       elements: Dictionary.init(
         uniqueKeysWithValues: keysAndValues.map({ ($0.0.value!, $0.1) })),
+      module: module,
       range: SourceRange(from: startToken.range.start, to: endToken.range.end))
   }
 

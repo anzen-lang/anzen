@@ -8,10 +8,13 @@
 /// fact that concrete syntactic details such as spaces and line returns are *abstracted* away.
 public class Node: Equatable {
 
-  fileprivate init(range: SourceRange) {
+  fileprivate init(module: ModuleDecl?, range: SourceRange) {
+    self.module = module
     self.range = range
   }
 
+  /// The module that contains the node.
+  public weak var module: ModuleDecl!
   /// Stores the ranges in the source file of the concrete syntax this node represents.
   public var range: SourceRange
 
@@ -36,7 +39,8 @@ public final class ModuleDecl: Node, ScopeDelimiter {
 
   public init(statements: [Node], range: SourceRange) {
     self.statements = statements
-    super.init(range: range)
+    super.init(module: nil, range: range)
+    self.module = self
   }
 
   /// Looks up for a (possibly overloaded) declaration set at the module scope.
@@ -64,9 +68,9 @@ public final class ModuleDecl: Node, ScopeDelimiter {
 /// This node represents a block of statements (e.g. a structure or function body).
 public final class Block: Node, ScopeDelimiter {
 
-  public init(statements: [Node], range: SourceRange) {
+  public init(statements: [Node], module: ModuleDecl, range: SourceRange) {
     self.statements = statements
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// Stores the statements of the module.
@@ -91,9 +95,9 @@ public enum MemberAttribute: String {
 /// Base class for named declarations.
 public class NamedDecl: Node {
 
-  fileprivate init(name: String, range: SourceRange) {
+  fileprivate init(name: String, module: ModuleDecl, range: SourceRange) {
     self.name = name
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The name of the declaration.
@@ -121,13 +125,14 @@ public final class PropDecl: NamedDecl {
     reassignable: Bool = false,
     typeAnnotation: QualSign? = nil,
     initialBinding: (op: BindingOperator, value: Expr)? = nil,
+    module: ModuleDecl,
     range: SourceRange)
   {
     self.attributes = attributes
     self.reassignable = reassignable
     self.typeAnnotation = typeAnnotation
     self.initialBinding = initialBinding
-    super.init(name: name, range: range)
+    super.init(name: name, module: module, range: range)
   }
 
   /// The member attributes of the property.
@@ -165,6 +170,7 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
     parameters: [ParamDecl],
     codomain: Node? = nil,
     body: Block? = nil,
+    module: ModuleDecl,
     range: SourceRange)
   {
     self.attributes = attributes
@@ -172,7 +178,7 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
     self.parameters = parameters
     self.codomain = codomain
     self.body = body
-    super.init(name: name, range: range)
+    super.init(name: name, module: module, range: range)
   }
 
   /// The member attributes of the function.
@@ -199,12 +205,13 @@ public final class ParamDecl: NamedDecl {
     name: String,
     typeAnnotation: QualSign?,
     defaultValue: Expr? = nil,
+    module: ModuleDecl,
     range: SourceRange)
   {
     self.label = label
     self.typeAnnotation = typeAnnotation
     self.defaultValue = defaultValue
-    super.init(name: name, range: range)
+    super.init(name: name, module: module, range: range)
   }
 
   /// The label of the parameter.
@@ -219,8 +226,8 @@ public final class ParamDecl: NamedDecl {
 /// Base class for node representing a nominal type declaration.
 public class NominalTypeDecl: NamedDecl, ScopeDelimiter {
 
-  fileprivate override init(name: String, range: SourceRange) {
-    super.init(name: name, range: range)
+  fileprivate override init(name: String, module: ModuleDecl, range: SourceRange) {
+    super.init(name: name, module: module, range: range)
   }
 
   /// The scope delimited by the type.
@@ -233,10 +240,16 @@ public class NominalTypeDecl: NamedDecl, ScopeDelimiter {
 /// Structures represent aggregate of properties and methods.
 public final class StructDecl: NominalTypeDecl {
 
-  public init(name: String, placeholders: [String] = [], body: Block, range: SourceRange) {
+  public init(
+    name: String,
+    placeholders: [String] = [],
+    body: Block,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
     self.placeholders = placeholders
     self.body = body
-    super.init(name: name, range: range)
+    super.init(name: name, module: module, range: range)
   }
 
   /// The generic placeholders of the type.
@@ -251,10 +264,16 @@ public final class StructDecl: NominalTypeDecl {
 /// Interfaces are blueprint of requirements (properties and methods) for types to conform to.
 public final class InterfaceDecl: NominalTypeDecl {
 
-  public init(name: String, placeholders: [String] = [], body: Block, range: SourceRange) {
+  public init(
+    name: String,
+    placeholders: [String] = [],
+    body: Block,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
     self.placeholders = placeholders
     self.body = body
-    super.init(name: name, range: range)
+    super.init(name: name, module: module, range: range)
   }
 
   /// The generic placeholders of the type.
@@ -272,10 +291,15 @@ public final class InterfaceDecl: NominalTypeDecl {
 /// of type qualifiers.
 public final class QualSign: Node {
 
-  public init(qualifiers: Set<TypeQualifier>, signature: Node?, range: SourceRange) {
+  public init(
+    qualifiers: Set<TypeQualifier>,
+    signature: Node?,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
     self.qualifiers = qualifiers
     self.signature = signature
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The qualifiers of the signature.
@@ -292,10 +316,10 @@ public final class QualSign: Node {
 /// A function type signature.
 public final class FunSign: Node {
 
-  public init(parameters: [ParamSign], codomain: Node, range: SourceRange) {
+  public init(parameters: [ParamSign], codomain: Node, module: ModuleDecl, range: SourceRange) {
     self.parameters = parameters
     self.codomain = codomain
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The parameters of the signature.
@@ -328,10 +352,10 @@ public enum TypeQualifier: CustomStringConvertible {
 /// A parameter of a function type signature.
 public final class ParamSign: Node {
 
-  public init(label: String?, typeAnnotation: Node, range: SourceRange) {
+  public init(label: String?, typeAnnotation: Node, module: ModuleDecl, range: SourceRange) {
     self.label = label
     self.typeAnnotation = typeAnnotation
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The label of the parameter.
@@ -352,11 +376,17 @@ public final class ParamSign: Node {
 /// - Note: Binding statements are also sometimes referred to as assignments.
 public final class BindingStmt: Node {
 
-  public init(lvalue: Expr, op: BindingOperator, rvalue: Expr, range: SourceRange) {
+  public init(
+    lvalue: Expr,
+    op: BindingOperator,
+    rvalue: Expr,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
     self.lvalue = lvalue
     self.op = op
     self.rvalue = rvalue
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The lvalue of the binding.
@@ -371,9 +401,9 @@ public final class BindingStmt: Node {
 /// A return statement.
 public final class ReturnStmt: Node {
 
-  public init(value: Node? = nil, range: SourceRange) {
+  public init(value: Node? = nil, module: ModuleDecl, range: SourceRange) {
     self.value = value
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The value of the return statement.
@@ -394,11 +424,17 @@ public class Expr: Node {
 /// A condition expression.
 public final class IfExpr: Expr {
 
-  public init(condition: Node, thenBlock: Node, elseBlock: Node? = nil, range: SourceRange) {
+  public init(
+    condition: Node,
+    thenBlock: Node,
+    elseBlock: Node? = nil,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
     self.condition = condition
     self.thenBlock = thenBlock
     self.elseBlock = elseBlock
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The condition of the expression.
@@ -416,11 +452,17 @@ public final class IfExpr: Expr {
 /// and can't feature place holders.
 public final class LambdaExpr: Expr {
 
-  public init(parameters: [ParamDecl], codomain: Node? = nil, body: Block, range: SourceRange) {
+  public init(
+    parameters: [ParamDecl],
+    codomain: Node? = nil,
+    body: Block,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
     self.parameters = parameters
     self.codomain = codomain
     self.body = body
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The domain (i.e. parameters) of the lambda.
@@ -447,11 +489,11 @@ public final class LambdaExpr: Expr {
 /// A binary expression.
 public final class BinExpr: Expr {
 
-  public init(left: Node, op: InfixOperator, right: Node, range: SourceRange) {
+  public init(left: Node, op: InfixOperator, right: Node, module: ModuleDecl, range: SourceRange) {
     self.left = left
     self.op = op
     self.right = right
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The left operand of the expression.
@@ -466,10 +508,10 @@ public final class BinExpr: Expr {
 /// An unary expression.
 public final class UnExpr: Expr {
 
-  public init(op: PrefixOperator, operand: Node, range: SourceRange) {
+  public init(op: PrefixOperator, operand: Node, module: ModuleDecl, range: SourceRange) {
     self.op = op
     self.operand = operand
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The operator of the expression.
@@ -482,10 +524,10 @@ public final class UnExpr: Expr {
 /// A call expression.
 public final class CallExpr: Expr {
 
-  public init(callee: Expr, arguments: [CallArg], range: SourceRange) {
+  public init(callee: Expr, arguments: [CallArg], module: ModuleDecl, range: SourceRange) {
     self.callee = callee
     self.arguments = arguments
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The callee.
@@ -502,12 +544,13 @@ public final class CallArg: Expr {
     label: String? = nil,
     bindingOp: BindingOperator = .copy,
     value: Expr,
+    module: ModuleDecl,
     range: SourceRange)
   {
     self.label = label
     self.bindingOp = bindingOp
     self.value = value
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The label of the argument.
@@ -522,10 +565,10 @@ public final class CallArg: Expr {
 /// A subscript expression.
 public final class SubscriptExpr: Expr {
 
-  public init(callee: Node, arguments: [CallArg], range: SourceRange) {
+  public init(callee: Node, arguments: [CallArg], module: ModuleDecl, range: SourceRange) {
     self.callee = callee
     self.arguments = arguments
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The callee.
@@ -538,10 +581,10 @@ public final class SubscriptExpr: Expr {
 /// A select expression.
 public final class SelectExpr: Expr {
 
-  public init(owner: Node? = nil, ownee: Ident, range: SourceRange) {
+  public init(owner: Node? = nil, ownee: Ident, module: ModuleDecl, range: SourceRange) {
     self.owner = owner
     self.ownee = ownee
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The owner.
@@ -557,11 +600,12 @@ public final class Ident: Expr {
   public init(
     name: String,
     specializations: [String: Node] = [:],
+    module: ModuleDecl,
     range: SourceRange)
   {
     self.name = name
     self.specializations = specializations
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The name of the identifier.
@@ -577,9 +621,9 @@ public final class Ident: Expr {
 /// An array literal expression.
 public final class ArrayLiteral: Expr {
 
-  public init(elements: [Node], range: SourceRange) {
+  public init(elements: [Node], module: ModuleDecl, range: SourceRange) {
     self.elements = elements
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The elements of the literal.
@@ -590,9 +634,9 @@ public final class ArrayLiteral: Expr {
 /// An set literal expression.
 public final class SetLiteral: Expr {
 
-  public init(elements: [Node], range: SourceRange) {
+  public init(elements: [Node], module: ModuleDecl, range: SourceRange) {
     self.elements = elements
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The elements of the literal.
@@ -603,9 +647,9 @@ public final class SetLiteral: Expr {
 /// An map literal expression.
 public final class MapLiteral: Expr {
 
-  public init(elements: [String: Node], range: SourceRange) {
+  public init(elements: [String: Node], module: ModuleDecl, range: SourceRange) {
     self.elements = elements
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The elements of the literal.
@@ -616,9 +660,9 @@ public final class MapLiteral: Expr {
 /// A scalar literal expression.
 public final class Literal<T>: Expr {
 
-  public init(value: T, range: SourceRange) {
+  public init(value: T, module: ModuleDecl, range: SourceRange) {
     self.value = value
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The value of the literal.
@@ -633,9 +677,9 @@ public final class Literal<T>: Expr {
 /// AST sanitizing phase.
 public final class EnclosedExpr: Expr {
 
-  public init(enclosing expression: Node, range: SourceRange) {
+  public init(enclosing expression: Node, module: ModuleDecl, range: SourceRange) {
     self.expression = expression
-    super.init(range: range)
+    super.init(module: module, range: range)
   }
 
   /// The enclosed expression.

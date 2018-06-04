@@ -37,6 +37,7 @@ extension Parser {
     return PropDecl(
       name: name.value!, reassignable: startToken.kind == .var, typeAnnotation: annotation,
       initialBinding: initialBinding,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: end))
   }
 
@@ -109,6 +110,7 @@ extension Parser {
     return FunDecl(
       name: name, placeholders: placeholders, parameters: parameters, codomain: codomain,
       body: block,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: end))
   }
 
@@ -150,6 +152,7 @@ extension Parser {
       name: second.value!,
       typeAnnotation: annotation,
       defaultValue: defaultValue,
+      module: module,
       range: SourceRange(from: first.range.start, to: end))
   }
 
@@ -161,7 +164,10 @@ extension Parser {
     let type = try parseNominalType()
 
     return StructDecl(
-      name: type.name, placeholders: type.placeholders, body: type.body,
+      name: type.name,
+      placeholders: type.placeholders,
+      body: type.body,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: type.body.range.end))
   }
 
@@ -173,7 +179,10 @@ extension Parser {
     let type = try parseNominalType()
 
     return InterfaceDecl(
-      name: type.name, placeholders: type.placeholders, body: type.body,
+      name: type.name,
+      placeholders: type.placeholders,
+      body: type.body,
+      module: module,
       range: SourceRange(from: startToken.range.start, to: type.body.range.end))
   }
 

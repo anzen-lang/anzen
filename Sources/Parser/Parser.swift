@@ -7,8 +7,10 @@ public class Parser {
   ///
   /// - Note: The token stream must have at least one token and ends with `.eof`.
   public init<S>(_ tokens: S) where S: Sequence, S.Element == Token {
-    self.stream = Array(tokens)
-    assert((self.stream.count > 0) && (self.stream.last!.kind == .eof), "invalid token stream")
+    let stream = Array(tokens)
+    assert((stream.count > 0) && (stream.last!.kind == .eof), "invalid token stream")
+    self.stream = stream
+    self.module = ModuleDecl(statements: [], range: self.stream.first!.range)
   }
 
   /// Initializes a parser from a text input.
@@ -18,21 +20,21 @@ public class Parser {
 
   /// Parses the token stream into a module declaration.
   public func parse() throws -> ModuleDecl {
-    var statements: [Node] = []
-
     while true {
       // Skip statement delimiters.
       consumeMany { $0.isStatementDelimiter }
       // Check for end of file.
       guard peek().kind != .eof else { break }
       // Parse a statement.
-      statements.append(try parseStatement())
+      module.statements.append(try parseStatement())
     }
 
-    let range = statements.isEmpty
+    module.range = module.statements.isEmpty
       ? self.stream.last!.range
-      : SourceRange(from: statements.first!.range.start, to: statements.last!.range.end)
-    return ModuleDecl(statements: statements, range: range)
+      : SourceRange(
+        from: module.statements.first!.range.start,
+        to: module.statements.last!.range.end)
+    return module
   }
 
   /// Attempts to run the given parsing function but backtracks if it failed.
@@ -92,6 +94,8 @@ public class Parser {
   var stream: [Token]
   /// The current position in the token stream.
   var streamPosition: Int = 0
+  /// The module being parser.
+  var module: ModuleDecl
 
 }
 
