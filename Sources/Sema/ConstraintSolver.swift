@@ -21,7 +21,7 @@ public struct ConstraintSolver {
   private var penalties: Int = 0
 
   private typealias Success = (solution: SubstitutionTable, penalties: Int)
-  private typealias Failure = (constraint: Constraint, kind: SolverResult.FailureKind)
+  private typealias Failure = (constraint: Constraint, cause: SolverResult.FailureKind)
 
   /// Attempts to solve a set of typing constraints, returning either a solution or the constraints
   /// that couldn't be satisfied.

@@ -3,8 +3,6 @@ import Utils
 
 public struct NameBinder: ASTVisitor, SAPass {
 
-  public static let title = "Name binding"
-
   public init(context: ASTContext) {
     self.context = context
   }

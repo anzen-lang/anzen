@@ -78,23 +78,120 @@ extension TextInputBuffer {
 
 }
 
+public struct Path {
+
+  public init(url: String) {
+    let urlComponents = url.split(separator: "/").map({ String($0) })
+    self.components = url.starts(with: "/")
+      ? urlComponents
+      : Path.currentWorkingDirectory.components + urlComponents
+  }
+
+  public init<S>(components: S) where S: Sequence, S.Element == String {
+    self.components = Array(components)
+  }
+
+  /// The path components.
+  private let components: [String]
+
+  /// The string representation of the path.
+  public var url: String {
+    return "/" + components.joined(separator: "/")
+  }
+
+  /// The basename of the path.
+  public var basename: String {
+    return components.last ?? ""
+  }
+
+  /// Whether or not the path is an existing file.
+  public var isFile: Bool {
+    return access(url, F_OK) != -1
+  }
+
+  public func appending(_ components: String) -> Path {
+    let other = components.split(separator: "/").map({ String($0) })
+    return Path(components: self.components + other)
+  }
+
+  public func pathname(relativeTo other: Path) -> String {
+    var i = 0
+    while i < Swift.min(self.count, other.count) {
+      guard self[i] == other[i] else { break }
+      i += 1
+    }
+    return ([String](repeating: "..", count: other.count - i) + components.dropFirst(i))
+      .joined(separator: "/")
+  }
+
+  public static var currentWorkingDirectory: Path {
+    let cwd = getcwd(UnsafeMutablePointer(bitPattern: 0), 0)
+    defer { cwd?.deallocate() }
+    return cwd != nil
+      ? Path(url: String(cString: cwd!))
+      : Path(components: [])
+  }
+
+}
+
+extension Path: BidirectionalCollection {
+
+  public typealias Index = Int
+  public typealias Element = String
+
+  public var startIndex: Index { return components.startIndex }
+  public var endIndex: Index { return components.endIndex }
+
+  public func index(after i: Index) -> Index {
+    return i + 1
+  }
+
+  public func index(before i: Index) -> Index {
+    return i - 1
+  }
+
+  public subscript(position: Index) -> Element {
+    return components[position]
+  }
+
+}
+
+extension Path: Equatable {
+
+  public static func == (lhs: Path, rhs: Path) -> Bool {
+    return lhs.components == rhs.components
+  }
+
+}
+
+extension Path: ExpressibleByStringLiteral {
+
+  public init(stringLiteral value: String) {
+    self.init(url: value)
+  }
+
+}
+
+extension Path: CustomStringConvertible {
+
+  public var description: String {
+    return url
+  }
+
+}
+
 public struct TextFile: TextInputBuffer, TextOutputStream {
 
-  public init(filename: String) {
-    self.filename = filename
+  public init(filepath: Path) {
+    self.filepath = filepath
   }
 
-  /// A string representing the name of the file to open.
-  public let filename: String
-
-  /// The basename of the file.
-  public var basename: String {
-    return filename.split(separator: "/").last.map(String.init) ?? ""
-  }
+  /// A string representing the path of the file to open.
+  public let filepath: Path
 
   /// Reads and return at most `count` characters from the buffer, offset by `offset`.
   public func read(count: Int, from offset: Int) -> String {
-    guard let pointer = fopen(filename, "r") else { return "" }
+    guard let pointer = fopen(filepath.url, "r") else { return "" }
     defer { fclose(pointer) }
 
     setlocale(LC_ALL, "")
@@ -110,13 +207,9 @@ public struct TextFile: TextInputBuffer, TextOutputStream {
 
   /// Appends the given string to the stream.
   public func write(_ string: String) {
-    guard let pointer = fopen(filename, "a") else { return }
+    guard let pointer = fopen(filepath.url, "a") else { return }
     defer { fclose(pointer) }
     _ = string.withCString { fwrite($0, MemoryLayout<CChar>.size, strlen($0), pointer) }
-  }
-
-  public static func exists(filename: String) -> Bool {
-    return access(filename, F_OK) != -1
   }
 
   public static func withTemporary<Result>(
@@ -128,9 +221,9 @@ public struct TextFile: TextInputBuffer, TextOutputStream {
     _ = buffer.withUnsafeMutableBufferPointer {
       return mkstemp($0.baseAddress)
     }
-    let path = String(cString: buffer.withUnsafeBufferPointer { $0.baseAddress! })
-    defer { remove(path) }
-    return try body(TextFile(filename: path))
+    let url = String(cString: buffer.withUnsafeBufferPointer { $0.baseAddress! })
+    defer { remove(url) }
+    return try body(TextFile(filepath: Path(url: url)))
   }
 
 }

@@ -11,8 +11,6 @@ import Utils
 /// This pass must be ran before name binding can take place.
 public struct SymbolCreator: ASTVisitor, SAPass {
 
-  public static let title = "Symbol creation"
-
   public init(context: ASTContext) {
     self.context = context
   }

@@ -3,8 +3,6 @@ import Utils
 
 public struct ConstraintCreator: ASTVisitor, SAPass {
 
-  public static let title = "Constraint creation"
-
   public init(context: ASTContext) {
     self.context = context
   }

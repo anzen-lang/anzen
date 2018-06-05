@@ -3,8 +3,6 @@ import AST
 /// Visitor that annotate the AST with inferred types.
 public struct TypeApplier: ASTVisitor, SAPass {
 
-  public static let title = "Type application"
-
   public init(context: ASTContext) {
     self.context = context
     self.solution = [:]

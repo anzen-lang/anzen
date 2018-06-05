@@ -7,8 +7,7 @@ public protocol SAPass {
 
   mutating func visit(_ node: ModuleDecl) throws
 
+  /// The AST context.
   var context: ASTContext { get }
-
-  static var title: String { get }
 
 }
