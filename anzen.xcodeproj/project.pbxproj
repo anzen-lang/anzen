@@ -24,6 +24,7 @@
 		75285A7020C184BA007E436B /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75285A6F20C184BA007E436B /* Diagnostic.swift */; };
 		75285A7220C18A49007E436B /* Parser.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "anzen::Parser::Product" /* Parser.framework */; };
 		75285A7620C54108007E436B /* StyledString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75285A7520C54108007E436B /* StyledString.swift */; };
+		75285A7B20C5F809007E436B /* Path.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75285A7A20C5F809007E436B /* Path.swift */; };
 		75ED04F320C0405000305579 /* ModuleLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = OBJ_58 /* ModuleLoader.swift */; };
 		75ED04F520C0409E00305579 /* ModuleIdentifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ED04F420C0409E00305579 /* ModuleIdentifier.swift */; };
 		75ED04F720C05EB100305579 /* Stopwatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75ED04F620C05EB100305579 /* Stopwatch.swift */; };
@@ -219,6 +220,7 @@
 /* Begin PBXFileReference section */
 		75285A6F20C184BA007E436B /* Diagnostic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Diagnostic.swift; sourceTree = "<group>"; };
 		75285A7520C54108007E436B /* StyledString.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyledString.swift; sourceTree = "<group>"; };
+		75285A7A20C5F809007E436B /* Path.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Path.swift; sourceTree = "<group>"; };
 		75ED04F420C0409E00305579 /* ModuleIdentifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleIdentifier.swift; sourceTree = "<group>"; };
 		75ED04F620C05EB100305579 /* Stopwatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stopwatch.swift; sourceTree = "<group>"; };
 		OBJ_10 /* IOStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOStream.swift; sourceTree = "<group>"; };
@@ -357,6 +359,16 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		75285A7920C5F7C3007E436B /* IO */ = {
+			isa = PBXGroup;
+			children = (
+				OBJ_9 /* Console.swift */,
+				OBJ_10 /* IOStream.swift */,
+				75285A7A20C5F809007E436B /* Path.swift */,
+			);
+			path = IO;
 			sourceTree = "<group>";
 		};
 		OBJ_17 /* Parser */ = {
@@ -502,8 +514,7 @@
 		OBJ_8 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
-				OBJ_9 /* Console.swift */,
-				OBJ_10 /* IOStream.swift */,
+				75285A7920C5F7C3007E436B /* IO */,
 				OBJ_11 /* OrderedMap.swift */,
 				OBJ_12 /* Sequence+Extensions.swift */,
 				OBJ_13 /* SortedArray.swift */,
@@ -781,6 +792,7 @@
 				75ED04F720C05EB100305579 /* Stopwatch.swift in Sources */,
 				OBJ_179 /* SortedArray.swift in Sources */,
 				OBJ_180 /* Stack.swift in Sources */,
+				75285A7B20C5F809007E436B /* Path.swift in Sources */,
 				OBJ_182 /* Unreachable.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
