@@ -28,20 +28,13 @@ public enum ModuleLoaderVerbosity: Int, Comparable {
 /// The default module loader.
 open class LocalModuleLoader: ModuleLoader {
 
-  public enum LoadingError: Error {
-
-    case moduleNotFound(moduleID: ModuleIdentifier)
-    case semanticAnalysisFailed(errors: [Any])
-
-  }
-
-  public init(searchPaths: [String], verbosity: ModuleLoaderVerbosity = .normal) {
+  public init(searchPaths: [Path], verbosity: ModuleLoaderVerbosity = .normal) {
     self.searchPaths = searchPaths
     self.verbosity = verbosity
   }
 
   /// The locations in which the loader shall try to locate modules.
-  let searchPaths: [String]
+  let searchPaths: [Path]
   /// The verbosity level of the loader.
   let verbosity: ModuleLoaderVerbosity
 
@@ -51,7 +44,7 @@ open class LocalModuleLoader: ModuleLoader {
 
     // Locate and parse the module.
     guard let file = locate(moduleID: moduleID)
-      else { throw LoadingError.moduleNotFound(moduleID: moduleID) }
+      else { throw SAError.moduleNotFound(moduleID: moduleID) }
     let module = try Parser(source: file).parse()
     module.id = moduleID
     let parseTime = stopwatch.elapsed
@@ -82,7 +75,11 @@ open class LocalModuleLoader: ModuleLoader {
       try applier.visit(module)
 
     case .failure(let errors):
-      throw LoadingError.semanticAnalysisFailed(errors: errors)
+      for error in errors {
+        context.add(
+          error: SAError.unsolvableConstraint(constraint: error.constraint, cause: error.cause),
+          on: error.constraint.location.resolved)
+      }
     }
     let dispatchTime = stopwatch.elapsed
 
@@ -118,9 +115,9 @@ open class LocalModuleLoader: ModuleLoader {
     }
 
     for directory in searchPaths {
-      let filename = directory + basename
-      if TextFile.exists(filename: filename) {
-        return TextFile(filename: filename)
+      let filepath = directory.appending(basename)
+      if filepath.isFile {
+        return TextFile(filepath: filepath)
       }
     }
     return nil

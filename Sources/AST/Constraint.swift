@@ -70,6 +70,40 @@ public struct ConstraintLocation {
   /// The path from the anchor to the exact node the constraint is about.
   public let paths: [ConstraintPath]
 
+  /// The resolved path of the location, i.e. the node it actually points to.
+  ///
+  /// This property is computed by following the paths components from the anchor. For instance, if
+  /// if the path is `call -> parameter(0)`, and the anchor is a `CallExpr` of the form `f(x = 2)`,
+  /// then the resolved path is the literal `2`.
+  ///
+  /// If the path can't be followed until then end, the deepest resolved node is returned.
+  public var resolved: Node {
+    var leaf = anchor
+
+    for path in paths {
+      switch path {
+      case .rvalue:
+        switch anchor {
+        case let binding as BindingStmt:
+          leaf = binding.rvalue
+        case let binding as PropDecl where binding.initialBinding != nil:
+          leaf = binding.initialBinding!.value
+        case let binding as ParamDecl where binding.defaultValue != nil:
+          leaf = binding.defaultValue!
+        case let binding as CallArg:
+          leaf = binding.value
+        default:
+          return leaf
+        }
+
+      default:
+        continue
+      }
+    }
+
+    return leaf
+  }
+
   public static func location(_ anchor: Node, _ paths: ConstraintPath...)
     -> ConstraintLocation
   {

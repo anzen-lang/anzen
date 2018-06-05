@@ -11,13 +11,23 @@ import Utils
 
 // ---
 
+func < (lhs: ASTError, rhs: ASTError) -> Bool {
+  let lname = lhs.node.module.id?.qualifiedName ?? ""
+  let rname = rhs.node.module.id?.qualifiedName ?? ""
+  return lname == rname
+    ? lhs.node.range.start < rhs.node.range.start
+    : lname < rname
+}
+
+// ---
+
 guard let cAnzenPath = getenv("ANZENPATH")
   else { fatalError("missing environment variable 'ANZENPATH'") }
-let anzenPath = String(cString: cAnzenPath)
+let anzenPath = Path(url: String(cString: cAnzenPath))
 
 let searchPaths = [
-  anzenPath + "/Sources/Core/",
-  anzenPath + "/InputSamples/",
+  anzenPath.appending("/Sources/Core/"),
+  anzenPath.appending("/InputSamples/"),
 ]
 
 let loader = LocalModuleLoader(searchPaths: searchPaths, verbosity: .debug)
@@ -28,6 +38,10 @@ do {
 
   main = try context.getModule(moduleID: .local(name: "main"))
   guard context.errors.isEmpty else {
+    // Print the errors, sorted.
+    for error in context.errors.sorted(by: <) {
+      Console.err.diagnose(error: error)
+    }
     exit(-1)
   }
 
@@ -36,11 +50,10 @@ do {
   // FIXME: Parse errors shouldn't get a special treatment, but should be added to the AST context
   // by the module loader. When that's done, we won't have to catch them here.
   if let range = error.range {
-    let filename = (range.start.source as? TextFile)?.basename ?? "<unknown>"
+    let filename = (range.start.source as? TextFile)?.filepath.basename ?? "<unknown>"
     let title = try! StyledString(
       "{\(filename)::\(range.start.line)::\(range.start.column):::bold} " +
-      "{error:::bold,red} " +
-      error.cause.description.styled("bold")
+      "{error:::bold,red} {\(error.cause):bold}"
     )
     Console.err.print(title)
     Console.err.diagnose(range: range)

@@ -1,4 +1,5 @@
 import AST
+import Sema
 import Utils
 
 extension Console {
@@ -9,10 +10,61 @@ extension Console {
     guard lines.count == range.start.line else { return }
 
     self.print(lines.last!)
-    self.print(String(repeating: " ", count: range.start.column - 1) + "^")
+
+    self.print(String(repeating: " ", count: range.start.column - 1), terminator: "")
+    self.print("^".styled("green"), terminator: "")
     if (range.start.line == range.end.line) && (range.end.column - range.start.column > 1) {
-      print(String(repeating: "~", count: range.end.column - range.start.column - 1))
+      let length = range.end.column - range.start.column - 1
+      self.print(String(repeating: "~", count: length).styled("green"))
+    } else {
+      self.print()
     }
+  }
+
+  func diagnose(error: ASTError) {
+    // Output the heading of the error.
+    let range = error.node.range
+    let filename: String
+    if let path = (range.start.source as? TextFile)?.filepath {
+      filename = path.pathname(relativeTo: .currentWorkingDirectory)
+    } else {
+      filename = "<unknown>"
+    }
+    let title = try! StyledString(
+      "{\(filename)::\(range.start.line)::\(range.start.column):::bold} {error:::bold,red}")
+    Console.err.print(title, terminator: " ")
+
+    // Diagnose the cause of the error.
+    switch error.cause {
+    case let semaError as SAError:
+      // Type inference errors should receive more care, so as to produce a better diagnostic.
+      if case .unsolvableConstraint(let constraint, let cause) = semaError {
+        diagnoseSolvingFailure(constraint: constraint, cause: cause)
+      } else {
+        Console.err.print(semaError)
+        Console.err.diagnose(range: range)
+      }
+
+    default:
+      Console.err.print(error.cause)
+      Console.err.diagnose(range: range)
+    }
+  }
+
+  func diagnoseSolvingFailure(constraint: Constraint, cause: SolverResult.FailureKind) {
+    assert(!constraint.location.paths.isEmpty)
+    switch constraint.location.paths.last! {
+    case .rvalue:
+      // An "r-value" location describes a constraint that failed because the r-value of a binding
+      // statement isn't compatible with the l-value.
+      let (t, u) = constraint.types!
+      Console.err.print("cannot assign to type '\(t)' value of type '\(u)'".styled("bold"))
+
+    default:
+      unreachable()
+    }
+
+    Console.err.diagnose(range: constraint.location.resolved.range)
   }
 
 }

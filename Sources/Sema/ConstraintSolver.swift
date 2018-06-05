@@ -31,8 +31,12 @@ public struct ConstraintSolver {
       case .equality, .conformance:
         // Attempt to solve the match-relation constraint.
         guard solve(match: constraint) == .success else {
-          return .failure(cause: [(reify(constraint: constraint), .typeMismatch)])
+          return .failure([(reify(constraint: constraint), .typeMismatch)])
         }
+
+        // FIXME: Instead of returning upon failure, we should bind variables to `<type error>` and
+        // try to solve the remainder of the constraints. This would make for more comprehensive
+        // diagnostics as it would let us detect additional errors as well.
 
       case .disjunction:
         // Solve each branch with a sub-solver.
@@ -57,7 +61,7 @@ public struct ConstraintSolver {
             guard case .failure(let cause) = result else { return nil }
             return cause
           }
-          return .failure(cause: Array(unsolvable.joined()))
+          return .failure(Array(unsolvable.joined()))
 
         case 1:
           return .success(solution: valid[0].solution, penalties: valid[0].penalties)
@@ -95,7 +99,7 @@ public struct ConstraintSolver {
           }
 
           // There's still equivalent solutions; the constraint system is ambiguous.
-          return .failure(cause: [(reify(constraint: constraint), .ambiguousExpression)])
+          return .failure([(reify(constraint: constraint), .ambiguousExpression)])
         }
 
       default:
@@ -325,7 +329,7 @@ public enum SolverResult {
   }
 
   case success(solution: SubstitutionTable, penalties: Int)
-  case failure(cause: [(constraint: Constraint, kind: FailureKind)])
+  case failure([(constraint: Constraint, cause: FailureKind)])
 
   public var isSuccess: Bool {
     if case .success = self {

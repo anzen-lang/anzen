@@ -3,8 +3,6 @@ import Utils
 /// Cass that holds metadata to be associated with an AST.
 public final class ASTContext {
 
-  // FIXME: Module loaders shouldn't throw error, but instead add them to the AST context, so that
-  // we can proceed with the compilation process in a "degraded" mode.
   public typealias ModuleLoader = (ModuleIdentifier, ASTContext) throws -> ModuleDecl
 
   public init(loadModule: @escaping ModuleLoader) {
