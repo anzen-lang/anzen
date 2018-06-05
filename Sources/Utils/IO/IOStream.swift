@@ -114,7 +114,7 @@ public struct TextFile: TextInputBuffer, TextOutputStream {
     prefix: String = "org.anzen-lang.",
     body: (TextFile) throws -> Result) rethrows -> Result
   {
-    let template = String(cString: getenv("TMPDIR")) + prefix + "XXXXXX"
+    let template = Path.temporaryDirectory.url + prefix + "XXXXXX"
     var buffer = template.utf8CString
     _ = buffer.withUnsafeMutableBufferPointer {
       return mkstemp($0.baseAddress)

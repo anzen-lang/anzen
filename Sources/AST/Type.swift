@@ -6,9 +6,9 @@ public class TypeBase: Equatable {
   fileprivate init() {}
 
   /// The metatype of the type.
-  public var metatype: Metatype {
+  public lazy var metatype: Metatype = { [unowned self] in
     return Metatype(of: self)
-  }
+  }()
 
   /// Returns whether this type is a subtype of another.
   public func isSubtype(of other: TypeBase) -> Bool {

@@ -18,7 +18,7 @@ public struct Path {
   }
 
   /// The path components.
-  private let components: [String]
+  public let components: [String]
 
   /// The string representation of the path.
   public var url: String {
@@ -57,6 +57,8 @@ public struct Path {
       ? Path(url: String(cString: cwd!))
       : Path(components: [])
   }
+
+  public static var temporaryDirectory = Path(url: String(cString: getenv("TMPDIR")))
 
 }
 

@@ -26,15 +26,12 @@ public enum ModuleLoaderVerbosity: Int, Comparable {
 }
 
 /// The default module loader.
-open class LocalModuleLoader: ModuleLoader {
+open class DefaultModuleLoader: ModuleLoader {
 
-  public init(searchPaths: [Path], verbosity: ModuleLoaderVerbosity = .normal) {
-    self.searchPaths = searchPaths
+  public init(verbosity: ModuleLoaderVerbosity = .normal) {
     self.verbosity = verbosity
   }
 
-  /// The locations in which the loader shall try to locate modules.
-  let searchPaths: [Path]
   /// The verbosity level of the loader.
   let verbosity: ModuleLoaderVerbosity
 
@@ -43,7 +40,7 @@ open class LocalModuleLoader: ModuleLoader {
     var stopwatch = Stopwatch()
 
     // Locate and parse the module.
-    guard let file = locate(moduleID: moduleID)
+    guard let file = locate(moduleID: moduleID, in: context)
       else { throw SAError.moduleNotFound(moduleID: moduleID) }
     let module = try Parser(source: file).parse()
     module.id = moduleID
@@ -102,25 +99,17 @@ open class LocalModuleLoader: ModuleLoader {
     return module
   }
 
-  public func locate(moduleID: ModuleIdentifier) -> TextFile? {
-    // Determine the filename of the module.
-    let basename: String
+  public func locate(moduleID: ModuleIdentifier, in context: ASTContext) -> TextFile? {
+    // Determine the filepath of the module.
+    let modulepath: Path
     switch moduleID {
-    case .builtin:
-      basename = "builtin.anzen"
-    case .stdlib:
-      basename = "stdlib.anzen"
-    case .local(name: let name):
-      basename = "\(name).anzen"
+    case .builtin: modulepath = context.anzenPath.appending("builtin.anzen")
+    case .stdlib: modulepath = context.anzenPath.appending("stdlib.anzen")
+    case .url(let path): modulepath = path
     }
 
-    for directory in searchPaths {
-      let filepath = directory.appending(basename)
-      if filepath.isFile {
-        return TextFile(filepath: filepath)
-      }
-    }
-    return nil
+    guard modulepath.isFile else { return nil }
+    return TextFile(filepath: modulepath)
   }
 
 }

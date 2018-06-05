@@ -24,19 +24,15 @@ func < (lhs: ASTError, rhs: ASTError) -> Bool {
 guard let cAnzenPath = getenv("ANZENPATH")
   else { fatalError("missing environment variable 'ANZENPATH'") }
 let anzenPath = Path(url: String(cString: cAnzenPath))
+let entryPath = Path(url: "/Users/alvae/Developer/Anzen/anzen")
 
-let searchPaths = [
-  anzenPath.appending("/Sources/Core/"),
-  anzenPath.appending("/InputSamples/"),
-]
-
-let loader = LocalModuleLoader(searchPaths: searchPaths, verbosity: .debug)
-let context = ASTContext(loadModule: loader.load)
+let loader = DefaultModuleLoader(verbosity: .debug)
+let context = ASTContext(anzenPath: anzenPath, entryPath: entryPath, loadModule: loader.load)
 
 let main: ModuleDecl
 do {
 
-  main = try context.getModule(moduleID: .local(name: "main"))
+  main = try context.getModule(moduleID: .url(entryPath.appending("InputSamples/main.anzen")))
   guard context.errors.isEmpty else {
     // Print the errors, sorted.
     for error in context.errors.sorted(by: <) {
@@ -62,5 +58,5 @@ do {
 
 }
 
-var printer = ASTPrinter(in: Console.out, includeType: false)
+var printer = ASTPrinter(in: Console.out, includeType: true)
 try! printer.visit(main)

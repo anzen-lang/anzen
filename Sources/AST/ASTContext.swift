@@ -5,9 +5,16 @@ public final class ASTContext {
 
   public typealias ModuleLoader = (ModuleIdentifier, ASTContext) throws -> ModuleDecl
 
-  public init(loadModule: @escaping ModuleLoader) {
+  public init(anzenPath: Path, entryPath: Path, loadModule: @escaping ModuleLoader) {
+    self.anzenPath = anzenPath
+    self.entryPath = entryPath
     self.loadModule = loadModule
   }
+
+  /// The path to Anzen's core modules.
+  public let anzenPath: Path
+  /// The path to the target's entry point.
+  public let entryPath: Path
 
   public func add(error: ASTError) {
     errors.append(error)
@@ -34,7 +41,7 @@ public final class ASTContext {
   }
 
   /// The module loader.
-  public let loadModule: ModuleLoader
+  private let loadModule: ModuleLoader
   /// The loaded already loaded in the context.
   public private(set) var loadedModules: [ModuleIdentifier: ModuleDecl] = [:]
 
