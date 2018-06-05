@@ -15,26 +15,8 @@ public struct Console: TextOutputStream {
   }
 
   public func print(_ items: Any..., separator: String = " ", terminator: String = "\n") {
-    var string = items.map({ "\($0)" }).joined(separator: separator)
-
-    if indentationLevel > 0 {
-      // If the indentation level of the console is greater than 0, pad each line.
-      string = string
-        .split (separator: "\n")
-        .map   ({ String(repeating: " ", count: indentationLevel * 2) + $0 })
-        .joined(separator: "\n")
-    }
-
+    let string = items.map({ "\($0)" }).joined(separator: separator)
     self.write(string + terminator)
-  }
-
-  public mutating func indent() {
-    indentationLevel += 1
-  }
-
-  public mutating func dedent() {
-    precondition(indentationLevel > 0)
-    indentationLevel -= 1
   }
 
   public static var out: Console {
@@ -46,8 +28,6 @@ public struct Console: TextOutputStream {
   }
 
   let ostream: UnsafeMutablePointer<FILE>
-
-  var indentationLevel: Int = 0
 
 }
 
