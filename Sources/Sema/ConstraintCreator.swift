@@ -1,7 +1,7 @@
 import AST
 import Utils
 
-public struct ConstraintCreator: ASTVisitor, SAPass {
+public final class ConstraintCreator: ASTVisitor, SAPass {
 
   public init(context: ASTContext) {
     self.context = context
@@ -10,7 +10,7 @@ public struct ConstraintCreator: ASTVisitor, SAPass {
   /// The AST context.
   public let context: ASTContext
 
-  public mutating func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) throws {
     var propType: TypeBase? = nil
     if let annotation = node.typeAnnotation {
       propType = typeFromAnnotation(annotation: annotation)
@@ -25,7 +25,7 @@ public struct ConstraintCreator: ASTVisitor, SAPass {
     }
   }
 
-  public mutating func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) throws {
     let fnType = node.type as! FunctionType
     let codomain: TypeBase
     if node.codomain != nil {
@@ -42,7 +42,7 @@ public struct ConstraintCreator: ASTVisitor, SAPass {
     }
   }
 
-  public mutating func visit(_ node: ParamDecl) throws {
+  public func visit(_ node: ParamDecl) throws {
     // Extract the type of the parameter from its annotation.
     var paramType: TypeBase? = nil
     if let annotation = node.typeAnnotation {
@@ -58,14 +58,14 @@ public struct ConstraintCreator: ASTVisitor, SAPass {
     }
   }
 
-  public mutating func visit(_ node: BindingStmt) throws {
+  public func visit(_ node: BindingStmt) throws {
     try visit(node.lvalue)
     try visit(node.rvalue)
     context.add(constraint:
       .conformance(t: node.rvalue.type!, u: node.lvalue.type!, at: .location(node, .rvalue)))
   }
 
-  public mutating func visit(_ node: CallExpr) throws {
+  public func visit(_ node: CallExpr) throws {
     // Build the supposed type of the callee. Note the use of fresh variables so as to loosen
     // the constraint on the arguments.
     let domain = node.arguments.map { Parameter(label: $0.label, type: TypeVariable()) }
@@ -87,12 +87,12 @@ public struct ConstraintCreator: ASTVisitor, SAPass {
     // FIXME: Create a disjunction with a construction constraint?
   }
 
-  public mutating func visit(_ node: CallArg) throws {
+  public func visit(_ node: CallArg) throws {
     try visit(node.value)
     node.type = node.value.type
   }
 
-  public mutating func visit(_ node: Ident) throws {
+  public func visit(_ node: Ident) throws {
     node.type = TypeVariable()
 
     // FIXME: Handle explicit generic parameters.

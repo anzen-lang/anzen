@@ -58,5 +58,5 @@ do {
 
 }
 
-var printer = ASTPrinter(in: Console.out, includeType: true)
+let printer = ASTUnparser(in: Console.out, includeType: true)
 try! printer.visit(main)

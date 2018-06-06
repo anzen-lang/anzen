@@ -1,7 +1,7 @@
 import AST
 
 /// Visitor that annotate the AST with inferred types.
-public struct TypeApplier: ASTVisitor, SAPass {
+public final class TypeApplier: ASTVisitor, SAPass {
 
   public init(context: ASTContext) {
     self.context = context
@@ -13,7 +13,7 @@ public struct TypeApplier: ASTVisitor, SAPass {
     self.solution = solution
   }
 
-  public mutating func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) throws {
     if let symbol = node.symbol {
       symbol.type = symbol.type.map {
         solution.reify(type: $0, in: context, skipping: &visited)
@@ -22,7 +22,7 @@ public struct TypeApplier: ASTVisitor, SAPass {
     try traverse(node)
   }
 
-  public mutating func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) throws {
     if let symbol = node.symbol {
       symbol.type = symbol.type.map {
         solution.reify(type: $0, in: context, skipping: &visited)
@@ -31,7 +31,7 @@ public struct TypeApplier: ASTVisitor, SAPass {
     try traverse(node)
   }
 
-  public mutating func visit(_ node: ParamDecl) throws {
+  public func visit(_ node: ParamDecl) throws {
     if let symbol = node.symbol {
       symbol.type = symbol.type.map {
         solution.reify(type: $0, in: context, skipping: &visited)
@@ -40,7 +40,7 @@ public struct TypeApplier: ASTVisitor, SAPass {
     try traverse(node)
   }
 
-  public mutating func visit(_ node: StructDecl) throws {
+  public func visit(_ node: StructDecl) throws {
     if let symbol = node.symbol {
       symbol.type = symbol.type.map {
         solution.reify(type: $0, in: context, skipping: &visited)
@@ -49,14 +49,14 @@ public struct TypeApplier: ASTVisitor, SAPass {
     try traverse(node)
   }
 
-  public mutating func visit(_ node: CallExpr) throws {
+  public func visit(_ node: CallExpr) throws {
     node.type = node.type.map {
       solution.reify(type: $0, in: context, skipping: &visited)
     }
     try traverse(node)
   }
 
-  public mutating func visit(_ node: Ident) throws {
+  public func visit(_ node: Ident) throws {
     node.type = node.type.map {
       solution.reify(type: $0, in: context, skipping: &visited)
     }

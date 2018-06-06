@@ -1,44 +1,44 @@
 public protocol ASTVisitor {
 
-  mutating func visit(_ node: ModuleDecl)      throws
-  mutating func visit(_ node: Block)           throws
+  func visit(_ node: ModuleDecl)      throws
+  func visit(_ node: Block)           throws
 
   // MARK: Declarations
 
-  mutating func visit(_ node: PropDecl)        throws
-  mutating func visit(_ node: FunDecl)         throws
-  mutating func visit(_ node: ParamDecl)       throws
-  mutating func visit(_ node: StructDecl)      throws
-  mutating func visit(_ node: InterfaceDecl)   throws
+  func visit(_ node: PropDecl)        throws
+  func visit(_ node: FunDecl)         throws
+  func visit(_ node: ParamDecl)       throws
+  func visit(_ node: StructDecl)      throws
+  func visit(_ node: InterfaceDecl)   throws
 
   // MARK: Type signatures
 
-  mutating func visit(_ node: QualSign)        throws
-  mutating func visit(_ node: FunSign)         throws
-  mutating func visit(_ node: ParamSign)       throws
+  func visit(_ node: QualSign)        throws
+  func visit(_ node: FunSign)         throws
+  func visit(_ node: ParamSign)       throws
 
   // MARK: Statements
 
-  mutating func visit(_ node: BindingStmt)     throws
-  mutating func visit(_ node: ReturnStmt)      throws
+  func visit(_ node: BindingStmt)     throws
+  func visit(_ node: ReturnStmt)      throws
 
   // MARK: Expressions
 
-  mutating func visit(_ node: IfExpr)          throws
-  mutating func visit(_ node: LambdaExpr)      throws
-  mutating func visit(_ node: BinExpr)         throws
-  mutating func visit(_ node: UnExpr)          throws
-  mutating func visit(_ node: CallExpr)        throws
-  mutating func visit(_ node: CallArg)         throws
-  mutating func visit(_ node: SubscriptExpr)   throws
-  mutating func visit(_ node: SelectExpr)      throws
-  mutating func visit(_ node: Ident)           throws
-  mutating func visit(_ node: ArrayLiteral)    throws
-  mutating func visit(_ node: SetLiteral)      throws
-  mutating func visit(_ node: MapLiteral)      throws
-  mutating func visit(_ node: Literal<Bool>)   throws
-  mutating func visit(_ node: Literal<Int>)    throws
-  mutating func visit(_ node: Literal<Double>) throws
-  mutating func visit(_ node: Literal<String>) throws
+  func visit(_ node: IfExpr)          throws
+  func visit(_ node: LambdaExpr)      throws
+  func visit(_ node: BinExpr)         throws
+  func visit(_ node: UnExpr)          throws
+  func visit(_ node: CallExpr)        throws
+  func visit(_ node: CallArg)         throws
+  func visit(_ node: SubscriptExpr)   throws
+  func visit(_ node: SelectExpr)      throws
+  func visit(_ node: Ident)           throws
+  func visit(_ node: ArrayLiteral)    throws
+  func visit(_ node: SetLiteral)      throws
+  func visit(_ node: MapLiteral)      throws
+  func visit(_ node: Literal<Bool>)   throws
+  func visit(_ node: Literal<Int>)    throws
+  func visit(_ node: Literal<Double>) throws
+  func visit(_ node: Literal<String>) throws
 
 }

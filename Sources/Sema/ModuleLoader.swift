@@ -48,13 +48,13 @@ open class DefaultModuleLoader: ModuleLoader {
 
     // Create the type constraints.
     stopwatch.reset()
-    var passes: [SAPass] = [
+    let passes: [SAPass] = [
       SymbolCreator(context: context),
       NameBinder(context: context),
       ConstraintCreator(context: context),
     ]
-    for i in 0 ..< passes.count {
-      try passes[i].visit(module)
+    for pass in passes {
+      try pass.visit(module)
     }
     let constraintCreationTime = stopwatch.elapsed
 
@@ -68,8 +68,7 @@ open class DefaultModuleLoader: ModuleLoader {
     stopwatch.reset()
     switch result {
     case .success(let solution, _):
-      var applier = TypeApplier(context: context, solution: solution)
-      try applier.visit(module)
+      try TypeApplier(context: context, solution: solution).visit(module)
 
     case .failure(let errors):
       for error in errors {

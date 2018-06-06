@@ -1,6 +1,6 @@
 import Utils
 
-public struct ASTPrinter: ASTVisitor {
+public final class ASTUnparser: ASTVisitor {
 
   public init(in console: Console = Console.err, includeType: Bool = false) {
     self.console = console
@@ -16,7 +16,7 @@ public struct ASTPrinter: ASTVisitor {
   private var isVisitingAnnotation: Bool = false
   private var isVisitingCallee: Bool = false
 
-  public mutating func visit(_ node: ModuleDecl) throws {
+  public func visit(_ node: ModuleDecl) throws {
     for statement in node.statements {
       try visit(statement)
       console.print(stack.pop()!)
@@ -24,7 +24,7 @@ public struct ASTPrinter: ASTVisitor {
     assert(stack.isEmpty)
   }
 
-  public mutating func visit(_ node: Block) throws {
+  public func visit(_ node: Block) throws {
     let statements = try node.statements.map { (statement) -> String in
       try visit(statement)
       return indent(stack.pop()!)
@@ -32,7 +32,7 @@ public struct ASTPrinter: ASTVisitor {
     stack.push("{\n\(str(items: statements, separator: "\n"))\n}")
   }
 
-  public mutating func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) throws {
     var repr = ""
     if !node.attributes.isEmpty {
       repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
@@ -59,7 +59,7 @@ public struct ASTPrinter: ASTVisitor {
     stack.push(repr)
   }
 
-  public mutating func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) throws {
     var repr = ""
     if !node.attributes.isEmpty {
       repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
@@ -97,7 +97,7 @@ public struct ASTPrinter: ASTVisitor {
     stack.push(repr)
   }
 
-  public mutating func visit(_ node: ParamDecl) throws {
+  public func visit(_ node: ParamDecl) throws {
     var repr = str(node.label)
     if node.label != node.name {
       repr += " \(node.name)"
@@ -121,7 +121,7 @@ public struct ASTPrinter: ASTVisitor {
     stack.push(repr)
   }
 
-//  public mutating func visit(_ node: StructDecl) throws {
+//  public func visit(_ node: StructDecl) throws {
 //    write("struct ", styled: "magenta")
 //    write(node.name, styled: "yellow")
 //
@@ -134,7 +134,7 @@ public struct ASTPrinter: ASTVisitor {
 //    try visit(node.body)
 //  }
 //
-//  public mutating func visit(_ node: InterfaceDecl) throws {
+//  public func visit(_ node: InterfaceDecl) throws {
 //    write("interface ", styled: "magenta")
 //    write(node.name, styled: "yellow")
 //
@@ -147,7 +147,7 @@ public struct ASTPrinter: ASTVisitor {
 //    try visit(node.body)
 //  }
 //
-//  public mutating func visit(_ node: QualSign) throws {
+//  public func visit(_ node: QualSign) throws {
 //    write(str(items: node.qualifiers, separator: " "))
 //    if let signature = node.signature {
 //      if !node.qualifiers.isEmpty {
@@ -157,7 +157,7 @@ public struct ASTPrinter: ASTVisitor {
 //    }
 //  }
 //
-//  public mutating func visit(_ node: FunSign) throws {
+//  public func visit(_ node: FunSign) throws {
 //    write("(")
 //    for parameter in node.parameters {
 //      try visit(parameter)
@@ -169,18 +169,18 @@ public struct ASTPrinter: ASTVisitor {
 //    try visit(node.codomain)
 //  }
 //
-//  public mutating func visit(_ node: ParamSign) throws {
+//  public func visit(_ node: ParamSign) throws {
 //    write(str(node.label) + " ")
 //    try visit(node.typeAnnotation)
 //  }
 
-  public mutating func visit(_ node: BindingStmt) throws {
+  public func visit(_ node: BindingStmt) throws {
     try visit(node.rvalue)
     try visit(node.lvalue)
     stack.push("\(stack.pop()!) \(node.op) \(stack.pop()!)")
   }
 
-  public mutating func visit(_ node: ReturnStmt) throws {
+  public func visit(_ node: ReturnStmt) throws {
     var repr = "return".styled("magenta")
     if let value = node.value {
       try visit(value)
@@ -189,7 +189,7 @@ public struct ASTPrinter: ASTVisitor {
     stack.push(repr)
   }
 
-//  public mutating func visit(_ node: IfExpr) throws {
+//  public func visit(_ node: IfExpr) throws {
 //    write("if ", styled: "magenta")
 //    try visit(node.condition)
 //    write(" ")
@@ -200,18 +200,18 @@ public struct ASTPrinter: ASTVisitor {
 //    }
 //  }
 //
-//  public mutating func visit(_ node: BinExpr) throws {
+//  public func visit(_ node: BinExpr) throws {
 //    try visit(node.left)
 //    write(" \(node.op) ")
 //    try visit(node.right)
 //  }
 //
-//  public mutating func visit(_ node: UnExpr) throws {
+//  public func visit(_ node: UnExpr) throws {
 //    write("\(node.op) ")
 //    try visit(node.operand)
 //  }
 
-  public mutating func visit(_ node: CallExpr) throws {
+  public func visit(_ node: CallExpr) throws {
     let wasVisitinCallee = isVisitingCallee
     isVisitingCallee = true
     try visit(node.callee)
@@ -227,14 +227,14 @@ public struct ASTPrinter: ASTVisitor {
     stack.push(repr)
   }
 
-  public mutating func visit(_ node: CallArg) throws {
+  public func visit(_ node: CallArg) throws {
     try visit(node.value)
     if let label = node.label {
       stack.push("\(label) \(node.bindingOp) \(stack.pop()!)")
     }
   }
 
-//  public mutating func visit(_ node: SubscriptExpr) throws {
+//  public func visit(_ node: SubscriptExpr) throws {
 //    try visit(node.callee)
 //    write("[")
 //    for argument in node.arguments {
@@ -246,7 +246,7 @@ public struct ASTPrinter: ASTVisitor {
 //    write("]")
 //  }
 //
-//  public mutating func visit(_ node: SelectExpr) throws {
+//  public func visit(_ node: SelectExpr) throws {
 //    if let owner = node.owner {
 //      try visit(owner)
 //    }
@@ -254,7 +254,7 @@ public struct ASTPrinter: ASTVisitor {
 //    try visit(node.ownee)
 //  }
 //
-//  public mutating func visit(_ node: LambdaExpr) throws {
+//  public func visit(_ node: LambdaExpr) throws {
 //    write("fun (")
 //    for parameter in node.parameters {
 //      try visit(parameter)
@@ -271,7 +271,7 @@ public struct ASTPrinter: ASTVisitor {
 //    try visit(node.body)
 //  }
 
-  public mutating func visit(_ node: Ident) throws {
+  public func visit(_ node: Ident) throws {
     var repr = node.name
     if isVisitingAnnotation {
       repr = repr.styled("yellow")
@@ -298,7 +298,7 @@ public struct ASTPrinter: ASTVisitor {
     stack.push(repr)
   }
 
-//  public mutating func visit(_ node: ArrayLiteral) throws {
+//  public func visit(_ node: ArrayLiteral) throws {
 //    write("[")
 //    for element in node.elements {
 //      try visit(element)
@@ -307,7 +307,7 @@ public struct ASTPrinter: ASTVisitor {
 //    write("]")
 //  }
 //
-//  public mutating func visit(_ node: SetLiteral) throws {
+//  public func visit(_ node: SetLiteral) throws {
 //    write("{")
 //    for element in node.elements {
 //      try visit(element)
@@ -316,7 +316,7 @@ public struct ASTPrinter: ASTVisitor {
 //    write("}")
 //  }
 //
-//  public mutating func visit(_ node: MapLiteral) throws {
+//  public func visit(_ node: MapLiteral) throws {
 //    write("{")
 //    for (key, value) in node.elements {
 //      write("\(key): ")
@@ -326,19 +326,19 @@ public struct ASTPrinter: ASTVisitor {
 //    write("}")
 //  }
 
-  public mutating func visit(_ node: Literal<Bool>) {
+  public func visit(_ node: Literal<Bool>) {
     stack.push(String(node.value).styled("green"))
   }
 
-  public mutating func visit(_ node: Literal<Int>) {
+  public func visit(_ node: Literal<Int>) {
     stack.push(String(node.value).styled("green"))
   }
 
-  public mutating func visit(_ node: Literal<Double>) {
+  public func visit(_ node: Literal<Double>) {
     stack.push(String(node.value).styled("green"))
   }
 
-  public mutating func visit(_ node: Literal<String>) {
+  public func visit(_ node: Literal<String>) {
     stack.push("\"\(node.value)\"".styled("green"))
   }
 

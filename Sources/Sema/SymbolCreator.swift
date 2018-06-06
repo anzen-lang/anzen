@@ -9,7 +9,7 @@ import Utils
 /// * It creates the possibly type corresponding to nominal type and function declarations.
 ///
 /// This pass must be ran before name binding can take place.
-public struct SymbolCreator: ASTVisitor, SAPass {
+public final class SymbolCreator: ASTVisitor, SAPass {
 
   public init(context: ASTContext) {
     self.context = context
@@ -24,7 +24,7 @@ public struct SymbolCreator: ASTVisitor, SAPass {
   /// Whether or not the built-in module is being visited.
   private var isBuiltinVisited: Bool = false
 
-  public mutating func visit(_ node: ModuleDecl) throws {
+  public func visit(_ node: ModuleDecl) throws {
     // Create a new scope for the module.
     node.innerScope = Scope(name: node.id?.qualifiedName, module: node)
 
@@ -49,7 +49,7 @@ public struct SymbolCreator: ASTVisitor, SAPass {
     // those symbols have been created.
   }
 
-  public mutating func visit(_ node: Block) throws {
+  public func visit(_ node: Block) throws {
     // Create a new scope for the block.
     node.innerScope = Scope(parent: stack.top!.innerScope)
 
@@ -59,7 +59,7 @@ public struct SymbolCreator: ASTVisitor, SAPass {
     stack.pop()
   }
 
-  public mutating func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) throws {
     // Make sure the property's name can be declared in the current scope.
     guard canBeDeclared(node: node) else {
       node.symbol = errorSymbol
@@ -72,7 +72,7 @@ public struct SymbolCreator: ASTVisitor, SAPass {
     try traverse(node)
   }
 
-  public mutating func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) throws {
     // Make sure the function's name can be declared in the current scope.
     guard canBeDeclared(node: node) else {
       node.symbol = errorSymbol
@@ -116,7 +116,7 @@ public struct SymbolCreator: ASTVisitor, SAPass {
     stack.pop()
   }
 
-  public mutating func visit(_ node: ParamDecl) throws {
+  public func visit(_ node: ParamDecl) throws {
     // Make sure the parameter's name can be declared in the current scope.
     guard canBeDeclared(node: node) else {
       node.symbol = errorSymbol
@@ -129,7 +129,7 @@ public struct SymbolCreator: ASTVisitor, SAPass {
     try traverse(node)
   }
 
-  public mutating func visit(_ node: StructDecl) throws {
+  public func visit(_ node: StructDecl) throws {
     // Make sure the struct's name can be declared in the current scope.
     guard canBeDeclared(node: node) else {
       node.symbol = errorSymbol

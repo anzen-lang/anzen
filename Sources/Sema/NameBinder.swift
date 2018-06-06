@@ -1,13 +1,13 @@
 import AST
 import Utils
 
-public struct NameBinder: ASTVisitor, SAPass {
+public final class NameBinder: ASTVisitor, SAPass {
 
   public init(context: ASTContext) {
     self.context = context
   }
 
-  public mutating func visit(_ node: ModuleDecl) throws {
+  public func visit(_ node: ModuleDecl) throws {
     // Don't implicitly import core symbols if the module describing them is being visited.
     if node.id != .builtin {
       scopes.push(context.builtinScope)
@@ -26,19 +26,19 @@ public struct NameBinder: ASTVisitor, SAPass {
     scopes.pop()
   }
 
-  public mutating func visit(_ node: Block) throws {
+  public func visit(_ node: Block) throws {
     scopes.push(node.innerScope!)
     try visit(node.statements)
     scopes.pop()
   }
 
-  public mutating func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) throws {
     underDeclaration[node.scope!] = node.name
     try traverse(node)
     underDeclaration.removeValue(forKey: node.scope!)
   }
 
-  public mutating func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) throws {
     scopes.push(node.innerScope!)
     for param in node.parameters {
       underDeclaration[param.scope!] = param.name
@@ -54,13 +54,13 @@ public struct NameBinder: ASTVisitor, SAPass {
     scopes.pop()
   }
 
-  public mutating func visit(_ node: StructDecl) throws {
+  public func visit(_ node: StructDecl) throws {
     scopes.push(node.innerScope!)
     try visit(node.body)
     scopes.pop()
   }
 
-  public mutating func visit(_ node: Ident) throws {
+  public func visit(_ node: Ident) throws {
     // Find the scope that defines the visited identifier.
     guard let scope = scopes.top?.findScope(declaring: node.name) else {
       context.add(error: SAError.undefinedSymbol(name: node.name), on: node)
