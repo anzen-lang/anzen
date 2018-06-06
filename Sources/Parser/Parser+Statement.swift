@@ -18,7 +18,7 @@ extension Parser {
           attributes.insert(.static)
         case .mutating:
           consume()
-          attributes.insert(.static)
+          attributes.insert(.mutating)
         case .let, .var, .fun:
           break attrs
         default:
