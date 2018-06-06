@@ -58,5 +58,8 @@ do {
 
 }
 
-let printer = ASTUnparser(in: Console.out, includeType: true)
-try! printer.visit(main)
+//let printer = ASTUnparser(in: Console.out, includeType: true)
+//try! printer.visit(main)
+
+let dumper = ASTDumper(console: Console.out)
+try dumper.visit(main)

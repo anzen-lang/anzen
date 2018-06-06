@@ -2,7 +2,7 @@ import Utils
 
 public final class ASTUnparser: ASTVisitor {
 
-  public init(in console: Console = Console.err, includeType: Bool = false) {
+  public init(console: Console = Console.err, includeType: Bool = false) {
     self.console = console
     self.includeType = includeType
   }
