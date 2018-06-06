@@ -104,6 +104,7 @@ open class DefaultModuleLoader: ModuleLoader {
     switch moduleID {
     case .builtin: modulepath = context.anzenPath.appending("builtin.anzen")
     case .stdlib: modulepath = context.anzenPath.appending("stdlib.anzen")
+    case .local(let url): modulepath = context.entryPath.appending(url)
     case .url(let path): modulepath = path
     }
 
