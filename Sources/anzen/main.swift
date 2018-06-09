@@ -8,6 +8,7 @@ import AST
 import Parser
 import Sema
 import Utils
+import SystemKit
 
 // ---
 
@@ -21,13 +22,16 @@ func < (lhs: ASTError, rhs: ASTError) -> Bool {
 
 // ---
 
-guard let cAnzenPath = getenv("ANZENPATH")
+guard let anzenPathname = System.environment["ANZENPATH"]
   else { fatalError("missing environment variable 'ANZENPATH'") }
-let anzenPath = Path(url: String(cString: cAnzenPath))
-let entryPath = Path(url: "/Users/alvae/Developer/Anzen/anzen/InputSamples")
+let anzenPath = Path(pathname: anzenPathname)
+
+// FIXME: This should be a parameter of the command line, or default to the parent of the file being
+// executed if we run simply `anzen path/to/some/file.anzen`.
+Path.workingDirectory = "/Users/alvae/Developer/Anzen/anzen/InputSamples"
 
 let loader = DefaultModuleLoader(verbosity: .debug)
-let context = ASTContext(anzenPath: anzenPath, entryPath: entryPath, loadModule: loader.load)
+let context = ASTContext(anzenPath: anzenPath, loadModule: loader.load)
 
 let main: ModuleDecl
 do {
@@ -36,7 +40,7 @@ do {
   guard context.errors.isEmpty else {
     // Print the errors, sorted.
     for error in context.errors.sorted(by: <) {
-      Console.err.diagnose(error: error)
+      System.err.diagnose(error: error)
     }
     exit(-1)
   }
@@ -46,20 +50,19 @@ do {
   // FIXME: Parse errors shouldn't get a special treatment, but should be added to the AST context
   // by the module loader. When that's done, we won't have to catch them here.
   if let range = error.range {
-    let filename = (range.start.source as? TextFile)?.filepath.basename ?? "<unknown>"
+    let filename = (range.start.source as? TextFile)?.path.filename ?? "<unknown>"
     let title = try! StyledString(
       "{\(filename)::\(range.start.line)::\(range.start.column):::bold} " +
       "{error:::bold,red} {\(error.cause):bold}"
     )
-    Console.err.print(title)
-    Console.err.diagnose(range: range)
+    System.err.print(title)
+    System.err.diagnose(range: range)
   }
   exit(-1)
 
 }
 
-//let printer = ASTUnparser(in: Console.out, includeType: true)
-//try! printer.visit(main)
-
-let dumper = ASTDumper(console: Console.out)
-try dumper.visit(main)
+let printer = ASTUnparser(console: System.out, includeType: true)
+try printer.visit(main)
+//let dumper = ASTDumper(outputTo: System.out)
+//try dumper.visit(main)

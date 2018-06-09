@@ -7,13 +7,13 @@ precedencegroup StreamPrecedence {
 
 infix operator <<<: StreamPrecedence
 
-public final class ASTDumper: ASTVisitor {
+public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextOutputStream {
 
-  public init(console: Console = Console.err) {
-    self.console = console
+  public init(outputTo outputStream: OutputStream) {
+    self.outputStream = outputStream
   }
 
-  public let console: Console
+  public var outputStream: OutputStream
 
   private var level: Int = 0
   private var indent: String {
@@ -465,13 +465,13 @@ public final class ASTDumper: ASTVisitor {
 
   @discardableResult
   fileprivate static func <<< <T>(dumper: ASTDumper, item: T) -> ASTDumper {
-    dumper.console.print(item, terminator: "")
+    dumper.outputStream.write(String(describing: item))
     return dumper
   }
 
   @discardableResult
   fileprivate static func <<< <T>(dumper: ASTDumper, item: T?) -> ASTDumper {
-    dumper.console.print(item.map({ String(describing: $0) }) ?? "_", terminator: "")
+    dumper.outputStream.write(item.map({ String(describing: $0) }) ?? "_")
     return dumper
   }
 

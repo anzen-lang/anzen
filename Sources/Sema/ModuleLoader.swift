@@ -1,6 +1,7 @@
 import AST
 import Parser
 import Utils
+import SystemKit
 
 /// Protocol for module loaders.
 public protocol ModuleLoader {
@@ -40,8 +41,7 @@ open class DefaultModuleLoader: ModuleLoader {
     var stopwatch = Stopwatch()
 
     // Locate and parse the module.
-    guard let file = locate(moduleID: moduleID, in: context)
-      else { throw SAError.moduleNotFound(moduleID: moduleID) }
+    let file = locate(moduleID: moduleID, in: context)
     let module = try Parser(source: file).parse()
     module.id = moduleID
     let parseTime = stopwatch.elapsed
@@ -81,35 +81,33 @@ open class DefaultModuleLoader: ModuleLoader {
 
     // Output verbose informations.
     if verbosity >= .verbose {
-      Console.err.print("Loading module '\(moduleID.qualifiedName)' ...".styled("bold"))
-      Console.err.print("- Parsed in \(parseTime.humanFormat)")
-      Console.err.print("- Created type constraints in \(constraintCreationTime.humanFormat)")
+      System.err.print("Loading module '\(moduleID.qualifiedName)' ...".styled("bold"))
+      System.err.print("- Parsed in \(parseTime.humanFormat)")
+      System.err.print("- Created type constraints in \(constraintCreationTime.humanFormat)")
       if verbosity >= .debug {
         for constraint in context.typeConstraints {
-          constraint.prettyPrint(in: Console.err, level: 2)
+          constraint.prettyPrint(in: System.err, level: 2)
         }
       }
-      Console.err.print("- Solved type constraints in \(solvingTime.humanFormat)")
-      Console.err.print("- Dispatched symbols in \(dispatchTime.humanFormat)")
-      Console.err.print()
+      System.err.print("- Solved type constraints in \(solvingTime.humanFormat)")
+      System.err.print("- Dispatched symbols in \(dispatchTime.humanFormat)")
+      System.err.print()
     }
 
     context.typeConstraints.removeAll()
     return module
   }
 
-  public func locate(moduleID: ModuleIdentifier, in context: ASTContext) -> TextFile? {
+  public func locate(moduleID: ModuleIdentifier, in context: ASTContext) -> TextFile {
     // Determine the filepath of the module.
     let modulepath: Path
     switch moduleID {
-    case .builtin: modulepath = context.anzenPath.appending("builtin.anzen")
-    case .stdlib: modulepath = context.anzenPath.appending("stdlib.anzen")
-    case .local(let url): modulepath = context.entryPath.appending(url)
-    case .url(let path): modulepath = path
+    case .builtin: modulepath = context.anzenPath.joined(with: "builtin.anzen")
+    case .stdlib: modulepath = context.anzenPath.joined(with: "stdlib.anzen")
+    case .local(let path): modulepath = path
     }
 
-    guard modulepath.isFile else { return nil }
-    return TextFile(filepath: modulepath)
+    return TextFile(path: modulepath)
   }
 
 }

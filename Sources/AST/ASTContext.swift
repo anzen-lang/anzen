@@ -1,20 +1,18 @@
 import Utils
+import SystemKit
 
 /// Cass that holds metadata to be associated with an AST.
 public final class ASTContext {
 
   public typealias ModuleLoader = (ModuleIdentifier, ASTContext) throws -> ModuleDecl
 
-  public init(anzenPath: Path, entryPath: Path, loadModule: @escaping ModuleLoader) {
+  public init(anzenPath: Path, loadModule: @escaping ModuleLoader) {
     self.anzenPath = anzenPath
-    self.entryPath = entryPath
     self.loadModule = loadModule
   }
 
   /// The path to Anzen's core modules.
   public let anzenPath: Path
-  /// The path to the target's entry point.
-  public let entryPath: Path
 
   public func add(error: ASTError) {
     errors.append(error)

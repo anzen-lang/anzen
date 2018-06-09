@@ -1,12 +1,13 @@
 import AST
 import Sema
 import Utils
+import SystemKit
 
 extension Console {
 
   func diagnose(range: SourceRange) {
-    let source = range.start.source.read()
-    let lines = source.read(lines: range.start.line)
+    let source = try! range.start.source.read()
+    let lines = try! source.read(lines: range.start.line)
     guard lines.count == range.start.line else { return }
 
     self.print(lines.last!)
@@ -25,14 +26,14 @@ extension Console {
     // Output the heading of the error.
     let range = error.node.range
     let filename: String
-    if let path = (range.start.source as? TextFile)?.filepath {
-      filename = path.pathname(relativeTo: .currentWorkingDirectory)
+    if let path = (range.start.source as? TextFile)?.path {
+      filename = path.relative(to: .workingDirectory).pathname
     } else {
       filename = "<unknown>"
     }
     let title = try! StyledString(
       "{\(filename)::\(range.start.line)::\(range.start.column):::bold} {error:::bold,red}")
-    Console.err.print(title, terminator: " ")
+    System.err.print(title, terminator: " ")
 
     // Diagnose the cause of the error.
     switch error.cause {
@@ -41,13 +42,13 @@ extension Console {
       if case .unsolvableConstraint(let constraint, let cause) = semaError {
         diagnoseSolvingFailure(constraint: constraint, cause: cause)
       } else {
-        Console.err.print(semaError)
-        Console.err.diagnose(range: range)
+        System.err.print(semaError)
+        System.err.diagnose(range: range)
       }
 
     default:
-      Console.err.print(error.cause)
-      Console.err.diagnose(range: range)
+      System.err.print(error.cause)
+      System.err.diagnose(range: range)
     }
   }
 
@@ -58,13 +59,13 @@ extension Console {
       // An "r-value" location describes a constraint that failed because the r-value of a binding
       // statement isn't compatible with the l-value.
       let (t, u) = constraint.types!
-      Console.err.print("cannot assign to type '\(t)' value of type '\(u)'".styled("bold"))
+      System.err.print("cannot assign to type '\(t)' value of type '\(u)'".styled("bold"))
 
     default:
       unreachable()
     }
 
-    Console.err.diagnose(range: constraint.location.resolved.range)
+    System.err.diagnose(range: constraint.location.resolved.range)
   }
 
 }

@@ -1,4 +1,5 @@
 import Utils
+import SystemKit
 
 public enum ConstraintKind: Int {
 
@@ -113,7 +114,7 @@ public struct Constraint {
 
 extension Constraint {
 
-  public func prettyPrint(in console: Console = Console.err, level: Int = 0) {
+  public func prettyPrint(in console: Console = System.err, level: Int = 0) {
     let ident = String(repeating: " ", count: level * 2)
     console.print(
       ident + location.anchor.range.start.description.styled("< 6") + ": ",

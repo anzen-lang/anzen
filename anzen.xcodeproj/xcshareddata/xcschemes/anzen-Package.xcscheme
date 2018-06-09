@@ -28,20 +28,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "anzen::Sema"
-               BuildableName = "Sema.framework"
-               BlueprintName = "Sema"
-               ReferencedContainer = "container:anzen.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "anzen::anzen"
                BuildableName = "anzen"
                BlueprintName = "anzen"
@@ -56,9 +42,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "anzen::Parser"
-               BuildableName = "Parser.framework"
-               BlueprintName = "Parser"
+               BlueprintIdentifier = "anzen::Interpreter"
+               BuildableName = "Interpreter.framework"
+               BlueprintName = "Interpreter"
                ReferencedContainer = "container:anzen.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -70,9 +56,37 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "anzen::Interpreter"
-               BuildableName = "Interpreter.framework"
-               BlueprintName = "Interpreter"
+               BlueprintIdentifier = "SystemKit::SystemKit"
+               BuildableName = "SystemKit.framework"
+               BlueprintName = "SystemKit"
+               ReferencedContainer = "container:anzen.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "anzen::Sema"
+               BuildableName = "Sema.framework"
+               BlueprintName = "Sema"
+               ReferencedContainer = "container:anzen.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "anzen::Parser"
+               BuildableName = "Parser.framework"
+               BlueprintName = "Parser"
                ReferencedContainer = "container:anzen.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

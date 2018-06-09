@@ -1,4 +1,5 @@
 import Utils
+import SystemKit
 
 /// Enum representing a module identifier.
 public enum ModuleIdentifier: Hashable {
@@ -7,21 +8,18 @@ public enum ModuleIdentifier: Hashable {
   case builtin
   /// Identifies Anzen's standard library module.
   case stdlib
-  /// Identifies a module by its URL, relative to the target entry point.
-  case local(String)
-  /// Identifies a module by its absolute URL.
-  case url(Path)
+  /// Identifies a module by its path.
+  case local(Path)
 
   /// The qualified name corresponding to this module identifier.
   public var qualifiedName: String {
     switch self {
     case .builtin       : return "anzen://builtin"
     case .stdlib        : return "anzen://stdlib"
-    case .url(let path) : return path.url
-    case .local(let rel):
-      return rel.hasSuffix(".anzen")
-        ? String(rel.dropLast(6))
-        : rel
+    case .local(let path):
+      return path.hasSuffix(".anzen")
+        ? String(path.pathname.dropLast(6))
+        : path.pathname
     }
   }
 
@@ -34,7 +32,6 @@ public enum ModuleIdentifier: Hashable {
     case (.builtin, .builtin): return true
     case (.stdlib, .stdlib): return true
     case (.local(let lhs), .local(let rhs)): return lhs == rhs
-    case (.url(let lhs), .url(let rhs)): return lhs == rhs
     default: return false
     }
   }

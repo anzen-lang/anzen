@@ -51,7 +51,8 @@ public final class SymbolCreator: ASTVisitor, SAPass {
 
   public func visit(_ node: Block) throws {
     // Create a new scope for the block.
-    node.innerScope = Scope(parent: stack.top!.innerScope)
+     
+    node.innerScope = Scope(name: "block", parent: stack.top!.innerScope)
 
     // Visit the block's statements.
     stack.push(node)

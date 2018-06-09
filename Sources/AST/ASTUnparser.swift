@@ -1,8 +1,9 @@
 import Utils
+import SystemKit
 
 public final class ASTUnparser: ASTVisitor {
 
-  public init(console: Console = Console.err, includeType: Bool = false) {
+  public init(console: Console = System.err, includeType: Bool = false) {
     self.console = console
     self.includeType = includeType
   }
