@@ -4,86 +4,96 @@ import AST
 import Parser
 import Sema
 import Utils
+import SystemKit
+
+class StringBuffer: TextOutputStream {
+
+  func write(_ string: String) {
+    storage.write(string)
+  }
+
+  var storage: String = ""
+
+}
 
 class SemaTests: XCTestCase {
 
   override func setUp() {
-    guard let cAnzenPath = getenv("ANZENPATH")
+    guard let anzenPathname = System.environment["ANZENPATH"]
       else { fatalError("missing environment variable 'ANZENPATH'") }
-    let anzenPath = Path(url: String(cString: cAnzenPath))
-    loader = DefaultModuleLoader(verbosity: .normal)
-    context = ASTContext(
-      anzenPath: anzenPath,
-      entryPath: .temporaryDirectory,
-      loadModule: loader.load)
+    anzenPath = Path(pathname: anzenPathname)
+
+    guard let entryPathname = System.environment["ANZENTESTPATH"]
+      else { fatalError("missing environment variable 'ANZENTESTPATH'") }
+    entryPath = Path(pathname: entryPathname)
+    Path.workingDirectory = entryPath
   }
 
-  var loader: DefaultModuleLoader!
-  var context: ASTContext!
+  var anzenPath: Path = .workingDirectory
+  var entryPath: Path = .workingDirectory
 
-  func testPropDeclTypeInference() throws {
-    let intType = context.builtinTypes["Int"]!
-
-    try TextFile.withTemporary { file in
-      file.write("let x: Int\n")
-      let module = try context.getModule(moduleID: .url(file.filepath))
-
-      let decl = module.statements.first as! PropDecl
-      XCTAssertEqual(decl.type, intType)
-      let signature = decl.typeAnnotation!.signature as! Ident
-      XCTAssertEqual(signature.type, intType.metatype)
+  func testTypeInferenceFixtures() {
+    var fixtures: [String: Path] = [:]
+    var outputs: [String: Path] = [:]
+    for entry in entryPath.joined(with: "inference") {
+      if entry.fileExtension == "anzen" {
+        fixtures[String(entry.pathname.dropLast(6))] = entry
+      } else if entry.fileExtension == "output" {
+        outputs[String(entry.pathname.dropLast(7))] = entry
+      }
     }
 
-    try TextFile.withTemporary { file in
-      file.write("let x = 0")
-      let module = try context.getModule(moduleID: .url(file.filepath))
+    for testCase in fixtures {
+      let loader = DefaultModuleLoader(verbosity: .normal)
+      let context = ASTContext(anzenPath: anzenPath, loadModule: loader.load)
 
-      let decl = module.statements.first as! PropDecl
-      XCTAssertEqual(decl.type, intType)
-      XCTAssertEqual(decl.initialBinding!.value.type, intType)
-    }
+      let module = try! context.getModule(moduleID: .local(testCase.value))
+      let testResult = StringBuffer()
+      try! ASTDumper(outputTo: testResult).visit(module)
 
-    try TextFile.withTemporary { file in
-      file.write("let x: Int = 0")
-      let module = try context.getModule(moduleID: .url(file.filepath))
-
-      let decl = module.statements.first as! PropDecl
-      XCTAssertEqual(decl.type, intType)
-    }
-
-    try TextFile.withTemporary { file in
-      file.write("let x: Int = \"text\"")
-      _ = try context.getModule(moduleID: .url(file.filepath))
-      XCTAssertEqual(context.errors.count, 1)
-    }
-  }
-
-  func testFunDeclTypeInference() throws {
-    let intType = context.builtinTypes["Int"]!
-    let boolType = context.builtinTypes["Bool"]!
-
-    let xi_yb_to_i = context.getFunctionType(
-      from: [Parameter(label: "x", type: intType), Parameter(label: "y", type: boolType)],
-      to: intType)
-
-    try TextFile.withTemporary { file in
-      file.write("fun mono(x: Int, y: Bool) -> Int\n")
-      let module = try context.getModule(moduleID: .url(file.filepath))
-
-      let decl = module.statements.first as! FunDecl
-      XCTAssertEqual(decl.type, xi_yb_to_i)
-      XCTAssertEqual(decl.parameters[0].type, intType)
-      XCTAssertEqual(decl.parameters[1].type, boolType)
-      let codomain = (decl.codomain as! QualSign).signature as! Ident
-      XCTAssertEqual(codomain.type, intType.metatype)
+      if let output = outputs[testCase.key] {
+        let expectation = TextFile(path: output)
+        XCTAssertLinesEqual(testResult.storage, try! expectation.read())
+      } else {
+        let outputPath = Path(pathname: String(testCase.value.pathname.dropLast(6)) + ".output")
+        let expectation = TextFile(path: outputPath)
+        try! expectation.write(testResult.storage)
+        print("⚠️ no oracle for '\(testCase.value.filename!)', regression test case created now")
+      }
     }
   }
 
   #if !os(macOS)
   static var allTests = [
-    ("testPropDeclTypeInference", testPropDeclTypeInference),
-    ("testFunDeclTypeInference", testFunDeclTypeInference),
+    ("testTypeInferenceFixtures", testTypeInferenceFixtures),
   ]
   #endif
 
+}
+
+private func XCTAssertLinesEqual(_ lhs: String, _ rhs: String) {
+  let lhsLines = lhs.split(separator: "\n")
+  let rhsLines = rhs.split(separator: "\n")
+
+  var errors: [(lineno: Int, lhs: String, rhs: String)] = []
+  for (i, (ll, rl)) in zip(lhsLines, rhsLines).enumerated() {
+    if ll != rl {
+      errors.append((lineno: i + 1, lhs: String(ll), rhs: String(rl)))
+    }
+  }
+
+  guard errors.isEmpty else {
+    XCTFail("Comparison failed:")
+    for (lineno, ll, rl) in errors {
+      print("line \(lineno):")
+      print("  expected:", ll)
+      print("  actual  :", rl)
+    }
+    return
+  }
+
+  guard lhsLines.count == rhsLines.count else {
+    XCTFail("Comparison failed: different line count")
+    return
+  }
 }

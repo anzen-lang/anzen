@@ -1,0 +1,27 @@
+(module_decl id='inference/call_002' inner_scope='inference/call_002'
+  (fun_decl 'mono' type='(x: Anything, y: Anything) -> Anything' symbol='mono' scope='inference/call_002' inner_scope='inference/call_002.mono'
+    (parameters
+      (param_decl 'x' type='Anything' symbol='x' scope='inference/call_002.mono'
+        (type_annotation
+          (qual_sign
+            (identifier 'Anything' type='Anything.metatype' scope='anzen://builtin'))))
+      (param_decl 'y' type='Anything' symbol='y' scope='inference/call_002.mono'
+        (type_annotation
+          (qual_sign
+            (identifier 'Anything' type='Anything.metatype' scope='anzen://builtin')))))
+    (codomain
+      (qual_sign
+        (identifier 'Anything' type='Anything.metatype' scope='anzen://builtin'))))
+  (prop_decl let 'a' type='Anything' symbol='a' scope='inference/call_002'
+    (initial_binding
+      (binding_operator =)
+      (call type='Anything'
+        (callee
+          (identifier 'mono' type='(x: Anything, y: Anything) -> Anything' scope='inference/call_002'))
+        (arguments
+          (call_arg 'x' type='Int'
+            (binding_operator =)
+            (int_literal 0 type='Int'))
+          (call_arg 'y' type='Bool'
+            (binding_operator =)
+            (bool_literal true type='Bool')))))))

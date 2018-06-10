@@ -1,0 +1,8 @@
+(module_decl id='inference/prop_decl_003' inner_scope='inference/prop_decl_003'
+  (prop_decl let 'property' type='Int' symbol='property' scope='inference/prop_decl_003'
+    (type_annotation
+      (qual_sign
+        (identifier 'Int' type='Int.metatype' scope='anzen://builtin')))
+    (initial_binding
+      (binding_operator =)
+      (int_literal 0 type='Int'))))

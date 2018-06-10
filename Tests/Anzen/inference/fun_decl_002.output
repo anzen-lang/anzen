@@ -1,0 +1,12 @@
+(module_decl id='inference/fun_decl_002' inner_scope='inference/fun_decl_002'
+  (fun_decl 'poly' type='(x: T) -> T' symbol='poly' scope='inference/fun_decl_002' inner_scope='inference/fun_decl_002.poly'
+    (placeholders
+      (placeholder T))
+    (parameters
+      (param_decl 'x' type='T' symbol='x' scope='inference/fun_decl_002.poly'
+        (type_annotation
+          (qual_sign
+            (identifier 'T' type='T.metatype' scope='inference/fun_decl_002.poly')))))
+    (codomain
+      (qual_sign
+        (identifier 'T' type='T.metatype' scope='inference/fun_decl_002.poly')))))

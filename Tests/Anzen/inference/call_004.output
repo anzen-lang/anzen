@@ -1,0 +1,43 @@
+(module_decl id='inference/call_004' inner_scope='inference/call_004'
+  (fun_decl 'poly' type='(x: T, y: U) -> T' symbol='poly' scope='inference/call_004' inner_scope='inference/call_004.poly'
+    (placeholders
+      (placeholder T)
+      (placeholder U))
+    (parameters
+      (param_decl 'x' type='T' symbol='x' scope='inference/call_004.poly'
+        (type_annotation
+          (qual_sign
+            (identifier 'T' type='T.metatype' scope='inference/call_004.poly'))))
+      (param_decl 'y' type='U' symbol='y' scope='inference/call_004.poly'
+        (type_annotation
+          (qual_sign
+            (identifier 'U' type='U.metatype' scope='inference/call_004.poly')))))
+    (codomain
+      (qual_sign
+        (identifier 'T' type='T.metatype' scope='inference/call_004.poly'))))
+  (prop_decl let 'a' type='Int' symbol='a' scope='inference/call_004'
+    (initial_binding
+      (binding_operator =)
+      (call type='Int'
+        (callee
+          (identifier 'poly' type='(x: Int, y: Bool) -> Int' scope='inference/call_004'))
+        (arguments
+          (call_arg 'x' type='Int'
+            (binding_operator =)
+            (int_literal 0 type='Int'))
+          (call_arg 'y' type='Bool'
+            (binding_operator =)
+            (bool_literal true type='Bool'))))))
+  (prop_decl let 'b' type='Bool' symbol='b' scope='inference/call_004'
+    (initial_binding
+      (binding_operator =)
+      (call type='Bool'
+        (callee
+          (identifier 'poly' type='(x: Bool, y: Int) -> Bool' scope='inference/call_004'))
+        (arguments
+          (call_arg 'x' type='Bool'
+            (binding_operator =)
+            (bool_literal true type='Bool'))
+          (call_arg 'y' type='Int'
+            (binding_operator =)
+            (int_literal 0 type='Int')))))))
