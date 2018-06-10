@@ -17,9 +17,10 @@ public enum ModuleIdentifier: Hashable {
     case .builtin       : return "anzen://builtin"
     case .stdlib        : return "anzen://stdlib"
     case .local(let path):
-      return path.hasSuffix(".anzen")
-        ? String(path.pathname.dropLast(6))
-        : path.pathname
+      let relative = path.relative(to: .workingDirectory)
+      return relative.hasSuffix(".anzen")
+        ? String(relative.pathname.dropLast(6))
+        : relative.pathname
     }
   }
 
