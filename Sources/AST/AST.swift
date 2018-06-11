@@ -581,14 +581,14 @@ public final class SubscriptExpr: Expr {
 /// A select expression.
 public final class SelectExpr: Expr {
 
-  public init(owner: Node? = nil, ownee: Ident, module: ModuleDecl, range: SourceRange) {
+  public init(owner: Expr? = nil, ownee: Ident, module: ModuleDecl, range: SourceRange) {
     self.owner = owner
     self.ownee = ownee
     super.init(module: module, range: range)
   }
 
   /// The owner.
-  public var owner: Node?
+  public var owner: Expr?
   /// The ownee.
   public var ownee: Ident
 

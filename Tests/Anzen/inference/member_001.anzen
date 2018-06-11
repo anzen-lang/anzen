@@ -1,0 +1,9 @@
+// Test explicit membership inference.
+
+struct Point {
+  let x: Int
+  let y: Int
+}
+
+let p: Point
+let x = p.x

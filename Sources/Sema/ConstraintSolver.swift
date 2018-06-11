@@ -38,6 +38,12 @@ public struct ConstraintSolver {
         // try to solve the remainder of the constraints. This would make for more comprehensive
         // diagnostics as it would let us detect additional errors as well.
 
+      case .member:
+        // Attempt to solve the membership constraint.
+        guard solve(member: constraint) == .success else {
+          return .failure([(reify(constraint: constraint), .typeMismatch)])
+        }
+
       case .disjunction:
         // Solve each branch with a sub-solver.
         var results: [SolverResult] = []
@@ -101,9 +107,6 @@ public struct ConstraintSolver {
           // There's still equivalent solutions; the constraint system is ambiguous.
           return .failure([(reify(constraint: constraint), .ambiguousExpression)])
         }
-
-      default:
-        fatalError("todo")
       }
     }
 
@@ -139,8 +142,7 @@ public struct ConstraintSolver {
     switch (a, b) {
     case (let var_ as TypeVariable, _):
       if constraint.kind == .conformance && b is TypeVariable {
-        // If both `T` and `U` are unknown, we can't solve the conformance constraint yet,
-        // but we may be able to do it later.
+        // If both `T` and `U` are unknown, we can't solve the conformance constraint yet.
         constraints.insert(constraint, at: 0)
         return .success
       }
@@ -207,6 +209,37 @@ public struct ConstraintSolver {
       // FIXME: Unlike an equality constraint, a conformance constraint shall be satisfied if `U`
       // is an interface that `T` implements.
       return .failure
+
+    default:
+      return .failure
+    }
+  }
+
+  /// Attempts to solve `T[.name] ~= U`.
+  private mutating func solve(member constraint: Constraint) -> TypeMatchResult {
+    let owner = self.assumptions.substitution(for: constraint.types!.t)
+
+    // Search a member (property or method) named `member` in the owner's type.
+    switch owner {
+    case is TypeVariable:
+      // If the owner's type is unknown, we can't solve the constraint yet.
+      constraints.insert(constraint, at: 0)
+      return .success
+
+    case let structType as StructType:
+      guard let members = structType.members[constraint.member!]
+        else { return .failure }
+
+      // Create a disjunction of membership constraints for each overloaded member.
+      let choices = members.map {
+        Constraint.equality(t: constraint.types!.u, u: $0, at: constraint.location)
+      }
+      if choices.count == 1 {
+        constraints.append(choices[0])
+      } else {
+        constraints.insert(.disjunction(choices, at: constraint.location), at: 0)
+      }
+      return .success
 
     default:
       return .failure

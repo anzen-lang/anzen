@@ -63,6 +63,13 @@ public final class TypeApplier: ASTVisitor, SAPass {
     try traverse(node)
   }
 
+  public func visit(_ node: SelectExpr) throws {
+    node.type = node.type.map {
+      solution.reify(type: $0, in: context, skipping: &visited)
+    }
+    try traverse(node)
+  }
+
   public func visit(_ node: Ident) throws {
     node.type = node.type.map {
       solution.reify(type: $0, in: context, skipping: &visited)
