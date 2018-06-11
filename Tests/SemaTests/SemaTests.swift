@@ -53,12 +53,12 @@ class SemaTests: XCTestCase {
 
       if let output = outputs[testCase.key] {
         let expectation = TextFile(path: output)
-        XCTAssertLinesEqual(testResult.storage, try! expectation.read())
+        XCTAssertLinesEqual(testResult.storage, try! expectation.read(), path: testCase.value)
       } else {
         let outputPath = Path(pathname: String(testCase.value.pathname.dropLast(6)) + ".output")
         let expectation = TextFile(path: outputPath)
         try! expectation.write(testResult.storage)
-        print("⚠️ no oracle for '\(testCase.value.filename!)', regression test case created now")
+        print("⚠️  no oracle for '\(testCase.value.filename!)', regression test case created now")
       }
     }
   }
@@ -71,7 +71,7 @@ class SemaTests: XCTestCase {
 
 }
 
-private func XCTAssertLinesEqual(_ lhs: String, _ rhs: String) {
+private func XCTAssertLinesEqual(_ lhs: String, _ rhs: String, path: Path) {
   let lhsLines = lhs.split(separator: "\n")
   let rhsLines = rhs.split(separator: "\n")
 
@@ -83,17 +83,16 @@ private func XCTAssertLinesEqual(_ lhs: String, _ rhs: String) {
   }
 
   guard errors.isEmpty else {
-    XCTFail("Comparison failed:")
+    XCTFail("⚠️  \(path.filename!)")
     for (lineno, ll, rl) in errors {
-      print("line \(lineno):")
-      print("  expected:", ll)
-      print("  actual  :", rl)
+      print("  L\(lineno) | expected: " + ll.trimmingCharacters(in: [" "]).styled("green"))
+      print("  L\(lineno) | actual  : " + rl.trimmingCharacters(in: [" "]).styled("red"))
     }
     return
   }
 
   guard lhsLines.count == rhsLines.count else {
-    XCTFail("Comparison failed: different line count")
+    XCTFail("⚠️  \(path.filename!): different line count")
     return
   }
 }
