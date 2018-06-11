@@ -156,7 +156,7 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
     assert(node.type != nil)
   }
 
-  public func visit(_ node: Literal<Float>) throws {
+  public func visit(_ node: Literal<Double>) throws {
     node.type = context.builtinTypes["Float"]
     assert(node.type != nil)
   }
