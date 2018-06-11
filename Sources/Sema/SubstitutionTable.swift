@@ -109,6 +109,34 @@ public struct SubstitutionTable {
     }
   }
 
+  /// Determines whether this substitution table is equivalent to another one, up to the variables
+  /// they share.
+  ///
+  /// Let a substitution table be a partial function `V -> T` where `V` is the set of type variables
+  /// and `T` the set of types. Two tables `t1`, `t2` are equivalent if for all variable `v` such
+  /// both `t1` and `t2` are defined `t1(v) = t2(v)`. Variables outside of represent intermediate
+  /// results introduced by the solver, and irrelevant after reification.
+  public func isEquivalent(to other: SubstitutionTable) -> Bool {
+    if self.mappingsRef !== other.mappingsRef {
+      // Nothing to do if both tables are trivially equal.
+      return true
+    }
+
+    for key in Set(mappings.keys).intersection(other.mappings.keys) {
+      guard mappings[key] == other.mappings[key]
+        else { return false }
+    }
+    return true
+  }
+
+  /// Determines whether this substitution table is more specific than another one, up to the
+  /// variables they share.
+  ///
+  /// Let a substitution table be a partial function `V -> T` where `V` is the set of type variables
+  /// and `T` the set of types. A table `t1` is said more specific than an other table `t2` if the
+  /// set of variables `v` such that `t1(v) < t2(v)` is bigger than the set of variables `w` such
+  /// that `t1(w) > t2(w)`. Variables outside of both domains represent intermediate results
+  /// introduced by the solver, and irrelevant after reification.
   public func isMoreSpecific(than other: SubstitutionTable) -> Bool {
     var score = 0
     for key in Set(mappings.keys).intersection(other.mappings.keys) {
@@ -147,6 +175,18 @@ extension SubstitutionTable: ExpressibleByDictionaryLiteral {
 
   public init(dictionaryLiteral elements: (TypeVariable, TypeBase)...) {
     self.init(Dictionary(uniqueKeysWithValues: elements))
+  }
+
+}
+
+extension SubstitutionTable: CustomDebugStringConvertible {
+
+  public var debugDescription: String {
+    var result = ""
+    for (v, t) in self.mappings {
+      result += "\(v) => \(t)\n"
+    }
+    return result
   }
 
 }

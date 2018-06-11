@@ -17,10 +17,8 @@ public struct ConstraintSolver {
   private var constraints: [Constraint]
   // The assumptions made so far on the free types of the AST.
   private var assumptions: SubstitutionTable
-  // The penalties on the solution.
-  private var penalties: Int = 0
 
-  private typealias Success = (solution: SubstitutionTable, penalties: Int)
+  private typealias Success = SubstitutionTable
   private typealias Failure = (constraint: Constraint, cause: SolverResult.FailureKind)
 
   /// Attempts to solve a set of typing constraints, returning either a solution or the constraints
@@ -57,8 +55,8 @@ public struct ConstraintSolver {
 
         // Collect all valid solutions.
         var valid = results.compactMap { result -> Success? in
-           guard case .success(let solution, let penalties) = result else { return nil }
-           return (solution, penalties)
+           guard case .success(let solution) = result else { return nil }
+           return solution
         }
 
         switch valid.count {
@@ -70,38 +68,35 @@ public struct ConstraintSolver {
           return .failure(Array(unsolvable.joined()))
 
         case 1:
-          return .success(solution: valid[0].solution, penalties: valid[0].penalties)
+          return .success(solution: valid[0])
 
         default:
-          // If there are several solutions, we have to try selecting the most specific one.
-          var best: [SubstitutionTable] = []
-          var lowestPenalties = Int.max
-          for candidate in valid {
-            if candidate.penalties < lowestPenalties {
-              best = [candidate.solution]
-              lowestPenalties = candidate.penalties
-            } else if candidate.penalties == lowestPenalties {
-              best.append(candidate.solution)
+          // If there are several solutions, we have to try selecting the most specific one. Note
+          // that it is possible for two solvers to find the same solution, as one may have received
+          // a constraint that didn't add any information to the assumptions. Hence the first step
+          // is to identify duplicates.
+          var candidates: [Success] = []
+          for solution in valid {
+            // Yep, this is a an ugly linear search! But We work on the assumption that the size of
+            // the list of solutions doesn't justify the use of a more sophisticated technique.
+            if !candidates.contains(where: { $0.isEquivalent(to: solution) }) {
+              candidates.append(solution)
             }
           }
 
-          // Note that it is possible for two solvers to find the same solution, as one may have
-          // received a constraint that didn't add any information to the assumptions, hence the
-          // use of a set to eliminate duplicates.
-          let candidates = Set(best.map({ $0.reified(in: context) }))
+          assert(candidates.count > 0)
           if candidates.count == 1 {
-            // We were able to identify a single unique solution after checking their penalties.
-            return .success(solution: best.first!, penalties: lowestPenalties + penalties)
+            return .success(solution: candidates[0])
           }
 
-          // If there are several solutions with the same number of penalties, we compare them to
-          // find the most specific one.
-          outer:for i in candidates.indices {
-            inner:for j in candidates.indices {
+          // If they are several *different* solutions, we attempt to find the most specific one.
+          // Note that there isn't a total order on "being more specific than".
+          outer:for i in 0 ..< candidates.count {
+            inner:for j in 0 ..< candidates.count {
               guard j != i else { continue inner }
               guard candidates[i].isMoreSpecific(than: candidates[j]) else { continue outer }
             }
-            return .success(solution: candidates[i], penalties: lowestPenalties + penalties)
+            return .success(solution: candidates[i])
           }
 
           // There's still equivalent solutions; the constraint system is ambiguous.
@@ -110,7 +105,7 @@ public struct ConstraintSolver {
       }
     }
 
-    return .success(solution: assumptions, penalties: penalties)
+    return .success(solution: assumptions)
   }
 
   /// Attempts to match `T` and `U`, effectively solving a given constraint between those types.
@@ -122,15 +117,12 @@ public struct ConstraintSolver {
     // If the types are obviously equivalent, we're done.
     guard a != b else { return .success }
 
-    // If either `T` or `U` is an unbound generic type, we "open" it. We also penalize the current
-    // solution, so as to favor the selection of monomorphic types.
+    // If either `T` or `U` is an unbound generic type, we "open" it.
     if let generic = a as? GenericType, !generic.placeholders.isEmpty {
       a = open(type: a)
-      penalties += 1
     }
     if let generic = b as? GenericType, !generic.placeholders.isEmpty {
       b = open(type: b)
-      penalties += 1
     }
 
     // If either `T` or `U` is closed but couldn't be reified, we have to postpone the constraint.
@@ -168,7 +160,6 @@ public struct ConstraintSolver {
         let choices: [Constraint] = [
           .equality(t: b, u: a, at: constraint.location),
           .equality(t: b, u: TypeBase.anything, at: constraint.location),
-
         ]
         constraints.insert(.disjunction(choices, at: constraint.location), at: 0)
         return .success
@@ -361,7 +352,7 @@ public enum SolverResult {
     case ambiguousExpression
   }
 
-  case success(solution: SubstitutionTable, penalties: Int)
+  case success(solution: SubstitutionTable)
   case failure([(constraint: Constraint, cause: FailureKind)])
 
   public var isSuccess: Bool {
