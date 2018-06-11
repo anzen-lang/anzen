@@ -60,6 +60,13 @@ public final class NameBinder: ASTVisitor, SAPass {
     scopes.pop()
   }
 
+  public func visit(_ node: SelectExpr) throws {
+    // Only visit the owner (if any), as the scope of the ownee has yet to be inferred.
+    if let owner = node.owner {
+      try visit(owner)
+    }
+  }
+
   public func visit(_ node: Ident) throws {
     // Find the scope that defines the visited identifier.
     guard let scope = scopes.top?.findScope(declaring: node.name) else {
