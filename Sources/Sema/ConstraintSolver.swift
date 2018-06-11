@@ -77,10 +77,11 @@ public struct ConstraintSolver {
           // is to identify duplicates.
           var candidates: [Success] = []
           for solution in valid {
+            let candidate = solution.reified(in: context)
             // Yep, this is a an ugly linear search! But We work on the assumption that the size of
             // the list of solutions doesn't justify the use of a more sophisticated technique.
-            if !candidates.contains(where: { $0.isEquivalent(to: solution) }) {
-              candidates.append(solution)
+            if !candidates.contains(where: { $0.isEquivalent(to: candidate) }) {
+              candidates.append(candidate)
             }
           }
 
