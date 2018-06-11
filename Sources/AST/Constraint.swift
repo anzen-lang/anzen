@@ -45,6 +45,8 @@ public enum ConstraintPath {
   case parameter(Int)
   /// The r-value of a binding statement.
   case rvalue
+  /// The ownee of a select expression.
+  case select
 
 }
 

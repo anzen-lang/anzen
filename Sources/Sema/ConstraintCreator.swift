@@ -92,6 +92,25 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
     node.type = node.value.type
   }
 
+  public func visit(_ node: SelectExpr) throws {
+    // We use a fresh variable for the node's ownee, which will be used to build  a membership
+    // constraint with the inferred type of the owner.
+    node.ownee.type = TypeVariable()
+    node.type = node.ownee.type
+
+    let ownerType: TypeBase
+    if let owner = node.owner {
+      try visit(owner)
+      ownerType = owner.type!
+    } else {
+      // If the select doesn't have an explicit owner, then the type of the implicit one must be the
+      // the same as that of the ownee.
+      ownerType = node.type!
+    }
+    context.add(constraint:
+      .member(t: ownerType, member: node.ownee.name, u: node.type!, at: .location(node, .select)))
+  }
+
   public func visit(_ node: Ident) throws {
     node.type = TypeVariable()
 
