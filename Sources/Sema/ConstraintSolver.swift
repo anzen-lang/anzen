@@ -155,7 +155,12 @@ public struct ConstraintSolver {
         // left side might be too specific. To tackle this problem, we should create a set of
         // assumptions that each will try to constraint the unknown type to a type compatible with
         // the left one, starting from the most specific one, and ending at `Anything`.
-        //
+        if b == TypeBase.anything {
+          // Since Anything is the top of the lattice, we don't need to find "super-types".
+          assumptions.set(substitution: b, for: var_)
+          return .success
+        }
+
         // FIXME: Until we implement interface conformance, the set of "super-types" of a type can
         // only be composed of the type itself together with `Anything`.
         let choices: [Constraint] = [
