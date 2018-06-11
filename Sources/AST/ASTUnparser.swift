@@ -122,19 +122,22 @@ public final class ASTUnparser: ASTVisitor {
     stack.push(repr)
   }
 
-//  public func visit(_ node: StructDecl) throws {
-//    write("struct ", styled: "magenta")
-//    write(node.name, styled: "yellow")
-//
-//    if includeType { comment(":\(str(node.type))") }
-//
-//    if !node.placeholders.isEmpty {
-//      write("<\(str(items: node.placeholders))>")
-//    }
-//    write(" ")
-//    try visit(node.body)
-//  }
-//
+  public func visit(_ node: StructDecl) throws {
+    var repr = try StyledString("{struct:magenta} {\(node.name):yellow}").description
+
+    if includeType {
+      repr += ":\(str(node.type))".styled("dimmed")
+    }
+
+    if !node.placeholders.isEmpty {
+      let placeholders = node.placeholders.map({ $0.styled("yellow") })
+      repr += "<\(str(items: placeholders))>"
+    }
+    try visit(node.body)
+    repr += " \(stack.pop()!)"
+    stack.push(repr)
+  }
+
 //  public func visit(_ node: InterfaceDecl) throws {
 //    write("interface ", styled: "magenta")
 //    write(node.name, styled: "yellow")
@@ -247,14 +250,6 @@ public final class ASTUnparser: ASTVisitor {
 //    write("]")
 //  }
 //
-//  public func visit(_ node: SelectExpr) throws {
-//    if let owner = node.owner {
-//      try visit(owner)
-//    }
-//    write(".")
-//    try visit(node.ownee)
-//  }
-//
 //  public func visit(_ node: LambdaExpr) throws {
 //    write("fun (")
 //    for parameter in node.parameters {
@@ -271,6 +266,18 @@ public final class ASTUnparser: ASTVisitor {
 //    write(" ")
 //    try visit(node.body)
 //  }
+
+  public func visit(_ node: SelectExpr) throws {
+    var repr = "."
+    if let owner = node.owner {
+      try visit(owner)
+      repr = stack.pop()! + repr
+    }
+    try visit(node.ownee)
+    repr += stack.pop()!
+
+    stack.push(repr)
+  }
 
   public func visit(_ node: Ident) throws {
     var repr = node.name
