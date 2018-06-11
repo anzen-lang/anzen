@@ -117,7 +117,7 @@ public struct SubstitutionTable {
   /// both `t1` and `t2` are defined `t1(v) = t2(v)`. Variables outside of represent intermediate
   /// results introduced by the solver, and irrelevant after reification.
   public func isEquivalent(to other: SubstitutionTable) -> Bool {
-    if self.mappingsRef !== other.mappingsRef {
+    if self.mappingsRef === other.mappingsRef {
       // Nothing to do if both tables are trivially equal.
       return true
     }
