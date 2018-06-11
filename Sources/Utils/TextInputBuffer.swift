@@ -10,7 +10,7 @@ public protocol TextInputBuffer {
 extension TextInputBuffer {
 
   public func read(lines: Int) throws -> [String] {
-    return try read().split(separator: "\n")
+    return try read().split(separator: "\n", omittingEmptySubsequences: false)
       .prefix(lines)
       .map({ String($0) })
   }

@@ -6,8 +6,7 @@ import SystemKit
 extension Console {
 
   func diagnose(range: SourceRange) {
-    let source = try! range.start.source.read()
-    let lines = try! source.read(lines: range.start.line)
+    let lines = try! range.start.source.read(lines: range.start.line)
     guard lines.count == range.start.line else { return }
 
     self.print(lines.last!)
