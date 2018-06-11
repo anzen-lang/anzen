@@ -104,8 +104,9 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
       ownerType = owner.type!
     } else {
       // If the select doesn't have an explicit owner, then the type of the implicit one must be the
-      // the same as that of the ownee.
-      ownerType = node.type!
+      // metatype of that of of the ownee. In other words, `member` should be static.
+      // FIXME: Does this work, knowing that `node.type` is a type variable?
+      ownerType = node.type!.metatype
     }
     context.add(constraint:
       .member(t: ownerType, member: node.ownee.name, u: node.type!, at: .location(node, .select)))
