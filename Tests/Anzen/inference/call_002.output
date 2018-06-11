@@ -1,5 +1,5 @@
 (module_decl id='inference/call_002' inner_scope='inference/call_002'
-  (fun_decl 'mono' type='(x: Anything, y: Anything) -> Anything' symbol='mono' scope='inference/call_002' inner_scope='inference/call_002.mono'
+  (function_decl 'mono' type='(x: Anything, y: Anything) -> Anything' symbol='mono' scope='inference/call_002' inner_scope='inference/call_002.mono'
     (parameters
       (param_decl 'x' type='Anything' symbol='x' scope='inference/call_002.mono'
         (type_annotation

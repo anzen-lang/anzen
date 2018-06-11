@@ -1,5 +1,5 @@
 (module_decl id='inference/call_006' inner_scope='inference/call_006'
-  (fun_decl 'overloaded' type='(x: T) -> T' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
+  (function_decl 'overloaded' type='(x: T) -> T' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
     (placeholders
       (placeholder T))
     (parameters
@@ -10,7 +10,7 @@
     (codomain
       (qual_sign
         (identifier 'T' type='T.metatype' scope='inference/call_006.overloaded'))))
-  (fun_decl 'overloaded' type='(x: Int) -> Int' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
+  (function_decl 'overloaded' type='(x: Int) -> Int' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
     (parameters
       (param_decl 'x' type='Int' symbol='x' scope='inference/call_006.overloaded'
         (type_annotation
@@ -19,7 +19,7 @@
     (codomain
       (qual_sign
         (identifier 'Int' type='Int.metatype' scope='anzen://builtin'))))
-  (fun_decl 'overloaded' type='(x: Bool) -> Bool' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
+  (function_decl 'overloaded' type='(x: Bool) -> Bool' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
     (parameters
       (param_decl 'x' type='Bool' symbol='x' scope='inference/call_006.overloaded'
         (type_annotation

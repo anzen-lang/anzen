@@ -1,5 +1,5 @@
 (module_decl id='inference/call_003' inner_scope='inference/call_003'
-  (fun_decl 'poly' type='(x: T) -> T' symbol='poly' scope='inference/call_003' inner_scope='inference/call_003.poly'
+  (function_decl 'poly' type='(x: T) -> T' symbol='poly' scope='inference/call_003' inner_scope='inference/call_003.poly'
     (placeholders
       (placeholder T))
     (parameters

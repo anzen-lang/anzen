@@ -1,0 +1,10 @@
+(module_decl id='inference/function_decl_001' inner_scope='inference/function_decl_001'
+  (function_decl 'mono' type='(x: Int) -> Int' symbol='mono' scope='inference/function_decl_001' inner_scope='inference/function_decl_001.mono'
+    (parameters
+      (param_decl 'x' type='Int' symbol='x' scope='inference/function_decl_001.mono'
+        (type_annotation
+          (qual_sign
+            (identifier 'Int' type='Int.metatype' scope='anzen://builtin')))))
+    (codomain
+      (qual_sign
+        (identifier 'Int' type='Int.metatype' scope='anzen://builtin')))))

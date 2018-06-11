@@ -1,5 +1,5 @@
 (module_decl id='inference/call_001' inner_scope='inference/call_001'
-  (fun_decl 'mono' type='(x: Int) -> Int' symbol='mono' scope='inference/call_001' inner_scope='inference/call_001.mono'
+  (function_decl 'mono' type='(x: Int) -> Int' symbol='mono' scope='inference/call_001' inner_scope='inference/call_001.mono'
     (parameters
       (param_decl 'x' type='Int' symbol='x' scope='inference/call_001.mono'
         (type_annotation
@@ -8,7 +8,7 @@
     (codomain
       (qual_sign
         (identifier 'Int' type='Int.metatype' scope='anzen://builtin'))))
-  (fun_decl 'mono' type='(x: Bool) -> Bool' symbol='mono' scope='inference/call_001' inner_scope='inference/call_001.mono'
+  (function_decl 'mono' type='(x: Bool) -> Bool' symbol='mono' scope='inference/call_001' inner_scope='inference/call_001.mono'
     (parameters
       (param_decl 'x' type='Bool' symbol='x' scope='inference/call_001.mono'
         (type_annotation
