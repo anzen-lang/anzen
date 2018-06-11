@@ -43,20 +43,35 @@ extension Parser {
 
   /// Parses a function declaration.
   func parseFunDecl() throws -> FunDecl {
-    guard let startToken = consume(.fun)
-      else { throw unexpectedToken(expected: "fun") }
-
-    // Parse the name of the function.
+    let startToken: Token
     let name: String
-    consumeNewlines()
-    if let id = consume(.identifier) {
-      name = id.value!
-    } else if let op = consume(if: { $0.isPrefixOperator }) {
-      name = op.asPrefixOperator!.description
-    } else if let op = consume(if: { $0.isInfixOperator }) {
-      name = op.asInfixOperator!.description
+    let kind: FunctionKind
+
+    if let funToken = consume(.fun) {
+      startToken = funToken
+      kind = .regular
+
+      // Parse the name of the function.
+      consumeNewlines()
+      if let id = consume(.identifier) {
+        name = id.value!
+      } else if let op = consume(if: { $0.isPrefixOperator }) {
+        name = op.asPrefixOperator!.description
+      } else if let op = consume(if: { $0.isInfixOperator }) {
+        name = op.asInfixOperator!.description
+      } else {
+        throw parseFailure(.expectedIdentifier)
+      }
+    } else if let newToken = consume(.new) {
+      startToken = newToken
+      name = "new"
+      kind = .constructor
+    } else if let newToken = consume(.del) {
+      startToken = newToken
+      name = "del"
+      kind = .destructor
     } else {
-      throw parseFailure(.expectedIdentifier)
+      throw unexpectedToken(expected: "fun")
     }
 
     // Parse the optional list of generic placeholders.
@@ -108,7 +123,11 @@ extension Parser {
     }
 
     return FunDecl(
-      name: name, placeholders: placeholders, parameters: parameters, codomain: codomain,
+      name: name,
+      kind: kind,
+      placeholders: placeholders,
+      parameters: parameters,
+      codomain: codomain,
       body: block,
       module: module,
       range: SourceRange(from: startToken.range.start, to: end))
@@ -218,6 +237,13 @@ extension Parser {
     // Parse the body of the type.
     consumeNewlines()
     let body = try parseStatementBlock()
+
+    // Mark all regular functions as methods.
+    for stmt in body.statements {
+      if let methDecl = stmt as? FunDecl, methDecl.kind == .regular {
+        methDecl.kind = .method
+      }
+    }
 
     return NominalType(name: name, placeholders: placeholders, body: body)
   }

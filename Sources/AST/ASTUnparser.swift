@@ -66,7 +66,11 @@ public final class ASTUnparser: ASTVisitor {
       repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
       repr += " "
     }
-    repr += try StyledString("{fun:magenta} {\(node.name):cyan}")
+    if node.kind == .constructor || node.kind == .destructor {
+      repr += node.name.styled("magenta")
+    } else {
+      repr += try StyledString("{fun:magenta} {\(node.name):cyan}")
+    }
 
     if includeType {
       repr += ":\(str(node.type))".styled("dimmed")

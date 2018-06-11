@@ -55,7 +55,6 @@ public final class ModuleDecl: Node, ScopeDelimiter {
 
   /// Stores the statements of the module.
   public var statements: [Node]
-
   /// The identifier of the module.
   public var id: ModuleIdentifier?
   /// The scope delimited by the module.
@@ -75,7 +74,6 @@ public final class Block: Node, ScopeDelimiter {
 
   /// Stores the statements of the module.
   public var statements: [Node]
-
   /// The scope delimited by the block.
   public var innerScope: Scope?
 
@@ -89,6 +87,16 @@ public enum MemberAttribute: String {
   case mutating
   case reassignable
   case `static`
+
+}
+
+/// Enumeration of the different function kinds.
+public enum FunctionKind: String {
+
+  case regular
+  case method
+  case constructor
+  case destructor
 
 }
 
@@ -166,6 +174,7 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
   public init(
     name: String,
     attributes: Set<MemberAttribute> = [],
+    kind: FunctionKind = .regular,
     placeholders: [String] = [],
     parameters: [ParamDecl],
     codomain: Node? = nil,
@@ -174,6 +183,7 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
     range: SourceRange)
   {
     self.attributes = attributes
+    self.kind = kind
     self.placeholders = placeholders
     self.parameters = parameters
     self.codomain = codomain
@@ -183,6 +193,8 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
 
   /// The member attributes of the function.
   public var attributes: Set<MemberAttribute>
+  /// The kind of the function.
+  public var kind: FunctionKind
   /// The generic placeholders of the function.
   public var placeholders: [String]
   /// The domain (i.e. parameters) of the function.
@@ -285,6 +297,20 @@ public final class InterfaceDecl: NominalTypeDecl {
 
 // MARK: Type signatures
 
+/// Enumeration of the type qualifiers.
+public enum TypeQualifier: CustomStringConvertible {
+
+  case cst, mut
+
+  public var description: String {
+    switch self {
+    case .cst: return "@cst"
+    case .mut: return "@mut"
+    }
+  }
+
+}
+
 /// A qualified type signature.
 ///
 /// Qualified type signature comprise a semantic type definition (e.g. a type identifier) and a set
@@ -332,20 +358,6 @@ public final class FunSign: Node {
   ///   either a type identifier (i.e. an instance of `Ident`), or a semantic type signature (i.e.
   ///   an instance of `FunSign` or `StructSign`).
   public var codomain: Node
-
-}
-
-/// Enumeration of the type qualifiers.
-public enum TypeQualifier: CustomStringConvertible {
-
-  case cst, mut
-
-  public var description: String {
-    switch self {
-    case .cst: return "@cst"
-    case .mut: return "@mut"
-    }
-  }
 
 }
 

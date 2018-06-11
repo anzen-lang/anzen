@@ -41,7 +41,7 @@ extension Parser {
 
     case .let, .var:
       return try parsePropDecl()
-    case .fun:
+    case .fun, .new, .del:
       return try parseFunDecl()
     case .struct:
       return try parseStructDecl()

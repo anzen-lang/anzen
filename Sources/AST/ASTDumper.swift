@@ -74,7 +74,13 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   public func visit(_ node: FunDecl) throws {
-    self <<< indent <<< "(fun_decl"
+    self <<< indent
+    switch node.kind {
+    case .regular    : self <<< "(function_decl"
+    case .method     : self <<< "(method_decl"
+    case .constructor: self <<< "(constructor_decl"
+    case .destructor : self <<< "(destructor_decl"
+    }
     if !node.attributes.isEmpty {
       self <<< " " + node.attributes.map({ $0.rawValue }).joined(separator: " ")
     }
