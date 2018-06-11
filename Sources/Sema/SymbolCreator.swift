@@ -51,7 +51,6 @@ public final class SymbolCreator: ASTVisitor, SAPass {
 
   public func visit(_ node: Block) throws {
     // Create a new scope for the block.
-     
     node.innerScope = Scope(name: "block", parent: stack.top!.innerScope)
 
     // Visit the block's statements.
@@ -104,6 +103,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
       symbol.type = phType.metatype
       placeholders.append(phType)
     }
+
     let functionType = context.getFunctionType(
       from: parameters,
       to: TypeVariable(),

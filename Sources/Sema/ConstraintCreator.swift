@@ -26,13 +26,28 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
   }
 
   public func visit(_ node: FunDecl) throws {
-    let fnType = node.type as! FunctionType
+    // Determine the expected codomain of the function.
     let codomain: TypeBase
-    if node.codomain != nil {
+    if node.kind == .constructor {
+      // If the function is a constructor, its return type must be `Self`.
+      assert(node.codomain == nil)
+      let selfSymbol = node.scope?.parent?.symbols["Self"]
+
+      // Assuming constructor declarations outside of a type are caught during AST sanitizing, the
+      // `Self` symbol can be expected to have been defined at this point.
+      assert(selfSymbol != nil, "constructor not declared within a type")
+      assert(selfSymbol?.count == 1, "overloaded 'Self' symbol")
+      assert(selfSymbol![0].type is Metatype, "'Self' should be a metatype")
+      codomain = (selfSymbol![0].type as! Metatype).type
+    } else if node.codomain != nil {
+      // The function has an explicit codomain annotation.
       codomain = typeFromAnnotation(annotation: node.codomain!)
     } else {
+      // In the absence of explicit codomain annotation, use `Nothing`.
       codomain = TypeBase.nothing
     }
+
+    let fnType = node.type as! FunctionType
     context.add(constraint:
       .equality(t: fnType.codomain, u: codomain, at: .location(node, .codomain)))
 
