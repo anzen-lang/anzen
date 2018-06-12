@@ -4,7 +4,7 @@ import SystemKit
 public enum ConstraintKind: Int {
 
   /// An equality constraint `T ~= U` that requires `T` to match `U`.
-  case equality = 3
+  case equality = 10
 
   /// A conformance constraint `T <= U` that requires `T` to be identical to or conforming `U`.
   ///
@@ -13,15 +13,15 @@ public enum ConstraintKind: Int {
   /// * `T` and `U` are function whose domains and codomains conform to each other. For instance if
   ///   `T = (l0: A0, ..., tn: An) -> B` and `U = (l0: C0, ..., Cn) -> D`, then `T <= U` holds if
   ///   `Ai <= Ci` and `B <= D`.
-  case conformance = 2
+  case conformance = 8
 
-  /// A construction constraint `T <+ (U0, ..., Un)` that requires `T` to have a constructor that
-  /// accepts `(U0, ..., Un)` as parameters.
-  // case construction(t: TypeBase, u: [TypeBase])
+  /// A construction constraint `T <+ U` requires `T` to be a metatype, and `U` to be a function
+  /// that constructs `T.type`.
+  case construction = 6
 
   /// A member constraint `T[.name] ~= U` that requires `T` to have a member `name` whose type
   /// matches `U`.
-  case member = 1
+  case member = 4
 
   /// A disjunction of constraints
   case disjunction = 0
@@ -90,6 +90,13 @@ public struct Constraint {
     return Constraint(kind: .member, types: (t, u), member: member, location: location)
   }
 
+  /// Creates a construction constraint.
+  public static func construction(t: TypeBase, u: TypeBase, at location: ConstraintLocation)
+    -> Constraint
+  {
+    return Constraint(kind: .construction, types: (t, u), location: location)
+  }
+
   /// Creates a disjunction constraint.
   public static func disjunction(_ choices: [Constraint], at location: ConstraintLocation)
     -> Constraint
@@ -129,6 +136,8 @@ extension Constraint {
       console.print("\(types!.t) ≤ \(types!.u)".styled("bold"))
     case .member:
       console.print("\(types!.t).\(member!) ≡ \(types!.u)".styled("bold"))
+    case .construction:
+      console.print("\(types!.t) <+ \(types!.u)".styled("bold"))
     case .disjunction:
       console.print("")
       for constraint in choices {

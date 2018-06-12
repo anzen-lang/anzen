@@ -27,7 +27,6 @@ public struct ConstraintSolver {
     while let constraint = constraints.popLast() {
       switch constraint.kind {
       case .equality, .conformance:
-        // Attempt to solve the match-relation constraint.
         guard solve(match: constraint) == .success else {
           return .failure([(reify(constraint: constraint), .typeMismatch)])
         }
@@ -37,8 +36,12 @@ public struct ConstraintSolver {
         // diagnostics as it would let us detect additional errors as well.
 
       case .member:
-        // Attempt to solve the membership constraint.
         guard solve(member: constraint) == .success else {
+          return .failure([(reify(constraint: constraint), .typeMismatch)])
+        }
+
+      case .construction:
+        guard solve(construction: constraint) == .success else {
           return .failure([(reify(constraint: constraint), .typeMismatch)])
         }
 
@@ -243,6 +246,32 @@ public struct ConstraintSolver {
     }
   }
 
+  /// Attempts to solve `T <+ U`.
+  private mutating func solve(construction constraint: Constraint) -> TypeMatchResult {
+    let owner = self.assumptions.substitution(for: constraint.types!.t)
+
+    // Search a member (property or method) named `member` in the owner's type.
+    switch owner {
+    case is TypeVariable:
+      // If the owner's type is unknown, we can't solve the constraint yet.
+      constraints.insert(constraint, at: 0)
+      return .success
+
+    case let metaType as Metatype:
+      // A construction constraint can be transformed into a membership constraint with `T.type` as
+      // the owner and `new` as the member.
+      constraints.append(
+        .member(t: metaType.type, member: "new", u: constraint.types!.u, at: constraint.location))
+      return .success
+
+    default:
+      // If the owner isn't a metatype, the constraint can't be solved.
+      return .failure
+    }
+
+    // FIXME: Handle opened and closed generics.
+  }
+
   /// Opens a type, effectively replacing its placeholders with fresh variables.
   private func open(
     type: TypeBase, with bindings: [PlaceholderType: TypeVariable] = [:]) -> TypeBase
@@ -331,15 +360,16 @@ public struct ConstraintSolver {
 
   /// Reify the types of a constraint.
   private func reify(constraint: Constraint) -> Constraint {
-    switch constraint.kind {
-    case .equality, .conformance, .member:
-      let t = assumptions.reify(type: constraint.types!.t, in: context)
-      let u = assumptions.reify(type: constraint.types!.u, in: context)
-      return Constraint(kind: constraint.kind, types: (t, u), location: constraint.location)
-
-    case .disjunction:
-      return .disjunction(constraint.choices.map(reify), at: constraint.location)
-    }
+    return Constraint(
+      kind: constraint.kind,
+      types: constraint.types.map({ (t, u) -> (TypeBase, TypeBase) in
+        let a = assumptions.reify(type: t, in: context)
+        let b = assumptions.reify(type: u, in: context)
+        return (a, b)
+      }),
+      member: constraint.member,
+      choices: constraint.choices.map(reify),
+      location: constraint.location)
   }
 
 }

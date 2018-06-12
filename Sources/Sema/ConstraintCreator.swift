@@ -87,19 +87,21 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
     node.type = TypeVariable()
     let fnType = context.getFunctionType(from: domain, to: node.type!)
 
-    try visit(node.callee)
-    context.add(constraint:
-      .equality(t: fnType, u: node.callee.type!, at: .location(node, .call)))
-
     // Create conformance constraints for the arguments.
-    let location: ConstraintLocation = .location(node, .call)
+    let loc: ConstraintLocation = .location(node, .call)
     for (i, (argument, parameter)) in zip(node.arguments, fnType.domain).enumerated() {
       try visit(argument)
       context.add(constraint:
-        .conformance(t: argument.type!, u: parameter.type, at: location + .parameter(i)))
+        .conformance(t: argument.type!, u: parameter.type, at: loc + .parameter(i)))
     }
 
-    // FIXME: Create a disjunction with a construction constraint?
+    // The callee may represent a function or a nominal type in case it is used as a constructor.
+    try visit(node.callee)
+    let choices: [Constraint] = [
+      .equality(t: node.callee.type!, u: fnType, at: loc),
+      .construction(t: node.callee.type!, u: fnType, at: loc),
+    ]
+    context.add(constraint: .disjunction(choices, at: loc))
   }
 
   public func visit(_ node: CallArg) throws {
