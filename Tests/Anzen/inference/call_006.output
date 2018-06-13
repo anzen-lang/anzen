@@ -1,5 +1,5 @@
 (module_decl id='inference/call_006' inner_scope='inference/call_006'
-  (function_decl 'overloaded' type='(x: T) -> T' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
+  (function_decl 'overloaded' type='<T> (x: T) -> T' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
     (placeholders
       (placeholder T))
     (parameters

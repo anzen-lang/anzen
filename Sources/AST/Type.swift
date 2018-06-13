@@ -95,7 +95,7 @@ public final class ClosedGenericType: TypeBase, CustomStringConvertible {
   public let bindings: [PlaceholderType: TypeBase]
 
   public var description: String {
-    let placeholders = bindings.map({ "\($0.key) = \($0.value)" }).joined(separator: ", ")
+    let placeholders = bindings.map({ "\($0.key)=\($0.value)" }).joined(separator: ", ")
     return "<\(placeholders)>\(unboundType)"
   }
 
@@ -130,7 +130,9 @@ public class NominalType: TypeBase, GenericType, Hashable, CustomStringConvertib
   }
 
   public var description: String {
-    return name
+    return !placeholders.isEmpty
+      ? name + "<" + placeholders.map({ $0.name }).joined(separator: ", ") + ">"
+      : name
   }
 
 }
@@ -191,7 +193,9 @@ public final class FunctionType: TypeBase, GenericType, CustomStringConvertible 
 
   public var description: String {
     let params = domain.map({ $0.description }).joined(separator: ", ")
-    return "(\(params)) -> \(codomain)"
+    return !placeholders.isEmpty
+      ? "<" + placeholders.map({ $0.name }).joined(separator: ", ") + "> (\(params)) -> \(codomain)"
+      : "(\(params)) -> \(codomain)"
   }
 
 }
