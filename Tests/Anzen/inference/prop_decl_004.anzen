@@ -1,0 +1,8 @@
+// Test property type inference using a generic annotation.
+
+struct Box<T> {
+  let value: T
+}
+
+let box1: Box<T=Int>
+let box2: Box<T=Box<T=Int>>

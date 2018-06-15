@@ -1,0 +1,7 @@
+// Test the construction of a type using a simple initializer.
+
+struct Point {
+  new(x: Int, y: Int) {}
+}
+
+let pt = Point(x = 0, y = 0)

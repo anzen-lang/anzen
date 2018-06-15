@@ -29,22 +29,10 @@ public struct SubstitutionTable {
   }
 
   public func substitution(for type: TypeBase) -> TypeBase {
-    switch type {
-    case let t as TypeVariable:
-      return mappings[t].map {
-        substitution(for: $0)
-      } ?? t
-
-    case let t as ClosedGenericType:
-      let unbound = substitution(for: t.unboundType)
-      if let placeholder = unbound as? PlaceholderType {
-        return substitution(for: t.bindings[placeholder]!)
-      }
-      return ClosedGenericType(unboundType: unbound, bindings: t.bindings)
-
-    default:
-      return type
+    if let var_ = type as? TypeVariable {
+      return mappings[var_].map { substitution(for: $0) } ?? var_
     }
+    return type
   }
 
   public mutating func set(substitution: TypeBase, for var_: TypeVariable) {
@@ -74,7 +62,7 @@ public struct SubstitutionTable {
     }
 
     switch walked {
-    case let t as ClosedGenericType:
+    case let t as BoundGenericType:
       let unbound = reify(type: t.unboundType, in: context, skipping: &visited)
       if let placeholder = unbound as? PlaceholderType {
         return reify(type: t.bindings[placeholder]!, in: context, skipping: &visited)
@@ -84,7 +72,7 @@ public struct SubstitutionTable {
         uniqueKeysWithValues: t.bindings.map({
           ($0.key, reify(type: $0.value, in: context, skipping: &visited))
         }))
-      return ClosedGenericType(unboundType: unbound, bindings: reifiedBindings)
+      return BoundGenericType(unboundType: unbound, bindings: reifiedBindings)
 
     case let t as NominalType:
       // Note that reifying a nominal type actually mutates said type.

@@ -17,9 +17,12 @@ public final class SymbolCreator: ASTVisitor, SAPass {
 
   /// The AST context.
   public let context: ASTContext
-  /// A stack of nodes that keeps track of which scope a new symbol should be created in.
-  private var stack: Stack<ScopeDelimiter> = []
-  /// The error.
+  /// A stack of scopes used to determine in which one a new symbol should be created.
+  private var scopes: Stack<Scope> = []
+  /// A stack of generic placeholders declarations nested inside generic types should inherit.
+  private var placeholders: Stack<[PlaceholderType]> = []
+
+  /// The error symbol.
   private var errorSymbol: Symbol?
   /// Whether or not the built-in module is being visited.
   private var isBuiltinVisited: Bool = false
@@ -41,9 +44,9 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     isBuiltinVisited = node.id == .builtin
 
     // Visit the module's statements.
-    stack.push(node)
+    scopes.push(node.innerScope!)
     try visit(node.statements)
-    stack.pop()
+    scopes.pop()
 
     // FIXME: Extensions that are visited before the type they extend should be revisited once
     // those symbols have been created.
@@ -51,12 +54,12 @@ public final class SymbolCreator: ASTVisitor, SAPass {
 
   public func visit(_ node: Block) throws {
     // Create a new scope for the block.
-    node.innerScope = Scope(name: "block", parent: stack.top!.innerScope)
+    node.innerScope = Scope(name: "block", parent: scopes.top!)
 
     // Visit the block's statements.
-    stack.push(node)
+    scopes.push(node.innerScope!)
     try visit(node.statements)
-    stack.pop()
+    scopes.pop()
   }
 
   public func visit(_ node: PropDecl) throws {
@@ -67,7 +70,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     }
 
     // Create a new symbol for the property, and visit the node's declaration.
-    let scope = stack.top!.innerScope!
+    let scope = scopes.top!
     node.symbol = scope.create(name: node.name, type: TypeVariable())
     try traverse(node)
   }
@@ -80,19 +83,19 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     }
 
     // Create the inner scope of the function.
-    let scope = stack.top!.innerScope!
+    let scope = scopes.top!
     let innerScope = Scope(name: node.name, parent: scope)
     node.innerScope = innerScope
 
     // Visit the function's parameters.
-    stack.push(node)
+    scopes.push(innerScope)
     try visit(node.parameters)
 
     // Create the symbols for the function, its placeholders and its parameters.
     let parameters = node.parameters.map {
       Parameter(label: $0.label, type: $0.type!)
     }
-    var placeholders: [PlaceholderType] = []
+    var functionPlaceholders: [PlaceholderType] = []
     for name in node.placeholders {
       if innerScope.defines(name: name) {
         context.add(error: SAError.duplicateDeclaration(name: name), on: node)
@@ -101,20 +104,26 @@ public final class SymbolCreator: ASTVisitor, SAPass {
       let symbol = innerScope.create(name: name, type: nil)
       let phType = context.getPlaceholderType(for: symbol)
       symbol.type = phType.metatype
-      placeholders.append(phType)
+      functionPlaceholders.append(phType)
     }
+
+    // Pass on generic placeholders from the enclosing generic types, if any.
+    let inheritedPlaceholders = placeholders.top?.filter({ ph in
+      !functionPlaceholders.contains(where: { $0.name == ph.name })
+    }) ?? []
+    functionPlaceholders.insert(contentsOf: inheritedPlaceholders, at: 0)
 
     let functionType = context.getFunctionType(
       from: parameters,
       to: TypeVariable(),
-      placeholders: placeholders)
+      placeholders: functionPlaceholders)
     node.symbol = scope.create(name: node.name, type: functionType, overloadable: true)
 
     // Visit the function's body.
     if let body = node.body {
       try visit(body)
     }
-    stack.pop()
+    scopes.pop()
   }
 
   public func visit(_ node: ParamDecl) throws {
@@ -125,7 +134,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     }
 
     // Create a new symbol for the parameter, and visit the node's declaration.
-    let scope = stack.top!.innerScope!
+    let scope = scopes.top!
     node.symbol = scope.create(name: node.name, type: TypeVariable())
     try traverse(node)
   }
@@ -138,7 +147,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     }
 
     // Create the inner scope of the struct.
-    let scope = stack.top!.innerScope!
+    let scope = scopes.top!
     let innerScope = Scope(name: node.name, parent: scope)
     node.innerScope = innerScope
 
@@ -146,6 +155,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     node.symbol = scope.create(name: node.name, type: nil)
     let declaredType = context.getStructType(for: node.symbol!)
     node.symbol!.type = declaredType.metatype
+
     for name in node.placeholders {
       if innerScope.defines(name: name) {
         context.add(error: SAError.duplicateDeclaration(name: name), on: node)
@@ -157,12 +167,20 @@ public final class SymbolCreator: ASTVisitor, SAPass {
       declaredType.placeholders.append(phType)
     }
 
+    // Pass on generic placeholders from the enclosing generic types, if any.
+    let inheritedPlaceholders = placeholders.top?.filter({ ph in
+      !declaredType.placeholders.contains(where: { $0.name == ph.name })
+    }) ?? []
+    declaredType.placeholders.insert(contentsOf: inheritedPlaceholders, at: 0)
+
     innerScope.create(name: "Self", type: declaredType.metatype)
 
     // Visit the struct's members.
-    stack.push(node)
+    scopes.push(innerScope)
+    placeholders.push(declaredType.placeholders)
     try traverse(node)
-    stack.pop()
+    placeholders.pop()
+    scopes.pop()
 
     // Create the body of the declared type.
     for member in node.body.statements {
@@ -183,7 +201,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
   }
 
   private func canBeDeclared(node: NamedDecl) -> Bool {
-    let scope = stack.top?.innerScope
+    let scope = scopes.top
     assert(scope != nil, "unscoped declaration")
 
     let symbols = scope!.symbols[node.name]

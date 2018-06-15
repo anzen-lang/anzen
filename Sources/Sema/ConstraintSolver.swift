@@ -121,7 +121,7 @@ public struct ConstraintSolver {
     // If the types are obviously equivalent, we're done.
     guard a != b else { return .success }
 
-    // If either `T` or `U` is an unbound generic type, we "open" it.
+    // Open unbound generic types.
     if let generic = a as? GenericType, !generic.placeholders.isEmpty {
       a = open(type: a)
     }
@@ -129,10 +129,24 @@ public struct ConstraintSolver {
       b = open(type: b)
     }
 
-    // If either `T` or `U` is closed but couldn't be reified, we have to postpone the constraint.
-    if a is ClosedGenericType || b is ClosedGenericType {
-      constraints.insert(constraint, at: 0)
-      return .success
+    // Close bound generic types, if the unbound type has already been infered. If that's not the
+    // case, the constraint has to be postponed, as we have no way to determine the final closing
+    // of the bound generic represents.
+    if let bound = a as? BoundGenericType {
+      let unbound = assumptions.substitution(for: bound.unboundType)
+      if unbound is TypeVariable {
+        constraints.insert(constraint, at: 0)
+        return .success
+      }
+      a = close(type: unbound, with: bound.bindings)
+    }
+    if let bound = b as? BoundGenericType {
+      let unbound = assumptions.substitution(for: bound.unboundType)
+      if unbound is TypeVariable {
+        constraints.insert(constraint, at: 0)
+        return .success
+      }
+      b = close(type: unbound, with: bound.bindings)
     }
 
     switch (a, b) {
@@ -217,7 +231,12 @@ public struct ConstraintSolver {
 
   /// Attempts to solve `T[.name] ~= U`.
   private mutating func solve(member constraint: Constraint) -> TypeMatchResult {
-    let owner = self.assumptions.substitution(for: constraint.types!.t)
+    var owner = assumptions.substitution(for: constraint.types!.t)
+    var bindings: [PlaceholderType: TypeBase]? = nil
+    if let bound = owner as? BoundGenericType {
+      owner = assumptions.substitution(for: bound.unboundType)
+      bindings = bound.bindings
+    }
 
     // Search a member (property or method) named `member` in the owner's type.
     switch owner {
@@ -226,14 +245,19 @@ public struct ConstraintSolver {
       constraints.insert(constraint, at: 0)
       return .success
 
-    case let structType as StructType:
-      guard let members = structType.members[constraint.member!]
+    case let nominalType as NominalType:
+      guard let members = nominalType.members[constraint.member!]
         else { return .failure }
 
       // Create a disjunction of membership constraints for each overloaded member.
-      let choices = members.map {
-        Constraint.equality(t: constraint.types!.u, u: $0, at: constraint.location)
+      let choices = members.map { (member) -> Constraint in
+        // If the owner is a bound generic type, close the found member with the same bindings.
+        let u = bindings != nil
+          ? close(type: member, with: bindings!)
+          : member
+        return Constraint.equality(t: constraint.types!.u, u: u, at: constraint.location)
       }
+
       if choices.count == 1 {
         constraints.append(choices[0])
       } else {
@@ -285,6 +309,9 @@ public struct ConstraintSolver {
       return bindings[placeholder] ?? placeholder
 
     case let nominalType as NominalType:
+      // FIXME: Can we reach this path?
+      assertionFailure("unreachable")
+
       // Make sure the type needs to be open.
       guard !nominalType.placeholders.isEmpty else { return nominalType }
 
@@ -315,12 +342,18 @@ public struct ConstraintSolver {
     case let var_ as TypeVariable:
       let reified = assumptions.substitution(for: type)
       if reified is TypeVariable {
-        // If the type is unknown at this point, wrap it inside a `ClosedGenericType` so that it
-        // can be reified later.
-        return ClosedGenericType(unboundType: var_, bindings: bindings)
+        // If the type is unknown at this point, wrap it inside a `ClosedGenericType` so that it can
+        // be reified later.
+        return BoundGenericType(unboundType: var_, bindings: bindings)
       } else {
         return open(type: reified, with: bindings)
       }
+
+    case let bound as BoundGenericType:
+      let updatedBindings = Dictionary(uniqueKeysWithValues: bound.bindings.map({ (key, value) in
+        (key, (value as? PlaceholderType).flatMap({ bindings[$0] }) ?? value)
+      }))
+      return BoundGenericType(unboundType: bound.unboundType, bindings: updatedBindings)
 
     case let abstract:
       fatalError("can't open abstract type \(Swift.type(of: abstract))")
@@ -334,24 +367,33 @@ public struct ConstraintSolver {
       return close(type: metatype.type, with: bindings).metatype
 
     case let placeholder as PlaceholderType:
-      return bindings[placeholder].map {
-        assumptions.substitution(for: $0)
-      } ?? placeholder
+      assert(bindings.keys.contains(placeholder), "partial specializations aren't supported yet")
+      return assumptions.substitution(for: bindings[placeholder]!)
 
-    case is NominalType, is FunctionType:
-      fatalError("todo")
-
-    case let closedGeneric as ClosedGenericType:
-      let reified = assumptions.substitution(for: closedGeneric.unboundType)
-      if reified is TypeVariable {
-        // We can't close the type if it's still unknown.
-        return closedGeneric
-      } else {
-        return close(type: reified, with: bindings)
+    case let functionType as FunctionType:
+      let domain = functionType.domain.map {
+        Parameter(label: $0.label, type: close(type: $0.type, with: bindings))
       }
+      let codomain = close(type: functionType.codomain, with: bindings)
+      return context.getFunctionType(from: domain, to: codomain)
+
+    case let nominalType as NominalType:
+      // We intentionally don't reify bound nominal types, so as to preserve the parameters with
+      // which they should be bound.
+      let typeBindings = bindings.filter { nominalType.placeholders.contains($0.key) }
+      return nominalType.placeholders.isEmpty
+        ? nominalType
+        : BoundGenericType(unboundType: nominalType, bindings: typeBindings)
+
+    case let boundGeneric as BoundGenericType:
+      let unbound = assumptions.substitution(for: boundGeneric.unboundType)
+      return close(type: unbound, with: bindings)
 
     case is TypeVariable:
-      unreachable()
+      let substitution = assumptions.substitution(for: type)
+      return substitution is TypeVariable
+        ? type
+        : close(type: substitution, with: bindings)
 
     case let abstract:
       fatalError("can't close abstract type \(Swift.type(of: abstract))")

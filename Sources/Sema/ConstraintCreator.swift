@@ -26,6 +26,8 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
   }
 
   public func visit(_ node: FunDecl) throws {
+    let fnType = node.type as! FunctionType
+
     // Determine the expected codomain of the function.
     let codomain: TypeBase
     if node.kind == .constructor {
@@ -37,8 +39,24 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
       // `Self` symbol can be expected to have been defined at this point.
       assert(selfSymbol != nil, "constructor not declared within a type")
       assert(selfSymbol?.count == 1, "overloaded 'Self' symbol")
-      assert(selfSymbol![0].type is Metatype, "'Self' should be a metatype")
-      codomain = (selfSymbol![0].type as! Metatype).type
+      guard
+        let selfMeta = selfSymbol![0].type as? Metatype,
+        let selfType = selfMeta.type as? NominalType else
+      {
+        fatalError("'Self' should be a nominal type")
+      }
+
+      if selfType.placeholders.isEmpty {
+        codomain = selfType
+      } else {
+        // If `Self` is generic, we must bound it to the placeholders of the method. Note that they
+        // should necesarily include those of `Self`, as the method should have inherited them
+        // during symbol creation.
+        // FIXME: This should be done for every reference to self as an annotation!
+        assert(selfType.placeholders.all(satisfy: { fnType.placeholders.contains($0) }))
+        let bindings = Dictionary(uniqueKeysWithValues: selfType.placeholders.map({ ($0, $0) }))
+        codomain = BoundGenericType(unboundType: selfType, bindings: bindings)
+      }
     } else if node.codomain != nil {
       // The function has an explicit codomain annotation.
       codomain = typeFromAnnotation(annotation: node.codomain!)
@@ -47,7 +65,6 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
       codomain = TypeBase.nothing
     }
 
-    let fnType = node.type as! FunctionType
     context.add(constraint:
       .equality(t: fnType.codomain, u: codomain, at: .location(node, .codomain)))
 
@@ -130,14 +147,17 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
   }
 
   public func visit(_ node: Ident) throws {
-    node.type = TypeVariable()
-
-    // FIXME: Handle explicit generic parameters.
-
     // Retrieve the symbol(s) associated with the identifier. If there're more than one, create a
     // disjunction constraint to model the different choices.
-    let symbols = node.scope!.symbols[node.name] ?? []
-    assert(!symbols.isEmpty)
+    guard let symbols = node.scope?.symbols[node.name] else {
+      node.type = ErrorType.get
+      return
+    }
+
+    // FIXME: Handle explicit generic parameters.
+    assert(node.specializations.isEmpty, "bound metatypes aren't unsupported yet")
+
+    node.type = TypeVariable()
     let choices: [Constraint] = symbols.map {
       .equality(t: node.type!, u: $0.type!, at: .location(node, .identifier))
     }
@@ -189,6 +209,22 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
         context.add(error: SAError.invalidTypeIdentifier(name: ident.name), on: ident)
         return ErrorType.get
       }
+
+      if !ident.specializations.isEmpty {
+        // If there are specialization arguments, we can use them to close the generic.
+        var bindings: [PlaceholderType: TypeBase] = [:]
+        for (key, value) in ident.specializations {
+          guard let placeholder = type.placeholders.first(where: { $0.name == key }) else {
+            context.add(error: SAError.superfluousSpecialization(name: key), on: ident)
+            return ErrorType.get
+          }
+          bindings[placeholder] = typeFromAnnotation(annotation: value)
+        }
+        let closed = BoundGenericType(unboundType: type, bindings: bindings)
+        ident.type = closed.metatype
+        return closed
+      }
+
       ident.type = type.metatype
       return type
 

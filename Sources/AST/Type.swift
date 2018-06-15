@@ -12,7 +12,7 @@ public class TypeBase: Equatable {
 
   /// Returns whether this type is a subtype of another.
   public func isSubtype(of other: TypeBase) -> Bool {
-    return false
+    return (self != other) && (other == TypeBase.anything)
   }
 
   public static func == (lhs: TypeBase, rhs: TypeBase) -> Bool {
@@ -82,7 +82,7 @@ public protocol GenericType {
 }
 
 /// Class to represent a possibly incomplete type whose placeholders have been fixed.
-public final class ClosedGenericType: TypeBase, CustomStringConvertible {
+public final class BoundGenericType: TypeBase, CustomStringConvertible {
 
   public init(unboundType: TypeBase, bindings: [PlaceholderType: TypeBase]) {
     self.unboundType = unboundType
