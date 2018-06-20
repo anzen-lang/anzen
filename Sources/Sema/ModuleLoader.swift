@@ -67,7 +67,7 @@ open class DefaultModuleLoader: ModuleLoader {
     // Apply the solution of the solver (if any) and dispatch identifiers to their symbol.
     stopwatch.reset()
     switch result {
-    case .success(let solution, _):
+    case .success(let solution):
       try TypeApplier(context: context, solution: solution).visit(module)
 
     case .failure(let errors):

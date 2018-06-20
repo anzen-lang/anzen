@@ -39,24 +39,9 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
       // `Self` symbol can be expected to have been defined at this point.
       assert(selfSymbol != nil, "constructor not declared within a type")
       assert(selfSymbol?.count == 1, "overloaded 'Self' symbol")
-      guard
-        let selfMeta = selfSymbol![0].type as? Metatype,
-        let selfType = selfMeta.type as? NominalType else
-      {
-        fatalError("'Self' should be a nominal type")
-      }
-
-      if selfType.placeholders.isEmpty {
-        codomain = selfType
-      } else {
-        // If `Self` is generic, we must bound it to the placeholders of the method. Note that they
-        // should necesarily include those of `Self`, as the method should have inherited them
-        // during symbol creation.
-        // FIXME: This should be done for every reference to self as an annotation!
-        assert(selfType.placeholders.all(satisfy: { fnType.placeholders.contains($0) }))
-        let bindings = Dictionary(uniqueKeysWithValues: selfType.placeholders.map({ ($0, $0) }))
-        codomain = BoundGenericType(unboundType: selfType, bindings: bindings)
-      }
+      guard let selfMeta = selfSymbol![0].type as? Metatype
+        else { fatalError("invalid 'Self' type") }
+      codomain = selfMeta.type
     } else if node.codomain != nil {
       // The function has an explicit codomain annotation.
       codomain = typeFromAnnotation(annotation: node.codomain!)
@@ -203,8 +188,7 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
       // must be typed with a metatype.
       guard
         symbols.count == 1,
-        let meta = symbols[0].type as? Metatype,
-        let type = meta.type as? NominalType else
+        let meta = symbols[0].type as? Metatype else
       {
         context.add(error: SAError.invalidTypeIdentifier(name: ident.name), on: ident)
         return ErrorType.get
@@ -212,6 +196,10 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
 
       if !ident.specializations.isEmpty {
         // If there are specialization arguments, we can use them to close the generic.
+        guard let type = meta.type as? GenericType else {
+          context.add(error: SAError.nonGenericType(type: meta.type), on: ident)
+          return ErrorType.get
+        }
         var bindings: [PlaceholderType: TypeBase] = [:]
         for (key, value) in ident.specializations {
           guard let placeholder = type.placeholders.first(where: { $0.name == key }) else {
@@ -220,13 +208,21 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
           }
           bindings[placeholder] = typeFromAnnotation(annotation: value)
         }
-        let closed = BoundGenericType(unboundType: type, bindings: bindings)
+
+        let closed: TypeBase
+        if let nominalType = type as? NominalType {
+          closed = BoundGenericType(unboundType: nominalType, bindings: bindings)
+        } else {
+          assert(type is FunctionType)
+          fatalError("todo")
+        }
+
         ident.type = closed.metatype
         return closed
       }
 
-      ident.type = type.metatype
-      return type
+      ident.type = meta
+      return meta.type
 
     default:
       unreachable()

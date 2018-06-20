@@ -36,7 +36,13 @@ public struct SubstitutionTable {
   }
 
   public mutating func set(substitution: TypeBase, for var_: TypeVariable) {
-    mappings[var_] = substitution
+    let walked = self.substitution(for: var_)
+    guard let key = walked as? TypeVariable else {
+      assert(walked == substitution, "inconsistent substitution")
+      return
+    }
+    assert(key != substitution, "occur check failed")
+    mappings[key] = substitution
   }
 
   public func reified(in context: ASTContext) -> SubstitutionTable {

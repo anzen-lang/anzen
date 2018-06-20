@@ -173,7 +173,17 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     }) ?? []
     declaredType.placeholders.insert(contentsOf: inheritedPlaceholders, at: 0)
 
-    innerScope.create(name: "Self", type: declaredType.metatype)
+    // Introduce `Self` in the scope.
+    if declaredType.placeholders.isEmpty {
+      innerScope.create(name: "Self", type: declaredType.metatype)
+    } else {
+      // If `Self` is generic, we must bound it to the placeholders of the method. Note that they
+      // should necesarily include those of `Self`, as the method should have inherited them
+      // during symbol creation.
+      let bindings = Dictionary(uniqueKeysWithValues: declaredType.placeholders.map({ ($0, $0) }))
+      let selfType = BoundGenericType(unboundType: declaredType, bindings: bindings)
+      innerScope.create(name: "Self", type: selfType.metatype)
+    }
 
     // Visit the struct's members.
     scopes.push(innerScope)

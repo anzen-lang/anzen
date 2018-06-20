@@ -33,6 +33,8 @@ public enum ConstraintPath: Equatable {
 
   /// The type annotation of a property or parameter declaration.
   case annotation
+  /// A generic binding.
+  case binding(PlaceholderType)
   /// The call site of a function.
   case call
   /// The codomain of a function type.
@@ -52,9 +54,10 @@ public enum ConstraintPath: Equatable {
     case (.call             , .call)              : return true
     case (.codomain         , .codomain)          : return true
     case (.identifier       , .identifier)        : return true
-    case (.parameter(let pl), .parameter(let pr)) : return pl == pr
     case (.rvalue           , .rvalue)            : return true
     case (.select           , .select)            : return true
+    case (.binding(let pl)  , .binding(let pr))   : return pl == pr
+    case (.parameter(let pl), .parameter(let pr)) : return pl == pr
     default                                       : return false
     }
   }
