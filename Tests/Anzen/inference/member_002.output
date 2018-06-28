@@ -23,7 +23,7 @@
         (owner
           (identifier 'box1' type='<T=Int>Box<T>' scope='inference/member_002'))
         (ownee
-          (identifier 'value' type='Int' scope='_')))))
+          (identifier 'value' type='Int' scope='inference/member_002.Box.block')))))
   (prop_decl let 'val2' type='String' symbol='val2' scope='inference/member_002'
     (initial_binding
       (binding_operator =)
@@ -31,4 +31,4 @@
         (owner
           (identifier 'box2' type='<T=String>Box<T>' scope='inference/member_002'))
         (ownee
-          (identifier 'value' type='String' scope='_'))))))
+          (identifier 'value' type='String' scope='inference/member_002.Box.block'))))))

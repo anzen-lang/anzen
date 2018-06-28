@@ -76,10 +76,8 @@ private func XCTAssertLinesEqual(_ lhs: String, _ rhs: String, path: Path) {
   let rhsLines = rhs.split(separator: "\n")
 
   var errors: [(lineno: Int, lhs: String, rhs: String)] = []
-  for (i, (ll, rl)) in zip(lhsLines, rhsLines).enumerated() {
-    if ll != rl {
-      errors.append((lineno: i + 1, lhs: String(ll), rhs: String(rl)))
-    }
+  for (i, (ll, rl)) in zip(lhsLines, rhsLines).enumerated() where ll != rl {
+    errors.append((lineno: i + 1, lhs: String(ll), rhs: String(rl)))
   }
 
   guard errors.isEmpty else {

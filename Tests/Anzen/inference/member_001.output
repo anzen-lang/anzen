@@ -21,4 +21,4 @@
         (owner
           (identifier 'p' type='Point' scope='inference/member_001'))
         (ownee
-          (identifier 'x' type='Int' scope='_'))))))
+          (identifier 'x' type='Int' scope='inference/member_001.Point.block'))))))
