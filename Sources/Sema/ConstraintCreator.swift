@@ -47,7 +47,7 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
       codomain = typeFromAnnotation(annotation: node.codomain!)
     } else {
       // In the absence of explicit codomain annotation, use `Nothing`.
-      codomain = TypeBase.nothing
+      codomain = NothingType.get
     }
 
     context.add(constraint:

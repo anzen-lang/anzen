@@ -180,7 +180,7 @@ public struct ConstraintSolver {
         // left side might be too specific. To tackle this problem, we should create a set of
         // assumptions that each will try to constraint the unknown type to a type compatible with
         // the left one, starting from the most specific one, and ending at `Anything`.
-        if b == TypeBase.anything {
+        if b == AnythingType.get {
           // Since Anything is the top of the lattice, we don't need to find "super-types".
           assumptions.set(substitution: b, for: var_)
           return .success
@@ -190,7 +190,7 @@ public struct ConstraintSolver {
         // only be composed of the type itself together with `Anything`.
         let choices: [Constraint] = [
           .equality(t: b, u: a, at: constraint.location),
-          .equality(t: b, u: TypeBase.anything, at: constraint.location),
+          .equality(t: b, u: AnythingType.get, at: constraint.location),
         ]
         constraints.insert(.disjunction(choices, at: constraint.location), at: 0)
         return .success
@@ -199,7 +199,7 @@ public struct ConstraintSolver {
       assumptions.set(substitution: a, for: var_)
       return .success
 
-    case (_, TypeBase.anything) where constraint.kind == .conformance:
+    case (_, AnythingType.get) where constraint.kind == .conformance:
       // All types trivially conform to `Anything`.
       return .success
 

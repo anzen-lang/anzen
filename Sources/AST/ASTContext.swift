@@ -63,23 +63,23 @@ public final class ASTContext {
   }
 
   /// Retrieves or create a struct type.
-  public func getStructType(for symbol: Symbol) -> StructType {
-    return getType(for: symbol)
+  public func getStructType(for symbol: Symbol, memberScope: Scope) -> StructType {
+    return getType(for: symbol, memberScope: memberScope)
   }
 
   /// Retrieves or create a placeholder type.
   public func getPlaceholderType(for symbol: Symbol) -> PlaceholderType {
-    return getType(for: symbol)
+    return getType(for: symbol, memberScope: nil)
   }
 
   /// Retrieves or create a nominal type.
-  public func getType<Ty>(for symbol: Symbol) -> Ty where Ty: NominalType {
+  public func getType<Ty>(for symbol: Symbol, memberScope: Scope?) -> Ty where Ty: NominalType {
     if let nominal = nominalTypes[symbol] {
       let ty = nominal as? Ty
       assert(ty != nil, "\(nominal) is not a \(Ty.self)")
       return ty!
     }
-    let ty = Ty(name: symbol.name)
+    let ty = Ty(name: symbol.name, memberScope: memberScope)
     nominalTypes[symbol] = ty
     return ty
   }
@@ -93,34 +93,24 @@ public final class ASTContext {
 
   // MARK: Built-ins
 
-  /// The built-in scope.
-  public lazy var builtinScope: Scope = loadScope(for: .builtin)
-  /// The stdlib scope.
-  public lazy var stdlibScope: Scope = loadScope(for: .stdlib)
+  /// Anzen's `Anything` type.
+  public var anythingType: AnythingType { return builtinTypes["Anything"] as! AnythingType }
+  /// Anzen's `Nothing` type.
+  public var nothingType: NothingType { return builtinTypes["Nothing"] as! NothingType }
 
   /// The built-in types.
-  public lazy var builtinTypes: [String: NominalType] = {
+  public lazy var builtinTypes: [String: TypeBase] = {
     do {
       let module = try getModule(moduleID: .builtin)
       return Dictionary(
         uniqueKeysWithValues: module.typeDecls.map({
           let meta = ($0.type as! Metatype)
-          let type = meta.type as! NominalType
-          return ($0.name, type)
+          return ($0.name, meta.type)
         }))
     } catch {
       fatalError("unable to load built-in module: \(error)")
     }
   }()
-
-  private func loadScope(for moduleID: ModuleIdentifier) -> Scope {
-    do {
-      let module = try getModule(moduleID: moduleID)
-      return module.innerScope!
-    } catch {
-      fatalError("unable to load \(moduleID): \(error)")
-    }
-  }
 
   // MARK: Diagnostics
 

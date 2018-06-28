@@ -68,7 +68,7 @@ open class DefaultModuleLoader: ModuleLoader {
     stopwatch.reset()
     switch result {
     case .success(let solution):
-      try TypeApplier(context: context, solution: solution).visit(module)
+      try Dispatcher(context: context, solution: solution).visit(module)
 
     case .failure(let errors):
       for error in errors {
@@ -84,7 +84,7 @@ open class DefaultModuleLoader: ModuleLoader {
       System.err.print("Loading module '\(moduleID.qualifiedName)' ...".styled("bold"))
       System.err.print("- Parsed in \(parseTime.humanFormat)")
       System.err.print("- Created type constraints in \(constraintCreationTime.humanFormat)")
-      if verbosity >= .debug {
+      if verbosity >= .debug && (moduleID != .builtin) && (moduleID != .stdlib) {
         for constraint in context.typeConstraints {
           constraint.prettyPrint(in: System.err, level: 2)
         }

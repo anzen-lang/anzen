@@ -624,9 +624,15 @@ public final class Ident: Expr {
   public var name: String
   /// The specialization list of the identifier.
   public var specializations: [String: Node]
-
   /// The scope in which the identifier's defined.
   public var scope: Scope?
+
+  /// The symbol associated with the name of this identifier.
+  ///
+  /// Identifiers might refer to overloaded names. As such, unlike other named nodes, they have to
+  /// annotated with the symbol they actually refer to, which will be defined during the static
+  /// dispatching phase.
+  public var symbol: Symbol?
 
 }
 

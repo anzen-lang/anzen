@@ -12,7 +12,7 @@ public class TypeBase: Equatable {
 
   /// Returns whether this type is a subtype of another.
   public func isSubtype(of other: TypeBase) -> Bool {
-    return (self != other) && (other == TypeBase.anything)
+    return (self != other) && (other == AnythingType.get)
   }
 
   /// Opens the type, replacing occurences of placeholders with fresh variables.
@@ -20,25 +20,20 @@ public class TypeBase: Equatable {
     using bindings: [PlaceholderType: TypeVariable] = [:],
     in context: ASTContext) -> TypeBase
   {
-    fatalError("can't open abstract type \(type(of: self))")
+    return self
   }
 
   /// Closes the type, effectively replacing its placeholders with their given substitution.
   public func close(
-    using bindings: [PlaceholderType: TypeBase],
+    using bindings: [PlaceholderType: TypeBase] = [:],
     in context: ASTContext) -> TypeBase
   {
-    fatalError("can't close abstract type \(type(of: self))")
+    return self
   }
 
   public static func == (lhs: TypeBase, rhs: TypeBase) -> Bool {
     return lhs === rhs
   }
-
-  /// The built-in `Anything` type, which represents the top of the lattice.
-  public static let anything = StructType(name: "Anything")
-  /// The built-in `Nothing` type, which represents the bottom of the lattice.
-  public static let nothing = StructType(name: "Nothing")
 
 }
 
@@ -65,30 +60,30 @@ public final class Metatype: TypeBase, CustomStringConvertible {
 
 }
 
+/// Anzen's `Anything` type.
+public final class AnythingType: TypeBase, CustomStringConvertible {
+
+  public static let get = AnythingType()
+
+  public let description = "Anything"
+
+}
+
+/// Anzen's `Nothing` type.
+public final class NothingType: TypeBase, CustomStringConvertible {
+
+  public static let get = NothingType()
+
+  public let description = "Nothing"
+
+}
+
 /// A special type that's used to represent a typing failure.
 public final class ErrorType: TypeBase, CustomStringConvertible {
 
   public static let get = ErrorType()
 
-  /// Opens the type, replacing occurences of placeholders with fresh variables.
-  public override func open(
-    using bindings: [PlaceholderType: TypeVariable] = [:],
-    in context: ASTContext) -> TypeBase
-  {
-    return self
-  }
-
-  /// Closes the type, effectively replacing its placeholders with their given substitution.
-  public override func close(
-    using bindings: [PlaceholderType: TypeBase] = [:],
-    in context: ASTContext) -> TypeBase
-  {
-    return self
-  }
-
-  public var description: String {
-    return "<error type>"
-  }
+  public let description = "<error type>"
 
 }
 
@@ -184,12 +179,15 @@ public final class BoundGenericType: TypeBase, CustomStringConvertible {
 /// Class to represent types whose name can be use to distinguish structurally-similar types.
 public class NominalType: TypeBase, GenericType, Hashable, CustomStringConvertible {
 
-  public required init(name: String) {
+  public required init(name: String, memberScope: Scope?) {
     self.name = name
+    self.memberScope = memberScope
   }
 
   /// The name of the type.
   public let name: String
+  /// The scope of the type's members.
+  public let memberScope: Scope?
   /// The type placeholders of the type, in case the type's generic.
   public var placeholders: [PlaceholderType] = []
   /// The members of the type.
@@ -198,7 +196,7 @@ public class NominalType: TypeBase, GenericType, Hashable, CustomStringConvertib
   /// Returns whether this type is a subtype of another.
   public override func isSubtype(of other: TypeBase) -> Bool {
     // FIXME: Handle interface conformance.
-    return (self != other) && (other == TypeBase.anything)
+    return (self != other) && (other == AnythingType.get)
   }
 
   /// Opens the type, replacing occurences of placeholders with fresh variables.
@@ -206,19 +204,7 @@ public class NominalType: TypeBase, GenericType, Hashable, CustomStringConvertib
     using bindings: [PlaceholderType: TypeVariable] = [:],
     in context: ASTContext) -> TypeBase
   {
-    // FIXME: Can we reach this path?
-    assertionFailure("unreachable")
-
-    // Make sure the type needs to be open.
-    guard !placeholders.isEmpty
-      else { return self }
-
-    // Notice that nominal types aren't opened recursively. Instead, we simply store what fresh
-    // variables placeholders should be bound to.
-    let updatedBindings = bindings.merging(
-      placeholders.map { (key: $0, value: TypeVariable()) },
-      uniquingKeysWith: { lhs, _ in lhs })
-    return OpenedNominalType(unboundType: self, bindings: updatedBindings)
+    unreachable()
   }
 
   /// Closes the type, effectively replacing its placeholders with their given substitution.
@@ -276,25 +262,6 @@ public final class PlaceholderType: NominalType {
 /// A struct type.
 public final class StructType: NominalType {}
 
-/// Class to represent a opened nominal generic type that hasn't been been closed yet.
-public final class OpenedNominalType: TypeBase, CustomStringConvertible {
-
-  public init(unboundType: NominalType, bindings: [PlaceholderType: TypeVariable]) {
-    self.unboundType = unboundType
-    self.bindings = bindings
-  }
-
-  /// The generic type with unbound placeholders.
-  public let unboundType: NominalType
-  /// The fresh variables used for which placeholders are substituted.
-  public let bindings: [PlaceholderType: TypeVariable]
-
-  public var description: String {
-    return "opened(\(unboundType))"
-  }
-
-}
-
 /// Class to represent function types.
 public final class FunctionType: TypeBase, GenericType, CustomStringConvertible {
 
@@ -314,7 +281,7 @@ public final class FunctionType: TypeBase, GenericType, CustomStringConvertible 
   /// Returns whether this type is a subtype of another.
   public override func isSubtype(of other: TypeBase) -> Bool {
     guard let rhs = other as? FunctionType else {
-      return other == TypeBase.anything
+      return other == AnythingType.get
     }
 
     guard domain.count == rhs.domain.count else { return false }

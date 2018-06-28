@@ -1,24 +1,30 @@
+struct Anything {
+}
+
+struct Nothing {
+}
+
 struct Bool {
 
   fun and (_ lhs: Self, _ rhs: Self) -> Self
-//   fun or  (_ lhs: Self, _ rhs: Self) -> Self
-//   fun ==  (_ lhs: Self, _ rhs: Self) -> Self
+  fun or  (_ lhs: Self, _ rhs: Self) -> Self
+  fun ==  (_ lhs: Self, _ rhs: Self) -> Self
 
 }
 
 struct Int {
 
-//   fun +  (_ lhs: Self, _ rhs: Self) -> Self
-//   fun -  (_ lhs: Self, _ rhs: Self) -> Self
-//   fun *  (_ lhs: Self, _ rhs: Self) -> Self
-//   fun /  (_ lhs: Self, _ rhs: Self) -> Self
-//   fun %  (_ lhs: Self, _ rhs: Self) -> Self
+  fun +  (_ lhs: Self, _ rhs: Self) -> Self
+  fun -  (_ lhs: Self, _ rhs: Self) -> Self
+  fun *  (_ lhs: Self, _ rhs: Self) -> Self
+  fun /  (_ lhs: Self, _ rhs: Self) -> Self
+  fun %  (_ lhs: Self, _ rhs: Self) -> Self
 
-//   fun == (_ lhs: Self, _ rhs: Self) -> Bool
-//   fun <  (_ lhs: Self, _ rhs: Self) -> Bool
-//   fun <= (_ lhs: Self, _ rhs: Self) -> Bool
-//   fun >  (_ lhs: Self, _ rhs: Self) -> Bool
-//   fun >= (_ lhs: Self, _ rhs: Self) -> Bool
+  fun == (_ lhs: Self, _ rhs: Self) -> Bool
+  fun <  (_ lhs: Self, _ rhs: Self) -> Bool
+  fun <= (_ lhs: Self, _ rhs: Self) -> Bool
+  fun >  (_ lhs: Self, _ rhs: Self) -> Bool
+  fun >= (_ lhs: Self, _ rhs: Self) -> Bool
 
 }
 
@@ -26,6 +32,15 @@ struct Float {
 }
 
 struct String {
+}
+
+struct Array<Element> {
+}
+
+struct Set<Element> {
+}
+
+struct Map<Key, Element> {
 }
 
 fun print(_ item: Anything) -> Nothing

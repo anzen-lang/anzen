@@ -34,23 +34,11 @@ public class Scope {
     return symbol
   }
 
-  /// Returns the first scope in the hierarchy for which a symbol with the given name exists.
-  public func findScope(declaring name: String) -> Scope? {
-    if self.symbols[name] != nil {
-      return self
-    } else if let parent = self.parent {
-      return parent.findScope(declaring: name)
-    } else {
-      return nil
-    }
-  }
-
   public weak var parent: Scope?
   public weak var module: ModuleDecl?
 
   public let id: Int
   public let name: String?
-  public var children: [Scope] = []
   public var symbols: [String: [Symbol]] = [:]
 
   fileprivate static var nextID = 0

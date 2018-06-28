@@ -7,19 +7,35 @@ public final class NameBinder: ASTVisitor, SAPass {
     self.context = context
   }
 
+  /// The AST context.
+  public let context: ASTContext
+  /// A stack of scope, used to bind symbols to their respective scope, lexically.
+  private var scopes: Stack<Scope> = []
+
+  /// Keeps track of what identifier is being declared while visiting its declaration.
+  ///
+  /// This mapping keeps track of the identifier being declared while visiting its declaration,
+  /// which is necessary to properly map the scopes of declaration expressions that refer to the
+  /// same name as the identifier under declaration, but from an enclosing scope. For instance:
+  ///
+  ///     let x = 0
+  ///     fun f() { let x = x }
+  ///
+  private var underDeclaration: [Scope: String] = [:]
+
   public func visit(_ node: ModuleDecl) throws {
     // Don't implicitly import core symbols if the module describing them is being visited.
     if node.id != .builtin {
-      scopes.push(context.builtinScope)
+      scopes.push(try context.getModule(moduleID: .builtin).innerScope!)
       if node.id != .stdlib {
-        scopes.push(context.stdlibScope)
+        scopes.push(try context.getModule(moduleID: .stdlib).innerScope!)
       }
     }
 
     // Note that all modules implicitly import Anzen's core modules so that symbols from those can
     // be referred without prefixing. This gets done by having the scopes of user modules descend
     // from that of Anzen's core libraries.
-    node.innerScope!.parent = scopes.top
+    // node.innerScope!.parent = scopes.top
 
     scopes.push(node.innerScope!)
     try visit(node.statements)
@@ -69,22 +85,11 @@ public final class NameBinder: ASTVisitor, SAPass {
 
   public func visit(_ node: Ident) throws {
     // Find the scope that defines the visited identifier.
-    guard let scope = scopes.top?.findScope(declaring: node.name) else {
+    guard let scope = findScope(declaring: node.name) else {
       context.add(error: SAError.undefinedSymbol(name: node.name), on: node)
       return
     }
-
-    // If we're visiting the initial value of the identifier's declaration (e.g. as part of a
-    // property declaration), we should bind it to an enclosing scope.
-    if underDeclaration[scope] == node.name {
-      guard let parent = scope.parent?.findScope(declaring: node.name) else {
-        context.add(error: SAError.undefinedSymbol(name: node.name), on: node)
-        return
-      }
-      node.scope = parent
-    } else {
-      node.scope = scope
-    }
+    node.scope = scope
 
     // Visit the specializations.
     for specialization in node.specializations {
@@ -92,20 +97,18 @@ public final class NameBinder: ASTVisitor, SAPass {
     }
   }
 
-  /// The AST context.
-  public let context: ASTContext
-  /// A stack of scope, used to bind symbols to their respective scope, lexically.
-  private var scopes: Stack<Scope> = []
+  private func findScope(declaring name: String) -> Scope? {
+    let candidates = scopes.reversed()
+    guard let index = candidates.index(where: { $0.symbols[name] != nil })
+      else { return nil }
 
-  /// Keeps track of what identifier is being declared while visiting its declaration.
-  ///
-  /// This mapping keeps track of the identifier being declared while visiting its declaration,
-  /// which is necessary to properly map the scopes of declaration expressions that refer to the
-  /// same name as the identifier under declaration, but from an enclosing scope. For instance:
-  ///
-  ///     let x = 0
-  ///     fun f() { let x = x }
-  ///
-  private var underDeclaration: [Scope: String] = [:]
+    if underDeclaration[scopes[index]] == name {
+      // If we're visiting the initial value of the identifier's declaration , we should bind it to
+      // an enclosing scope.
+      return candidates.dropFirst(index + 1).first { $0.symbols[name] != nil }
+    } else {
+      return scopes[index]
+    }
+  }
 
 }

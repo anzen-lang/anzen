@@ -31,11 +31,6 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     // Create a new scope for the module.
     node.innerScope = Scope(name: node.id?.qualifiedName, module: node)
 
-    if node.id == .builtin {
-      node.innerScope?.create(name: "Anything", type: TypeBase.anything.metatype)
-      node.innerScope?.create(name: "Nothing", type: TypeBase.nothing.metatype)
-    }
-
     // Create the module's error symbol.
     errorSymbol = node.innerScope?.create(name: "<error>", type: ErrorType.get)
 
@@ -146,14 +141,27 @@ public final class SymbolCreator: ASTVisitor, SAPass {
       return
     }
 
-    // Create the inner scope of the struct.
+    // Create the inner scopes of the struct.
     let scope = scopes.top!
     let innerScope = Scope(name: node.name, parent: scope)
     node.innerScope = innerScope
+    node.body.innerScope = Scope(name: "block", parent: node.innerScope)
 
     // Create the symbols for the struct and its placeholders.
     node.symbol = scope.create(name: node.name, type: nil)
-    let declaredType = context.getStructType(for: node.symbol!)
+
+    if isBuiltinVisited {
+      // Bind Anzen's `Anything` and `Nothing` to their respective singleton.
+      if node.name == "Anything" {
+        node.symbol!.type = AnythingType.get.metatype
+        return
+      } else if node.name == "Nothing" {
+        node.symbol!.type = NothingType.get.metatype
+        return
+      }
+    }
+
+    let declaredType = context.getStructType(for: node.symbol!, memberScope: node.body.innerScope!)
     node.symbol!.type = declaredType.metatype
 
     for name in node.placeholders {
@@ -186,11 +194,17 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     }
 
     // Visit the struct's members.
-    scopes.push(innerScope)
     placeholders.push(declaredType.placeholders)
-    try traverse(node)
-    placeholders.pop()
+    scopes.push(innerScope)
+    scopes.push(node.body.innerScope!)
+
+    for statement in node.body.statements {
+      try visit(statement)
+    }
+
     scopes.pop()
+    scopes.pop()
+    placeholders.pop()
 
     // Create the body of the declared type.
     for member in node.body.statements {
