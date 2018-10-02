@@ -48,9 +48,18 @@ public final class ModuleDecl: Node, ScopeDelimiter {
     return statements.filter { ($0 as? NamedDecl)?.name == name }
   }
 
-  /// List of the top-level type declarations of the module.
+  /// List of type declarations of the module.
   public var typeDecls: [NominalTypeDecl] {
-    return statements.compactMap({ $0 as? NominalTypeDecl })
+    let finder = TypeDeclFinder()
+    try! finder.visit(self)
+    return finder.declarations
+  }
+
+  /// List of top-level function declarations of the module.
+  public var funDecls: [FunDecl] {
+    let finder = FunDeclFinder()
+    try! finder.visit(self)
+    return finder.declarations
   }
 
   /// Stores the statements of the module.
@@ -59,6 +68,28 @@ public final class ModuleDecl: Node, ScopeDelimiter {
   public var id: ModuleIdentifier?
   /// The scope delimited by the module.
   public var innerScope: Scope?
+
+}
+
+private class TypeDeclFinder: ASTVisitor {
+
+  func visit(_ node: StructDecl) throws {
+    declarations.append(node)
+    try traverse(node)
+  }
+
+  var declarations: [NominalTypeDecl] = []
+
+}
+
+private class FunDeclFinder: ASTVisitor {
+
+  func visit(_ node: FunDecl) throws {
+    declarations.append(node)
+    try traverse(node)
+  }
+
+  var declarations: [FunDecl] = []
 
 }
 
