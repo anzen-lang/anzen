@@ -23,8 +23,9 @@ public class Symbol {
 
 extension Symbol: Hashable {
 
-  public var hashValue: Int {
-    return 31 &* self.name.hashValue &+ self.scope.id
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
+    hasher.combine(scope)
   }
 
   public static func == (lhs: Symbol, rhs: Symbol) -> Bool {

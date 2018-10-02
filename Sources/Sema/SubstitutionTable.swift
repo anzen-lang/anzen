@@ -147,8 +147,10 @@ public struct SubstitutionTable {
 
 extension SubstitutionTable: Hashable {
 
-  public var hashValue: Int {
-    return mappings.keys.reduce(17) { h, key in 31 &* h &+ key.hashValue }
+  public func hash(into hasher: inout Hasher) {
+    for key in mappings.keys {
+      hasher.combine(key)
+    }
   }
 
   public static func == (lhs: SubstitutionTable, rhs: SubstitutionTable) -> Bool {

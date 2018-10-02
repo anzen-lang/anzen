@@ -150,7 +150,7 @@ public final class BoundGenericType: TypeBase, CustomStringConvertible {
     using bindings: [PlaceholderType: TypeVariable] = [:],
     in context: ASTContext) -> TypeBase
   {
-    let updatedBindings = Dictionary(
+    let updatedBindings = [PlaceholderType: TypeBase](
       uniqueKeysWithValues: self.bindings.map({ (key, value) in
         (key, (value as? PlaceholderType).flatMap({ bindings[$0] }) ?? value)
       }))
@@ -221,12 +221,11 @@ public class NominalType: TypeBase, GenericType, Hashable, CustomStringConvertib
       : BoundGenericType(unboundType: self, bindings: typeBindings)
   }
 
-  public var hashValue: Int {
-    var h = 31 &* name.hashValue
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
     for ph in placeholders {
-      h = 31 &* h &+ ph.hashValue
+      hasher.combine(ph)
     }
-    return h
   }
 
   public var description: String {

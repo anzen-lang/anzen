@@ -24,10 +24,6 @@ public enum ModuleIdentifier: Hashable {
     }
   }
 
-  public var hashValue: Int {
-    return qualifiedName.hashValue
-  }
-
   public static func == (lhs: ModuleIdentifier, rhs: ModuleIdentifier) -> Bool {
     switch (lhs, rhs) {
     case (.builtin, .builtin): return true
