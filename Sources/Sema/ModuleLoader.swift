@@ -37,6 +37,10 @@ open class DefaultModuleLoader: ModuleLoader {
   let verbosity: ModuleLoaderVerbosity
 
   public func load(_ moduleID: ModuleIdentifier, in context: ASTContext) throws -> ModuleDecl {
+    if verbosity >= .verbose {
+      System.err.print("Loading module '\(moduleID.qualifiedName)' ...".styled("bold"))
+    }
+
     // Start the stopwatch.
     var stopwatch = Stopwatch()
 
@@ -45,6 +49,10 @@ open class DefaultModuleLoader: ModuleLoader {
     let module = try Parser(source: file).parse()
     module.id = moduleID
     let parseTime = stopwatch.elapsed
+
+    if verbosity >= .verbose {
+      System.err.print("- Parsed in \(parseTime.humanFormat)")
+    }
 
     // Create the type constraints.
     stopwatch.reset()
@@ -58,11 +66,24 @@ open class DefaultModuleLoader: ModuleLoader {
     }
     let constraintCreationTime = stopwatch.elapsed
 
+    if verbosity >= .verbose {
+      System.err.print("- Created type constraints in \(constraintCreationTime.humanFormat)")
+      if verbosity >= .debug && (moduleID != .builtin) && (moduleID != .stdlib) {
+        for constraint in context.typeConstraints {
+          constraint.prettyPrint(in: System.err, level: 2)
+        }
+      }
+    }
+
     // Solve the type constraints.
     stopwatch.reset()
     var solver = ConstraintSolver(constraints: context.typeConstraints, in: context)
     let result = solver.solve()
     let solvingTime = stopwatch.elapsed
+
+    if verbosity >= .verbose {
+      System.err.print("- Solved type constraints in \(solvingTime.humanFormat)")
+    }
 
     // Apply the solution of the solver (if any) and dispatch identifiers to their symbol.
     stopwatch.reset()
@@ -79,17 +100,7 @@ open class DefaultModuleLoader: ModuleLoader {
     }
     let dispatchTime = stopwatch.elapsed
 
-    // Output verbose informations.
     if verbosity >= .verbose {
-      System.err.print("Loading module '\(moduleID.qualifiedName)' ...".styled("bold"))
-      System.err.print("- Parsed in \(parseTime.humanFormat)")
-      System.err.print("- Created type constraints in \(constraintCreationTime.humanFormat)")
-      if verbosity >= .debug && (moduleID != .builtin) && (moduleID != .stdlib) {
-        for constraint in context.typeConstraints {
-          constraint.prettyPrint(in: System.err, level: 2)
-        }
-      }
-      System.err.print("- Solved type constraints in \(solvingTime.humanFormat)")
       System.err.print("- Dispatched symbols in \(dispatchTime.humanFormat)")
       System.err.print()
     }
