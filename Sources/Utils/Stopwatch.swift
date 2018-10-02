@@ -2,7 +2,13 @@ import Dispatch
 
 public struct Stopwatch {
 
-  public struct TimeInterval {
+  public struct TimeInterval: Comparable {
+
+    public init(ns: UInt64) { self.ns = ns }
+    public init(μs: Double) { self.ns = UInt64(μs * 1_000) }
+    public init(ms: Double) { self.ns = UInt64(ms * 1_000_000) }
+    public init(s : Double) { self.ns = UInt64(s  * 1_000_000_000) }
+
     public let ns: UInt64
     public var μs: Double { return Double(ns) / 1_000 }
     public var ms: Double { return Double(ns) / 1_000_000 }
@@ -22,6 +28,11 @@ public struct Stopwatch {
       minutes = minutes % 60
       return "\(hours)h \(minutes)m \(seconds)s"
     }
+
+    public static func < (lhs: TimeInterval, rhs: TimeInterval) -> Bool {
+      return lhs.ns < rhs.ns
+    }
+
   }
 
   public init() {
