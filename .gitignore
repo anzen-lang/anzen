@@ -5,7 +5,7 @@
 /.build
 /Packages
 /Package.resolved
-xcuserdata/
+/*.xcodeproj
 
 # Project specific files
 InputSamples/
