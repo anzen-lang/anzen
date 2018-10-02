@@ -159,34 +159,40 @@ public struct ConstraintSolver {
 
     switch (a, b) {
     case (let var_ as TypeVariable, _):
-      if constraint.kind == .conformance && b is TypeVariable {
-        // If both `T` and `U` are unknown, we can't solve the conformance constraint yet.
-        constraints.insert(constraint, at: 0)
+      if constraint.kind == .conformance {
+        if b is TypeVariable {
+          // If both `T` and `U` are unknown, we can't solve the conformance constraint yet.
+          constraints.insert(constraint, at: 0)
+          return .success
+        }
+
+        // If only `T` is unknown, trying to unify it with `U` might be too broad. Instead, we
+        // should compute the "join" of both types. We do that by creating a dusjunction that either
+        // unifies `T` with `U`, or postpones the conformance constraint until we can infer `T`.
+        let choices: [Constraint] = [
+          .equality(t: a, u: b, at: constraint.location),
+          constraint,
+        ]
+        constraints.insert(.disjunction(choices, at: constraint.location), at: 0)
         return .success
       }
 
-      // ASSUMPTION: Even in the case of a conformance match, we can unify `T` with `U` if the
-      // former's unknown, as any constraint that would require `t > u` would leave to an invalid
-      // program. In other words, we assume `T = join(T, U)` if `T` is a type variable.
-      //
-      // If this assumption is proved wrong, we'll have to actually compute the "join" of `T` and
-      // `U`, using `U` as the upper bound.
       assumptions.set(substitution: b, for: var_)
       return .success
 
     case (_, let var_ as TypeVariable):
       if constraint.kind == .conformance {
-        // If only the right type of a conformance match is unknown, trying to unify it with the
-        // left side might be too specific. To tackle this problem, we should create a set of
-        // assumptions that each will try to constraint the unknown type to a type compatible with
-        // the left one, starting from the most specific one, and ending at `Anything`.
-        if b == AnythingType.get {
-          // Since Anything is the top of the lattice, we don't need to find "super-types".
-          assumptions.set(substitution: b, for: var_)
+        // If only `U` is unknown, trying to unify it with `T` might be too specific. Instead, we
+        // should compute the "meet" of both types. We do that by creating a set of assumptions that
+        // each try to constraint `U` with a compatible type, starting from `T` and falling back to
+        // a "super" type until we reach `Anything`.
+        if a == AnythingType.get {
+          // Since Anything is the top of the lattice, we don't need to find "super" type.
+          assumptions.set(substitution: a, for: var_)
           return .success
         }
 
-        // FIXME: Until we implement interface conformance, the set of "super-types" of a type can
+        // FIXME: Until we implement interface conformance, the set of "super" types of a type can
         // only be composed of the type itself together with `Anything`.
         let choices: [Constraint] = [
           .equality(t: b, u: a, at: constraint.location),
