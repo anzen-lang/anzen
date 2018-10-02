@@ -38,7 +38,7 @@ public class AIRInterpreter {
 
     while let instruction = cursors.top?.next() {
       switch instruction {
-      case let inst as NewRefInst : execute(inst)
+      case let inst as AllocInst : execute(inst)
       case let inst as CopyInst   : execute(inst)
       case let inst as MoveInst   : execute(inst)
       case let inst as BindInst   : execute(inst)
@@ -50,7 +50,7 @@ public class AIRInterpreter {
     }
   }
 
-  private func execute(_ newRef: NewRefInst) {
+  private func execute(_ newRef: AllocInst) {
     frames.top![newRef.name] = Box(value: Null(), type: newRef.type)
   }
 
@@ -63,7 +63,7 @@ public class AIRInterpreter {
     switch move.source {
     case let literal as AIRLiteral:
       frames.top![move.target.name]!.value = literal.value
-    case let rvalue as NewRefInst:
+    case let rvalue as AllocInst:
       frames.top![move.target.name]!.value = frames.top![rvalue.name]!.value
     case let rvalue as ApplyInst:
       frames.top![move.target.name]!.value = frames.top![rvalue.name]!.value
@@ -74,7 +74,7 @@ public class AIRInterpreter {
 
   private func execute(_ bind: BindInst) {
     switch bind.source {
-    case let rvalue as NewRefInst:
+    case let rvalue as AllocInst:
       frames.top![bind.target.name] = frames.top![rvalue.name]
     case let rvalue as ApplyInst:
       frames.top![bind.target.name] = frames.top![rvalue.name]
@@ -139,7 +139,7 @@ public class AIRInterpreter {
     switch airValue {
     case let literal as AIRLiteral:
       return literal.value
-    case let rvalue as NewRefInst:
+    case let rvalue as AllocInst:
       return frames.top![rvalue.name]!.value
     case let rvalue as ApplyInst:
       return frames.top![rvalue.name]!.value

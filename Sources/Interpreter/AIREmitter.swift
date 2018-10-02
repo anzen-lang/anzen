@@ -24,7 +24,7 @@ public class AIREmitter: ASTVisitor {
     if builder.unit.isEntry {
       let symbols = node.statements.compactMap { ($0 as? NamedDecl)?.symbol }
       for sym in symbols.reversed() {
-        if let value = registers[sym] as? NewRefInst {
+        if let value = registers[sym] as? AllocInst {
           builder.buildDrop(value: value)
         }
         registers[sym] = nil
@@ -42,7 +42,7 @@ public class AIREmitter: ASTVisitor {
       try visit(statement)
 
       // Call expressions may be used as a statement, without being bound to any l-value.
-      if let value = stack.pop() as? NewRefInst {
+      if let value = stack.pop() as? AllocInst {
         guard statement is CallExpr && stack.isEmpty
           else { fatalError("unconsumed r-value(s)") }
         builder.buildDrop(value: value)
@@ -93,7 +93,7 @@ public class AIREmitter: ASTVisitor {
     try visit(node.lvalue)
     try visit(node.rvalue)
     let rvalue = stack.pop()!
-    let lvalue = stack.pop() as! NewRefInst
+    let lvalue = stack.pop() as! AllocInst
     builder.build(assignment: node.op, source: rvalue, target: lvalue)
   }
 
@@ -134,7 +134,7 @@ public class AIREmitter: ASTVisitor {
     try visit(node.callee)
     builder.buildBind(source: stack.pop()!, target: callee)
 
-    let argrefs = try node.arguments.map { (argument) -> NewRefInst in
+    let argrefs = try node.arguments.map { (argument) -> AllocInst in
       let argref = builder.buildRef(type: argument.type!)
       try visit(argument.value)
       builder.build(assignment: argument.bindingOp, source: stack.pop()!, target: argref)

@@ -16,8 +16,8 @@ public class AIRBuilder {
 
   /// Creates a new reference in the current instruction block.
   @discardableResult
-  public func buildRef(type: TypeBase) -> NewRefInst {
-    let inst = NewRefInst(type: type, name: currentBlock!.nextName())
+  public func buildRef(type: TypeBase) -> AllocInst {
+    let inst = AllocInst(type: type, name: currentBlock!.nextName())
     currentBlock!.instructions.append(inst)
     return inst
   }
@@ -40,21 +40,21 @@ public class AIRBuilder {
   }
 
   @discardableResult
-  public func buildCopy(source: AIRValue, target: NewRefInst) -> CopyInst {
+  public func buildCopy(source: AIRValue, target: AllocInst) -> CopyInst {
     let inst = CopyInst(source: source, target: target)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
   @discardableResult
-  public func buildMove(source: AIRValue, target: NewRefInst) -> MoveInst {
+  public func buildMove(source: AIRValue, target: AllocInst) -> MoveInst {
     let inst = MoveInst(source: source, target: target)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
   @discardableResult
-  public func buildBind(source: AIRValue, target: NewRefInst) -> BindInst {
+  public func buildBind(source: AIRValue, target: AllocInst) -> BindInst {
     let inst = BindInst(source: source, target: target)
     currentBlock!.instructions.append(inst)
     return inst
@@ -64,7 +64,7 @@ public class AIRBuilder {
   public func build(
     assignment: BindingOperator,
     source: AIRValue,
-    target: NewRefInst) -> AIRInstruction
+    target: AllocInst) -> AIRInstruction
   {
     switch assignment {
     case .copy: return buildCopy(source: source, target: target)
@@ -74,7 +74,7 @@ public class AIRBuilder {
   }
 
   @discardableResult
-  public func buildDrop(value: NewRefInst) -> DropInst {
+  public func buildDrop(value: AllocInst) -> DropInst {
     let inst = DropInst(value: value)
     currentBlock!.instructions.append(inst)
     return inst

@@ -38,7 +38,7 @@ public class InstructionBlock: Sequence {
 }
 
 /// This represents the allocation of a reference (i.e. a pointer), which is provided unintialized.
-public struct NewRefInst: AIRInstruction, AIRValue {
+public struct AllocInst: AIRInstruction, AIRValue {
 
   public let type: TypeBase
   public let name: String
@@ -48,7 +48,7 @@ public struct NewRefInst: AIRInstruction, AIRValue {
   }
 
   public var instDescription: String {
-    return "%\(name) = newref \(type)\n"
+    return "%\(name) = alloc \(type)\n"
   }
 
 }
@@ -100,7 +100,7 @@ public struct ReturnInst: AIRInstruction {
 public struct CopyInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: NewRefInst
+  public let target: AllocInst
 
   public var instDescription: String {
     return "copy \(source.valueDescription), \(target.valueDescription)"
@@ -112,7 +112,7 @@ public struct CopyInst: AIRInstruction {
 public struct MoveInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: NewRefInst
+  public let target: AllocInst
 
   public var instDescription: String {
     return "move \(source.valueDescription), \(target.valueDescription)"
@@ -124,7 +124,7 @@ public struct MoveInst: AIRInstruction {
 public struct BindInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: NewRefInst
+  public let target: AllocInst
 
   public var instDescription: String {
     return "bind \(source.valueDescription), \(target.valueDescription)"
@@ -135,7 +135,7 @@ public struct BindInst: AIRInstruction {
 /// This represents a drop instruction.
 public struct DropInst: AIRInstruction {
 
-  public let value: NewRefInst
+  public let value: AllocInst
 
   public var instDescription: String {
     return "drop \(value.valueDescription)"
