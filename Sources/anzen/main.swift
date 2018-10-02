@@ -5,6 +5,7 @@ import Darwin.C
 #endif
 
 import AST
+import Interpreter
 import Parser
 import Sema
 import Utils
@@ -45,6 +46,24 @@ do {
     exit(-1)
   }
 
+  let printer = ASTUnparser(console: System.out, includeType: true)
+  try printer.visit(main)
+  System.out.print()
+  //let dumper = ASTDumper(outputTo: System.out)
+  //try dumper.visit(main)
+
+  let mainUnit = AIRUnit(name: main.id!.qualifiedName, isEntry: true)
+  let builder = AIRBuilder(unit: mainUnit, context: context)
+  let emitter = AIREmitter(builder: builder)
+  try emitter.visit(main)
+  System.out.print(builder.unit)
+
+  let interpreter = AIRInterpreter()
+  interpreter.load(unit: mainUnit)
+  guard let entry = mainUnit.functions["main"]
+    else { fatalError("program doesn't have a main function") }
+  interpreter.invoke(function: entry)
+
 } catch let error as ParseError {
 
   // FIXME: Parse errors shouldn't get a special treatment, but should be added to the AST context
@@ -61,8 +80,3 @@ do {
   exit(-1)
 
 }
-
-let printer = ASTUnparser(console: System.out, includeType: true)
-try printer.visit(main)
-//let dumper = ASTDumper(outputTo: System.out)
-//try dumper.visit(main)
