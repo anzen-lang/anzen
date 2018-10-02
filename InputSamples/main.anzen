@@ -1,4 +1,0 @@
-// let x = 42
-// var y: @mut = 42
-let x: Int
-let y = x

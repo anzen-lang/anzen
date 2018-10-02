@@ -6,3 +6,6 @@
 /Packages
 /Package.resolved
 xcuserdata/
+
+# Project specific files
+InputSamples/
