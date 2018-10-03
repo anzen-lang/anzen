@@ -98,7 +98,7 @@ public final class NameBinder: ASTVisitor, SAPass {
   }
 
   private func findScope(declaring name: String) -> Scope? {
-    let candidates = scopes.reversed()
+    let candidates = scopes
     guard let index = candidates.index(where: { $0.symbols[name] != nil })
       else { return nil }
 
