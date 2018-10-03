@@ -22,6 +22,18 @@ public class Scope {
     return false
   }
 
+  /// Returns whether this scope is contained in the given one.
+  public func isContained(in other: Scope) -> Bool {
+    var ancestor = parent
+    while ancestor != nil {
+      if ancestor == other {
+        return true
+      }
+      ancestor = ancestor!.parent
+    }
+    return false
+  }
+
   /// Create a symbol in this scope.
   @discardableResult
   public func create(name: String, type: TypeBase?, overloadable: Bool = false) -> Symbol {

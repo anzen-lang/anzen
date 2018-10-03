@@ -1,11 +1,15 @@
 import AST
+import Utils
 
-/// Visitor that annotate the AST with inferred types and corresponding symbols.
+/// Visitor that annotates expressions with their type (as inferred by the type solver), identifiers
+/// with their corresponding symbol and functions with their capture list.
 ///
-/// This pass reifies the types of each node, according to the solution it is provided, and link all
-/// identifiers to the appropriate symbol, based on their reified type. Note that this pass may fail
-/// if the dispatcher is unable to unambiguously determine which symbol an identifier should be
-/// bound to, which may happen in the presence of overloaded generic functions.
+/// This pass reifies the types of each node, according to the solution it is provided with, and
+/// links all identifiers to the appropriate symbol, based on their reified type. This also allows
+/// to determine the functions' capture lists.
+///
+/// This pass may fail if the dispatcher is unable to unambiguously determine which symbol an
+// identifier should be bound to, which may happen in the presence of overloaded generic functions.
 public final class Dispatcher: ASTVisitor, SAPass {
 
   public init(context: ASTContext) {
@@ -17,6 +21,15 @@ public final class Dispatcher: ASTVisitor, SAPass {
     self.context = context
     self.solution = solution
   }
+
+  /// The AST context.
+  public let context: ASTContext
+  /// The substitution map obtained after inference.
+  public let solution: SubstitutionTable
+  /// The nominal types already reified.
+  private var visited: [NominalType] = []
+  /// The stack of functions, used to determine capture lists.
+  private var functions: Stack<FunDecl> = []
 
   public func visit(_ node: ModuleDecl) throws {
     if let scope = node.innerScope {
@@ -37,12 +50,14 @@ public final class Dispatcher: ASTVisitor, SAPass {
   }
 
   public func visit(_ node: FunDecl) throws {
+    functions.push(node)
     if let scope = node.innerScope {
       for symbol in scope.symbols.values.joined() {
         symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
       }
     }
     try traverse(node)
+    functions.pop()
   }
 
   public func visit(_ node: StructDecl) throws {
@@ -137,16 +152,21 @@ public final class Dispatcher: ASTVisitor, SAPass {
     }
     assert(choices.count > 0)
 
-    // FIXME: Desambiguise when there are several choices.
-    node.symbol = choices[0]
-  }
+    // FIXME: Disambiguise when there are several choices.
+    let symbol = choices[0]
+    node.symbol = symbol
 
-  /// The AST context.
-  public let context: ASTContext
-  /// The substitution map obtained after inference.
-  public let solution: SubstitutionTable
-  /// The nominal types already reified.
-  private var visited: [NominalType] = []
+    // Check whether the identifier should be registered in a capture list.
+    if let fn = functions.top {
+      // FIXME: Captures must be added to all outer functions also within the scope of the captured
+      // symbol, so that they also get wrapped during AIR generation.
+      // FIXME: Global symbols (e.g. functions) should be excluded from capture lists. It is already
+      // the case for types, as they aren't referenced by expression identifiers.
+      if !symbol.scope.isContained(in: fn.innerScope!) {
+        fn.captures.append(symbol)
+      }
+    }
+  }
 
 }
 

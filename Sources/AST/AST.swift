@@ -235,8 +235,10 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
   /// The body of the function.
   public var body: Block?
 
-  /// The scope delimited by this module.
+  /// The scope delimited by this function.
   public var innerScope: Scope?
+  /// The capture list of the function.
+  public var captures: [Symbol] = []
 
 }
 
