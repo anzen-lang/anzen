@@ -38,7 +38,7 @@ public class InstructionBlock: Sequence {
 }
 
 /// This represents the allocation of a reference (i.e. a pointer), which is provided unintialized.
-public struct AllocInst: AIRInstruction, AIRValue {
+public struct AllocInst: AIRInstruction, AIRRegister {
 
   public let type: TypeBase
   public let name: String
@@ -54,7 +54,7 @@ public struct AllocInst: AIRInstruction, AIRValue {
 }
 
 /// This represents the application of a function.
-public struct ApplyInst: AIRInstruction, AIRValue {
+public struct ApplyInst: AIRInstruction, AIRRegister {
 
   internal init(callee: AIRValue, arguments: [AIRValue], type: TypeBase, name: String) {
     self.callee = callee

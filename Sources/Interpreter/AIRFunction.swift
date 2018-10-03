@@ -45,7 +45,7 @@ extension AIRFunction: Hashable {
 ///
 /// A formal parameter does not contain any actual value, but instead represents the argument that
 /// will be passed to the function, when it is called.
-public struct AIRParameter: AIRValue {
+public struct AIRParameter: AIRRegister {
 
   public let type: TypeBase
   public let name: String

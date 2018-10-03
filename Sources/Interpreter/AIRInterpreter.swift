@@ -38,7 +38,7 @@ public class AIRInterpreter {
 
     while let instruction = cursors.top?.next() {
       switch instruction {
-      case let inst as AllocInst : execute(inst)
+      case let inst as AllocInst  : execute(inst)
       case let inst as CopyInst   : execute(inst)
       case let inst as MoveInst   : execute(inst)
       case let inst as BindInst   : execute(inst)
@@ -105,7 +105,7 @@ public class AIRInterpreter {
       // Push the next stack frame.
       var frame: [String: Box] = [:]
       for (i, argument) in apply.arguments.enumerated() {
-        frame[i.description] = Box(value: value(of: argument), type: argument.type)
+        frame[String(describing: i)] = Box(value: value(of: argument), type: argument.type)
       }
       frames.push(frame)
 
@@ -120,9 +120,9 @@ public class AIRInterpreter {
   }
 
   private func execute(_ ret: ReturnInst) {
-    // Move the return value (if any) on the return register.
+    // Move the return value (if any) onto the return register.
     if let retval = ret.value {
-      frames[frames.count - 2][returnRegisters.top!]!.value = retval
+      frames[frames.count - 2][returnRegisters.top!]!.value = value(of: retval)
 
       // FIXME: If the return value is to be passed by reference, we should copy the box itself.
       // Note that implementing this functionality will most likely require an additional flag in
@@ -139,10 +139,14 @@ public class AIRInterpreter {
     switch airValue {
     case let literal as AIRLiteral:
       return literal.value
-    case let rvalue as AllocInst:
-      return frames.top![rvalue.name]!.value
-    case let rvalue as ApplyInst:
-      return frames.top![rvalue.name]!.value
+
+    case let register as AIRRegister:
+      guard let frame = frames.top
+        else { fatalError("trying to read a register outside of a frame") }
+      guard let box = frame[register.name]
+        else { fatalError("invalid register '\(register.name)'") }
+      return box.value
+
     default:
       unreachable()
     }
