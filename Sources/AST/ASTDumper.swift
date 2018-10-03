@@ -208,6 +208,14 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: TypeIdent) throws {
+    self <<< indent <<< "(type_identifier"
+    self <<< " '\(node.name)'"
+    self <<< " type='" <<< node.type <<< "'"
+    self <<< " scope='" <<< node.scope <<< "'"
+    self <<< ")"
+  }
+
   public func visit(_ node: FunSign) throws {
     self <<< indent <<< "(fun_sign"
     withIndentation {

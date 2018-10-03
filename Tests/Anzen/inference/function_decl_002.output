@@ -6,7 +6,7 @@
       (param_decl 'x' type='T' symbol='x' scope='inference/function_decl_002.poly'
         (type_annotation
           (qual_sign
-            (identifier 'T' type='T.metatype' scope='inference/function_decl_002.poly')))))
+            (type_identifier 'T' type='T.metatype' scope='inference/function_decl_002.poly')))))
     (codomain
       (qual_sign
-        (identifier 'T' type='T.metatype' scope='inference/function_decl_002.poly')))))
+        (type_identifier 'T' type='T.metatype' scope='inference/function_decl_002.poly')))))

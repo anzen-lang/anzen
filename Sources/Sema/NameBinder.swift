@@ -24,18 +24,15 @@ public final class NameBinder: ASTVisitor, SAPass {
   private var underDeclaration: [Scope: String] = [:]
 
   public func visit(_ node: ModuleDecl) throws {
-    // Don't implicitly import core symbols if the module describing them is being visited.
+    // Note that user modules implicitly import Anzen's core modules so that symbols from those can
+    // be referred without prefixing. Hence, unless those modules are being visited, their scopes
+    // are added to the scope stack so that name binding can succeed.
     if node.id != .builtin {
       scopes.push(try context.getModule(moduleID: .builtin).innerScope!)
       if node.id != .stdlib {
         scopes.push(try context.getModule(moduleID: .stdlib).innerScope!)
       }
     }
-
-    // Note that all modules implicitly import Anzen's core modules so that symbols from those can
-    // be referred without prefixing. This gets done by having the scopes of user modules descend
-    // from that of Anzen's core libraries.
-    // node.innerScope!.parent = scopes.top
 
     scopes.push(node.innerScope!)
     try visit(node.statements)
@@ -74,6 +71,26 @@ public final class NameBinder: ASTVisitor, SAPass {
     scopes.push(node.innerScope!)
     try visit(node.body)
     scopes.pop()
+  }
+
+  public func visit(_ node: TypeIdent) throws {
+    // Find the scope that defines the visited identifier.
+    guard let scope = findScope(declaring: node.name) else {
+      context.add(error: SAError.undefinedSymbol(name: node.name), on: node)
+      return
+    }
+
+    // Type identifiers can't be overloaded.
+    guard scope.symbols[node.name]?.count == 1 else {
+      context.add(error: SAError.invalidTypeIdentifier(name: node.name), on: node)
+      return
+    }
+    node.symbol = scope.symbols[node.name]!.first!
+
+    // Visit the specializations.
+    for specialization in node.specializations {
+      try visit(specialization.value)
+    }
   }
 
   public func visit(_ node: SelectExpr) throws {

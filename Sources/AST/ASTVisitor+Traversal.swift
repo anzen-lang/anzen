@@ -11,6 +11,7 @@ public extension ASTVisitor {
     case let n as StructDecl:      try visit(n)
     case let n as InterfaceDecl:   try visit(n)
     case let n as QualSign:        try visit(n)
+    case let n as TypeIdent:       try visit(n)
     case let n as FunSign:         try visit(n)
     case let n as ParamSign:       try visit(n)
     case let n as BindingStmt:     try visit(n)
@@ -124,6 +125,14 @@ public extension ASTVisitor {
     if let signature = node.signature {
       try visit(signature)
     }
+  }
+
+  func visit(_ node: TypeIdent) throws {
+    try traverse(node)
+  }
+
+  func traverse(_ node: TypeIdent) throws {
+    try visit(Array(node.specializations.values))
   }
 
   func visit(_ node: FunSign) throws {

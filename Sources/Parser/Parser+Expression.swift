@@ -194,26 +194,15 @@ extension Parser {
 
     // Attempt to parse the specialization list.
     let backtrackPosition = streamPosition
-    if consume(.lt, afterMany: .newline) != nil {
-      guard let keysAndValues = attempt({
-        try parseList(delimitedBy: .gt, parsingElementWith: parseSpecArg)
-      }) else {
-        rewind(to: backtrackPosition)
-        return ident
-      }
-
+    consumeNewlines()
+    if peek().kind == .lt, let keysAndValues = attempt(parseSpecializationList) {
       // Make sure there's no duplicate key.
       let duplicates = keysAndValues.duplicates { $0.0.value! }
       guard duplicates.isEmpty else {
         let key = duplicates.first!.0
         throw ParseError(.duplicateKey(key: key.value!), range: key.range)
       }
-
-      // Consume the delimiter of the list.
-      guard consume(.gt) != nil
-        else { throw unexpectedToken(expected: ">") }
-
-      ident.specializations = Dictionary.init(
+      ident.specializations = Dictionary(
         uniqueKeysWithValues: keysAndValues.map({ ($0.0.value!, $0.1) }))
     } else {
       rewind(to: backtrackPosition)
@@ -386,22 +375,6 @@ extension Parser {
     consumeNewlines()
     let value = try parseExpression()
     return (key, value)
-  }
-
-  /// Parses a specialization argument.
-  func parseSpecArg() throws -> (Token, Node) {
-    // Parse the name of the placeholder.
-    guard let name = consume(.identifier)
-      else { throw unexpectedToken(expected: "identifier") }
-
-    // Parse the `=` symbol.
-    guard consume(.copy, afterMany: .newline) != nil
-      else { throw unexpectedToken(expected: "=") }
-
-    // Parse the signature it should maps to.
-    consumeNewlines()
-    let sign = try parseTypeSign()
-    return (name, sign)
   }
 
 }

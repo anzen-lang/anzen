@@ -6,28 +6,28 @@
       (param_decl 'x' type='T' symbol='x' scope='inference/call_006.overloaded'
         (type_annotation
           (qual_sign
-            (identifier 'T' type='T.metatype' scope='inference/call_006.overloaded')))))
+            (type_identifier 'T' type='T.metatype' scope='inference/call_006.overloaded')))))
     (codomain
       (qual_sign
-        (identifier 'T' type='T.metatype' scope='inference/call_006.overloaded'))))
+        (type_identifier 'T' type='T.metatype' scope='inference/call_006.overloaded'))))
   (function_decl 'overloaded' type='(x: Int) -> Int' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
     (parameters
       (param_decl 'x' type='Int' symbol='x' scope='inference/call_006.overloaded'
         (type_annotation
           (qual_sign
-            (identifier 'Int' type='Int.metatype' scope='anzen://builtin')))))
+            (type_identifier 'Int' type='Int.metatype' scope='anzen://builtin')))))
     (codomain
       (qual_sign
-        (identifier 'Int' type='Int.metatype' scope='anzen://builtin'))))
+        (type_identifier 'Int' type='Int.metatype' scope='anzen://builtin'))))
   (function_decl 'overloaded' type='(x: Bool) -> Bool' symbol='overloaded' scope='inference/call_006' inner_scope='inference/call_006.overloaded'
     (parameters
       (param_decl 'x' type='Bool' symbol='x' scope='inference/call_006.overloaded'
         (type_annotation
           (qual_sign
-            (identifier 'Bool' type='Bool.metatype' scope='anzen://builtin')))))
+            (type_identifier 'Bool' type='Bool.metatype' scope='anzen://builtin')))))
     (codomain
       (qual_sign
-        (identifier 'Bool' type='Bool.metatype' scope='anzen://builtin'))))
+        (type_identifier 'Bool' type='Bool.metatype' scope='anzen://builtin'))))
   (prop_decl let 'a' type='Int' symbol='a' scope='inference/call_006'
     (initial_binding
       (binding_operator =)

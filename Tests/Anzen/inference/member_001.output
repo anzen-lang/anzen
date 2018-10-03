@@ -5,15 +5,15 @@
           (prop_decl let 'x' type='Int' symbol='x' scope='inference/member_001.Point.block'
             (type_annotation
               (qual_sign
-                (identifier 'Int' type='Int.metatype' scope='anzen://builtin'))))
+                (type_identifier 'Int' type='Int.metatype' scope='anzen://builtin'))))
           (prop_decl let 'y' type='Int' symbol='y' scope='inference/member_001.Point.block'
             (type_annotation
               (qual_sign
-                (identifier 'Int' type='Int.metatype' scope='anzen://builtin')))))))
+                (type_identifier 'Int' type='Int.metatype' scope='anzen://builtin')))))))
   (prop_decl let 'p' type='Point' symbol='p' scope='inference/member_001'
     (type_annotation
       (qual_sign
-        (identifier 'Point' type='Point.metatype' scope='inference/member_001'))))
+        (type_identifier 'Point' type='Point.metatype' scope='inference/member_001'))))
   (prop_decl let 'x' type='Int' symbol='x' scope='inference/member_001'
     (initial_binding
       (binding_operator =)

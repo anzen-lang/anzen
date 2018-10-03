@@ -14,7 +14,6 @@ public final class ASTUnparser: ASTVisitor {
   public let includeType: Bool
 
   private var stack: Stack<String> = []
-  private var isVisitingAnnotation: Bool = false
   private var isVisitingCallee: Bool = false
 
   public func visit(_ node: ModuleDecl) throws {
@@ -47,10 +46,8 @@ public final class ASTUnparser: ASTVisitor {
     }
 
     if let annotation = node.typeAnnotation {
-      isVisitingAnnotation = true
       try visit(annotation)
       repr += ": \(stack.pop()!)"
-      isVisitingAnnotation = false
     }
     if let (op, value) = node.initialBinding {
       try visit(value)
@@ -88,10 +85,8 @@ public final class ASTUnparser: ASTVisitor {
     repr += "(\(str(items: parameters)))"
 
     if let codomain = node.codomain {
-      isVisitingAnnotation = true
       try visit(codomain)
       repr += " -> \(stack.pop()!)"
-      isVisitingAnnotation = false
     }
 
     if let body = node.body {
@@ -113,10 +108,8 @@ public final class ASTUnparser: ASTVisitor {
     }
 
     if let annotation = node.typeAnnotation {
-      isVisitingAnnotation = true
       try visit(annotation)
       repr += ": \(stack.pop()!)"
-      isVisitingAnnotation = false
     }
     if let value = node.defaultValue {
       try visit(value)
@@ -164,7 +157,25 @@ public final class ASTUnparser: ASTVisitor {
 //      try visit(signature)
 //    }
 //  }
-//
+
+  public func visit(_ node: TypeIdent) throws {
+    var repr = node.name.styled("yellow")
+    if includeType {
+      repr += ":\(str(node.type))".styled("dimmed")
+    }
+
+    if !node.specializations.isEmpty {
+      var args: [String] = []
+      for (key, value) in node.specializations {
+        try visit(value)
+        args.append("\(key) = \(stack.pop()!)")
+      }
+      repr += "<\(str(items: args))>"
+    }
+
+    stack.push(repr)
+  }
+
 //  public func visit(_ node: FunSign) throws {
 //    write("(")
 //    for parameter in node.parameters {
@@ -285,9 +296,7 @@ public final class ASTUnparser: ASTVisitor {
 
   public func visit(_ node: Ident) throws {
     var repr = node.name
-    if isVisitingAnnotation {
-      repr = repr.styled("yellow")
-    } else if isVisitingCallee {
+    if isVisitingCallee {
       repr = repr.styled("cyan")
     }
 
@@ -298,11 +307,8 @@ public final class ASTUnparser: ASTVisitor {
     if !node.specializations.isEmpty {
       var args: [String] = []
       for (key, value) in node.specializations {
-        let wasParsingAnnotation = isVisitingAnnotation
-        isVisitingAnnotation = true
         try visit(value)
         args.append("\(key) = \(stack.pop()!)")
-        isVisitingAnnotation = wasParsingAnnotation
       }
       repr += "<\(str(items: args))>"
     }

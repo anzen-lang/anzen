@@ -9,7 +9,7 @@
               (param_decl 'value' type='T' symbol='value' scope='inference/construction_002.Box.block.new'
                 (type_annotation
                   (qual_sign
-                    (identifier 'T' type='T.metatype' scope='inference/construction_002.Box')))))
+                    (type_identifier 'T' type='T.metatype' scope='inference/construction_002.Box')))))
             (body
               (block inner_scope='inference/construction_002.Box.block.new.block'))))))
   (prop_decl let 'int_box' type='<T=Int>Box<T>' symbol='int_box' scope='inference/construction_002'

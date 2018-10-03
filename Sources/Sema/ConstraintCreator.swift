@@ -178,18 +178,9 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
     case let sign as QualSign:
       return sign.signature.map { typeFromAnnotation(annotation: $0) } ?? TypeVariable()
 
-    case let ident as Ident:
-      guard let symbols = ident.scope?.symbols[ident.name] else {
-        // The symbols of an identifier couldn't be linked; we use an error type.
-        return ErrorType.get
-      }
-
-      // When the annotation is an identifier, it should be associated with a unique symbol that
-      // must be typed with a metatype.
-      guard
-        symbols.count == 1,
-        let meta = symbols[0].type as? Metatype else
-      {
+    case let ident as TypeIdent:
+      // Type identifiers' symvols should have a metatype.
+      guard let meta = ident.symbol?.type as? Metatype else {
         context.add(error: SAError.invalidTypeIdentifier(name: ident.name), on: ident)
         return ErrorType.get
       }

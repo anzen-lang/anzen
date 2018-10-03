@@ -370,6 +370,34 @@ public final class QualSign: Node {
 
 }
 
+/// A type identifier.
+public final class TypeIdent: Node {
+
+  public init(
+    name: String,
+    specializations: [String: Node] = [:],
+    module: ModuleDecl,
+    range: SourceRange)
+  {
+    self.name = name
+    self.specializations = specializations
+    super.init(module: module, range: range)
+  }
+
+  /// The name of the type.
+  public var name: String
+  /// The specialization list of the type.
+  public var specializations: [String: Node]
+  /// The symbol associated with the declaration.
+  public var symbol: Symbol?
+  /// The scope in which the declaration is defined.
+  public var scope: Scope? { return symbol?.scope }
+
+  /// The type of the identifier, which might differ from its symbol for generic types.
+  public var type: TypeBase?
+
+}
+
 /// A function type signature.
 public final class FunSign: Node {
 
@@ -658,7 +686,7 @@ public final class Ident: Expr {
   /// The scope in which the identifier's defined.
   public var scope: Scope?
 
-  /// The symbol associated with the name of this identifier.
+  /// The symbol associated with this identifier.
   ///
   /// Identifiers might refer to overloaded names. As such, unlike other named nodes, they have to
   /// annotated with the symbol they actually refer to, which will be defined during the static

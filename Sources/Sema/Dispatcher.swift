@@ -63,6 +63,13 @@ public final class Dispatcher: ASTVisitor, SAPass {
     try traverse(node)
   }
 
+  public func visit(_ node: TypeIdent) throws {
+    node.type = node.type.map {
+      solution.reify(type: $0, in: context, skipping: &visited)
+    }
+    try traverse(node)
+  }
+
   public func visit(_ node: CallExpr) throws {
     node.type = node.type.map {
       solution.reify(type: $0, in: context, skipping: &visited)

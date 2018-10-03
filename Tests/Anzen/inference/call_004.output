@@ -7,14 +7,14 @@
       (param_decl 'x' type='T' symbol='x' scope='inference/call_004.poly'
         (type_annotation
           (qual_sign
-            (identifier 'T' type='T.metatype' scope='inference/call_004.poly'))))
+            (type_identifier 'T' type='T.metatype' scope='inference/call_004.poly'))))
       (param_decl 'y' type='U' symbol='y' scope='inference/call_004.poly'
         (type_annotation
           (qual_sign
-            (identifier 'U' type='U.metatype' scope='inference/call_004.poly')))))
+            (type_identifier 'U' type='U.metatype' scope='inference/call_004.poly')))))
     (codomain
       (qual_sign
-        (identifier 'T' type='T.metatype' scope='inference/call_004.poly'))))
+        (type_identifier 'T' type='T.metatype' scope='inference/call_004.poly'))))
   (prop_decl let 'a' type='Int' symbol='a' scope='inference/call_004'
     (initial_binding
       (binding_operator =)

@@ -2,4 +2,4 @@
   (prop_decl let 'property' type='Int' symbol='property' scope='inference/prop_decl_001'
     (type_annotation
       (qual_sign
-        (identifier 'Int' type='Int.metatype' scope='anzen://builtin')))))
+        (type_identifier 'Int' type='Int.metatype' scope='anzen://builtin')))))

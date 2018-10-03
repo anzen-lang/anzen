@@ -55,7 +55,7 @@ extension Parser {
   func parseTypeSign() throws -> Node {
     switch peek().kind {
     case .identifier:
-      return try parseIdentifier()
+      return try parseTypeIdentifier()
 
     case .leftParen:
       // First, attempt to parse an enclosed signature.
@@ -76,6 +76,57 @@ extension Parser {
     default:
       throw unexpectedToken(expected: "type signature")
     }
+  }
+
+  /// Parses a type identifier.
+  func parseTypeIdentifier() throws -> TypeIdent {
+    guard let token = consume(.identifier)
+      else { throw unexpectedToken(expected: "identifier") }
+    let ident = TypeIdent(name: token.value!, module: module, range: token.range)
+
+    // Attempt to parse the specialization list.
+    let backtrackPosition = streamPosition
+    consumeNewlines()
+    if peek().kind == .lt, let keysAndValues = attempt(parseSpecializationList) {
+      // Make sure there's no duplicate key.
+      let duplicates = keysAndValues.duplicates { $0.0.value! }
+      guard duplicates.isEmpty else {
+        let key = duplicates.first!.0
+        throw ParseError(.duplicateKey(key: key.value!), range: key.range)
+      }
+      ident.specializations = Dictionary(
+        uniqueKeysWithValues: keysAndValues.map({ ($0.0.value!, $0.1) }))
+    } else {
+      rewind(to: backtrackPosition)
+    }
+
+    return ident
+  }
+
+  /// Parses a specialization list.
+  func parseSpecializationList() throws -> [(Token, Node)] {
+    guard consume(.lt) != nil
+      else { throw unexpectedToken(expected: "<") }
+    let keysAndValues = try parseList(delimitedBy: .gt, parsingElementWith: parseSpecArg)
+    guard consume(.gt) != nil
+      else { throw unexpectedToken(expected: ">") }
+    return keysAndValues
+  }
+
+  /// Parses a specialization argument.
+  func parseSpecArg() throws -> (Token, Node) {
+    // Parse the name of the placeholder.
+    guard let name = consume(.identifier)
+      else { throw unexpectedToken(expected: "identifier") }
+
+    // Parse the `=` symbol.
+    guard consume(.copy, afterMany: .newline) != nil
+      else { throw unexpectedToken(expected: "=") }
+
+    // Parse the signature it should maps to.
+    consumeNewlines()
+    let sign = try parseTypeSign()
+    return (name, sign)
   }
 
   /// Parses a function type signature.

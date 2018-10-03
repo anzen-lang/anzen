@@ -14,6 +14,7 @@ public protocol ASTVisitor {
   // MARK: Type signatures
 
   func visit(_ node: QualSign)        throws
+  func visit(_ node: TypeIdent)       throws
   func visit(_ node: FunSign)         throws
   func visit(_ node: ParamSign)       throws
 
