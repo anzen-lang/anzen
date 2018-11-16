@@ -28,9 +28,16 @@ public final class NameBinder: ASTVisitor, SAPass {
     // be referred without prefixing. Hence, unless those modules are being visited, their scopes
     // are added to the scope stack so that name binding can succeed.
     if node.id != .builtin {
-      scopes.push(try context.getModule(moduleID: .builtin).innerScope!)
+      guard let builtin = context.loadedModules[.builtin]?.innerScope else {
+        fatalError("built-in module not loaded")
+      }
+      scopes.push(builtin)
+
       if node.id != .stdlib {
-        scopes.push(try context.getModule(moduleID: .stdlib).innerScope!)
+        guard let stdlib = context.loadedModules[.stdlib]?.innerScope else {
+          fatalError("stdlib module not loaded")
+        }
+        scopes.push(stdlib)
       }
     }
 

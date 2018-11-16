@@ -42,13 +42,13 @@ public enum SyntaxError: Error, CustomStringConvertible {
 
 public struct ParseError: Error, CustomStringConvertible {
 
-  public init(_ cause: SyntaxError, range: SourceRange? = nil) {
+  public init(_ cause: SyntaxError, range: SourceRange) {
     self.cause = cause
     self.range = range
   }
 
   public let cause: SyntaxError
-  public let range: SourceRange?
+  public let range: SourceRange
 
   public var description: String {
     return cause.description

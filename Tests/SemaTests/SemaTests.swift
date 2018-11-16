@@ -1,9 +1,8 @@
 import XCTest
 
 import AST
-import Parser
-import Sema
-import Utils
+import AnzenLib
+// import Utils
 import SystemKit
 
 class StringBuffer: TextOutputStream {
@@ -44,10 +43,10 @@ class SemaTests: XCTestCase {
     }
 
     for testCase in fixtures {
-      let loader = DefaultModuleLoader(verbosity: .normal)
-      let context = ASTContext(anzenPath: anzenPath, loadModule: loader.load)
+      let loader = DefaultModuleLoader()
+      let context = ASTContext(anzenPath: anzenPath, moduleLoader: loader)
 
-      let module = try! context.getModule(moduleID: .local(testCase.value))
+      let module = context.getModule(moduleID: .local(testCase.value))!
       let testResult = StringBuffer()
       try! ASTDumper(outputTo: testResult).visit(module)
 

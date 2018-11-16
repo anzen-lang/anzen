@@ -4,11 +4,13 @@ import SystemKit
 /// Cass that holds metadata to be associated with an AST.
 public final class ASTContext {
 
-  public typealias ModuleLoader = (ModuleIdentifier, ASTContext) throws -> ModuleDecl
-
-  public init(anzenPath: Path, loadModule: @escaping ModuleLoader) {
+  public init(anzenPath: Path, moduleLoader: ModuleLoader) {
     self.anzenPath = anzenPath
-    self.loadModule = loadModule
+    self.moduleLoader = moduleLoader
+
+    // Load core module.
+    _ = getModule(moduleID: .builtin)
+    _ = getModule(moduleID: .stdlib)
   }
 
   /// The path to Anzen's core modules.
@@ -29,17 +31,19 @@ public final class ASTContext {
   // MARK: Modules
 
   /// Returns a module given its identifier, loading it if necessary.
-  public func getModule(moduleID: ModuleIdentifier) throws -> ModuleDecl {
+  public func getModule(moduleID: ModuleIdentifier) -> ModuleDecl? {
     if let module = loadedModules[moduleID] {
       return module
+    } else if let module = moduleLoader.load(moduleID, in: self) {
+      loadedModules[moduleID] = module
+      return module
+    } else {
+      return nil
     }
-    let module = try loadModule(moduleID, self)
-    loadedModules[moduleID] = module
-    return module
   }
 
   /// The module loader.
-  private let loadModule: ModuleLoader
+  private let moduleLoader: ModuleLoader
   /// The loaded already loaded in the context.
   public private(set) var loadedModules: [ModuleIdentifier: ModuleDecl] = [:]
 
@@ -100,34 +104,18 @@ public final class ASTContext {
 
   /// The built-in types.
   public lazy var builtinTypes: [String: TypeBase] = {
-    do {
-      let module = try getModule(moduleID: .builtin)
-      return Dictionary(
-        uniqueKeysWithValues: module.typeDecls.map({
-          let meta = ($0.type as! Metatype)
-          return ($0.name, meta.type)
-        }))
-    } catch {
-      fatalError("unable to load built-in module: \(error)")
-    }
+    guard let module = getModule(moduleID: .builtin)
+      else { fatalError("unable to load built-in module") }
+    return Dictionary(
+      uniqueKeysWithValues: module.typeDecls.map({
+        let meta = ($0.type as! Metatype)
+        return ($0.name, meta.type)
+      }))
   }()
 
   // MARK: Diagnostics
 
   /// The list of errors encountered during the processing of the AST.
   public var errors: [ASTError] = []
-
-}
-
-/// An error associated with an AST node.
-public struct ASTError {
-
-  public init(cause: Any, node: Node) {
-    self.cause = cause
-    self.node = node
-  }
-
-  public let cause: Any
-  public let node: Node
 
 }
