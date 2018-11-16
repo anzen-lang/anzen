@@ -66,7 +66,7 @@ public final class ASTUnparser: ASTVisitor {
     if node.kind == .constructor || node.kind == .destructor {
       repr += node.name.styled("magenta")
     } else {
-      repr += try StyledString("{fun:magenta} {\(node.name):cyan}")
+      repr += StyledString("{fun:magenta} {\(node.name):cyan}")
     }
 
     if includeType {
@@ -120,7 +120,7 @@ public final class ASTUnparser: ASTVisitor {
   }
 
   public func visit(_ node: StructDecl) throws {
-    var repr = try StyledString("{struct:magenta} {\(node.name):yellow}").description
+    var repr = StyledString("{struct:magenta} {\(node.name):yellow}").description
 
     if includeType {
       repr += ":\(str(node.type))".styled("dimmed")

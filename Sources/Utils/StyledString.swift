@@ -18,7 +18,7 @@
 /// expect the subject to be parsed in a certain way (e.g. `round`).
 public struct StyledString: CustomStringConvertible, ExpressibleByStringLiteral {
 
-  public init(_ value: String) throws {
+  public init(_ value: String) {
     var styled = ""
     styled.reserveCapacity(value.count)
 
@@ -76,7 +76,7 @@ public struct StyledString: CustomStringConvertible, ExpressibleByStringLiteral 
 
           // let subject = String(expression[expression.startIndex ..< end])
           let styles = String(expression[next ..< expression.endIndex])
-          try styled.append(StyledString.format(subject: subject, styles: styles))
+          styled.append(StyledString.format(subject: subject, styles: styles))
           break
         }
 
@@ -96,7 +96,7 @@ public struct StyledString: CustomStringConvertible, ExpressibleByStringLiteral 
   }
 
   public init(stringLiteral value: String) {
-    try! self.init(value)
+    self.init(value)
   }
 
   private var value: String
@@ -139,7 +139,7 @@ public struct StyledString: CustomStringConvertible, ExpressibleByStringLiteral 
     "round"    : Round(),
   ]
 
-  public static func format(subject: String, styles: String) throws -> String {
+  public static func format(subject: String, styles: String) -> String {
     let styles = styles
       .split(separator: ",")
       .map({ $0.stripped.split(separator: " ") })
@@ -148,8 +148,8 @@ public struct StyledString: CustomStringConvertible, ExpressibleByStringLiteral 
     var result = subject
     for components in styles {
       guard let style = StyledString.styles[String(components[0])]
-        else { throw StyleError(message: "unknown style '\(components[0])'") }
-      result = try style.apply(on: result, parameters: Array(components.dropFirst()))
+        else { preconditionFailure("unknown style '\(components[0])'") }
+      result = style.apply(on: result, parameters: Array(components.dropFirst()))
     }
 
     return result
@@ -182,7 +182,7 @@ extension StyledString: BidirectionalCollection {
 extension String {
 
   public func styled(_ styles: String) -> String {
-    return try! StyledString.format(subject: self, styles: styles)
+    return StyledString.format(subject: self, styles: styles)
   }
 
 }
@@ -197,17 +197,7 @@ extension String {
 public protocol Style {
 
   /// Applies this style to the given subject.
-  func apply(on subject: String, parameters: [Substring]) throws -> String
-
-}
-
-public struct StyleError: Error {
-
-  public init(message: String) {
-    self.message = message
-  }
-
-  public let message: String
+  func apply(on subject: String, parameters: [Substring]) -> String
 
 }
 
@@ -217,11 +207,11 @@ public struct StyleError: Error {
 ///   padding character.
 public struct PadLeft: Style {
 
-  public func apply(on subject: String, parameters: [Substring]) throws -> String {
-    guard parameters.count > 0
-      else { throw StyleError(message: "< requires at least 1 argument") }
+  public func apply(on subject: String, parameters: [Substring]) -> String {
+    precondition(parameters.count > 0, "< requires at least 1 argument")
     guard let width = Int(parameters[0])
-      else { throw StyleError(message: "cannot convert '\(parameters[0])' to Int") }
+      else { preconditionFailure("cannot convert '\(parameters[0])' to Int") }
+
     let pad = parameters.count > 1
       ? String(parameters[1])
       : " "
@@ -238,11 +228,11 @@ public struct PadLeft: Style {
 ///   padding character.
 public struct PadRight: Style {
 
-  public func apply(on subject: String, parameters: [Substring]) throws -> String {
-    guard parameters.count > 0
-      else { throw StyleError(message: "< requires at least 1 argument") }
+  public func apply(on subject: String, parameters: [Substring]) -> String {
+    precondition(parameters.count > 0, "< requires at least 1 argument")
     guard let width = Int(parameters[0])
-      else { throw StyleError(message: "cannot convert '\(parameters[0])' to Int") }
+      else { preconditionFailure("cannot convert '\(parameters[0])' to Int") }
+
     let pad = parameters.count > 1
       ? String(parameters[1])
       : " "
@@ -271,14 +261,12 @@ public struct AnsiSRG: Style {
 /// - Usage: `{text:rgb r g b}` where `r`, `g` and `b` are values in the range 0 ..< 255.
 public struct AnsiRGB: Style {
 
-  public func apply(on subject: String, parameters: [Substring]) throws -> String {
-    guard parameters.count == 3
-      else { throw StyleError(message: "rgb requires 3 arguments") }
-    let values = try parameters.map { (s) -> Int in
+  public func apply(on subject: String, parameters: [Substring]) -> String {
+    precondition(parameters.count == 3, "rgb requires 3 arguments")
+    let values = parameters.map { (s) -> Int in
       guard let v = Int(s)
-        else { throw StyleError(message: "cannot convert '\(s)' to Int") }
-      guard 0 ..< 256 ~= v
-        else { throw StyleError(message: "value '\(v)' is outside of range") }
+        else { preconditionFailure("cannot convert '\(s)' to Int") }
+      precondition(0 ..< 256 ~= v, "value '\(v)' is outside of range")
       return Int((Double(v) * 5.0 / 255.0).rounded())
     }
     let rgb = 16 + 36 * values[0] + 6 * values[1] + values[2]
@@ -290,13 +278,14 @@ public struct AnsiRGB: Style {
 /// Rounds a floating-point value to a specified number of decimals.
 public struct Round: Style {
 
-  public func apply(on subject: String, parameters: [Substring]) throws -> String {
+  public func apply(on subject: String, parameters: [Substring]) -> String {
+    precondition(parameters.count == 1, "round requires 1 argument")
     guard parameters.count == 1
-      else { throw StyleError(message: "round requires 1 argument") }
+      else { preconditionFailure("round requires 1 argument") }
     guard let digits = Int(parameters[0])
-      else { throw StyleError(message: "cannot convert '\(parameters[0])' to Int") }
+      else { preconditionFailure("cannot convert '\(parameters[0])' to Int") }
     guard let value = Double(subject)
-      else { throw StyleError(message: "cannot convert '\(subject)' to Double") }
+      else { preconditionFailure("cannot convert '\(subject)' to Double") }
 
     let multiplier: Double = (0 ..< digits).reduce(1, { result, _ in result * 10 })
     return String(describing: (value * multiplier).rounded() / multiplier)
