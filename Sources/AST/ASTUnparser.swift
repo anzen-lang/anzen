@@ -208,23 +208,28 @@ public final class ASTUnparser: ASTVisitor {
     stack.push(repr)
   }
 
-//  public func visit(_ node: IfExpr) throws {
-//    write("if ", styled: "magenta")
-//    try visit(node.condition)
-//    write(" ")
-//    try visit(node.thenBlock)
-//    if let elseBlock = node.elseBlock {
-//      write(" else ")
-//      try visit(elseBlock)
-//    }
-//  }
-//
-//  public func visit(_ node: BinExpr) throws {
-//    try visit(node.left)
-//    write(" \(node.op) ")
-//    try visit(node.right)
-//  }
-//
+  public func visit(_ node: IfExpr) throws {
+    var repr = StyledString("{if:magenta}").description
+    try visit(node.condition)
+    repr += " \(stack.pop()!)"
+
+    try visit(node.thenBlock)
+    repr += " \(stack.pop()!)"
+
+    if let elseBlock = node.elseBlock {
+      try visit(elseBlock)
+      repr += " else \(stack.pop()!)"
+    }
+
+    stack.push(repr)
+  }
+
+  public func visit(_ node: BinExpr) throws {
+    try visit(node.right)
+    try visit(node.left)
+    stack.push("\(stack.pop()!) \(node.op) \(stack.pop()!)")
+  }
+
 //  public func visit(_ node: UnExpr) throws {
 //    write("\(node.op) ")
 //    try visit(node.operand)
