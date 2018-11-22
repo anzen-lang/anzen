@@ -82,6 +82,45 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
       .conformance(t: node.rvalue.type!, u: node.lvalue.type!, at: .location(node, .rvalue)))
   }
 
+  public func visit(_ node: IfExpr) throws {
+    try visit(node.condition)
+    let bool = context.builtinTypes["Bool"]!
+    context.add(constraint:
+      .equality(t: node.condition.type!, u: bool, at: .location(node, .condition)))
+
+    try visit(node.thenBlock)
+    if let elseBlock = node.elseBlock {
+      try visit(elseBlock)
+    }
+
+    // FIXME: Type if expression with either the type of their return statement or `Nothing`.
+  }
+
+  public func visit(_ node: BinExpr) throws {
+    try visit(node.left)
+    try visit(node.right)
+
+    // Binary expressions require the left operand to have a method of type `(_: L, _: R) -> T`,
+    // where `L` is the type of the left operand, and `R` is a type the right operand conforms to.
+    // Therefore, we need to create the type of such function, similar to what we do for any
+    // "regular" call expression.
+    let domain = [
+      Parameter(label: nil, type: node.left.type!),
+      Parameter(label: nil, type: TypeVariable()),
+    ]
+    node.type = TypeVariable()
+    let opType = context.getFunctionType(from: domain, to: node.type!)
+
+    // The right operand's type must conforms to `R`.
+    context.add(constraint:
+      .conformance(t: node.right.type!, u: domain[1].type, at: .location(node, .binaryRHS)))
+
+    // The left operand's type must have a member `(_: L, _: R) -> T`.
+    let member = String(describing: node.op)
+    context.add(constraint:
+      .member(t: node.left.type!, member: member, u: opType, at: .location(node, .binaryOperator)))
+  }
+
   public func visit(_ node: CallExpr) throws {
     // Build the supposed type of the callee. Note the use of fresh variables so as to loosen
     // the constraint on the arguments.

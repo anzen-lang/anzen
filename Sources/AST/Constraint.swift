@@ -28,42 +28,6 @@ public enum ConstraintKind: Int {
 
 }
 
-/// Describes a derivation step to reach the exact location of a constraint from an anchor node.
-public enum ConstraintPath: Equatable {
-
-  /// The type annotation of a property or parameter declaration.
-  case annotation
-  /// A generic binding.
-  case binding(PlaceholderType)
-  /// The call site of a function.
-  case call
-  /// The codomain of a function type.
-  case codomain
-  /// An identifier.
-  case identifier
-  /// The i-th parameter of a function.
-  case parameter(Int)
-  /// The r-value of a binding statement.
-  case rvalue
-  /// The ownee of a select expression.
-  case select
-
-  public static func == (lhs: ConstraintPath, rhs: ConstraintPath) -> Bool {
-    switch (lhs, rhs) {
-    case (.annotation       , .annotation)        : return true
-    case (.call             , .call)              : return true
-    case (.codomain         , .codomain)          : return true
-    case (.identifier       , .identifier)        : return true
-    case (.rvalue           , .rvalue)            : return true
-    case (.select           , .select)            : return true
-    case (.binding(let pl)  , .binding(let pr))   : return pl == pr
-    case (.parameter(let pl), .parameter(let pr)) : return pl == pr
-    default                                       : return false
-    }
-  }
-
-}
-
 public struct Constraint {
 
   public init(

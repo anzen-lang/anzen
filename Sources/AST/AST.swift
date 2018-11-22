@@ -474,13 +474,13 @@ public final class BindingStmt: Node {
 /// A return statement.
 public final class ReturnStmt: Node {
 
-  public init(value: Node? = nil, module: ModuleDecl, range: SourceRange) {
+  public init(value: Expr? = nil, module: ModuleDecl, range: SourceRange) {
     self.value = value
     super.init(module: module, range: range)
   }
 
   /// The value of the return statement.
-  public var value: Node?
+  public var value: Expr?
 
 }
 
@@ -498,7 +498,7 @@ public class Expr: Node {
 public final class IfExpr: Expr {
 
   public init(
-    condition: Node,
+    condition: Expr,
     thenBlock: Node,
     elseBlock: Node? = nil,
     module: ModuleDecl,
@@ -511,7 +511,7 @@ public final class IfExpr: Expr {
   }
 
   /// The condition of the expression.
-  public var condition: Node
+  public var condition: Expr
   /// The block of statements to execute if the condition is statisfied.
   public var thenBlock: Node
   /// The block of statements to execute if the condition isn't statisfied.
@@ -562,7 +562,7 @@ public final class LambdaExpr: Expr {
 /// A binary expression.
 public final class BinExpr: Expr {
 
-  public init(left: Node, op: InfixOperator, right: Node, module: ModuleDecl, range: SourceRange) {
+  public init(left: Expr, op: InfixOperator, right: Expr, module: ModuleDecl, range: SourceRange) {
     self.left = left
     self.op = op
     self.right = right
@@ -570,18 +570,18 @@ public final class BinExpr: Expr {
   }
 
   /// The left operand of the expression.
-  public var left : Node
+  public var left : Expr
   /// The operator of the expression.
   public var op: InfixOperator
   /// The right operand of the expression.
-  public var right: Node
+  public var right: Expr
 
 }
 
 /// An unary expression.
 public final class UnExpr: Expr {
 
-  public init(op: PrefixOperator, operand: Node, module: ModuleDecl, range: SourceRange) {
+  public init(op: PrefixOperator, operand: Expr, module: ModuleDecl, range: SourceRange) {
     self.op = op
     self.operand = operand
     super.init(module: module, range: range)
@@ -590,7 +590,7 @@ public final class UnExpr: Expr {
   /// The operator of the expression.
   public var op: PrefixOperator
   /// The operand of the expression.
-  public var operand: Node
+  public var operand: Expr
 
 }
 

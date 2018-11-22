@@ -68,3 +68,31 @@ public struct ConstraintLocation {
   }
 
 }
+
+/// Describes a derivation step to reach the exact location of a constraint from an anchor node.
+public enum ConstraintPath: Equatable {
+
+  /// The type annotation of a property or parameter declaration.
+  case annotation
+  /// The operator of a binary expression.
+  case binaryOperator
+  // The right operand of a binary expression.
+  case binaryRHS
+  /// A generic binding.
+  case binding(PlaceholderType)
+  /// The call site of a function.
+  case call
+  /// The codomain of a function type.
+  case codomain
+  /// The condition of an `if` or a `while` statement.
+  case condition
+  /// An identifier.
+  case identifier
+  /// The i-th parameter of a function.
+  case parameter(Int)
+  /// The r-value of a binding statement.
+  case rvalue
+  /// The ownee of a select expression.
+  case select
+
+}
