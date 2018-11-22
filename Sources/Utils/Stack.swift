@@ -71,7 +71,8 @@ extension Stack: Collection {
   }
 
   public subscript(index: Index) -> Element {
-    return storage[index]
+    get { return storage[index] }
+    set { storage[index] = newValue }
   }
 
 }
