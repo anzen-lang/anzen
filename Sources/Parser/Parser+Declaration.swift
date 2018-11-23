@@ -55,10 +55,8 @@ extension Parser {
       consumeNewlines()
       if let id = consume(.identifier) {
         name = id.value!
-      } else if let op = consume(if: { $0.isPrefixOperator }) {
-        name = op.asPrefixOperator!.description
-      } else if let op = consume(if: { $0.isInfixOperator }) {
-        name = op.asInfixOperator!.description
+      } else if let op = consume(if: { $0.isPrefixOperator || $0.isInfixOperator }) {
+        name = op.kind.rawValue
       } else {
         throw parseFailure(.expectedIdentifier)
       }
