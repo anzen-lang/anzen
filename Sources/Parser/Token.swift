@@ -22,23 +22,23 @@ public enum TokenKind: String {
   case not
   case and
   case or
-  case add
-  case sub
-  case mul
-  case div
-  case mod
-  case lt
-  case le
-  case ge
-  case gt
-  case eq
-  case ne
-  case peq
-  case pne
-  case copy
-  case ref
-  case move
-  case arrow
+  case add    = "+"
+  case sub    = "-"
+  case mul    = "*"
+  case div    = "/"
+  case mod    = "%"
+  case lt     = "<"
+  case le     = "<="
+  case ge     = ">="
+  case gt     = ">"
+  case eq     = "=="
+  case ne     = "!="
+  case peq    = "==="
+  case pne    = "!=="
+  case copy   = "="
+  case ref    = "&-"
+  case move   = "<-"
+  case arrow  = "->"
 
   case dot
   case comma

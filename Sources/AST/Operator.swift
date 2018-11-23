@@ -2,15 +2,11 @@
 public enum PrefixOperator: String, CustomStringConvertible {
 
   case not
-  case add
-  case sub
+  case add = "+"
+  case sub = "-"
 
   public var description: String {
-    switch self {
-    case .add: return "+"
-    case .sub: return "-"
-    default  : return rawValue
-    }
+    return rawValue
   }
 
 }
@@ -24,28 +20,28 @@ public enum InfixOperator: String, CustomStringConvertible {
 
   // MARK: Multiplication precedence
 
-  case mul
-  case div
-  case mod
+  case mul  = "*"
+  case div  = "/"
+  case mod  = "%"
 
   // MARK: Addition precedence
 
-  case add
-  case sub
+  case add  = "+"
+  case sub  = "-"
 
   // MARK: Comparison precedence
 
-  case lt
-  case le
-  case ge
-  case gt
+  case lt   = "<"
+  case le   = "<="
+  case ge   = ">="
+  case gt   = ">"
 
   // MARK: Equivalence precedence
 
-  case eq
-  case ne
-  case peq
-  case pne
+  case eq   = "=="
+  case ne   = "!="
+  case peq  = "==="
+  case pne  = "!==="
   case `is`
 
   // MARK: Logical conjunction precedence
@@ -77,22 +73,7 @@ public enum InfixOperator: String, CustomStringConvertible {
   }
 
   public var description: String {
-    switch self {
-    case .mul: return "*"
-    case .div: return "/"
-    case .mod: return "%"
-    case .add: return "+"
-    case .sub: return "-"
-    case .lt : return "<"
-    case .le : return "<="
-    case .ge : return ">="
-    case .gt : return ">"
-    case .eq : return "=="
-    case .ne : return "!="
-    case .peq: return "==="
-    case .pne: return "!=="
-    default  : return rawValue
-    }
+    return rawValue
   }
 
 }
@@ -100,16 +81,12 @@ public enum InfixOperator: String, CustomStringConvertible {
 /// Enumeration of the binding operators.
 public enum BindingOperator: String, CustomStringConvertible {
 
-  case copy
-  case ref
-  case move
+  case copy = "="
+  case ref  = "&-"
+  case move = "<-"
 
   public var description: String {
-    switch self {
-    case .copy: return "="
-    case .ref : return "&-"
-    case .move: return "<-"
-    }
+    return rawValue
   }
 
 }
