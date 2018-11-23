@@ -1,5 +1,5 @@
-import Utils
 import SystemKit
+import Utils
 
 /// Enum representing a module identifier.
 public enum ModuleIdentifier: Hashable {
@@ -14,13 +14,14 @@ public enum ModuleIdentifier: Hashable {
   /// The qualified name corresponding to this module identifier.
   public var qualifiedName: String {
     switch self {
-    case .builtin       : return "anzen://builtin"
-    case .stdlib        : return "anzen://stdlib"
+    case .builtin       : return "__builtin"
+    case .stdlib        : return "__stdlib"
     case .local(let path):
       let relative = path.relative(to: .workingDirectory)
-      return relative.hasSuffix(".anzen")
-        ? String(relative.pathname.dropLast(6))
-        : relative.pathname
+      return relative.pathname
+        .dropLast(relative.fileExtension.map { $0.count + 1 } ?? 0)
+        .replacing("../", with: ".")
+        .replacing("/", with: ".")
     }
   }
 

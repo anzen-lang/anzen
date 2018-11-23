@@ -1,5 +1,5 @@
-(module_decl id='inference/prop_decl_002' inner_scope='inference/prop_decl_002'
-  (prop_decl let 'property' type='Int' symbol='property' scope='inference/prop_decl_002'
+(module_decl id='inference.prop_decl_002' inner_scope='inference.prop_decl_002'
+  (prop_decl let 'property' type='Int' symbol='property' scope='inference.prop_decl_002'
     (initial_binding
       (binding_operator =)
       (int_literal 0 type='Int'))))

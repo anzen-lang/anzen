@@ -1,37 +1,37 @@
-(module_decl id='inference/call_007' inner_scope='inference/call_007'
-  (struct_decl 'Box' type='Box<T>.metatype' symbol='Box' scope='inference/call_007' inner_scope='inference/call_007.Box'
+(module_decl id='inference.call_007' inner_scope='inference.call_007'
+  (struct_decl 'Box' type='Box<T>.metatype' symbol='Box' scope='inference.call_007' inner_scope='inference.call_007.Box'
     (placeholders
       (placeholder T))
     (body
-      (block inner_scope='inference/call_007.Box.block'
-          (prop_decl let 'clone' type='<T=T>Box<T>' symbol='clone' scope='inference/call_007.Box.block'
+      (block inner_scope='inference.call_007.Box.block'
+          (prop_decl let 'clone' type='<T=T>Box<T>' symbol='clone' scope='inference.call_007.Box.block'
             (type_annotation
               (qual_sign
-                (type_identifier 'Self' type='<T=T>Box<T>.metatype' scope='inference/call_007.Box'))))
-          (method_decl 'f' type='<T> (x: <T=T>Box<T>) -> T' symbol='f' scope='inference/call_007.Box.block' inner_scope='inference/call_007.Box.block.f'
+                (type_identifier 'Self' type='<T=T>Box<T>.metatype' scope='inference.call_007.Box'))))
+          (method_decl 'f' type='<T> (x: <T=T>Box<T>) -> T' symbol='f' scope='inference.call_007.Box.block' inner_scope='inference.call_007.Box.block.f'
             (parameters
-              (param_decl 'x' type='<T=T>Box<T>' symbol='x' scope='inference/call_007.Box.block.f'
+              (param_decl 'x' type='<T=T>Box<T>' symbol='x' scope='inference.call_007.Box.block.f'
                 (type_annotation
                   (qual_sign
-                    (type_identifier 'Self' type='<T=T>Box<T>.metatype' scope='inference/call_007.Box')))))
+                    (type_identifier 'Self' type='<T=T>Box<T>.metatype' scope='inference.call_007.Box')))))
             (codomain
               (qual_sign
-                (type_identifier 'T' type='T.metatype' scope='inference/call_007.Box')))))))
-  (prop_decl let 'box' type='<T=Int>Box<T>' symbol='box' scope='inference/call_007'
+                (type_identifier 'T' type='T.metatype' scope='inference.call_007.Box')))))))
+  (prop_decl let 'box' type='<T=Int>Box<T>' symbol='box' scope='inference.call_007'
     (type_annotation
       (qual_sign
-        (type_identifier 'Box' type='<T=Int>Box<T>.metatype' scope='inference/call_007'))))
-  (prop_decl let 'val' type='Int' symbol='val' scope='inference/call_007'
+        (type_identifier 'Box' type='<T=Int>Box<T>.metatype' scope='inference.call_007'))))
+  (prop_decl let 'val' type='Int' symbol='val' scope='inference.call_007'
     (initial_binding
       (binding_operator =)
       (call type='Int'
         (callee
           (select type='(x: <T=Int>Box<T>) -> Int'
             (owner
-              (identifier 'box' type='<T=Int>Box<T>' scope='inference/call_007'))
+              (identifier 'box' type='<T=Int>Box<T>' scope='inference.call_007'))
             (ownee
-              (identifier 'f' type='(x: <T=Int>Box<T>) -> Int' scope='inference/call_007.Box.block'))))
+              (identifier 'f' type='(x: <T=Int>Box<T>) -> Int' scope='inference.call_007.Box.block'))))
         (arguments
           (call_arg 'x' type='<T=Int>Box<T>'
             (binding_operator =)
-            (identifier 'box' type='<T=Int>Box<T>' scope='inference/call_007')))))))
+            (identifier 'box' type='<T=Int>Box<T>' scope='inference.call_007')))))))

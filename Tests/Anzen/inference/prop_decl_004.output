@@ -1,18 +1,18 @@
-(module_decl id='inference/prop_decl_004' inner_scope='inference/prop_decl_004'
-  (struct_decl 'Box' type='Box<T>.metatype' symbol='Box' scope='inference/prop_decl_004' inner_scope='inference/prop_decl_004.Box'
+(module_decl id='inference.prop_decl_004' inner_scope='inference.prop_decl_004'
+  (struct_decl 'Box' type='Box<T>.metatype' symbol='Box' scope='inference.prop_decl_004' inner_scope='inference.prop_decl_004.Box'
     (placeholders
       (placeholder T))
     (body
-      (block inner_scope='inference/prop_decl_004.Box.block'
-          (prop_decl let 'value' type='T' symbol='value' scope='inference/prop_decl_004.Box.block'
+      (block inner_scope='inference.prop_decl_004.Box.block'
+          (prop_decl let 'value' type='T' symbol='value' scope='inference.prop_decl_004.Box.block'
             (type_annotation
               (qual_sign
-                (type_identifier 'T' type='T.metatype' scope='inference/prop_decl_004.Box')))))))
-  (prop_decl let 'box1' type='<T=Int>Box<T>' symbol='box1' scope='inference/prop_decl_004'
+                (type_identifier 'T' type='T.metatype' scope='inference.prop_decl_004.Box')))))))
+  (prop_decl let 'box1' type='<T=Int>Box<T>' symbol='box1' scope='inference.prop_decl_004'
     (type_annotation
       (qual_sign
-        (type_identifier 'Box' type='<T=Int>Box<T>.metatype' scope='inference/prop_decl_004'))))
-  (prop_decl let 'box2' type='<T=<T=Int>Box<T>>Box<T>' symbol='box2' scope='inference/prop_decl_004'
+        (type_identifier 'Box' type='<T=Int>Box<T>.metatype' scope='inference.prop_decl_004'))))
+  (prop_decl let 'box2' type='<T=<T=Int>Box<T>>Box<T>' symbol='box2' scope='inference.prop_decl_004'
     (type_annotation
       (qual_sign
-        (type_identifier 'Box' type='<T=<T=Int>Box<T>>Box<T>.metatype' scope='inference/prop_decl_004')))))
+        (type_identifier 'Box' type='<T=<T=Int>Box<T>>Box<T>.metatype' scope='inference.prop_decl_004')))))

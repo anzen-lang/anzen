@@ -1,24 +1,24 @@
-(module_decl id='inference/member_001' inner_scope='inference/member_001'
-  (struct_decl 'Point' type='Point.metatype' symbol='Point' scope='inference/member_001' inner_scope='inference/member_001.Point'
+(module_decl id='inference.member_001' inner_scope='inference.member_001'
+  (struct_decl 'Point' type='Point.metatype' symbol='Point' scope='inference.member_001' inner_scope='inference.member_001.Point'
     (body
-      (block inner_scope='inference/member_001.Point.block'
-          (prop_decl let 'x' type='Int' symbol='x' scope='inference/member_001.Point.block'
+      (block inner_scope='inference.member_001.Point.block'
+          (prop_decl let 'x' type='Int' symbol='x' scope='inference.member_001.Point.block'
             (type_annotation
               (qual_sign
-                (type_identifier 'Int' type='Int.metatype' scope='anzen://builtin'))))
-          (prop_decl let 'y' type='Int' symbol='y' scope='inference/member_001.Point.block'
+                (type_identifier 'Int' type='Int.metatype' scope='__builtin'))))
+          (prop_decl let 'y' type='Int' symbol='y' scope='inference.member_001.Point.block'
             (type_annotation
               (qual_sign
-                (type_identifier 'Int' type='Int.metatype' scope='anzen://builtin')))))))
-  (prop_decl let 'p' type='Point' symbol='p' scope='inference/member_001'
+                (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))))
+  (prop_decl let 'p' type='Point' symbol='p' scope='inference.member_001'
     (type_annotation
       (qual_sign
-        (type_identifier 'Point' type='Point.metatype' scope='inference/member_001'))))
-  (prop_decl let 'x' type='Int' symbol='x' scope='inference/member_001'
+        (type_identifier 'Point' type='Point.metatype' scope='inference.member_001'))))
+  (prop_decl let 'x' type='Int' symbol='x' scope='inference.member_001'
     (initial_binding
       (binding_operator =)
       (select type='Int'
         (owner
-          (identifier 'p' type='Point' scope='inference/member_001'))
+          (identifier 'p' type='Point' scope='inference.member_001'))
         (ownee
-          (identifier 'x' type='Int' scope='inference/member_001.Point.block'))))))
+          (identifier 'x' type='Int' scope='inference.member_001.Point.block'))))))
