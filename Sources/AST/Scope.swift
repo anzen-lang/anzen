@@ -22,14 +22,14 @@ public class Scope {
     return false
   }
 
-  /// Returns whether this scope is contained in the given one.
-  public func isContained(in other: Scope) -> Bool {
-    var ancestor = parent
+  /// Returns whether this scope is an ancestor of the given one.
+  public func isAncestor(of other: Scope) -> Bool {
+    var ancestor = other.parent
     while ancestor != nil {
-      if ancestor == other {
+      if ancestor == self {
         return true
       }
-      ancestor = ancestor!.parent
+      ancestor = ancestor?.parent
     }
     return false
   }

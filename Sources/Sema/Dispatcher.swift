@@ -2,11 +2,11 @@ import AST
 import Utils
 
 /// Visitor that annotates expressions with their type (as inferred by the type solver), identifiers
-/// with their corresponding symbol and functions with their capture list.
+/// with their corresponding symbol and functions with their capture set.
 ///
 /// This pass reifies the types of each node, according to the solution it is provided with, and
 /// links all identifiers to the appropriate symbol, based on their reified type. This also allows
-/// to determine the functions' capture lists.
+/// to determine the functions' capture set.
 ///
 /// This pass may fail if the dispatcher is unable to unambiguously determine which symbol an
 // identifier should be bound to, which may happen in the presence of overloaded generic functions.
@@ -28,7 +28,7 @@ public final class Dispatcher: ASTVisitor, SAPass {
   public let solution: SubstitutionTable
   /// The nominal types already reified.
   private var visited: [NominalType] = []
-  /// The stack of functions, used to determine capture lists.
+  /// The stack of functions, used to determine capture set.
   private var functions: Stack<FunDecl> = []
 
   public func visit(_ node: ModuleDecl) throws {
@@ -156,14 +156,17 @@ public final class Dispatcher: ASTVisitor, SAPass {
     let symbol = choices[0]
     node.symbol = symbol
 
-    // Check whether the identifier should be registered in a capture list.
-    if let fn = functions.top {
-      // FIXME: Captures must be added to all outer functions also within the scope of the captured
-      // symbol, so that they also get wrapped during AIR generation.
-      // FIXME: Global symbols (e.g. functions) should be excluded from capture lists. It is already
-      // the case for types, as they aren't referenced by expression identifiers.
-      if !symbol.scope.isContained(in: fn.innerScope!) {
-        fn.captures.append(symbol)
+    // Check whether the identifier should be registered in a capture set.
+    for fn in functions {
+      if (symbol != fn.symbol) && symbol.scope.isAncestor(of: fn.innerScope!) {
+        // If the identifier doesn't refer to neither a function's parameter, nor a local variable,
+        // nor the function itself, then it should figure in the capture set. However, note that
+        // global function names will be included as well. Those should be removed in a later pass,
+        // if it can be established they refer to thin functions.
+        fn.captures.insert(symbol)
+      } else {
+        // If a function doesn't capture a particular symbol, neither will the outer ones.
+        break
       }
     }
   }
