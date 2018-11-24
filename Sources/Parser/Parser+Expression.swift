@@ -92,7 +92,10 @@ extension Parser {
 
     case .dot:
       consume()
-      let ident = try parseIdentifier()
+      guard peek().kind == .identifier || peek().isPrefixOperator || peek().isInfixOperator
+        else { throw parseFailure(.expectedMember) }
+      let ident = try parseIdentifier(allowOperators: true)
+
       expression = SelectExpr(
         ownee: ident,
         module: module,
@@ -113,11 +116,10 @@ extension Parser {
       throw unexpectedToken(expected: "expression")
     }
 
-    // Parse optional trailers.
+    // NOTE: Although it wouldn't make the grammar ambiguous otherwise, notice that we require
+    // trailers to start at the same line. The rationale is that it doing otherwise could easily
+    // make some portions of code *look* ambiguous.
     trailer:while true {
-      // Although it wouldn't make the grammar ambiguous otherwise, notice that we require such
-      // call/subscript trailers to start at the same line. The rationale is that it doing
-      // otherwise could easily make some portions of code *look* ambiguous.
       if consume(.leftParen) != nil {
         let args = try parseList(delimitedBy: .rightParen, parsingElementWith: parseCallArg)
 
@@ -151,12 +153,10 @@ extension Parser {
       // consuming possibly significant new lines.
       let backtrackPosition = streamPosition
       if consume(.dot, afterMany: .newline) != nil {
-        // Although it wouldn't make the grammar ambiguous otherwise, notice that we require the
-        // selected identifier to be on the same line.
-        guard peek().kind == .identifier
+        guard peek().kind == .identifier || peek().isPrefixOperator || peek().isInfixOperator
           else { throw parseFailure(.expectedMember) }
+        let ident = try parseIdentifier(allowOperators: true)
 
-        let ident = try parseIdentifier()
         expression = SelectExpr(
           owner: expression,
           ownee: ident,
@@ -187,10 +187,15 @@ extension Parser {
   }
 
   /// Parses an identifier.
-  func parseIdentifier() throws -> Ident {
-    guard let token = consume(.identifier)
-      else { throw unexpectedToken(expected: "identifier") }
-    let ident = Ident(name: token.value!, module: module, range: token.range)
+  func parseIdentifier(allowOperators: Bool = false) throws -> Ident {
+    let ident: Ident
+    if let name = consume(.identifier) {
+      ident = Ident(name: name.value!, module: module, range: name.range)
+    } else if allowOperators, let op = consume(if: { $0.isPrefixOperator || $0.isInfixOperator }) {
+      ident = Ident(name: op.kind.rawValue, module: module, range: op.range)
+    } else {
+      throw unexpectedToken(expected: "identifier")
+    }
 
     // Attempt to parse the specialization list.
     let backtrackPosition = streamPosition
