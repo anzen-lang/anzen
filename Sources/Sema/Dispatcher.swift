@@ -1,15 +1,16 @@
 import AST
 import Utils
 
-/// Visitor that annotates expressions with their type (as inferred by the type solver), identifiers
-/// with their corresponding symbol and functions with their capture set.
+/// Visitor that annotates expressions with their reified type (as inferred by the type solver), and
+/// associates identifiers with their corresponding symbol.
 ///
-/// This pass reifies the types of each node, according to the solution it is provided with, and
-/// links all identifiers to the appropriate symbol, based on their reified type. This also allows
-/// to determine the functions' capture set.
+/// The main purpose of this pass is to resolve identifiers' symbols, so as to know which variable,
+/// function or type they refer to. The choice is based on the inferred type of the identifier,
+/// which is why this pass also reifies all types.
 ///
-/// This pass may fail if the dispatcher is unable to unambiguously determine which symbol an
-// identifier should be bound to, which may happen in the presence of overloaded generic functions.
+/// Dispatching may fail if the pass is unable to unambiguously resolve an identifier's symbol,
+/// which may happen in the presence of function declarations whose normalized (and specialized)
+/// signature are found identical.
 public final class Dispatcher: ASTTransformer {
 
   public init(context: ASTContext) {
@@ -28,8 +29,6 @@ public final class Dispatcher: ASTTransformer {
   public let solution: SubstitutionTable
   /// The nominal types already reified.
   private var visited: [NominalType] = []
-  /// The stack of functions, used to determine capture set.
-  private var functions: Stack<FunDecl> = []
 
   public func transform(_ node: ModuleDecl) throws -> Node {
     visitScopeDelimiter(node)
@@ -42,11 +41,8 @@ public final class Dispatcher: ASTTransformer {
   }
 
   public func transform(_ node: FunDecl) throws -> Node {
-    functions.push(node)
     visitScopeDelimiter(node)
-    let transformed = try defaultTransform(node)
-    functions.pop()
-    return transformed
+    return try defaultTransform(node)
   }
 
   public func transform(_ node: TypeIdent) throws -> Node {
@@ -160,21 +156,6 @@ public final class Dispatcher: ASTTransformer {
     // FIXME: Disambiguise when there are several choices.
     assert(choices.count > 0)
     node.symbol = choices.first!
-
-    // Check whether the identifier should be registered in a capture set.
-    for fn in functions {
-      if (node.symbol! != fn.symbol) && node.symbol!.scope.isAncestor(of: fn.innerScope!) {
-        // If the identifier doesn't refer to neither a function's parameter, nor a local variable,
-        // nor the function itself, then it should figure in the capture set. However, note that
-        // global function names will be included as well. Those should be removed in a later pass,
-        // if it can be established they refer to thin functions.
-        fn.captures.insert(node.symbol!)
-      } else {
-        // If a function doesn't capture a particular symbol, neither will the outer ones.
-        break
-      }
-    }
-
     return node
   }
 
