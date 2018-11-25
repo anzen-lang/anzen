@@ -50,81 +50,69 @@ public final class Dispatcher: ASTTransformer {
   }
 
   public func transform(_ node: TypeIdent) throws -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.type = reify(type: node.type)
     return try defaultTransform(node)
   }
 
   public func transform(_ node: IfExpr) throws -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.type = reify(type: node.type)
     return try defaultTransform(node)
   }
 
   public func transform(_ node: LambdaExpr) throws -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.type = reify(type: node.type)
     return try defaultTransform(node)
   }
 
   public func transform(_ node: BinExpr) throws -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.type = reify(type: node.type)
 
     let lhs = try transform(node.left) as! Expr
     let rhs = try transform(node.right) as! Expr
 
-    // Try to retrieve the operator's symbol among the member of the left operand's type.
-    guard let lhsTy = lhs.type as? NominalType
-      else { unreachable() }
-    let choices = lhsTy.members.filter { (symbol) -> Bool in
-      guard symbol.name == node.op.rawValue
-        else { return false }
-      var bindings: [PlaceholderType: TypeBase] = [:]
-      return specializes(
-        lhs: node.operatorType!, rhs: symbol.type!, in: context, bindings: &bindings)
-    }
+    // Transform the binary expression into a function application of the form `lhs.op(rhs)`.
+    let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
+    opIdent.scope = (lhs.type as! NominalType).memberScope
+    opIdent.type = node.operatorType
 
-    // FIXME: Disambiguise when there are several choices.
-    assert(choices.count > 0)
-
-    // Transform the binary expression into a call expression.
-    let callee = Ident(name: node.op.rawValue, module: node.module, range: node.range)
-    callee.symbol = choices.first!
-    callee.scope = lhsTy.memberScope
-    callee.type = node.operatorType!
-
-    let call = CallExpr(
-      callee: callee,
-      arguments: [
-        CallArg(label: nil, bindingOp: .copy, value: lhs, module: node.module, range: lhs.range),
-        CallArg(label: nil, bindingOp: .copy, value: rhs, module: node.module, range: lhs.range),
-      ],
+    let callee = SelectExpr(
+      owner: lhs,
+      ownee: try transform(opIdent) as! Ident,
       module: node.module,
       range: node.range)
+    callee.type = lhs.type?.metatype
+
+    let arg = CallArg(value: rhs, module: node.module, range: node.range)
+    arg.type = rhs.type
+
+    let call = CallExpr(callee: callee, arguments: [arg], module: node.module, range: node.range)
     call.type = node.type
 
     return call
   }
 
   public func transform(_ node: UnExpr) throws -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.type = reify(type: node.type)
     return try defaultTransform(node)
   }
 
   public func transform(_ node: CallExpr) throws -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.type = reify(type: node.type)
     return try defaultTransform(node)
   }
 
   public func transform(_ node: CallArg) throws -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.type = reify(type: node.type)
     return try defaultTransform(node)
   }
 
   public func transform(_ node: SubscriptExpr) throws -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.type = reify(type: node.type)
     return try defaultTransform(node)
   }
 
   public func transform(_ node: SelectExpr) throws -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.type = reify(type: node.type)
     node.owner = try node.owner.map { try transform($0) as! Expr }
 
     let ownerTy = node.owner != nil
@@ -198,6 +186,10 @@ public final class Dispatcher: ASTTransformer {
     }
   }
 
+  private func reify(type: TypeBase?) -> TypeBase? {
+    return type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+  }
+
 }
 
 private func specializes(
@@ -243,6 +235,9 @@ private func specializes(
         else { return false }
     }
     return specializes(lhs: left.codomain, rhs: right.codomain, in: context, bindings: &bindings)
+
+  case (is TypeVariable, _), (_, is TypeVariable):
+    preconditionFailure("Unexpected type variable, did you forget to reify?")
 
   default:
     return false
