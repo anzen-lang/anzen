@@ -124,6 +124,43 @@ public final class TypeVariable: TypeBase, Hashable, CustomStringConvertible {
 
 }
 
+/// A type placeholder, a.k.a. a generic parameter.
+public final class PlaceholderType: TypeBase, Hashable, CustomStringConvertible {
+
+  public required init(name: String) {
+    self.name = name
+  }
+
+  /// The name of the placeholder.
+  public let name: String
+
+  /// Opens the type, replacing occurences of placeholders with fresh variables.
+  public override func open(
+    using bindings: [PlaceholderType: TypeVariable] = [:],
+    in context: ASTContext) -> TypeBase
+  {
+    return bindings[self] ?? self
+  }
+
+  /// Closes the type, effectively replacing its placeholders with their given substitution.
+  public override func close(
+    using bindings: [PlaceholderType: TypeBase] = [:],
+    in context: ASTContext) -> TypeBase
+  {
+    assert(bindings.keys.contains(self), "partial specializations aren't supported yet")
+    return bindings[self]!
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
+  }
+
+  public var description: String {
+    return name
+  }
+
+}
+
 /// Protocol for types that may have generic placeholders.
 public protocol GenericType {
 
@@ -179,19 +216,25 @@ public final class BoundGenericType: TypeBase, CustomStringConvertible {
 /// Class to represent types whose name can be use to distinguish structurally-similar types.
 public class NominalType: TypeBase, GenericType, Hashable, CustomStringConvertible {
 
-  public required init(name: String, memberScope: Scope?) {
-    self.name = name
+  public required init(decl: NominalTypeDecl, memberScope: Scope?, isBuiltin: Bool = false) {
+    self.decl = decl
     self.memberScope = memberScope
+    self.isBuiltin = isBuiltin
   }
 
-  /// The name of the type.
-  public let name: String
+  /// The node that declares this type.
+  public unowned let decl: NominalTypeDecl
   /// The scope of the type's members.
   public let memberScope: Scope?
   /// The type placeholders of the type, in case the type's generic.
   public var placeholders: [PlaceholderType] = []
   /// The members of the type.
-  public var members: [String: [TypeBase]] = [:]
+  public var members: Set<Symbol> = []
+  /// Whether the type is built-in.
+  public let isBuiltin: Bool
+
+  /// The name of the type.
+  public var name: String { return decl.name }
 
   /// Returns whether this type is a subtype of another.
   public override func isSubtype(of other: TypeBase) -> Bool {
@@ -232,28 +275,6 @@ public class NominalType: TypeBase, GenericType, Hashable, CustomStringConvertib
     return !placeholders.isEmpty
       ? name + "<" + placeholders.map({ $0.name }).joined(separator: ", ") + ">"
       : name
-  }
-
-}
-
-/// A type placeholder, a.k.a. a generic parameter.
-public final class PlaceholderType: NominalType {
-
-  /// Opens the type, replacing occurences of placeholders with fresh variables.
-  public override func open(
-    using bindings: [PlaceholderType: TypeVariable] = [:],
-    in context: ASTContext) -> TypeBase
-  {
-    return bindings[self] ?? self
-  }
-
-  /// Closes the type, effectively replacing its placeholders with their given substitution.
-  public override func close(
-    using bindings: [PlaceholderType: TypeBase] = [:],
-    in context: ASTContext) -> TypeBase
-  {
-    assert(bindings.keys.contains(self), "partial specializations aren't supported yet")
-    return bindings[self]!
   }
 
 }

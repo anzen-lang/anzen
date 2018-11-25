@@ -271,10 +271,18 @@ public final class ParamDecl: NamedDecl {
 /// Base class for node representing a nominal type declaration.
 public class NominalTypeDecl: NamedDecl, ScopeDelimiter {
 
-  fileprivate override init(name: String, module: ModuleDecl, range: SourceRange) {
+  fileprivate init(
+    name: String,
+    body: Block,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
+    self.body = body
     super.init(name: name, module: module, range: range)
   }
 
+  /// The body of the type.
+  public var body: Block
   /// The scope delimited by the type.
   public var innerScope: Scope?
 
@@ -293,14 +301,11 @@ public final class StructDecl: NominalTypeDecl {
     range: SourceRange)
   {
     self.placeholders = placeholders
-    self.body = body
-    super.init(name: name, module: module, range: range)
+    super.init(name: name, body: body, module: module, range: range)
   }
 
   /// The generic placeholders of the type.
   public var placeholders: [String]
-  /// The body of the type.
-  public var body: Block
 
 }
 
@@ -317,14 +322,11 @@ public final class InterfaceDecl: NominalTypeDecl {
     range: SourceRange)
   {
     self.placeholders = placeholders
-    self.body = body
-    super.init(name: name, module: module, range: range)
+    super.init(name: name, body: body, module: module, range: range)
   }
 
   /// The generic placeholders of the type.
   public var placeholders: [String]
-  /// The body of the type.
-  public var body: Block
 
 }
 
@@ -576,6 +578,9 @@ public final class BinExpr: Expr {
   /// The right operand of the expression.
   public var right: Expr
 
+  /// The type of the operator.
+  public var operatorType: TypeBase?
+
 }
 
 /// An unary expression.
@@ -591,6 +596,9 @@ public final class UnExpr: Expr {
   public var op: PrefixOperator
   /// The operand of the expression.
   public var operand: Expr
+
+  /// The type of the operator.
+  public var operatorType: TypeBase?
 
 }
 
@@ -690,9 +698,8 @@ public final class Ident: Expr {
 
   /// The symbol associated with this identifier.
   ///
-  /// Identifiers might refer to overloaded names. As such, unlike other named nodes, they have to
-  /// annotated with the symbol they actually refer to, which will be defined during the static
-  /// dispatching phase.
+  /// Identifiers might refer to overloaded names. Hence, their symbol can't be determined during
+  /// name binding, but should rather be resolved by static dispatching.
   public var symbol: Symbol?
 
 }

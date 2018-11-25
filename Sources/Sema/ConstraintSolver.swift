@@ -278,15 +278,16 @@ public struct ConstraintSolver {
       return .success
 
     case let nominalType as NominalType:
-      guard let members = nominalType.members[constraint.member!]
+      let members = nominalType.members.filter { $0.name == constraint.member! }
+      guard !members.isEmpty
         else { return .failure }
 
       // Create a disjunction of membership constraints for each overloaded member.
       let choices = members.map { (member) -> Constraint in
         // If the owner is a bound generic type, close the found member with the same bindings.
         let u = bindings != nil
-          ? assumptions.reify(type: member, in: context).close(using: bindings!, in: context)
-          : member
+          ? assumptions.reify(type: member.type!, in: context).close(using: bindings!, in: context)
+          : member.type!
         return Constraint.equality(t: constraint.types!.u, u: u, at: constraint.location)
       }
 

@@ -47,6 +47,11 @@ public final class ASTContext {
   /// The loaded already loaded in the context.
   public private(set) var loadedModules: [ModuleIdentifier: ModuleDecl] = [:]
 
+  /// The built-in module.
+  public var builtinModule: ModuleDecl { return loadedModules[.builtin]! }
+  /// The standard library module.
+  public var stdlibModule: ModuleDecl { return loadedModules[.stdlib]! }
+
   // MARK: Types
 
   /// Retrieves or create a function type.
@@ -66,30 +71,46 @@ public final class ASTContext {
     return type
   }
 
-  /// Retrieves or create a struct type.
-  public func getStructType(for symbol: Symbol, memberScope: Scope) -> StructType {
-    return getType(for: symbol, memberScope: memberScope)
-  }
-
   /// Retrieves or create a placeholder type.
   public func getPlaceholderType(for symbol: Symbol) -> PlaceholderType {
-    return getType(for: symbol, memberScope: nil)
+    if let ty = placeholderTypes[symbol] {
+      return ty
+    }
+    let ty = PlaceholderType(name: symbol.name)
+    placeholderTypes[symbol] = ty
+    return ty
+  }
+
+  /// Retrieves or create a struct type.
+  public func getStructType(
+    for decl: NominalTypeDecl,
+    memberScope: Scope,
+    isBuiltin: Bool) -> StructType
+  {
+    return getNominalType(for: decl, memberScope: memberScope, isBuiltin: isBuiltin)
   }
 
   /// Retrieves or create a nominal type.
-  public func getType<Ty>(for symbol: Symbol, memberScope: Scope?) -> Ty where Ty: NominalType {
-    if let nominal = nominalTypes[symbol] {
+  public func getNominalType<Ty>(
+    for decl: NominalTypeDecl,
+    memberScope: Scope,
+    isBuiltin: Bool) -> Ty
+    where Ty: NominalType
+  {
+    if let nominal = nominalTypes[decl.symbol!] {
       let ty = nominal as? Ty
       assert(ty != nil, "\(nominal) is not a \(Ty.self)")
       return ty!
     }
-    let ty = Ty(name: symbol.name, memberScope: memberScope)
-    nominalTypes[symbol] = ty
+    let ty = Ty(decl: decl, memberScope: memberScope, isBuiltin: isBuiltin)
+    nominalTypes[decl.symbol!] = ty
     return ty
   }
 
   /// The nominal types in the context.
   private var nominalTypes: [Symbol: NominalType] = [:]
+  /// The placeholder types in the context.
+  private var placeholderTypes: [Symbol: PlaceholderType] = [:]
   /// The function types in the context.
   private var functionTypes: [FunctionType] = []
   /// The type constraints that haven't been solved yet.

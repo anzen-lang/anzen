@@ -100,23 +100,20 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
     try visit(node.left)
     try visit(node.right)
 
-    // Binary expressions require the left operand to have a method of type `(_: L, _: R) -> T`,
-    // where `L` is the type of the left operand, and `R` is a type the right operand conforms to.
-    // Therefore, we need to create the type of such function, similar to what we do for any
-    // "regular" call expression.
-    let domain = [
-      Parameter(label: nil, type: node.left.type!),
-      Parameter(label: nil, type: TypeVariable()),
-    ]
-    node.type = TypeVariable()
-    let opType = context.getFunctionType(from: domain, to: node.type!)
+    // Binary expressions require the left operand to have a method of type `(_: RHS) -> T`, where
+    // `RHS` is a type the right operand conforms to. Therefore, we need to create the type of such
+    // function, similar to what we do for any "regular" call expression.
+    let domain = [Parameter(label: nil, type: TypeVariable())]
+    let opType = context.getFunctionType(from: domain, to: TypeVariable())
+    node.type = opType.codomain
+    node.operatorType = opType
 
-    // The right operand's type must conforms to `R`.
+    // The right operand's type must conforms to `RHS`.
     context.add(constraint:
-      .conformance(t: node.right.type!, u: domain[1].type, at: .location(node, .binaryRHS)))
+      .conformance(t: node.right.type!, u: domain[0].type, at: .location(node, .binaryRHS)))
 
-    // The left operand's type must have a member `(_: L, _: R) -> T`.
-    let member = String(describing: node.op)
+    // The left operand's type must have a member `(_: RHS) -> T`.
+    let member = node.op.rawValue
     context.add(constraint:
       .member(t: node.left.type!, member: member, u: opType, at: .location(node, .binaryOperator)))
   }
@@ -125,8 +122,8 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
     // Build the supposed type of the callee. Note the use of fresh variables so as to loosen
     // the constraint on the arguments.
     let domain = node.arguments.map { Parameter(label: $0.label, type: TypeVariable()) }
-    node.type = TypeVariable()
-    let fnType = context.getFunctionType(from: domain, to: node.type!)
+    let fnType = context.getFunctionType(from: domain, to: TypeVariable())
+    node.type = fnType.codomain
 
     // Create conformance constraints for the arguments.
     let loc: ConstraintLocation = .location(node, .call)
