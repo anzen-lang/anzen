@@ -6,25 +6,25 @@ struct Nothing {
 
 struct Bool {
 
-  fun and (_ lhs: Self, _ rhs: Self) -> Self
-  fun or  (_ lhs: Self, _ rhs: Self) -> Self
-  fun ==  (_ lhs: Self, _ rhs: Self) -> Self
+  fun and (_ rhs: Self) -> Self
+  fun or  (_ rhs: Self) -> Self
+  fun ==  (_ rhs: Self) -> Self
 
 }
 
 struct Int {
 
-  fun +  (_ lhs: Self, _ rhs: Self) -> Self
-  fun -  (_ lhs: Self, _ rhs: Self) -> Self
-  fun *  (_ lhs: Self, _ rhs: Self) -> Self
-  fun /  (_ lhs: Self, _ rhs: Self) -> Self
-  fun %  (_ lhs: Self, _ rhs: Self) -> Self
+  fun +  (_ rhs: Self) -> Self
+  fun -  (_ rhs: Self) -> Self
+  fun *  (_ rhs: Self) -> Self
+  fun /  (_ rhs: Self) -> Self
+  fun %  (_ rhs: Self) -> Self
 
-  fun == (_ lhs: Self, _ rhs: Self) -> Bool
-  fun <  (_ lhs: Self, _ rhs: Self) -> Bool
-  fun <= (_ lhs: Self, _ rhs: Self) -> Bool
-  fun >  (_ lhs: Self, _ rhs: Self) -> Bool
-  fun >= (_ lhs: Self, _ rhs: Self) -> Bool
+  fun == (_ rhs: Self) -> Bool
+  fun <  (_ rhs: Self) -> Bool
+  fun <= (_ rhs: Self) -> Bool
+  fun >  (_ rhs: Self) -> Bool
+  fun >= ( _ rhs: Self) -> Bool
 
 }
 
