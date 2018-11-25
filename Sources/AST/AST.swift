@@ -362,13 +362,13 @@ public final class QualSign: Node {
   }
 
   /// The qualifiers of the signature.
-  public let qualifiers: Set<TypeQualifier>
+  public var qualifiers: Set<TypeQualifier>
 
   /// The semantic type definition of the signature.
   ///
   /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a semantic
   ///   type signature (i.e. an instance of `FunSign` or `StructSign`).
-  public let signature: Node?
+  public var signature: Node?
 
 }
 
@@ -700,39 +700,39 @@ public final class Ident: Expr {
 /// An array literal expression.
 public final class ArrayLiteral: Expr {
 
-  public init(elements: [Node], module: ModuleDecl, range: SourceRange) {
+  public init(elements: [Expr], module: ModuleDecl, range: SourceRange) {
     self.elements = elements
     super.init(module: module, range: range)
   }
 
   /// The elements of the literal.
-  public var elements: [Node]
+  public var elements: [Expr]
 
 }
 
 /// An set literal expression.
 public final class SetLiteral: Expr {
 
-  public init(elements: [Node], module: ModuleDecl, range: SourceRange) {
+  public init(elements: [Expr], module: ModuleDecl, range: SourceRange) {
     self.elements = elements
     super.init(module: module, range: range)
   }
 
   /// The elements of the literal.
-  public var elements: [Node]
+  public var elements: [Expr]
 
 }
 
 /// An map literal expression.
 public final class MapLiteral: Expr {
 
-  public init(elements: [String: Node], module: ModuleDecl, range: SourceRange) {
+  public init(elements: [String: Expr], module: ModuleDecl, range: SourceRange) {
     self.elements = elements
     super.init(module: module, range: range)
   }
 
   /// The elements of the literal.
-  public var elements: [String: Node]
+  public var elements: [String: Expr]
 
 }
 

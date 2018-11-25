@@ -367,7 +367,7 @@ extension Parser {
   }
 
   /// Parses a map literal element.
-  func parseMapElement() throws -> (Token, Node) {
+  func parseMapElement() throws -> (Token, Expr) {
     // Parse the key of the element.
     guard let key = consume(.identifier)
       else { throw unexpectedToken(expected: "identifier") }
