@@ -10,7 +10,7 @@ import Utils
 ///
 /// This pass may fail if the dispatcher is unable to unambiguously determine which symbol an
 // identifier should be bound to, which may happen in the presence of overloaded generic functions.
-public final class Dispatcher: ASTVisitor, SAPass {
+public final class Dispatcher: ASTTransformer {
 
   public init(context: ASTContext) {
     self.context = context
@@ -31,115 +31,133 @@ public final class Dispatcher: ASTVisitor, SAPass {
   /// The stack of functions, used to determine capture set.
   private var functions: Stack<FunDecl> = []
 
-  public func visit(_ node: ModuleDecl) throws {
-    if let scope = node.innerScope {
-      for symbol in scope.symbols.values.joined() {
-        symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
-      }
-    }
-    try traverse(node)
+  public func transform(_ node: ModuleDecl) throws -> Node {
+    visitScopeDelimiter(node)
+    return try defaultTransform(node)
   }
 
-  public func visit(_ node: Block) throws {
-    if let scope = node.innerScope {
-      for symbol in scope.symbols.values.joined() {
-        symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
-      }
-    }
-    try traverse(node)
+  public func transform(_ node: Block) throws -> Node {
+    visitScopeDelimiter(node)
+    return try defaultTransform(node)
   }
 
-  public func visit(_ node: FunDecl) throws {
+  public func transform(_ node: FunDecl) throws -> Node {
     functions.push(node)
-    if let scope = node.innerScope {
-      for symbol in scope.symbols.values.joined() {
-        symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
-      }
-    }
-    try traverse(node)
+    visitScopeDelimiter(node)
+    let transformed = try defaultTransform(node)
     functions.pop()
+    return transformed
   }
 
-  public func visit(_ node: StructDecl) throws {
-    if let scope = node.innerScope {
-      for symbol in scope.symbols.values.joined() {
-        symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
-      }
-    }
-    try traverse(node)
+  public func transform(_ node: TypeIdent) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    return try defaultTransform(node)
   }
 
-  public func visit(_ node: InterfaceDecl) throws {
-    if let scope = node.innerScope {
-      for symbol in scope.symbols.values.joined() {
-        symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
-      }
-    }
-    try traverse(node)
+  public func transform(_ node: IfExpr) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    return try defaultTransform(node)
   }
 
-  public func visit(_ node: TypeIdent) throws {
-    node.type = node.type.map {
-      solution.reify(type: $0, in: context, skipping: &visited)
-    }
-    try traverse(node)
+  public func transform(_ node: LambdaExpr) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    return try defaultTransform(node)
   }
 
-  public func visit(_ node: CallExpr) throws {
-    node.type = node.type.map {
-      solution.reify(type: $0, in: context, skipping: &visited)
+  public func transform(_ node: BinExpr) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+
+    let lhs = try transform(node.left) as! Expr
+    let rhs = try transform(node.right) as! Expr
+
+    // Try to retrieve the operator's symbol among the member of the left operand's type.
+    guard let lhsTy = lhs.type as? NominalType
+      else { unreachable() }
+    let choices = lhsTy.members.filter { (symbol) -> Bool in
+      guard symbol.name == node.op.rawValue
+        else { return false }
+      var bindings: [PlaceholderType: TypeBase] = [:]
+      return specializes(
+        lhs: node.operatorType!, rhs: symbol.type!, in: context, bindings: &bindings)
     }
-    try traverse(node)
+
+    // FIXME: Disambiguise when there are several choices.
+    assert(choices.count > 0)
+
+    // Transform the binary expression into a call expression.
+    let callee = Ident(name: node.op.rawValue, module: node.module, range: node.range)
+    callee.symbol = choices.first!
+    callee.scope = lhsTy.memberScope
+    callee.type = node.operatorType!
+
+    let call = CallExpr(
+      callee: callee,
+      arguments: [
+        CallArg(label: nil, bindingOp: .copy, value: lhs, module: node.module, range: lhs.range),
+        CallArg(label: nil, bindingOp: .copy, value: rhs, module: node.module, range: lhs.range),
+      ],
+      module: node.module,
+      range: node.range)
+    call.type = node.type
+
+    return call
   }
 
-  public func visit(_ node: CallArg) throws {
-    node.type = node.type.map {
-      solution.reify(type: $0, in: context, skipping: &visited)
-    }
-    try traverse(node)
+  public func transform(_ node: UnExpr) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    return try defaultTransform(node)
   }
 
-  public func visit(_ node: SelectExpr) throws {
-    node.type = node.type.map {
-      solution.reify(type: $0, in: context, skipping: &visited)
-    }
+  public func transform(_ node: CallExpr) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    return try defaultTransform(node)
+  }
 
-    let ownerType: TypeBase
-    if let owner = node.owner {
-      try visit(owner)
-      ownerType = owner.type!
-    } else {
-      ownerType = node.type!
-    }
+  public func transform(_ node: CallArg) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    return try defaultTransform(node)
+  }
+
+  public func transform(_ node: SubscriptExpr) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    return try defaultTransform(node)
+  }
+
+  public func transform(_ node: SelectExpr) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.owner = try node.owner.map { try transform($0) as! Expr }
+
+    let ownerTy = node.owner != nil
+      ? node.owner!.type!
+      : node.type!
 
     // Now that the owner's type has been inferred, we can determine the scope of the ownee. Note
     // that we can expect the owner to be either a nominal type or the metatype of a nominal type,
     // as other types may not have members.
-    switch ownerType {
+    switch ownerTy {
     case let nominal as NominalType:
       node.ownee.scope = nominal.memberScope
-
     case let bound as BoundGenericType:
       node.ownee.scope = (bound.unboundType as! NominalType).memberScope
-
     case let meta as Metatype where meta.type is NominalType:
       node.ownee.scope = (meta.type as! NominalType).memberScope!.parent
-
     case let meta as Metatype where meta.type is BoundGenericType:
       let unbound = (meta.type as! BoundGenericType).unboundType
       node.ownee.scope = (unbound as! NominalType).memberScope!.parent
-
     default:
-      fatalError("\(ownerType) does not have a member scope")
+      unreachable()
     }
-    try visit(node.ownee)
+
+    // Dispatch the symbol of the ownee, now that its scope's been determined.
+    node.ownee = try transform(node.ownee) as! Ident
+
+    return node
   }
 
-  public func visit(_ node: Ident) throws {
-    node.type = node.type.map {
-      solution.reify(type: $0, in: context, skipping: &visited)
-    }
-    try traverse(node)
+  public func transform(_ node: Ident) throws -> Node {
+    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+    node.specializations = try Dictionary(
+      uniqueKeysWithValues: node.specializations.map({ try ($0, transform($1)) }))
 
     var scope = node.scope
     var choices: [Symbol] = []
@@ -150,23 +168,32 @@ public final class Dispatcher: ASTVisitor, SAPass {
       }))
       scope = scope?.parent
     }
-    assert(choices.count > 0)
 
     // FIXME: Disambiguise when there are several choices.
-    let symbol = choices[0]
-    node.symbol = symbol
+    assert(choices.count > 0)
+    node.symbol = choices.first!
 
     // Check whether the identifier should be registered in a capture set.
     for fn in functions {
-      if (symbol != fn.symbol) && symbol.scope.isAncestor(of: fn.innerScope!) {
+      if (node.symbol! != fn.symbol) && node.symbol!.scope.isAncestor(of: fn.innerScope!) {
         // If the identifier doesn't refer to neither a function's parameter, nor a local variable,
         // nor the function itself, then it should figure in the capture set. However, note that
         // global function names will be included as well. Those should be removed in a later pass,
         // if it can be established they refer to thin functions.
-        fn.captures.insert(symbol)
+        fn.captures.insert(node.symbol!)
       } else {
         // If a function doesn't capture a particular symbol, neither will the outer ones.
         break
+      }
+    }
+
+    return node
+  }
+
+  private func visitScopeDelimiter(_ node: ScopeDelimiter) {
+    if let scope = node.innerScope {
+      for symbol in scope.symbols.values.joined() {
+        symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
       }
     }
   }
