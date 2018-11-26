@@ -1,6 +1,9 @@
 extension StringProtocol {
 
   public func firstRange<S>(of substring: S) -> ClosedRange<Self.Index>? where S: StringProtocol {
+    guard substring.count <= self.count
+      else { return nil }
+
     var i = startIndex
     while index(i, offsetBy: substring.count - 1) < endIndex {
       let range = i ... index(i, offsetBy: substring.count - 1)
