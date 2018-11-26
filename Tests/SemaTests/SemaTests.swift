@@ -46,13 +46,17 @@ class SemaTests: XCTestCase {
       let loader = DefaultModuleLoader()
       let context = ASTContext(anzenPath: anzenPath, moduleLoader: loader)
 
-      let module = context.getModule(moduleID: .local(testCase.value))!
+      guard let module = context.getModule(moduleID: .local(testCase.value)) else {
+        XCTFail("❌ failed to load '\(testCase.value.filename!)'")
+        continue
+      }
       let testResult = StringBuffer()
       try! ASTDumper(outputTo: testResult).visit(module)
 
       if let output = outputs[testCase.key] {
         let expectation = TextFile(path: output)
         XCTAssertLinesEqual(testResult.storage, try! expectation.read(), path: testCase.value)
+        print("✅  regression test succeeded for '\(testCase.value.filename!)'")
       } else {
         let outputPath = Path(pathname: String(testCase.value.pathname.dropLast(6)) + ".output")
         let expectation = TextFile(path: outputPath)

@@ -50,8 +50,11 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
       codomain = NothingType.get
     }
 
-    context.add(constraint:
-      .equality(t: fnType.codomain, u: codomain, at: .location(node, .codomain)))
+    // Rember that methods have a type `(Self) -> (A -> B)`...
+    let fnCo = node.kind == .method
+      ? (fnType.codomain as! FunctionType).codomain
+      : fnType.codomain
+    context.add(constraint: .equality(t: fnCo, u: codomain, at: .location(node, .codomain)))
 
     try visit(node.parameters)
     if let body = node.body {
@@ -100,22 +103,22 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
     try visit(node.left)
     try visit(node.right)
 
-    // Binary expressions require the left operand to have a method of type `(_: RHS) -> T`, where
-    // `RHS` is a type the right operand conforms to. Therefore, we need to create the type of such
-    // function, similar to what we do for any "regular" call expression.
-    let domain = [Parameter(label: nil, type: TypeVariable())]
-    let opType = context.getFunctionType(from: domain, to: TypeVariable())
-    node.type = opType.codomain
-    node.operatorType = opType
+    // Infix operators are implemented as methods of the left operand, meaning the left operand
+    // should have a method `(_: R) -> T`, where:
+    // - `R` is a type right right operand conforms to
+    // - `T` is the codomain of the operator
+    let opTy = context.getFunctionType(from: [Parameter(type: TypeVariable())], to: TypeVariable())
+    node.type = opTy.codomain
+    node.operatorType = opTy
 
-    // The right operand's type must conforms to `RHS`.
+    // The right operand's type must conforms to `R`.
     context.add(constraint:
-      .conformance(t: node.right.type!, u: domain[0].type, at: .location(node, .binaryRHS)))
+      .conformance(t: node.right.type!, u: opTy.domain[0].type, at: .location(node, .binaryRHS)))
 
-    // The left operand's type must have a member `(_: RHS) -> T`.
+    // The left operand's type must have a method member of type `(_: R) -> T`.
     let member = node.op.rawValue
     context.add(constraint:
-      .member(t: node.left.type!, member: member, u: opType, at: .location(node, .binaryOperator)))
+      .member(t: node.left.type!, member: member, u: opTy, at: .location(node, .binaryOperator)))
   }
 
   public func visit(_ node: CallExpr) throws {
@@ -148,8 +151,8 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
   }
 
   public func visit(_ node: SelectExpr) throws {
-    // We use a fresh variable for the node's ownee, which will be used to build  a membership
-    // constraint with the inferred type of the owner.
+    // The ownee's typed with a fresh variable, which will also be part of a membership constraint
+    // contraint with the owner's type.
     node.ownee.type = TypeVariable()
     node.type = node.ownee.type
 
@@ -158,11 +161,12 @@ public final class ConstraintCreator: ASTVisitor, SAPass {
       try visit(owner)
       ownerType = owner.type!
     } else {
-      // If the select doesn't have an explicit owner, then the type of the implicit one must be the
-      // metatype of that of of the ownee. In other words, `member` should be static.
+      // If the select doesn't have an explicit owner, then the type of the implicit one has to be
+      // the metatype of that of of the ownee. In other words, `member` should be static.
       // FIXME: Does this work, knowing that `node.type` is a type variable?
       ownerType = node.type!.metatype
     }
+
     context.add(constraint:
       .member(t: ownerType, member: node.ownee.name, u: node.type!, at: .location(node, .select)))
   }

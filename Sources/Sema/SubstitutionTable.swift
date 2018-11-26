@@ -81,10 +81,9 @@ public struct SubstitutionTable {
       return BoundGenericType(unboundType: unbound, bindings: reifiedBindings)
 
     case let t as NominalType:
-      // Note that reifying a nominal type actually mutates said type.
       visited.append(t)
-      for (name, types) in t.members {
-        t.members[name] = types.map({ reify(type: $0, in: context, skipping: &visited) })
+      for symbol in t.members {
+        symbol.type = reify(type: symbol.type!, in: context, skipping: &visited)
       }
       return t
 

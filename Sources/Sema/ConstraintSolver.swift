@@ -285,9 +285,13 @@ public struct ConstraintSolver {
       // Create a disjunction of membership constraints for each overloaded member.
       let choices = members.map { (member) -> Constraint in
         // If the owner is a bound generic type, close the found member with the same bindings.
-        let u = bindings != nil
+        var u = bindings != nil
           ? assumptions.reify(type: member.type!, in: context).close(using: bindings!, in: context)
           : member.type!
+        if member.isMethod {
+          u = (u as! FunctionType).codomain
+        }
+
         return Constraint.equality(t: constraint.types!.u, u: u, at: constraint.location)
       }
 
@@ -297,6 +301,10 @@ public struct ConstraintSolver {
         constraints.insert(.disjunction(choices, at: constraint.location), at: 0)
       }
       return .success
+
+    case is Metatype:
+      // Such situation may happen if we have for instance `let add = Int.+`.
+      fatalError("TODO")
 
     default:
       return .failure

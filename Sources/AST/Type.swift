@@ -356,7 +356,7 @@ public final class FunctionType: TypeBase, GenericType, CustomStringConvertible 
 /// A function parameter.
 public struct Parameter: Equatable, CustomStringConvertible {
 
-  public init(label: String?, type: TypeBase) {
+  public init(label: String? = nil, type: TypeBase) {
     self.label = label
     self.type = type
   }

@@ -69,14 +69,14 @@ public final class Dispatcher: ASTTransformer {
     // Transform the binary expression into a function application of the form `lhs.op(rhs)`.
     let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
     opIdent.scope = (lhs.type as! NominalType).memberScope
-    opIdent.type = node.operatorType
+    opIdent.type = reify(type: node.operatorType)
 
     let callee = SelectExpr(
       owner: lhs,
       ownee: try transform(opIdent) as! Ident,
       module: node.module,
       range: node.range)
-    callee.type = lhs.type?.metatype
+    callee.type = opIdent.type
 
     let arg = CallArg(value: rhs, module: node.module, range: node.range)
     arg.type = rhs.type
@@ -147,8 +147,11 @@ public final class Dispatcher: ASTTransformer {
     var choices: [Symbol] = []
     while scope != nil {
       choices.append(contentsOf: (scope!.symbols[node.name] ?? []).filter({ (symbol) -> Bool in
+        let ty = symbol.isMethod
+          ? (symbol.type as! FunctionType).codomain
+          : symbol.type!
         var bindings: [PlaceholderType: TypeBase] = [:]
-        return specializes(lhs: node.type!, rhs: symbol.type!, in: context, bindings: &bindings)
+        return specializes(lhs: node.type!, rhs: ty, in: context, bindings: &bindings)
       }))
       scope = scope?.parent
     }

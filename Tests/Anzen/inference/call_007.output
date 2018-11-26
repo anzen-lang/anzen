@@ -8,7 +8,7 @@
             (type_annotation
               (qual_sign
                 (type_identifier 'Self' type='<T=T>Box<T>.metatype' scope='inference.call_007.Box'))))
-          (method_decl 'f' type='<T> (x: <T=T>Box<T>) -> T' symbol='f' scope='inference.call_007.Box.block' inner_scope='inference.call_007.Box.block.f'
+          (method_decl 'f' type='(_: <T=T>Box<T>) -> <T> (x: <T=T>Box<T>) -> T' symbol='f' scope='inference.call_007.Box.block' inner_scope='inference.call_007.Box.block.f'
             (parameters
               (param_decl 'x' type='<T=T>Box<T>' symbol='x' scope='inference.call_007.Box.block.f'
                 (type_annotation

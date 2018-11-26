@@ -25,7 +25,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
   /// The error symbol.
   private var errorSymbol: Symbol?
   /// Whether or not the built-in module is being visited.
-  private var isBuiltinVisited: Bool = false
+  private var isVisitingBuiltin: Bool = false
 
   public func visit(_ node: ModuleDecl) throws {
     // Create a new scope for the module.
@@ -36,7 +36,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
 
     // We need to set whether or not we're visiting the built-in module, so that built-in types can
     // be properly marked as such.
-    isBuiltinVisited = node.id == .builtin
+    isVisitingBuiltin = node.id == .builtin
 
     // Visit the module's statements.
     scopes.push(node.innerScope!)
@@ -112,7 +112,19 @@ public final class SymbolCreator: ASTVisitor, SAPass {
       from: parameters,
       to: TypeVariable(),
       placeholders: functionPlaceholders)
-    node.symbol = scope.create(name: node.name, type: functionType, overloadable: true)
+
+    if node.kind == .method {
+      // If the function is a method, then its type should actually be `(_: Self) -> (A -> B)`,
+      // where `(A -> B)` is the type of the declared function and `Self` is the type in which the
+      // function's defined.
+      let typeScope = scope.parent!
+      let selfTy = (typeScope.symbols["Self"]!.first!.type as! Metatype).type
+      let methTy = context.getFunctionType(from: [Parameter(type: selfTy)], to: functionType)
+      node.symbol = scope.create(
+        name: node.name, type: methTy, isOverloadable: true, isMethod: true)
+    } else {
+      node.symbol = scope.create(name: node.name, type: functionType, isOverloadable: true)
+    }
 
     // Visit the function's body.
     if let body = node.body {
@@ -150,7 +162,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     // Create the symbols for the struct and its placeholders.
     node.symbol = scope.create(name: node.name, type: nil)
 
-    if isBuiltinVisited {
+    if isVisitingBuiltin {
       // Bind Anzen's `Anything` and `Nothing` to their respective singleton.
       if node.name == "Anything" {
         node.symbol!.type = AnythingType.get.metatype
@@ -161,7 +173,8 @@ public final class SymbolCreator: ASTVisitor, SAPass {
       }
     }
 
-    let declaredType = context.getStructType(for: node.symbol!, memberScope: node.body.innerScope!)
+    let declaredType = context.getStructType(
+      for: node, memberScope: node.body.innerScope!, isBuiltin: isVisitingBuiltin)
     node.symbol!.type = declaredType.metatype
 
     for name in node.placeholders {
@@ -207,21 +220,8 @@ public final class SymbolCreator: ASTVisitor, SAPass {
     placeholders.pop()
 
     // Create the body of the declared type.
-    for member in node.body.statements {
-      switch member {
-      case let property as PropDecl:
-        declaredType.members[property.name] = [property.type!]
-
-      case let method as FunDecl:
-        if declaredType.members[method.name] == nil {
-          declaredType.members[method.name] = []
-        }
-        declaredType.members[method.name]!.append(method.type!)
-
-      default:
-        unreachable()
-      }
-    }
+    let members = node.body.statements.compactMap({ ($0 as? NamedDecl)?.symbol })
+    declaredType.members.formUnion(members)
   }
 
   private func canBeDeclared(node: NamedDecl) -> Bool {
@@ -230,7 +230,7 @@ public final class SymbolCreator: ASTVisitor, SAPass {
 
     let symbols = scope!.symbols[node.name]
     if node is FunDecl {
-      guard symbols?.all(satisfy: { $0.overloadable }) ?? true else {
+      guard symbols?.all(satisfy: { $0.isOverloadable }) ?? true else {
         context.add(error: SAError.invalidRedeclaration(name: node.name), on: node)
         return false
       }
