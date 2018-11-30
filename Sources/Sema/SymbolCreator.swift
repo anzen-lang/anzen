@@ -9,7 +9,7 @@ import Utils
 /// * It creates the possibly type corresponding to nominal type and function declarations.
 ///
 /// This pass must be ran before name binding can take place.
-public final class SymbolCreator: ASTVisitor, SAPass {
+public final class SymbolCreator: ASTVisitor {
 
   public init(context: ASTContext) {
     self.context = context

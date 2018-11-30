@@ -1,7 +1,7 @@
 import AST
 import Utils
 
-public final class ConstraintCreator: ASTVisitor, SAPass {
+public final class ConstraintCreator: ASTVisitor {
 
   public init(context: ASTContext) {
     self.context = context

@@ -1,7 +1,7 @@
 import AST
 import Utils
 
-public final class NameBinder: ASTVisitor, SAPass {
+public final class NameBinder: ASTVisitor {
 
   public init(context: ASTContext) {
     self.context = context
