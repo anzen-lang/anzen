@@ -38,3 +38,10 @@ let x = f(-9)
 # error: main.anzen:7:9
 # 'f(-9)' does not respect the contract 'a > 0'
 ```
+
+## Run the tests
+
+Tests of the type inference are done with actual Anzen files.
+Test fixtures are placed in the directory `Tests/Anzen/inference`,
+accompanied with oracles that consist of the expected annotated AST.
+The test driver expects the environment variables `ANZENPATH` and `ANZENTESTPATH` to be set.

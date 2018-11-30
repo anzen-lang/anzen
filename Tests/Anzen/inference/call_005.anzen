@@ -1,0 +1,17 @@
+// Test non-linear argument inference in a polymorphic function.
+//
+// This test declares a single polymorphic function that accepts two arguments of generic type `T`.
+// The function is called to initialize three properties with various combinations of arguments.
+// Type inference should properly infer the type of each property.
+
+fun poly<T>(x: T, y: T) -> T
+
+// The type of `a` should be `Int`, as both `x` and `y` have type `Int`.
+let a = poly(x = 0, y = 0)
+
+// The type of `b` should be `Bool`, as both `x` and `y` have type `Bool`.
+let b = poly(x = true, y = false)
+
+// The type of `b` should be `Anything`, as the join of `Int` and `Bool` (i.e. the type of `x` and
+// `y` respectively) is `Anything.`
+let c = poly(x = 0, y = false)

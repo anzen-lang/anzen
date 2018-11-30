@@ -1,0 +1,3 @@
+// Test polymorphic function type inference.
+
+fun poly<T, U, V>(x: T, y: U) -> V

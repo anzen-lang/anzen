@@ -1,0 +1,10 @@
+// Test call to a polymorphic function.
+//
+// This test declares a single polymorphic function. Two properties are then initialized by using
+// this function, with arguments of different type. The type inference should type `a` with `Int`,
+// and `b` with `Bool`, after having properly dispatched `mono` using the type of their arguments.
+
+fun poly<T>(x: T) -> T
+
+let a = poly(x = 0)
+let b = poly(x = poly(x = true))

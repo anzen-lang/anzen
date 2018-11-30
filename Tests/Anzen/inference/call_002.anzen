@@ -1,0 +1,9 @@
+// Test argument conformance in function call.
+//
+// This test declares a single polymorphic function that accepts two arguments of type `Anything`.
+// The function is called to initialize a property, with two arguments of type `Int` and `Bool`
+// respectively. Type inference should accept this program and type the property with `Anything`.
+
+fun mono(x: Anything, y: Anything) -> Anything
+
+let a = mono(x = 0, y = true)
