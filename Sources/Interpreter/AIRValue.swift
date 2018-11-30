@@ -24,6 +24,26 @@ public protocol AIRRegister: AIRValue {
 
 }
 
+/// Represents a function closure
+public struct AIRClosure: AIRValue {
+
+  internal init(function: AIRFunction, arguments: [AIRValue], type: FunctionType) {
+    self.function = function
+    self.arguments = arguments
+    self.type = type
+  }
+
+  public let function: AIRFunction
+  public let arguments: [AIRValue]
+  public let type: TypeBase
+
+  public var valueDescription: String {
+    let arguments = self.arguments.map({ $0.valueDescription }).joined(separator: ", ")
+    return "closure($\(function.valueDescription), \(arguments)"
+  }
+
+}
+
 /// This represents a literal value in AIR.
 public struct AIRLiteral: AIRValue {
 

@@ -17,18 +17,18 @@ public class AIREmitter: ASTVisitor {
   private var locals: Stack<[Symbol: AIRValue]> = []
 
   public func visit(_ node: ModuleDecl) throws {
-    // Create the `main` function if the unit is the program's entry.
-    if builder.unit.isEntry {
+    // Create the `main` function if the unit is supposed to be the program's entry.
+    if builder.unit.isMain {
       let mainType = builder.context.getFunctionType(from: [], to: NothingType.get)
       let main = builder.unit.getFunction(name: "main", type: mainType)
-      main.appendBlock(name: "entry")
+      main.appendBlock(label: "entry")
       builder.currentBlock = main.blocks.first?.value
       locals.push([:])
     }
 
     try emitBlock(statements: node.statements)
 
-    if builder.unit.isEntry {
+    if builder.unit.isMain {
       locals.pop()
     }
   }
@@ -79,7 +79,7 @@ public class AIREmitter: ASTVisitor {
     if let body = node.body {
       // Create the entry point of the function.
       let previousBlock = builder.currentBlock
-      fn.appendBlock(name: "entry")
+      fn.appendBlock(label: "entry")
       builder.currentBlock = fn.blocks.first?.value
 
       // Set up the local register mapping.
@@ -88,7 +88,7 @@ public class AIREmitter: ASTVisitor {
       // Create the function parameters.
       let parameterSymbols = node.captures + node.parameters.map({ $0.symbol! })
       for sym in parameterSymbols {
-        let paramref = AIRParameter(type: sym.type!, name: builder.currentBlock!.nextName())
+        let paramref = AIRParameter(type: sym.type!, name: builder.currentBlock!.nextRegisterName())
         locals.top![sym] = paramref
       }
 
@@ -124,6 +124,78 @@ public class AIREmitter: ASTVisitor {
     }
   }
 
+  public func visit(_ node: IfExpr) throws {
+    guard let currentFn = builder.currentBlock?.function
+      else { fatalError("not in a function") }
+    let thenIB = currentFn.appendBlock(label: "then")
+    let elseIB = currentFn.appendBlock(label: "else")
+    let afterIB = currentFn.appendBlock(label: "after")
+
+    try visit(node.condition)
+    builder.buildBranch(condition: stack.pop()!, thenLabel: thenIB.label, elseLabel: elseIB.label)
+
+    builder.currentBlock = thenIB
+    try visit(node.thenBlock)
+    builder.buildJump(label: afterIB.label)
+
+    builder.currentBlock = elseIB
+    try node.elseBlock.map { try visit($0) }
+    builder.buildJump(label: afterIB.label)
+
+    builder.currentBlock = afterIB
+  }
+
+  public func visit(_ node: CallExpr) throws {
+    let callee = builder.buildRef(type: node.callee.type!)
+    try visit(node.callee)
+    builder.buildBind(source: stack.pop()!, target: callee)
+
+    let argrefs = try node.arguments.map { (argument) -> AllocInst in
+      let argref = builder.buildRef(type: argument.type!)
+      try visit(argument.value)
+      builder.build(assignment: argument.bindingOp, source: stack.pop()!, target: argref)
+      return argref
+    }
+
+    let apply = builder.buildApply(callee: callee, arguments: argrefs, type: node.type!)
+    stack.push(apply)
+
+    // TODO: There's probably a way to optimize calls to built-in functions, so that we don't
+    // need to create partial applications for built-in operators. A promising lead would be to
+    // check if the callee's a select whose owner has a built-in type.
+  }
+
+  public func visit(_ node: SelectExpr) throws {
+    guard let owner = node.owner
+      else { fatalError("Support for implicit not implemented") }
+    try visit(owner)
+
+    if node.ownee.symbol!.isMethod {
+      // Methods have types of the form `(_: Self) -> FnTy`, so they must be loaded as a partial
+      // application of an uncurried function, taking `self` as its first parameter.
+      guard let methTy = node.ownee.symbol!.type as? FunctionType
+        else { fatalError() }
+      guard let fnTy = methTy.codomain as? FunctionType
+        else { fatalError() }
+      let uncurriedTy = builder.context.getFunctionType(
+        from: methTy.domain + fnTy.domain,
+        to: fnTy.codomain)
+
+      // Create the partial application of the uncurried function.
+      let uncurried = builder.unit.getFunction(
+        name: mangle(symbol: node.ownee.symbol!),
+        type: uncurriedTy)
+      let partial = builder.buildPartialApply(
+        function: uncurried,
+        arguments: [stack.pop()!],
+        type: node.type!)
+      stack.push(partial)
+      return
+    }
+
+    fatalError("TODO")
+  }
+
   public func visit(_ node: Ident) throws {
     // Look for the node's symbol in the accessible scopes.
     if let value = locals.top![node.symbol!] {
@@ -148,22 +220,6 @@ public class AIREmitter: ASTVisitor {
 
     // FIXME: Hoist type declarations.
     fatalError()
-  }
-
-  public func visit(_ node: CallExpr) throws {
-    let callee = builder.buildRef(type: node.callee.type!)
-    try visit(node.callee)
-    builder.buildBind(source: stack.pop()!, target: callee)
-
-    let argrefs = try node.arguments.map { (argument) -> AllocInst in
-      let argref = builder.buildRef(type: argument.type!)
-      try visit(argument.value)
-      builder.build(assignment: argument.bindingOp, source: stack.pop()!, target: argref)
-      return argref
-    }
-
-    let apply = builder.buildApply(callee: callee, arguments: argrefs, type: node.type!)
-    stack.push(apply)
   }
 
   public func visit(_ node: Literal<Bool>) {

@@ -10,29 +10,50 @@ public class AIRFunction: AIRValue {
   }
 
   public let type: TypeBase
-  public let name: String?
+  public let name: String
 
+  /// The instruction blocks of the function.
   public private(set) var blocks: OrderedMap<String, InstructionBlock> = [:]
+  /// The ID of the next unnamed virtual register.
+  public private(set) var nextRegisterID = 0
 
   @discardableResult
-  public func appendBlock(name: String) -> InstructionBlock {
-    assert(blocks[name] == nil)
+  public func appendBlock(label: String) -> InstructionBlock {
+    let uniqueLabel = uniquify(label)
+    assert(blocks[uniqueLabel] == nil)
 
-    let ib = InstructionBlock(function: self)
-    blocks[name] = ib
+    let ib = InstructionBlock(label: uniqueLabel, function: self)
+    blocks[label] = ib
     return ib
   }
 
+  public func nextRegisterName() -> String {
+    defer { nextRegisterID += 1 }
+    return "\(nextRegisterID)"
+  }
+
   public var valueDescription: String {
-    return "$\(name!)"
+    return "$\(name)"
+  }
+
+  private func uniquify(_ label: String) -> String {
+    if blocks[label] == nil {
+      return label
+    }
+    let greatestID = blocks.compactMap({
+      $0.key.starts(with: label)
+        ? Int($0.key.dropFirst(label.count)) ?? 0
+        : nil
+    }).max() ?? 0
+    return "\(label)\(greatestID + 1)"
   }
 
 }
 
 extension AIRFunction: Hashable {
 
-  public var hashValue: Int {
-    return name!.hashValue
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
   }
 
   public static func == (lhs: AIRFunction, rhs: AIRFunction) -> Bool {
@@ -55,3 +76,4 @@ public struct AIRParameter: AIRRegister {
   }
 
 }
+

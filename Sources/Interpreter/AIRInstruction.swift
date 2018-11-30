@@ -11,20 +11,20 @@ public protocol AIRInstruction {
 /// This represents a sequence of instructions.
 public class InstructionBlock: Sequence {
 
-  public init(function: AIRFunction) {
+  public init(label: String, function: AIRFunction) {
+    self.label = label
     self.function = function
   }
 
-  /// The instructions of the block.
-  public var instructions: [AIRInstruction] = []
+  /// The label of the block.
+  public let label: String
   /// The function in which the block's defined.
   public unowned var function: AIRFunction
-  /// The ID of the next unnamed virtual register.
-  public var nextRegisterID = 0
+  /// The instructions of the block.
+  public var instructions: [AIRInstruction] = []
 
-  public func nextName() -> String {
-    defer { nextRegisterID += 1 }
-    return nextRegisterID.description
+  public func nextRegisterName() -> String {
+    return function.nextRegisterName()
   }
 
   public func makeIterator() -> Array<AIRInstruction>.Iterator {
@@ -48,7 +48,7 @@ public struct AllocInst: AIRInstruction, AIRRegister {
   }
 
   public var instDescription: String {
-    return "%\(name) = alloc \(type)\n"
+    return "%\(name) = alloc \(type)"
   }
 
 }
@@ -76,7 +76,32 @@ public struct ApplyInst: AIRInstruction, AIRRegister {
     let args = arguments
       .map({ $0.valueDescription })
       .joined(separator: ", ")
-    return "%\(name) = apply \(callee.valueDescription), \(args)\n"
+    return "%\(name) = apply \(callee.valueDescription), \(args)"
+  }
+
+}
+
+/// This represents the partial application of a function.
+///
+/// A partial application keeps a reference to another function as well as a partial sequence of
+/// arguments. When applied, the backing function is called with the stored arguments first,
+/// followed by those that are provided additionally.
+public struct PartialApplyInst: AIRInstruction, AIRRegister {
+
+  public let function: AIRFunction
+  public let arguments: [AIRValue]
+  public let type: TypeBase
+  public let name: String
+
+  public var valueDescription: String {
+    return "%\(name)"
+  }
+
+  public var instDescription: String {
+    let args = arguments
+      .map({ $0.valueDescription })
+      .joined(separator: ", ")
+    return "%\(name) = partial_apply \(function.valueDescription), \(args)"
   }
 
 }
@@ -120,7 +145,7 @@ public struct MoveInst: AIRInstruction {
 
 }
 
-/// This represents a binding assignment.
+/// This represents a borrow assignment.
 public struct BindInst: AIRInstruction {
 
   public let source: AIRValue
@@ -139,6 +164,30 @@ public struct DropInst: AIRInstruction {
 
   public var instDescription: String {
     return "drop \(value.valueDescription)"
+  }
+
+}
+
+/// This represents a conditional jump instruction.
+public struct BranchInst: AIRInstruction {
+
+  public let condition: AIRValue
+  public let thenLabel: String
+  public let elseLabel: String
+
+  public var instDescription: String {
+    return "branch \(condition.valueDescription) \(thenLabel) \(elseLabel)"
+  }
+
+}
+
+/// This represents an unconditional jump instruction.
+public struct JumpInst: AIRInstruction {
+
+  public let label: String
+
+  public var instDescription: String {
+    return "jump \(label)"
   }
 
 }

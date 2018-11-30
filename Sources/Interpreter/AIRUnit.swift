@@ -3,15 +3,15 @@ import Utils
 
 public class AIRUnit: CustomStringConvertible {
 
-  public init(name: String, isEntry: Bool = false) {
+  public init(name: String, isMain: Bool = false) {
     self.name = name
-    self.isEntry = isEntry
+    self.isMain = isMain
   }
 
   /// The name of the unit.
   public let name: String
   /// Whether or not the unit is the program's entry.
-  public let isEntry: Bool
+  public let isMain: Bool
 
   /// The functions of the unit.
   public private(set) var functions: [String: AIRFunction] = [:]
@@ -34,7 +34,7 @@ public class AIRUnit: CustomStringConvertible {
 }
 
 private func prettyPrint(function: AIRFunction) -> String {
-  var result = "fun $\(function.name!) : \(function.type)"
+  var result = "fun $\(function.name) : \(function.type)"
   if function.blocks.isEmpty {
     return result + "\n"
   }
