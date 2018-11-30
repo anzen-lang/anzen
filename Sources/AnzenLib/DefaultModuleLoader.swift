@@ -23,7 +23,7 @@ public final class DefaultModuleLoader: ModuleLoader {
     // ------- //
 
     let file = locate(moduleID: moduleID, in: context)
-    let module: ModuleDecl
+    var module: ModuleDecl
     do {
       module = try Parser(source: file).parse()
       module.id = moduleID
@@ -85,7 +85,7 @@ public final class DefaultModuleLoader: ModuleLoader {
     switch result {
     case .success(let solution):
       let dispatcher = Dispatcher(context: context, solution: solution)
-      try! dispatcher.visit(module)
+      module = try! dispatcher.transform(module) as! ModuleDecl
       guard context.errors.isEmpty else {
         logger?.log(astErrors: context.errors)
         return nil
@@ -97,6 +97,10 @@ public final class DefaultModuleLoader: ModuleLoader {
       }
       return nil
     }
+
+    // Identify closure captures.
+    let captureAnalyzer = CaptureAnalyzer()
+    try! captureAnalyzer.visit(module)
 
     let semanticAnalysisTime = stopwatch.elapsed
     logger?.verbose("Semantic analysis completed in \(semanticAnalysisTime.humanFormat)\n")

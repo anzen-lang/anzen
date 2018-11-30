@@ -38,7 +38,7 @@ extension Logger {
   public func log(error: Error) {
     switch error {
     case let parseError as ParseError:
-      log(error: parseError)
+      log(parseError: parseError)
 
     default:
       write("error:".styled("bold,red") + " \(error)\n")
