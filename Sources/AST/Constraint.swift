@@ -109,13 +109,13 @@ extension Constraint {
 
     switch kind {
     case .equality:
-      console.print("\(types!.t) ≡ \(types!.u)".styled("bold"))
+      console.print("\(types!.t) ≡ \(types!.u)")
     case .conformance:
-      console.print("\(types!.t) ≤ \(types!.u)".styled("bold"))
+      console.print("\(types!.t) ≤ \(types!.u)")
     case .member:
-      console.print("\(types!.t).\(member!) ≡ \(types!.u)".styled("bold"))
+      console.print("\(types!.t).\(member!) ≡ \(types!.u)")
     case .construction:
-      console.print("\(types!.t) <+ \(types!.u)".styled("bold"))
+      console.print("\(types!.t) <+ \(types!.u)")
     case .disjunction:
       console.print("")
       for constraint in choices {
