@@ -51,7 +51,7 @@ class SemaTests: XCTestCase {
         continue
       }
       let testResult = StringBuffer()
-      try! ASTDumper(outputTo: testResult).visit(module)
+      try! ASTDumper(to: testResult).visit(module)
 
       if let output = outputs[testCase.key] {
         let expectation = TextFile(path: output)
