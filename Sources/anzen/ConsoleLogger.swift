@@ -18,18 +18,13 @@ public struct ConsoleLogger: Logger {
   private let messageQueue = DispatchQueue(label: "messageQueue")
 
   public func log(_ text: String) {
-    DispatchQueue.global(qos: .utility).async {
-      self.messageQueue.sync {
-        self.console.write(text)
-      }
-    }
+    messageQueue.sync { self.console.write(text) }
   }
 
   public func error(_ err: Error) {
     switch err {
     case let parseError as ParseError:
       log(describe(parseError))
-
     default:
       log("error:".styled("bold,red") + " \(error)\n")
     }
