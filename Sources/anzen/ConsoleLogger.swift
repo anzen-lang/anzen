@@ -8,13 +8,11 @@ import Utils
 
 public struct ConsoleLogger: Logger {
 
-  public init(console: Console = System.err, useStyles: Bool = true) {
+  public init(console: Console = System.err) {
     self.console = console
-    self.isUsingStyles = useStyles
   }
 
   public let console: Console
-  public let isUsingStyles: Bool
 
   private var messages: [String] = []
   private let messageQueue = DispatchQueue(label: "messageQueue")
@@ -33,11 +31,7 @@ public struct ConsoleLogger: Logger {
       log(describe(parseError))
 
     default:
-      if isUsingStyles {
-        log("error:".styled("bold,red") + " \(error)\n")
-      } else {
-        log("error: \(err)\n")
-      }
+      log("error:".styled("bold,red") + " \(error)\n")
     }
   }
 
@@ -47,14 +41,9 @@ public struct ConsoleLogger: Logger {
       $0.relative(to: .workingDirectory).pathname
     } ?? "<unknown>"
 
-    let heading: String
-    if isUsingStyles {
-      heading = "\(filename)::\(range.start.line)::\(range.start.column): ".styled("bold") +
-                "error: ".styled("bold,red") +
-                "\(err.cause)\n"
-    } else {
-      heading = "\(filename)::\(range.start.line)::\(range.start.column): error: \(err.cause)\n"
-    }
+    let heading = "\(filename)::\(range.start.line)::\(range.start.column): ".styled("bold") +
+                  "error: ".styled("bold,red") +
+                  "\(err.cause)\n"
 
     return heading + describe(range)
   }
@@ -65,13 +54,8 @@ public struct ConsoleLogger: Logger {
       $0.relative(to: .workingDirectory).pathname
     } ?? "<unknown>"
 
-    var heading: String
-    if isUsingStyles {
-      heading = "\(filename)::\(range.start.line)::\(range.start.column): ".styled("bold") +
-                "error:".styled("bold,red")
-    } else {
-      heading = "\(filename)::\(range.start.line)::\(range.start.column): error: "
-    }
+    var heading = "\(filename)::\(range.start.line)::\(range.start.column): ".styled("bold") +
+                  "error:".styled("bold,red")
 
     switch err.cause {
     case let semaError as SAError:
@@ -85,9 +69,7 @@ public struct ConsoleLogger: Logger {
 
   /// Logs the given type solver error.
   public func describe(_ err: SolverFailure) -> String {
-    return isUsingStyles
-      ? "error: ".styled("bold,red") + "type error\n"
-      : "error: type error\n"
+    return "error: ".styled("bold,red") + "type error\n"
   }
 
   public func describe(_ range: SourceRange) -> String {
@@ -107,11 +89,7 @@ public struct ConsoleLogger: Logger {
       cursor += "\n"
     }
 
-    if isUsingStyles {
-      cursor = cursor.styled("green")
-    }
-
-    return snippet + leading + cursor
+    return snippet + leading + cursor.styled("red")
   }
 
 }
