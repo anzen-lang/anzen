@@ -1,5 +1,5 @@
 /// An error associated with an AST node.
-public struct ASTError {
+public struct ASTError: Error {
 
   public init(cause: Any, node: Node) {
     self.cause = cause

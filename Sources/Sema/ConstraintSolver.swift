@@ -22,7 +22,6 @@ public struct ConstraintSolver {
   private var assumptions: SubstitutionTable
 
   private typealias Success = SubstitutionTable
-  private typealias Failure = (constraint: Constraint, cause: SolverResult.FailureKind)
 
   /// Attempts to solve a set of typing constraints, returning either a solution or the constraints
   /// that couldn't be satisfied.
@@ -30,13 +29,18 @@ public struct ConstraintSolver {
     let stopwatch = Stopwatch()
 
     while let constraint = constraints.popLast() {
-      guard (SOLVER_TIMEOUT == nil) || (stopwatch.elapsed < SOLVER_TIMEOUT!)
-        else { return .failure([(reify(constraint: constraint), .timeout)]) }
+      guard (SOLVER_TIMEOUT == nil) || (stopwatch.elapsed < SOLVER_TIMEOUT!) else {
+        return .failure([
+          SolverFailure(constraint: reify(constraint: constraint), cause: .timeout),
+        ])
+      }
 
       switch constraint.kind {
       case .equality, .conformance:
         guard solve(match: constraint) == .success else {
-          return .failure([(reify(constraint: constraint), .typeMismatch)])
+          return .failure([
+            SolverFailure(constraint: reify(constraint: constraint), cause: .typeMismatch),
+          ])
         }
 
         // FIXME: Instead of returning upon failure, we should bind variables to `<type error>` and
@@ -45,12 +49,16 @@ public struct ConstraintSolver {
 
       case .member:
         guard solve(member: constraint) == .success else {
-          return .failure([(reify(constraint: constraint), .typeMismatch)])
+          return .failure([
+            SolverFailure(constraint: reify(constraint: constraint), cause: .typeMismatch),
+          ])
         }
 
       case .construction:
         guard solve(construction: constraint) == .success else {
-          return .failure([(reify(constraint: constraint), .typeMismatch)])
+          return .failure([
+            SolverFailure(constraint: reify(constraint: constraint), cause: .typeMismatch),
+          ])
         }
 
       case .disjunction:
@@ -72,7 +80,7 @@ public struct ConstraintSolver {
 
         switch valid.count {
         case 0:
-          let unsolvable = results.compactMap { result -> [Failure]? in
+          let unsolvable = results.compactMap { result -> [SolverFailure]? in
             guard case .failure(let cause) = result else { return nil }
             return cause
           }
@@ -112,7 +120,9 @@ public struct ConstraintSolver {
           }
 
           // There's still equivalent solutions; the constraint system is ambiguous.
-          return .failure([(reify(constraint: constraint), .ambiguousExpression)])
+          return .failure([
+            SolverFailure(constraint: reify(constraint: constraint), cause: .ambiguousExpression),
+          ])
         }
       }
     }
@@ -360,16 +370,25 @@ private enum TypeMatchResult {
 
 }
 
+public enum SolverFailureKind {
+
+  case ambiguousExpression
+  case timeout
+  case typeMismatch
+
+}
+
+public struct SolverFailure: Error {
+
+  public let constraint: Constraint
+  public let cause: SolverFailureKind
+
+}
+
 public enum SolverResult {
 
-  public enum FailureKind {
-    case ambiguousExpression
-    case timeout
-    case typeMismatch
-  }
-
   case success(solution: SubstitutionTable)
-  case failure([(constraint: Constraint, cause: FailureKind)])
+  case failure([SolverFailure])
 
   public var isSuccess: Bool {
     if case .success = self {

@@ -9,7 +9,7 @@ infix operator <<<: StreamPrecedence
 
 public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextOutputStream {
 
-  public init(outputTo outputStream: OutputStream) {
+  public init(to outputStream: OutputStream) {
     self.outputStream = outputStream
   }
 

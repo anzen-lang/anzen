@@ -35,4 +35,8 @@ extension Logger {
     error("\(err)")
   }
 
+  public func errors<S>(_ errs: S)  where S: Sequence, S.Element: Error {
+    _ = errs.map(error)
+  }
+
 }

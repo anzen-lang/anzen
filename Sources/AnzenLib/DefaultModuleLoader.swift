@@ -7,17 +7,28 @@ import SystemKit
 /// The default module loader.
 public final class DefaultModuleLoader: ModuleLoader {
 
-  public init(logger: Logger? = nil) {
+  public struct DebugConfig {
+
+    public init() {}
+
+    public var showRawAST: Bool = false
+    public var showScopedAST: Bool = false
+    public var showTypedAST: Bool = false
+    public var showTypeConstraints: Bool = false
+
+  }
+
+  public init(logger: Logger? = nil, config: DebugConfig = DebugConfig()) {
     self.logger = logger
+    self.config = config
   }
 
   /// The loader's logger.
   public let logger: Logger?
+  /// The loader's debug config (for logging).
+  public let config: DebugConfig
 
   public func load(_ moduleID: ModuleIdentifier, in context: ASTContext) -> ModuleDecl? {
-    logger?.verbose("Loading module '\(moduleID.qualifiedName)'".styled("bold"))
-    var stopwatch = Stopwatch()
-
     // ------- //
     // Parsing //
     // ------- //
@@ -28,12 +39,15 @@ public final class DefaultModuleLoader: ModuleLoader {
       module = try Parser(source: file).parse()
       module.id = moduleID
     } catch {
-      logger?.log(error: error)
+      logger?.error(error)
       return nil
     }
 
-    let parseTime = stopwatch.elapsed
-    logger?.verbose("Parsed in \(parseTime.humanFormat)")
+    if config.showRawAST && (moduleID != .builtin) && (moduleID != .stdlib) {
+      let buffer = StringBuffer()
+      try! ASTDumper(to: buffer).visit(module)
+      logger?.debug(buffer.value)
+    }
 
     // ------- //
     // Scoping //
@@ -43,13 +57,11 @@ public final class DefaultModuleLoader: ModuleLoader {
     // rather add the errors they encountered in the AST context. This is why we run the visitors
     // unsafely with `!`, but check if there's anything in `context.errors` after each pass.
 
-    stopwatch.reset()
-
     // Symbol creation.
     let symbolCreator = SymbolCreator(context: context)
     try! symbolCreator.visit(module)
     guard context.errors.isEmpty else {
-      logger?.log(astErrors: context.errors)
+      logger?.errors(context.errors.sorted(by: <))
       return nil
     }
 
@@ -57,8 +69,14 @@ public final class DefaultModuleLoader: ModuleLoader {
     let nameBinder = NameBinder(context: context)
     try! nameBinder.visit(module)
     guard context.errors.isEmpty else {
-      logger?.log(astErrors: context.errors)
+      logger?.errors(context.errors.sorted(by: <))
       return nil
+    }
+
+    if config.showScopedAST && (moduleID != .builtin) && (moduleID != .stdlib) {
+      let buffer = StringBuffer()
+      try! ASTDumper(to: buffer).visit(module)
+      logger?.debug(buffer.value)
     }
 
     // -------------- //
@@ -69,13 +87,27 @@ public final class DefaultModuleLoader: ModuleLoader {
     let constraintCreator = ConstraintCreator(context: context)
     try! constraintCreator.visit(module)
     guard context.errors.isEmpty else {
-      logger?.log(astErrors: context.errors)
+      logger?.errors(context.errors.sorted(by: <))
       return nil
+    }
+
+    if config.showTypeConstraints && (moduleID != .builtin) && (moduleID != .stdlib) {
+      var buffer = ""
+      for constraint in context.typeConstraints {
+        constraint.dump(to: &buffer)
+      }
+      logger?.debug(buffer)
     }
 
     // Solve the type constraints.
     var solver = ConstraintSolver(constraints: context.typeConstraints, in: context)
     let result = solver.solve()
+
+    if config.showTypedAST && (moduleID != .builtin) && (moduleID != .stdlib) {
+      let buffer = StringBuffer()
+      try! ASTDumper(to: buffer).visit(module)
+      logger?.debug(buffer.value)
+    }
 
     // --------------- //
     // Static Dispatch //
@@ -87,23 +119,18 @@ public final class DefaultModuleLoader: ModuleLoader {
       let dispatcher = Dispatcher(context: context, solution: solution)
       module = try! dispatcher.transform(module) as! ModuleDecl
       guard context.errors.isEmpty else {
-        logger?.log(astErrors: context.errors)
+        logger?.errors(context.errors.sorted(by: <))
         return nil
       }
 
     case .failure(let errors):
-      for error in errors {
-        logger?.log(unsolvableConstraint: error.constraint, causedBy: error.cause)
-      }
+      logger?.errors(errors)
       return nil
     }
 
     // Identify closure captures.
     let captureAnalyzer = CaptureAnalyzer()
     try! captureAnalyzer.visit(module)
-
-    let semanticAnalysisTime = stopwatch.elapsed
-    logger?.verbose("Semantic analysis completed in \(semanticAnalysisTime.humanFormat)\n")
 
     context.typeConstraints.removeAll()
     return module

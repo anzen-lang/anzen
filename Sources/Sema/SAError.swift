@@ -16,7 +16,7 @@ public enum SAError: Error, CustomStringConvertible {
   /// Occurs when a symbol appears to be not declared in any accessible scope.
   case undefinedSymbol(name: String)
   /// Occurs when the given type constraint seems unsolvable.
-  case unsolvableConstraint(constraint: Constraint, cause: SolverResult.FailureKind)
+  case unsolvableConstraint(constraint: Constraint, cause: SolverFailureKind)
 
   public var description: String {
     switch self {

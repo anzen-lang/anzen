@@ -83,15 +83,8 @@ public struct ConsoleLogger: Logger {
     return heading + describe(range)
   }
 
-  public func describe<S>(_ errs: S) -> String where S: Sequence, S.Element == ASTError {
-    return errs.sorted(by: <).map(describe).joined()
-  }
-
   /// Logs the given type solver error.
-  public func describe(
-    unsolvableConstraint constraint: Constraint,
-    causedBy cause: SolverResult.FailureKind) -> String
-  {
+  public func describe(_ err: SolverFailure) -> String {
     return isUsingStyles
       ? "error: ".styled("bold,red") + "type error\n"
       : "error: type error\n"
