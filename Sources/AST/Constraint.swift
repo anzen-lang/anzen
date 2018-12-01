@@ -1,5 +1,4 @@
 import Utils
-import SystemKit
 
 public enum ConstraintKind: Int {
 
@@ -99,27 +98,32 @@ public struct Constraint {
 
 }
 
-extension Constraint {
+extension Constraint: CustomStringConvertible {
 
-  public func prettyPrint(in console: Console = System.err, level: Int = 0) {
+  public var description: String {
+    var buffer = ""
+    dump(to: &buffer)
+    return buffer
+  }
+
+  public func dump<OutputStream>(to outputStream: inout OutputStream, level: Int = 0)
+    where OutputStream: TextOutputStream
+  {
     let ident = String(repeating: " ", count: level * 2)
-    console.print(
-      ident + location.anchor.range.start.description.styled("< 6") + ": ",
-      terminator: "")
-
+    outputStream.write(ident + location.anchor.range.start.description.styled("< 6") + ": ")
     switch kind {
     case .equality:
-      console.print("\(types!.t) ≡ \(types!.u)")
+      outputStream.write("\(types!.t) ≡ \(types!.u)\n")
     case .conformance:
-      console.print("\(types!.t) ≤ \(types!.u)")
+      outputStream.write("\(types!.t) ≤ \(types!.u)\n")
     case .member:
-      console.print("\(types!.t).\(member!) ≡ \(types!.u)")
+      outputStream.write("\(types!.t).\(member!) ≡ \(types!.u)\n")
     case .construction:
-      console.print("\(types!.t) <+ \(types!.u)")
+      outputStream.write("\(types!.t) <+ \(types!.u)\n")
     case .disjunction:
-      console.print("")
+      outputStream.write("")
       for constraint in choices {
-        constraint.prettyPrint(in: console, level: level + 1)
+        constraint.dump(to: &outputStream, level: level + 1)
       }
     }
   }

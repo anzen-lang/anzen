@@ -1,4 +1,4 @@
-// swift-tools-version:4.0
+// swift-tools-version:4.2
 import PackageDescription
 
 let package = Package(
@@ -7,10 +7,11 @@ let package = Package(
     .executable(name: "anzen", targets: ["anzen"]),
   ],
   dependencies: [
+    .package(url: "https://github.com/kyouko-taiga/ArgParse.git", from: "1.1.0"),
     .package(url: "https://github.com/anzen-lang/SystemKit", .branch("master")),
   ],
   targets: [
-    .target(name: "anzen"       , dependencies: ["AnzenLib"]),
+    .target(name: "anzen"       , dependencies: ["AnzenLib", "ArgParse"]),
     .target(name: "AnzenLib"    , dependencies: ["Parser", "Interpreter", "Sema"]),
     .target(name: "AST"         , dependencies: ["Utils"]),
     .target(name: "Interpreter" , dependencies: ["AST", "Utils"]),
