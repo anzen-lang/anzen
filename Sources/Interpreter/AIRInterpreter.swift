@@ -42,45 +42,45 @@ public class AIRInterpreter {
     }
   }
 
-  private func execute(_ newRef: AllocInst) {
-    frames.top![newRef.name] = Box(value: Null(), type: newRef.type)
+  private func execute(_ inst: AllocInst) {
+    frames.top![inst.name] = Box(value: Null())
   }
 
-  private func execute(_ copy: CopyInst) {
+  private func execute(_ inst: CopyInst) {
     // FIXME: Call copy constructor.
-    frames.top![copy.target.name]!.value = value(of: copy.source)
+    frames.top![inst.target.name]!.value = value(of: inst.source)
   }
 
-  private func execute(_ move: MoveInst) {
-    switch move.source {
-    case let literal as AIRLiteral:
-      frames.top![move.target.name]!.value = literal.value
+  private func execute(_ inst: MoveInst) {
+    switch inst.source {
+    case let cst as AIRConstant:
+      frames.top![inst.target.name]!.value = cst.value
     case let reg as AIRRegister:
-      frames.top![move.target.name]!.value = frames.top![reg.name]!.value
+      frames.top![inst.target.name]!.value = frames.top![reg.name]!.value
     default:
       unreachable()
     }
   }
 
-  private func execute(_ bind: BindInst) {
-    switch bind.source {
+  private func execute(_ inst: BindInst) {
+    switch inst.source {
     case let fn as AIRFunction:
-      frames.top![bind.target.name]!.value = fn
+      frames.top![inst.target.name]!.value = fn
     case let reg as AIRRegister:
-      frames.top![bind.target.name] = frames.top![reg.name]
+      frames.top![inst.target.name] = frames.top![reg.name]
     default:
       unreachable()
     }
   }
 
-  private func execute(_ apply: ApplyInst) {
+  private func execute(_ inst: ApplyInst) {
     // Retrieve the function to be called, and all its arguments.
     let fn: AIRFunction
-    var args = apply.arguments
-    switch value(of: apply.callee) {
+    var args = inst.arguments
+    switch value(of: inst.callee) {
     case let thin as AIRFunction:
       fn = thin
-    case let thick as AIRClosure:
+    case let thick as Closure:
       fn = thick.function
       args = thick.arguments + args
     default:
@@ -91,16 +91,16 @@ public class AIRInterpreter {
     guard !fn.name.starts(with: "__builtin") else {
       let returnValue = applyBuiltin(name: fn.name, arguments: args)
       if let value = returnValue {
-        frames.top![apply.name] = Box(value: value, type: apply.type)
+        frames.top![inst.name] = Box(value: value)
       }
       return
     }
 
     // Prepare the next stack frame.
-    frames.top![apply.name] = Box(value: Null(), type: apply.type)
-    var nextFrame = Frame(returnCursor: cursor, returnName: apply.name)
-    for (i, arg) in apply.arguments.enumerated() {
-      nextFrame["\(i)"] = Box(value: value(of: arg), type: arg.type)
+    frames.top![inst.name] = Box(value: Null())
+    var nextFrame = Frame(returnCursor: cursor, returnName: inst.name)
+    for (i, arg) in (args + inst.arguments).enumerated() {
+      nextFrame["\(i)"] = Box(value: value(of: arg))
     }
     frames.push(nextFrame)
 
@@ -108,23 +108,18 @@ public class AIRInterpreter {
     cursor = Cursor(atEntryOf: fn)
   }
 
-  private func execute(_ partialApply: PartialApplyInst) {
-    frames.top![partialApply.name] = Box(
-      value: AIRClosure(
-        function: partialApply.function,
-        arguments: partialApply.arguments,
-        type: partialApply.type as! FunctionType),
-      type: partialApply.type)
+  private func execute(_ inst: PartialApplyInst) {
+    frames.top![inst.name] = Box(value: Closure(function: inst.function, arguments: inst.arguments))
   }
 
-  private func execute(_ drop: DropInst) {
-    frames.top![drop.value.name] = nil
+  private func execute(_ inst: DropInst) {
+    frames.top![inst.value.name] = nil
     // FIXME: Call destructors.
   }
 
-  private func execute(_ ret: ReturnInst) {
+  private func execute(_ inst: ReturnInst) {
     // Move the return value (if any) onto the return register.
-    if let retval = ret.value {
+    if let retval = inst.value {
       if frames.count > 1 {
         frames[frames.count - 2][frames.top!.returnName!]!.value = value(of: retval)
       }
@@ -152,17 +147,17 @@ public class AIRInterpreter {
 
   private func value(of airValue: AIRValue) -> Any {
     switch airValue {
-    case let literal as AIRLiteral:
-      return literal.value
+    case let cst as AIRConstant:
+      return cst.value
 
-    case let register as AIRRegister:
+    case let reg as AIRRegister:
       guard let frame = frames.top
         else { fatalError("trying to read a register outside of a frame") }
-      guard let box = frame[register.name]
-        else { fatalError("invalid register '\(register.name)'") }
+      guard let box = frame[reg.name]
+        else { fatalError("invalid register '\(reg.name)'") }
       return box.value
 
-    case let closure as AIRClosure:
+    case let closure as Closure:
       return closure
 
     default:
@@ -233,17 +228,32 @@ struct Cursor {
 
 }
 
-class Box {
+private struct Null {
+}
 
-  public init(value: Any, type: TypeBase) {
-    self.value = value
-    self.type = type
+/// Represents a struct type instance.
+private struct StructInstance {
+
+  let vtable: [String: AIRValue]
+  let properties: [AIRValue]
+  let type: AIRType
+
+  var valueDescription: String {
+    let properties = self.properties.map({ $0.valueDescription }).joined(separator: ", ")
+    return "{ \(properties) }"
   }
-
-  var value: Any
-  let type: TypeBase
 
 }
 
-private struct Null {
+/// Represents a function closure
+private struct Closure {
+
+  let function: AIRFunction
+  let arguments: [AIRValue]
+
+  var valueDescription: String {
+    let arguments = self.arguments.map({ $0.valueDescription }).joined(separator: ", ")
+    return "closure(\(function.valueDescription), \(arguments)"
+  }
+
 }

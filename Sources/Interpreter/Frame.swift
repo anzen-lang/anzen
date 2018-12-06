@@ -25,3 +25,13 @@ struct Frame {
   let returnName: String?
 
 }
+
+class Box {
+
+  init(value: Any) {
+    self.value = value
+  }
+
+  var value: Any
+
+}
