@@ -68,6 +68,30 @@ public struct MakeRefInst: AIRInstruction, AIRRegister {
 
 }
 
+/// This represents the extraction of a reference from a composite type.
+///
+/// - Note: This intruction only extracts references that are part of the storage of the source
+///   (i.e. it doesn't handle computed properties).
+public struct ExtractInst: AIRInstruction, AIRRegister {
+
+  /// The composite type from which the extraction is performed.
+  public let source: AIRValue
+  /// The index of the reference to extract.
+  public let index: Int
+
+  public let type: AIRType
+  public let name: String
+
+  public var valueDescription: String {
+    return "%\(name)"
+  }
+
+  public var instDescription: String {
+    return "%\(name) = extract \(source.valueDescription), \(index)"
+  }
+
+}
+
 /// This represents the application of a function.
 public struct ApplyInst: AIRInstruction, AIRRegister {
 
