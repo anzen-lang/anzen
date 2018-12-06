@@ -229,7 +229,7 @@ public class NominalType: TypeBase, GenericType, Hashable, CustomStringConvertib
   /// The type placeholders of the type, in case the type's generic.
   public var placeholders: [PlaceholderType] = []
   /// The members of the type.
-  public var members: Set<Symbol> = []
+  public var members: [Symbol] = []
   /// Whether the type is built-in.
   public let isBuiltin: Bool
 

@@ -229,7 +229,7 @@ public final class SymbolCreator: ASTVisitor {
 
     // Create the body of the declared type.
     let members = node.body.statements.compactMap({ ($0 as? NamedDecl)?.symbol })
-    declaredType.members.formUnion(members)
+    declaredType.members = members
   }
 
   private func canBeDeclared(node: NamedDecl) -> Bool {
