@@ -101,7 +101,7 @@ public class AIREmitter: ASTVisitor {
       if node.kind == .constructor {
         guard selfSym != nil
           else { fatalError("no symbol for 'self' in constructor scope") }
-        locals.top![selfSym!] = builder.buildAlloc(type: fnTy.codomain)
+        locals.top![selfSym!] = builder.buildAlloc(type: fnTy.codomain, id: 0)
       }
 
       // Create the function parameters.
@@ -109,7 +109,7 @@ public class AIREmitter: ASTVisitor {
       for sym in parameterSymbols {
         let paramref = AIRParameter(
           type: builder.unit.getType(of: sym.type!),
-          name: builder.currentBlock!.nextRegisterName())
+          id: builder.currentBlock!.nextRegisterID())
         locals.top![sym] = paramref
       }
 

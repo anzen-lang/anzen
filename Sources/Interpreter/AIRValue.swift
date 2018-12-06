@@ -17,8 +17,8 @@ public protocol AIRValue {
 /// An AIR register is an AIR value that can be represented as a register.
 public protocol AIRRegister: AIRValue {
 
-  /// The name of the register.
-  var name: String { get }
+  /// The ID of the register.
+  var id: Int { get }
 
 }
 

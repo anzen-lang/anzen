@@ -15,7 +15,7 @@ public class AIRFunction: AIRValue {
   /// The instruction blocks of the function.
   public private(set) var blocks: OrderedMap<String, InstructionBlock> = [:]
   /// The ID of the next unnamed virtual register.
-  public private(set) var nextRegisterID = 0
+  private var _nextRegisterID = 1
 
   @discardableResult
   public func appendBlock(label: String) -> InstructionBlock {
@@ -27,9 +27,9 @@ public class AIRFunction: AIRValue {
     return ib
   }
 
-  public func nextRegisterName() -> String {
-    defer { nextRegisterID += 1 }
-    return "\(nextRegisterID)"
+  public func nextRegisterID() -> Int {
+    defer { _nextRegisterID += 1 }
+    return _nextRegisterID
   }
 
   public var valueDescription: String {
@@ -69,10 +69,10 @@ extension AIRFunction: Hashable {
 public struct AIRParameter: AIRRegister {
 
   public let type: AIRType
-  public let name: String
+  public let id: Int
 
   public var valueDescription: String {
-    return "%\(name)"
+    return "%\(id)"
   }
 
 }

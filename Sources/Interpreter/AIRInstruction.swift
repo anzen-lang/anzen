@@ -22,8 +22,8 @@ public class InstructionBlock: Sequence {
   /// The instructions of the block.
   public var instructions: [AIRInstruction] = []
 
-  public func nextRegisterName() -> String {
-    return function.nextRegisterName()
+  public func nextRegisterID() -> Int {
+    return function.nextRegisterID()
   }
 
   public func makeIterator() -> Array<AIRInstruction>.Iterator {
@@ -40,14 +40,14 @@ public class InstructionBlock: Sequence {
 public struct AllocInst: AIRInstruction, AIRRegister {
 
   public let type: AIRType
-  public let name: String
+  public let id: Int
 
   public var valueDescription: String {
-    return "%\(name)"
+    return "%\(id)"
   }
 
   public var instDescription: String {
-    return "%\(name) = alloc \(type)"
+    return "%\(id) = alloc \(type)"
   }
 
 }
@@ -56,14 +56,14 @@ public struct AllocInst: AIRInstruction, AIRRegister {
 public struct MakeRefInst: AIRInstruction, AIRRegister {
 
   public let type: AIRType
-  public let name: String
+  public let id: Int
 
   public var valueDescription: String {
-    return "%\(name)"
+    return "%\(id)"
   }
 
   public var instDescription: String {
-    return "%\(name) = make_ref \(type)"
+    return "%\(id) = make_ref \(type)"
   }
 
 }
@@ -80,14 +80,14 @@ public struct ExtractInst: AIRInstruction, AIRRegister {
   public let index: Int
 
   public let type: AIRType
-  public let name: String
+  public let id: Int
 
   public var valueDescription: String {
-    return "%\(name)"
+    return "%\(id)"
   }
 
   public var instDescription: String {
-    return "%\(name) = extract \(source.valueDescription), \(index)"
+    return "%\(id) = extract \(source.valueDescription), \(index)"
   }
 
 }
@@ -95,27 +95,27 @@ public struct ExtractInst: AIRInstruction, AIRRegister {
 /// This represents the application of a function.
 public struct ApplyInst: AIRInstruction, AIRRegister {
 
-  internal init(callee: AIRValue, arguments: [AIRValue], type: AIRType, name: String) {
+  internal init(callee: AIRValue, arguments: [AIRValue], type: AIRType, id: Int) {
     self.callee = callee
     self.arguments = arguments
     self.type = type
-    self.name = name
+    self.id = id
   }
 
   public let callee: AIRValue
   public let arguments: [AIRValue]
   public let type: AIRType
-  public let name: String
+  public let id: Int
 
   public var valueDescription: String {
-    return "%\(name)"
+    return "%\(id)"
   }
 
   public var instDescription: String {
     let args = arguments
       .map({ $0.valueDescription })
       .joined(separator: ", ")
-    return "%\(name) = apply \(callee.valueDescription), \(args)"
+    return "%\(id) = apply \(callee.valueDescription), \(args)"
   }
 
 }
@@ -130,17 +130,17 @@ public struct PartialApplyInst: AIRInstruction, AIRRegister {
   public let function: AIRFunction
   public let arguments: [AIRValue]
   public let type: AIRType
-  public let name: String
+  public let id: Int
 
   public var valueDescription: String {
-    return "%\(name)"
+    return "%\(id)"
   }
 
   public var instDescription: String {
     let args = arguments
       .map({ $0.valueDescription })
       .joined(separator: ", ")
-    return "%\(name) = partial_apply \(function.valueDescription), \(args)"
+    return "%\(id) = partial_apply \(function.valueDescription), \(args)"
   }
 
 }

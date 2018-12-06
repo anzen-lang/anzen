@@ -15,46 +15,59 @@ public class AIRBuilder {
   public var currentBlock: InstructionBlock?
 
   /// Creates a new reference in the current instruction block.
-  public func buildMakeRef(type: AIRType) -> MakeRefInst {
-    let inst = MakeRefInst(type: type, name: currentBlock!.nextRegisterName())
+  public func buildMakeRef(type: AIRType, id: Int? = nil) -> MakeRefInst {
+    let inst = MakeRefInst(type: type, id: id ?? currentBlock!.nextRegisterID())
     currentBlock!.instructions.append(inst)
     return inst
   }
 
-  public func buildAlloc(type: AIRType) -> AllocInst {
-    let inst = AllocInst(type: type, name: currentBlock!.nextRegisterName())
+  public func buildAlloc(type: AIRType, id: Int? = nil) -> AllocInst {
+    let inst = AllocInst(type: type, id: id ?? currentBlock!.nextRegisterID())
     currentBlock!.instructions.append(inst)
     return inst
   }
 
-  public func buildExtract(from source: AIRValue, index: Int, type: AIRType) -> ExtractInst {
+  public func buildExtract(
+    from source: AIRValue,
+    index: Int,
+    type: AIRType,
+    id: Int? = nil) -> ExtractInst
+  {
     let inst = ExtractInst(
       source: source,
       index: index,
       type: type,
-      name: currentBlock!.nextRegisterName())
+      id: id ?? currentBlock!.nextRegisterID())
     currentBlock!.instructions.append(inst)
     return inst
   }
 
-  public func buildApply(callee: AIRValue, arguments: [AIRValue], type: AIRType) -> ApplyInst {
+  public func buildApply(
+    callee: AIRValue,
+    arguments: [AIRValue],
+    type: AIRType,
+    id: Int? = nil) -> ApplyInst
+  {
     let inst = ApplyInst(
       callee: callee,
       arguments: arguments,
       type: type,
-      name: currentBlock!.nextRegisterName())
+      id: id ?? currentBlock!.nextRegisterID())
     currentBlock!.instructions.append(inst)
     return inst
   }
 
-  public func buildPartialApply(function: AIRFunction, arguments: [AIRValue], type: AIRType)
-    -> PartialApplyInst
+  public func buildPartialApply(
+    function: AIRFunction,
+    arguments: [AIRValue],
+    type: AIRType,
+    id: Int? = nil) -> PartialApplyInst
   {
     let inst = PartialApplyInst(
       function: function,
       arguments: arguments,
       type: type,
-      name: currentBlock!.nextRegisterName())
+      id: id ?? currentBlock!.nextRegisterID())
     currentBlock!.instructions.append(inst)
     return inst
   }
