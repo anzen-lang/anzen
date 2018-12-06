@@ -4,12 +4,12 @@ import Utils
 /// This represents an AIR function.
 public class AIRFunction: AIRValue {
 
-  internal init(name: String, type: FunctionType) {
+  internal init(name: String, type: AIRFunctionType) {
     self.name = name
     self.type = type
   }
 
-  public let type: TypeBase
+  public let type: AIRType
   public let name: String
 
   /// The instruction blocks of the function.
@@ -68,7 +68,7 @@ extension AIRFunction: Hashable {
 /// will be passed to the function, when it is called.
 public struct AIRParameter: AIRRegister {
 
-  public let type: TypeBase
+  public let type: AIRType
   public let name: String
 
   public var valueDescription: String {

@@ -25,7 +25,7 @@ public func mangle(type: TypeBase) -> String {
     }
     return "N" + nominalTy.decl.scope!.mangled + nominalTy.decl.name
 
-  case let fnTy as FunctionType:
+  case let fnTy as AST.FunctionType:
     let domain = fnTy.domain.map { (param) -> String in
       return "\(param.label ?? "_")\(mangle(type: param.type))"
     }

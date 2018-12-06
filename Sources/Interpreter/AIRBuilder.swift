@@ -16,13 +16,13 @@ public class AIRBuilder {
 
   /// Creates a new reference in the current instruction block.
   @discardableResult
-  public func buildRef(type: TypeBase) -> AllocInst {
+  public func buildRef(type: AIRType) -> AllocInst {
     let inst = AllocInst(type: type, name: currentBlock!.nextRegisterName())
     currentBlock!.instructions.append(inst)
     return inst
   }
 
-  public func buildApply(callee: AIRValue, arguments: [AIRValue], type: TypeBase) -> ApplyInst {
+  public func buildApply(callee: AIRValue, arguments: [AIRValue], type: AIRType) -> ApplyInst {
     let inst = ApplyInst(
       callee: callee,
       arguments: arguments,
@@ -32,7 +32,7 @@ public class AIRBuilder {
     return inst
   }
 
-  public func buildPartialApply(function: AIRFunction, arguments: [AIRValue], type: TypeBase)
+  public func buildPartialApply(function: AIRFunction, arguments: [AIRValue], type: AIRType)
     -> PartialApplyInst
   {
     let inst = PartialApplyInst(

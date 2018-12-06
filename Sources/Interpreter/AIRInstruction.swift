@@ -1,4 +1,3 @@
-import AST
 import Utils
 
 public protocol AIRInstruction {
@@ -40,7 +39,7 @@ public class InstructionBlock: Sequence {
 /// This represents the allocation of a reference (i.e. a pointer), which is provided unintialized.
 public struct AllocInst: AIRInstruction, AIRRegister {
 
-  public let type: TypeBase
+  public let type: AIRType
   public let name: String
 
   public var valueDescription: String {
@@ -56,7 +55,7 @@ public struct AllocInst: AIRInstruction, AIRRegister {
 /// This represents the application of a function.
 public struct ApplyInst: AIRInstruction, AIRRegister {
 
-  internal init(callee: AIRValue, arguments: [AIRValue], type: TypeBase, name: String) {
+  internal init(callee: AIRValue, arguments: [AIRValue], type: AIRType, name: String) {
     self.callee = callee
     self.arguments = arguments
     self.type = type
@@ -65,7 +64,7 @@ public struct ApplyInst: AIRInstruction, AIRRegister {
 
   public let callee: AIRValue
   public let arguments: [AIRValue]
-  public let type: TypeBase
+  public let type: AIRType
   public let name: String
 
   public var valueDescription: String {
@@ -90,7 +89,7 @@ public struct PartialApplyInst: AIRInstruction, AIRRegister {
 
   public let function: AIRFunction
   public let arguments: [AIRValue]
-  public let type: TypeBase
+  public let type: AIRType
   public let name: String
 
   public var valueDescription: String {

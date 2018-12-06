@@ -19,10 +19,10 @@ public class AIREmitter: ASTVisitor {
   public func visit(_ node: ModuleDecl) throws {
     // Create the `main` function if the unit is supposed to be the program's entry.
     if builder.unit.isMain {
-      let mainType = builder.context.getFunctionType(from: [], to: NothingType.get)
-      let main = builder.unit.getFunction(name: "main", type: mainType)
-      main.appendBlock(label: "entry")
-      builder.currentBlock = main.blocks.first?.value
+      let mainFnType = AIRFunctionType(domain: [], codomain: .nothing)
+      let mainFn = builder.unit.getFunction(name: "main", type: mainFnType)
+      mainFn.appendBlock(label: "entry")
+      builder.currentBlock = mainFn.blocks.first?.value
       locals.push([:])
     }
 
@@ -51,7 +51,7 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: PropDecl) throws {
-    let ref = builder.buildRef(type: node.type!)
+    let ref = builder.buildRef(type: builder.unit.getAIRType(of: node.type!))
     locals.top![node.symbol!] = ref
 
     if let (op, value) = node.initialBinding {
@@ -62,19 +62,31 @@ public class AIREmitter: ASTVisitor {
 
   public func visit(_ node: FunDecl) throws {
     // Get the type of the declared function.
-    var fnType = node.type as! FunctionType
-
+    var fnTy = builder.unit.getAIRFunctionType(of: node.type! as! FunctionType)
     if !node.captures.isEmpty {
       // If the function captures symbols, we need to emit a context-free version of the it, which
       // gets the captured values as parameters. This boils down to extending the domain.
-      let additional = node.captures.map { Parameter(label: nil, type: $0.type!) }
-      fnType = builder.context.getFunctionType(
-        from: additional + fnType.domain, to: fnType.codomain, placeholders: fnType.placeholders)
+      assert(node.captures.duplicates(groupedBy: { $0.name }).isEmpty)
+      let additional = node.captures
+        .sorted(by: { a, b in a.name < b.name })
+        .map({ builder.unit.getAIRType(of: $0.type!) })
+      fnTy = AIRFunctionType(domain: additional + fnTy.domain, codomain: fnTy.codomain)
     }
 
     // Retrieve the function object.
-    let fn = builder.unit.getFunction(name: mangle(symbol: node.symbol!), type: fnType)
+    let fn = builder.unit.getFunction(name: mangle(symbol: node.symbol!), type: fnTy)
     assert(fn.blocks.isEmpty, "AIR for \(node) already emitted")
+
+    if !node.captures.isEmpty {
+      // Create the function closure.
+      // Note that arguments are captured by reference in the current frame.
+      locals.top![node.symbol!] = builder.buildPartialApply(
+        function: fn,
+        arguments: node.captures
+          .sorted(by: { a, b in a.name < b.name })
+          .map({ locals.top![$0]! }),
+        type: fnTy)
+    }
 
     if let body = node.body {
       // Create the entry point of the function.
@@ -88,7 +100,9 @@ public class AIREmitter: ASTVisitor {
       // Create the function parameters.
       let parameterSymbols = node.captures + node.parameters.map({ $0.symbol! })
       for sym in parameterSymbols {
-        let paramref = AIRParameter(type: sym.type!, name: builder.currentBlock!.nextRegisterName())
+        let paramref = AIRParameter(
+          type: builder.unit.getAIRType(of: sym.type!),
+          name: builder.currentBlock!.nextRegisterName())
         locals.top![sym] = paramref
       }
 
@@ -146,18 +160,21 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: CallExpr) throws {
-    let callee = builder.buildRef(type: node.callee.type!)
+    let callee = builder.buildRef(type: builder.unit.getAIRType(of: node.callee.type!))
     try visit(node.callee)
     builder.buildBind(source: stack.pop()!, target: callee)
 
     let argrefs = try node.arguments.map { (argument) -> AllocInst in
-      let argref = builder.buildRef(type: argument.type!)
+      let argref = builder.buildRef(type: builder.unit.getAIRType(of: argument.type!))
       try visit(argument.value)
       builder.build(assignment: argument.bindingOp, source: stack.pop()!, target: argref)
       return argref
     }
 
-    let apply = builder.buildApply(callee: callee, arguments: argrefs, type: node.type!)
+    let apply = builder.buildApply(
+      callee: callee,
+      arguments: argrefs,
+      type: builder.unit.getAIRType(of: node.type!))
     stack.push(apply)
 
     // TODO: There's probably a way to optimize calls to built-in functions, so that we don't
@@ -177,9 +194,9 @@ public class AIREmitter: ASTVisitor {
         else { fatalError() }
       guard let fnTy = methTy.codomain as? FunctionType
         else { fatalError() }
-      let uncurriedTy = builder.context.getFunctionType(
-        from: methTy.domain + fnTy.domain,
-        to: fnTy.codomain)
+      let uncurriedTy = AIRFunctionType(
+        domain: (methTy.domain + fnTy.domain).map({ builder.unit.getAIRType(of: $0.type) }),
+        codomain: builder.unit.getAIRType(of: fnTy.codomain))
 
       // Create the partial application of the uncurried function.
       let uncurried = builder.unit.getFunction(
@@ -188,7 +205,7 @@ public class AIREmitter: ASTVisitor {
       let partial = builder.buildPartialApply(
         function: uncurried,
         arguments: [stack.pop()!],
-        type: node.type!)
+        type: builder.unit.getAIRType(of: node.type!))
       stack.push(partial)
       return
     }
@@ -211,7 +228,7 @@ public class AIREmitter: ASTVisitor {
       // function closures) here.
       let fn = builder.unit.getFunction(
         name: mangle(symbol: node.symbol!),
-        type: functionType)
+        type: builder.unit.getAIRFunctionType(of: functionType))
 
       locals.top![node.symbol!] = fn
       stack.push(fn)
@@ -223,19 +240,19 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: Literal<Bool>) {
-    stack.push(AIRLiteral(value: node.value, type: node.type!))
+    stack.push(AIRConstant(value: node.value))
   }
 
   public func visit(_ node: Literal<Int>) {
-    stack.push(AIRLiteral(value: node.value, type: node.type!))
+    stack.push(AIRConstant(value: node.value))
   }
 
   public func visit(_ node: Literal<Double>) {
-    stack.push(AIRLiteral(value: node.value, type: node.type!))
+    stack.push(AIRConstant(value: node.value))
   }
 
   public func visit(_ node: Literal<String>) {
-    stack.push(AIRLiteral(value: node.value, type: node.type!))
+    stack.push(AIRConstant(value: node.value))
   }
 
 }
