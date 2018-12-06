@@ -138,11 +138,7 @@ public final class ConstraintCreator: ASTVisitor {
 
     // The callee may represent a function or a nominal type in case it is used as a constructor.
     try visit(node.callee)
-    let choices: [Constraint] = [
-      .equality(t: node.callee.type!, u: fnType, at: loc),
-      .construction(t: node.callee.type!, u: fnType, at: loc),
-    ]
-    context.add(constraint: .disjunction(choices, at: loc))
+    context.add(constraint: .equality(t: node.callee.type!, u: fnType, at: loc))
   }
 
   public func visit(_ node: CallArg) throws {
@@ -182,15 +178,16 @@ public final class ConstraintCreator: ASTVisitor {
     // FIXME: Handle explicit generic parameters.
     assert(node.specializations.isEmpty, "bound metatypes aren't unsupported yet")
 
+    // FIXME: Include symbols from upper scopes if those are overloadable.
     node.type = TypeVariable()
-    let choices: [Constraint] = symbols.map {
-      .equality(t: node.type!, u: $0.type!, at: .location(node, .identifier))
+    var choices: [Constraint] = []
+    let location: ConstraintLocation = .location(node, .identifier)
+    for symbol in symbols {
+      choices.append(.equality(t: node.type!, u: symbol.type!, at: location))
+      choices.append(.construction(t: node.type!, u: symbol.type!, at: location))
     }
-    if choices.count == 1 {
-      context.add(constraint: choices[0])
-    } else {
-      context.add(constraint: .disjunction(choices, at: .location(node, .identifier)))
-    }
+
+    context.add(constraint: .disjunction(choices, at: location))
   }
 
   public func visit(_ node: Literal<Bool>) throws {

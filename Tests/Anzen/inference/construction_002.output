@@ -17,7 +17,7 @@
       (binding_operator =)
       (call type='<T=Int>Box<T>'
         (callee
-          (identifier 'Box' type='Box<T>.metatype' scope='inference.construction_002'))
+          (identifier 'Box' type='(value: Int) -> <T=Int>Box<T>' scope='inference.construction_002'))
         (arguments
           (call_arg 'value' type='Int'
             (binding_operator =)
@@ -27,7 +27,7 @@
       (binding_operator =)
       (call type='<T=String>Box<T>'
         (callee
-          (identifier 'Box' type='Box<T>.metatype' scope='inference.construction_002'))
+          (identifier 'Box' type='(value: String) -> <T=String>Box<T>' scope='inference.construction_002'))
         (arguments
           (call_arg 'value' type='String'
             (binding_operator =)

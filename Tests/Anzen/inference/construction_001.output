@@ -19,7 +19,7 @@
       (binding_operator =)
       (call type='Point'
         (callee
-          (identifier 'Point' type='Point.metatype' scope='inference.construction_001'))
+          (identifier 'Point' type='(x: Int, y: Int) -> Point' scope='inference.construction_001'))
         (arguments
           (call_arg 'x' type='Int'
             (binding_operator =)

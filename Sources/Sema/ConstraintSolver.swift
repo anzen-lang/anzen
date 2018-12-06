@@ -323,7 +323,7 @@ public struct ConstraintSolver {
 
   /// Attempts to solve `T <+ U`.
   private mutating func solve(construction constraint: Constraint) -> TypeMatchResult {
-    let owner = self.assumptions.substitution(for: constraint.types!.t)
+    let owner = self.assumptions.substitution(for: constraint.types!.u)
 
     // Search a member (property or method) named `member` in the owner's type.
     switch owner {
@@ -333,10 +333,10 @@ public struct ConstraintSolver {
       return .success
 
     case let metaType as Metatype:
-      // A construction constraint can be transformed into a membership constraint with `T.type` as
+      // A construction constraint can be transformed into a membership constraint with `U.type` as
       // the owner and `new` as the member.
       constraints.append(
-        .member(t: metaType.type, member: "new", u: constraint.types!.u, at: constraint.location))
+        .member(t: metaType.type, member: "new", u: constraint.types!.t, at: constraint.location))
       return .success
 
     default:

@@ -14,8 +14,8 @@ public enum ConstraintKind: Int {
   ///   `Ai <= Ci` and `B <= D`.
   case conformance = 8
 
-  /// A construction constraint `T <+ U` requires `T` to be a metatype, and `U` to be a function
-  /// that constructs `T.type`.
+  /// A construction constraint `T <+ U` requires `U` to be the metatype of a nominal type, and `T`
+  /// to be a constructor of said type.
   case construction = 6
 
   /// A member constraint `T[.name] ~= U` that requires `T` to have a member `name` whose type
@@ -121,7 +121,7 @@ extension Constraint: CustomStringConvertible {
     case .construction:
       outputStream.write("\(types!.t) <+ \(types!.u)\n")
     case .disjunction:
-      outputStream.write("")
+      outputStream.write("\n")
       for constraint in choices {
         constraint.dump(to: &outputStream, level: level + 1)
       }

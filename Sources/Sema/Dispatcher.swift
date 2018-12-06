@@ -143,22 +143,51 @@ public final class Dispatcher: ASTTransformer {
     node.specializations = try Dictionary(
       uniqueKeysWithValues: node.specializations.map({ try ($0, transform($1)) }))
 
-    var scope = node.scope
-    var choices: [Symbol] = []
-    while scope != nil {
-      choices.append(contentsOf: (scope!.symbols[node.name] ?? []).filter({ (symbol) -> Bool in
+    assert(node.scope != nil)
+    assert(node.scope!.symbols[node.name] != nil)
+    var choices = node.scope!.symbols[node.name]!
+    assert(!choices.isEmpty)
+
+    // If the identifier has a function type, the actual symbol to which we'll dispatch it could be
+    // in any of the accessible scopes from `node.scope`, provided those symbols are overloadable,
+    // or in the member scope of a type defined in `node.scope`. Otherwise there has to be a non-
+    // overloadable symbol in `node.scope`.
+    if node.type is FunctionType {
+      if choices[0].isOverloadable {
+        // Add overloaded symbols from each accessible scope to the list of choices.
+        var scope = node.scope
+        while let parent = scope?.parent {
+          if let symbols = parent.symbols[node.name] {
+            guard symbols.first!.isOverloadable
+              else { break }
+            choices += symbols
+          }
+          scope = parent
+        }
+      } else {
+        assert(choices.count == 1)
+        guard let ty = (choices[0].type as? Metatype)?.type as? NominalType
+          else { fatalError() }
+        choices = ty.memberScope!.symbols["new"]!
+      }
+
+      // Filter out incompatible symbols.
+      choices = choices.filter { symbol in
         let ty = symbol.isMethod
           ? (symbol.type as! FunctionType).codomain
           : symbol.type!
         var bindings: [PlaceholderType: TypeBase] = [:]
         return specializes(lhs: node.type!, rhs: ty, in: context, bindings: &bindings)
-      }))
-      scope = scope?.parent
+      }
+
+      // FIXME: Disambiguise when there are several choices.
+      assert(choices.count > 0)
+      node.symbol = choices[0]
+    } else {
+      assert(choices.count == 1)
+      node.symbol = choices[0]
     }
 
-    // FIXME: Disambiguise when there are several choices.
-    assert(choices.count > 0)
-    node.symbol = choices.first!
     return node
   }
 
