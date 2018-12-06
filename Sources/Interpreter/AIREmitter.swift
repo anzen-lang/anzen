@@ -136,7 +136,7 @@ public class AIREmitter: ASTVisitor {
     try visit(node.lvalue)
     try visit(node.rvalue)
     let rvalue = stack.pop()!
-    let lvalue = stack.pop() as! MakeRefInst
+    let lvalue = stack.pop() as! AIRRegister
     builder.build(assignment: node.op, source: rvalue, target: lvalue)
   }
 

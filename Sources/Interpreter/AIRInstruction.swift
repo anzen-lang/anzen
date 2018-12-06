@@ -140,7 +140,7 @@ public struct ReturnInst: AIRInstruction {
 public struct CopyInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: MakeRefInst
+  public let target: AIRRegister
 
   public var instDescription: String {
     return "copy \(source.valueDescription), \(target.valueDescription)"
@@ -152,7 +152,7 @@ public struct CopyInst: AIRInstruction {
 public struct MoveInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: MakeRefInst
+  public let target: AIRRegister
 
   public var instDescription: String {
     return "move \(source.valueDescription), \(target.valueDescription)"
@@ -164,7 +164,7 @@ public struct MoveInst: AIRInstruction {
 public struct BindInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: MakeRefInst
+  public let target: AIRRegister
 
   public var instDescription: String {
     return "bind \(source.valueDescription), \(target.valueDescription)"

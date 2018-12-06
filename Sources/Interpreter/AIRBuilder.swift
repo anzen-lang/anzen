@@ -57,21 +57,21 @@ public class AIRBuilder {
   }
 
   @discardableResult
-  public func buildCopy(source: AIRValue, target: MakeRefInst) -> CopyInst {
+  public func buildCopy(source: AIRValue, target: AIRRegister) -> CopyInst {
     let inst = CopyInst(source: source, target: target)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
   @discardableResult
-  public func buildMove(source: AIRValue, target: MakeRefInst) -> MoveInst {
+  public func buildMove(source: AIRValue, target: AIRRegister) -> MoveInst {
     let inst = MoveInst(source: source, target: target)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
   @discardableResult
-  public func buildBind(source: AIRValue, target: MakeRefInst) -> BindInst {
+  public func buildBind(source: AIRValue, target: AIRRegister) -> BindInst {
     let inst = BindInst(source: source, target: target)
     currentBlock!.instructions.append(inst)
     return inst
@@ -81,7 +81,7 @@ public class AIRBuilder {
   public func build(
     assignment: BindingOperator,
     source: AIRValue,
-    target: MakeRefInst) -> AIRInstruction
+    target: AIRRegister) -> AIRInstruction
   {
     switch assignment {
     case .copy: return buildCopy(source: source, target: target)
