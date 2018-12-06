@@ -1,7 +1,7 @@
 struct Frame {
 
   init(
-    locals: [String: Box] = [:],
+    locals: [String: Any] = [:],
     returnCursor: Cursor? = nil,
     returnName: String? = nil)
   {
@@ -11,10 +11,10 @@ struct Frame {
   }
 
   /// The locals (included arguments) of the routine.
-  var locals: [String: Box]
+  var locals: [String: Any]
 
   /// Returns the value of a frame's local.
-  subscript(name: String) -> Box? {
+  subscript(name: String) -> Any? {
     get { return locals[name] }
     set { locals[name] = newValue }
   }
@@ -23,15 +23,5 @@ struct Frame {
   let returnCursor: Cursor?
   /// The name of the parent's local expecting the return value from this frame.
   let returnName: String?
-
-}
-
-class Box {
-
-  init(value: Any) {
-    self.value = value
-  }
-
-  var value: Any
 
 }

@@ -4,6 +4,11 @@ public class AIRType: Equatable {
 
   fileprivate init() {}
 
+  /// The metatype of the type.
+  public lazy var metatype: AIRMetatype = { [unowned self] in
+    return AIRMetatype(of: self)
+  }()
+
   public static func == (lhs: AIRType, rhs: AIRType) -> Bool {
     return lhs === rhs
   }
@@ -28,6 +33,20 @@ public class AIRType: Equatable {
     "Float"   : .float,
     "String"  : .string,
     ]
+
+}
+
+public final class AIRMetatype: AIRType, CustomStringConvertible {
+
+  fileprivate init(of type: AIRType) {
+    self.type = type
+  }
+
+  public let type: AIRType
+
+  public var description: String {
+    return "\(type).metatype"
+  }
 
 }
 

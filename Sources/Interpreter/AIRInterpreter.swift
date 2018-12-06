@@ -1,3 +1,4 @@
+import SystemKit
 import Utils
 
 /// An interpreter for AIR code.
@@ -43,34 +44,58 @@ public class AIRInterpreter {
     }
   }
 
+  private func panic(_ message: String) -> Never {
+    System.err.print("Fatal error: \(message)")
+    System.exit(status: 1)
+  }
+
   private func execute(_ inst: AllocInst) {
-    frames.top![inst.name] = Box(value: Null())
+    switch inst.type {
+    case let ty as AIRStructType:
+      frames.top![inst.name] = StructInstance(
+        payload: Array(repeating: Reference(), count: ty.elements.count))
+    default:
+      panic("no allocator for type '\(inst.type)'")
+    }
+  }
+
+  private func execute(_ inst: MakeRefInst) {
+    frames.top![inst.name] = Reference()
   }
 
   private func execute(_ inst: CopyInst) {
+    guard let ref = frames.top![inst.target.name] as? Reference
+      else { panic("invalid or uninitialized register '\(inst.target.name)'") }
+
     // FIXME: Call copy constructor.
-    frames.top![inst.target.name]!.value = value(of: inst.source)
+    ref.value = value(of: inst.source)
   }
 
   private func execute(_ inst: MoveInst) {
+    guard let ref = frames.top![inst.target.name] as? Reference
+      else { panic("invalid or uninitialized register '\(inst.target.name)'") }
+
     switch inst.source {
     case let cst as AIRConstant:
-      frames.top![inst.target.name]!.value = cst.value
+      ref.value = cst.value
     case let reg as AIRRegister:
-      frames.top![inst.target.name]!.value = frames.top![reg.name]!.value
+      ref.value = value(of: reg)
     default:
-      unreachable()
+      panic("invalid r-value for move '\(inst.source)'")
     }
   }
 
   private func execute(_ inst: BindInst) {
+    guard let ref = frames.top![inst.target.name] as? Reference
+      else { panic("invalid or uninitialized register '\(inst.target.name)'") }
+
     switch inst.source {
     case let fn as AIRFunction:
-      frames.top![inst.target.name]!.value = fn
+      ref.value = fn
     case let reg as AIRRegister:
       frames.top![inst.target.name] = frames.top![reg.name]
     default:
-      unreachable()
+      panic("invalid r-value for bind '\(inst.source)'")
     }
   }
 
@@ -92,16 +117,15 @@ public class AIRInterpreter {
     guard !fn.name.starts(with: "__builtin") else {
       let returnValue = applyBuiltin(name: fn.name, arguments: args)
       if let value = returnValue {
-        frames.top![inst.name] = Box(value: value)
+        frames.top![inst.name] = value
       }
       return
     }
 
     // Prepare the next stack frame.
-    frames.top![inst.name] = Box(value: Null())
     var nextFrame = Frame(returnCursor: cursor, returnName: inst.name)
     for (i, arg) in (args + inst.arguments).enumerated() {
-      nextFrame["\(i)"] = Box(value: value(of: arg))
+      nextFrame["\(i)"] = Reference(to: value(of: arg))
     }
     frames.push(nextFrame)
 
@@ -110,7 +134,7 @@ public class AIRInterpreter {
   }
 
   private func execute(_ inst: PartialApplyInst) {
-    frames.top![inst.name] = Box(value: Closure(function: inst.function, arguments: inst.arguments))
+    frames.top![inst.name] = Closure(function: inst.function, arguments: inst.arguments)
   }
 
   private func execute(_ inst: DropInst) {
@@ -122,7 +146,8 @@ public class AIRInterpreter {
     // Move the return value (if any) onto the return register.
     if let retval = inst.value {
       if frames.count > 1 {
-        frames[frames.count - 2][frames.top!.returnName!]!.value = value(of: retval)
+        // Note that the register in which we're about to write isn't supposed to exist yet.
+        frames[frames.count - 2][frames.top!.returnName!] = value(of: retval)
       }
 
       // FIXME: If the return value is to be passed by reference, we should copy the box itself.
@@ -152,11 +177,15 @@ public class AIRInterpreter {
       return cst.value
 
     case let reg as AIRRegister:
-      guard let frame = frames.top
-        else { fatalError("trying to read a register outside of a frame") }
-      guard let box = frame[reg.name]
-        else { fatalError("invalid register '\(reg.name)'") }
-      return box.value
+      if let ref = frames.top![reg.name] as? Reference {
+        guard let val = ref.value
+          else { panic("memory error") }
+        return val
+      } else if let val = frames.top![reg.name] {
+        return val
+      } else {
+        panic("invalid or uninitialized register '\(reg.name)'")
+      }
 
     case let closure as Closure:
       return closure
@@ -229,32 +258,44 @@ struct Cursor {
 
 }
 
-private struct Null {
+/// Represetns a reference.
+private class Reference: CustomStringConvertible {
+
+  init(to value: Any? = nil) {
+    assert(!(value is Reference))
+    self.value = value
+  }
+
+  var value: Any? {
+    didSet { assert(!(value is Reference)) }
+  }
+
+  var description: String {
+    return "\(value ?? "null")"
+  }
+
 }
 
 /// Represents a struct type instance.
-private struct StructInstance {
+private struct StructInstance: CustomStringConvertible {
 
-  let vtable: [String: AIRValue]
-  let properties: [AIRValue]
-  let type: AIRType
+  let payload: [Any]
 
-  var valueDescription: String {
-    let properties = self.properties.map({ $0.valueDescription }).joined(separator: ", ")
-    return "{ \(properties) }"
+  var description: String {
+    let members = payload.map({ "\($0)" }).joined(separator: ", ")
+    return "{\(members)}"
   }
 
 }
 
 /// Represents a function closure
-private struct Closure {
+private struct Closure: CustomStringConvertible {
 
   let function: AIRFunction
   let arguments: [AIRValue]
 
-  var valueDescription: String {
-    let arguments = self.arguments.map({ $0.valueDescription }).joined(separator: ", ")
-    return "closure(\(function.valueDescription), \(arguments)"
+  var description: String {
+    return "(Function)"
   }
 
 }
