@@ -57,6 +57,9 @@ extension OrderedMap: Collection {
     }
   }
 
+  public var keys  : [Key]   { return map { $0.key } }
+  public var values: [Value] { return map { $0.value } }
+
 }
 
 extension OrderedMap: ExpressibleByDictionaryLiteral {
