@@ -55,7 +55,7 @@ class SemaTests: XCTestCase {
 
       if let output = outputs[testCase.key] {
         let expectation = TextFile(path: output)
-        XCTAssertLinesEqual(testResult.storage, try! expectation.read(), path: testCase.value)
+        XCTAssertLinesEqual(try! expectation.read(), testResult.storage, path: testCase.value)
         print("✅  regression test succeeded for '\(testCase.value.filename!)'")
       } else {
         let outputPath = Path(pathname: String(testCase.value.pathname.dropLast(6)) + ".output")
@@ -87,7 +87,7 @@ private func XCTAssertLinesEqual(_ lhs: String, _ rhs: String, path: Path) {
     XCTFail("⚠️  \(path.filename!)")
     for (lineno, ll, rl) in errors {
       print("  L\(lineno) | expected: " + ll.trimmingCharacters(in: [" "]).styled("green"))
-      print("  L\(lineno) | actual  : " + rl.trimmingCharacters(in: [" "]).styled("red"))
+      print("  L\(lineno) | obtained: " + rl.trimmingCharacters(in: [" "]).styled("red"))
     }
     return
   }
