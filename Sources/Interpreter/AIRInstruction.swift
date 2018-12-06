@@ -36,7 +36,7 @@ public class InstructionBlock: Sequence {
 
 }
 
-/// This represents the allocation of a reference (i.e. a pointer), which is provided unintialized.
+/// This represents the allocation of an object.
 public struct AllocInst: AIRInstruction, AIRRegister {
 
   public let type: AIRType
@@ -48,6 +48,22 @@ public struct AllocInst: AIRInstruction, AIRRegister {
 
   public var instDescription: String {
     return "%\(name) = alloc \(type)"
+  }
+
+}
+
+/// This represents the allocation of a reference (i.e. a pointer), which is provided unintialized.
+public struct MakeRefInst: AIRInstruction, AIRRegister {
+
+  public let type: AIRType
+  public let name: String
+
+  public var valueDescription: String {
+    return "%\(name)"
+  }
+
+  public var instDescription: String {
+    return "%\(name) = make_ref \(type)"
   }
 
 }
@@ -124,7 +140,7 @@ public struct ReturnInst: AIRInstruction {
 public struct CopyInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: AllocInst
+  public let target: MakeRefInst
 
   public var instDescription: String {
     return "copy \(source.valueDescription), \(target.valueDescription)"
@@ -136,7 +152,7 @@ public struct CopyInst: AIRInstruction {
 public struct MoveInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: AllocInst
+  public let target: MakeRefInst
 
   public var instDescription: String {
     return "move \(source.valueDescription), \(target.valueDescription)"
@@ -148,7 +164,7 @@ public struct MoveInst: AIRInstruction {
 public struct BindInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: AllocInst
+  public let target: MakeRefInst
 
   public var instDescription: String {
     return "bind \(source.valueDescription), \(target.valueDescription)"
@@ -159,7 +175,7 @@ public struct BindInst: AIRInstruction {
 /// This represents a drop instruction.
 public struct DropInst: AIRInstruction {
 
-  public let value: AllocInst
+  public let value: MakeRefInst
 
   public var instDescription: String {
     return "drop \(value.valueDescription)"

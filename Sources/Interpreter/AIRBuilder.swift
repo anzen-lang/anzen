@@ -15,8 +15,13 @@ public class AIRBuilder {
   public var currentBlock: InstructionBlock?
 
   /// Creates a new reference in the current instruction block.
-  @discardableResult
-  public func buildRef(type: AIRType) -> AllocInst {
+  public func buildMakeRef(type: AIRType) -> MakeRefInst {
+    let inst = MakeRefInst(type: type, name: currentBlock!.nextRegisterName())
+    currentBlock!.instructions.append(inst)
+    return inst
+  }
+
+  public func buildAlloc(type: AIRType) -> AllocInst {
     let inst = AllocInst(type: type, name: currentBlock!.nextRegisterName())
     currentBlock!.instructions.append(inst)
     return inst
@@ -52,21 +57,21 @@ public class AIRBuilder {
   }
 
   @discardableResult
-  public func buildCopy(source: AIRValue, target: AllocInst) -> CopyInst {
+  public func buildCopy(source: AIRValue, target: MakeRefInst) -> CopyInst {
     let inst = CopyInst(source: source, target: target)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
   @discardableResult
-  public func buildMove(source: AIRValue, target: AllocInst) -> MoveInst {
+  public func buildMove(source: AIRValue, target: MakeRefInst) -> MoveInst {
     let inst = MoveInst(source: source, target: target)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
   @discardableResult
-  public func buildBind(source: AIRValue, target: AllocInst) -> BindInst {
+  public func buildBind(source: AIRValue, target: MakeRefInst) -> BindInst {
     let inst = BindInst(source: source, target: target)
     currentBlock!.instructions.append(inst)
     return inst
@@ -76,7 +81,7 @@ public class AIRBuilder {
   public func build(
     assignment: BindingOperator,
     source: AIRValue,
-    target: AllocInst) -> AIRInstruction
+    target: MakeRefInst) -> AIRInstruction
   {
     switch assignment {
     case .copy: return buildCopy(source: source, target: target)
@@ -86,7 +91,7 @@ public class AIRBuilder {
   }
 
   @discardableResult
-  public func buildDrop(value: AllocInst) -> DropInst {
+  public func buildDrop(value: MakeRefInst) -> DropInst {
     let inst = DropInst(value: value)
     currentBlock!.instructions.append(inst)
     return inst

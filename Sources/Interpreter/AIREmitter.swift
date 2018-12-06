@@ -43,7 +43,7 @@ public class AIREmitter: ASTVisitor {
       try visit(statement)
 
       // Call expressions may be used as a statement, without being bound to any l-value.
-      if stack.pop() is AllocInst {
+      if stack.pop() is MakeRefInst {
         guard statement is CallExpr && stack.isEmpty
           else { fatalError("unconsumed r-value(s)") }
       }
@@ -51,7 +51,7 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: PropDecl) throws {
-    let ref = builder.buildRef(type: builder.unit.getAIRType(of: node.type!))
+    let ref = builder.buildMakeRef(type: builder.unit.getType(of: node.type!))
     locals.top![node.symbol!] = ref
 
     if let (op, value) = node.initialBinding {
@@ -125,7 +125,7 @@ public class AIREmitter: ASTVisitor {
     try visit(node.lvalue)
     try visit(node.rvalue)
     let rvalue = stack.pop()!
-    let lvalue = stack.pop() as! AllocInst
+    let lvalue = stack.pop() as! MakeRefInst
     builder.build(assignment: node.op, source: rvalue, target: lvalue)
   }
 
@@ -160,12 +160,12 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: CallExpr) throws {
-    let callee = builder.buildRef(type: builder.unit.getAIRType(of: node.callee.type!))
+    let callee = builder.buildMakeRef(type: builder.unit.getType(of: node.callee.type!))
     try visit(node.callee)
     builder.buildBind(source: stack.pop()!, target: callee)
 
-    let argrefs = try node.arguments.map { (argument) -> AllocInst in
-      let argref = builder.buildRef(type: builder.unit.getAIRType(of: argument.type!))
+    let argrefs = try node.arguments.map { (argument) -> MakeRefInst in
+      let argref = builder.buildMakeRef(type: builder.unit.getType(of: argument.type!))
       try visit(argument.value)
       builder.build(assignment: argument.bindingOp, source: stack.pop()!, target: argref)
       return argref

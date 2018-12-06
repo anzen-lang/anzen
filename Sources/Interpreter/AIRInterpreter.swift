@@ -28,6 +28,7 @@ public class AIRInterpreter {
     while let instruction = cursor?.next() {
       switch instruction {
       case let inst as AllocInst        : execute(inst)
+      case let inst as MakeRefInst      : execute(inst)
       case let inst as CopyInst         : execute(inst)
       case let inst as MoveInst         : execute(inst)
       case let inst as BindInst         : execute(inst)
