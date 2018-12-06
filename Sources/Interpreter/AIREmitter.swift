@@ -19,7 +19,7 @@ public class AIREmitter: ASTVisitor {
   public func visit(_ node: ModuleDecl) throws {
     // Create the `main` function if the unit is supposed to be the program's entry.
     if builder.unit.isMain {
-      let mainFnType = AIRFunctionType(domain: [], codomain: .nothing)
+      let mainFnType = builder.unit.getFunctionType(from: [], to: .nothing)
       let mainFn = builder.unit.getFunction(name: "main", type: mainFnType)
       mainFn.appendBlock(label: "entry")
       builder.currentBlock = mainFn.blocks.first?.value
@@ -62,15 +62,15 @@ public class AIREmitter: ASTVisitor {
 
   public func visit(_ node: FunDecl) throws {
     // Get the type of the declared function.
-    var fnTy = builder.unit.getAIRFunctionType(of: node.type! as! FunctionType)
+    var fnTy = builder.unit.getFunctionType(of: node.type! as! FunctionType)
     if !node.captures.isEmpty {
       // If the function captures symbols, we need to emit a context-free version of the it, which
       // gets the captured values as parameters. This boils down to extending the domain.
       assert(node.captures.duplicates(groupedBy: { $0.name }).isEmpty)
       let additional = node.captures
         .sorted(by: { a, b in a.name < b.name })
-        .map({ builder.unit.getAIRType(of: $0.type!) })
-      fnTy = AIRFunctionType(domain: additional + fnTy.domain, codomain: fnTy.codomain)
+        .map({ builder.unit.getType(of: $0.type!) })
+      fnTy = builder.unit.getFunctionType(from: additional + fnTy.domain, to: fnTy.codomain)
     }
 
     // Retrieve the function object.
@@ -101,7 +101,7 @@ public class AIREmitter: ASTVisitor {
       let parameterSymbols = node.captures + node.parameters.map({ $0.symbol! })
       for sym in parameterSymbols {
         let paramref = AIRParameter(
-          type: builder.unit.getAIRType(of: sym.type!),
+          type: builder.unit.getType(of: sym.type!),
           name: builder.currentBlock!.nextRegisterName())
         locals.top![sym] = paramref
       }
@@ -174,7 +174,7 @@ public class AIREmitter: ASTVisitor {
     let apply = builder.buildApply(
       callee: callee,
       arguments: argrefs,
-      type: builder.unit.getAIRType(of: node.type!))
+      type: builder.unit.getType(of: node.type!))
     stack.push(apply)
 
     // TODO: There's probably a way to optimize calls to built-in functions, so that we don't
@@ -194,9 +194,9 @@ public class AIREmitter: ASTVisitor {
         else { fatalError() }
       guard let fnTy = methTy.codomain as? FunctionType
         else { fatalError() }
-      let uncurriedTy = AIRFunctionType(
-        domain: (methTy.domain + fnTy.domain).map({ builder.unit.getAIRType(of: $0.type) }),
-        codomain: builder.unit.getAIRType(of: fnTy.codomain))
+      let uncurriedTy = builder.unit.getFunctionType(
+        from: (methTy.domain + fnTy.domain).map({ builder.unit.getType(of: $0.type) }),
+        to: builder.unit.getType(of: fnTy.codomain))
 
       // Create the partial application of the uncurried function.
       let uncurried = builder.unit.getFunction(
@@ -205,7 +205,7 @@ public class AIREmitter: ASTVisitor {
       let partial = builder.buildPartialApply(
         function: uncurried,
         arguments: [stack.pop()!],
-        type: builder.unit.getAIRType(of: node.type!))
+        type: builder.unit.getType(of: node.type!))
       stack.push(partial)
       return
     }
@@ -222,13 +222,13 @@ public class AIREmitter: ASTVisitor {
 
     // The symbol might not be declared yet if it refers to a hoisted type or function. Otherwise,
     // an `undefined symbol` error would have been detected during semantic analysis.
-    if let functionType = (node.symbol!.type as? FunctionType) {
+    if let fnTy = (node.symbol!.type as? FunctionType) {
       // NOTE: Functions that capture symbols can't be hoisted, as the capture may happen after the
       // function call otherwise. Therefore, we don't have to handle partial applications (a.k.a.
       // function closures) here.
       let fn = builder.unit.getFunction(
         name: mangle(symbol: node.symbol!),
-        type: builder.unit.getAIRFunctionType(of: functionType))
+        type: builder.unit.getFunctionType(of: fnTy))
 
       locals.top![node.symbol!] = fn
       stack.push(fn)

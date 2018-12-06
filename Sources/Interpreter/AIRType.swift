@@ -1,6 +1,6 @@
 import AST
 
-public class AIRType {
+public class AIRType: Equatable {
 
   fileprivate init() {}
 
@@ -47,7 +47,7 @@ public final class AIRBuiltinType: AIRType, CustomStringConvertible {
 
 public final class AIRFunctionType: AIRType, CustomStringConvertible {
 
-  public init(domain: [AIRType], codomain: AIRType) {
+  internal init(domain: [AIRType], codomain: AIRType) {
     self.domain = domain
     self.codomain = codomain
   }
@@ -63,7 +63,7 @@ public final class AIRFunctionType: AIRType, CustomStringConvertible {
 
 public final class AIRStructType: AIRType, CustomStringConvertible {
 
-  public init(name: String, elements: [AIRType]) {
+  internal init(name: String, elements: [AIRType]) {
     self.name = name
     self.elements = elements
   }
