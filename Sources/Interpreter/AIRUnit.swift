@@ -52,12 +52,12 @@ public class AIRUnit: CustomStringConvertible {
 
     case let ty as StructType:
       let airTy = getStructType(name: ty.name)
-      if airTy.elements.isEmpty {
-        airTy.elements = ty.members.compactMap { mem in
+      if airTy.members.isEmpty {
+        airTy.members = OrderedMap(ty.members.compactMap { mem in
           mem.type is FunctionType
             ? nil
-            : getType(of: mem.type!)
-        }
+            : (mem.name, getType(of: mem.type!))
+        })
       }
       return airTy
 
@@ -74,7 +74,7 @@ public class AIRUnit: CustomStringConvertible {
       return ty
     }
 
-    let ty = AIRStructType(name: name, elements: [])
+    let ty = AIRStructType(name: name, members: [:])
     structTypes[name] = ty
     return ty
   }

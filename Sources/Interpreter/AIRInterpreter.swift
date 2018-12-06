@@ -52,8 +52,7 @@ public class AIRInterpreter {
   private func execute(_ inst: AllocInst) {
     switch inst.type {
     case let ty as AIRStructType:
-      frames.top![inst.name] = StructInstance(
-        payload: Array(repeating: Reference(), count: ty.elements.count))
+      frames.top![inst.name] = StructInstance(type: ty)
     default:
       panic("no allocator for type '\(inst.type)'")
     }
@@ -279,11 +278,19 @@ private class Reference: CustomStringConvertible {
 /// Represents a struct type instance.
 private struct StructInstance: CustomStringConvertible {
 
+  init(type: AIRStructType) {
+    self.type = type
+    self.payload = Array(repeating: Reference(), count: type.members.count)
+  }
+
+  let type: AIRStructType
   let payload: [Any]
 
   var description: String {
-    let members = payload.map({ "\($0)" }).joined(separator: ", ")
-    return "{\(members)}"
+    let members = zip(type.members.keys, payload)
+      .map({ "\($0.0): \($0.1)" })
+      .joined(separator: ", ")
+    return "\(type)(\(members))"
   }
 
 }

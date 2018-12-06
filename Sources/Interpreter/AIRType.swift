@@ -1,4 +1,5 @@
 import AST
+import Utils
 
 public class AIRType: Equatable {
 
@@ -82,13 +83,13 @@ public final class AIRFunctionType: AIRType, CustomStringConvertible {
 
 public final class AIRStructType: AIRType, CustomStringConvertible {
 
-  internal init(name: String, elements: [AIRType]) {
+  internal init(name: String, members: OrderedMap<String, AIRType>) {
     self.name = name
-    self.elements = elements
+    self.members = members
   }
 
   public let name: String
-  public var elements: [AIRType]
+  public var members: OrderedMap<String, AIRType>
 
   public var description: String {
     return self.name
