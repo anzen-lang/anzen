@@ -40,33 +40,34 @@ public class AIRUnit: CustomStringConvertible {
     switch anzenType {
     case is AnythingType:
       return .anything
-
     case is NothingType:
       return .nothing
-
     case let ty as FunctionType:
       return getFunctionType(of: ty)
-
     case let ty as StructType where ty.isBuiltin:
       return .builtin(named: ty.name)!
-
     case let ty as StructType:
-      let airTy = getStructType(name: ty.name)
-      if airTy.members.isEmpty {
-        airTy.members = OrderedMap(ty.members.compactMap { mem in
-          mem.type is FunctionType
-            ? nil
-            : (mem.name, getType(of: mem.type!))
-        })
-      }
-      return airTy
-
+      return getStructType(of: ty)
     case let ty as Metatype:
       return getType(of: ty.type).metatype
-
     default:
       fatalError("type '\(anzenType)' has no AIR representation")
     }
+  }
+
+  public func getStructType(of anzenType: StructType) -> AIRStructType {
+    if let ty = structTypes[name] {
+      return ty
+    }
+
+    let ty = AIRStructType(name: anzenType.name, members: [:])
+    structTypes[name] = ty
+    ty.members = OrderedMap(anzenType.members.compactMap { mem in
+      mem.isOverloadable
+        ? nil
+        : (mem.name, getType(of: mem.type!))
+    })
+    return ty
   }
 
   public func getStructType(name: String) -> AIRStructType {
