@@ -30,6 +30,7 @@ public class AIRInterpreter {
       switch instruction {
       case let inst as AllocInst        : execute(inst)
       case let inst as MakeRefInst      : execute(inst)
+      case let inst as ExtractInst      : execute(inst)
       case let inst as CopyInst         : execute(inst)
       case let inst as MoveInst         : execute(inst)
       case let inst as BindInst         : execute(inst)
@@ -60,6 +61,14 @@ public class AIRInterpreter {
 
   private func execute(_ inst: MakeRefInst) {
     frames.top![inst.name] = Reference()
+  }
+
+  private func execute(_ inst: ExtractInst) {
+    guard let object = value(of: inst.source) as? StructInstance
+      else { panic("cannot extract from '\(inst.source)'") }
+    guard object.payload.count > inst.index
+      else { panic("index is out of bound") }
+    frames.top![inst.name] = object.payload[inst.index]
   }
 
   private func execute(_ inst: CopyInst) {
