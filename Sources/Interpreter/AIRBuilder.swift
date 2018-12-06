@@ -27,6 +27,16 @@ public class AIRBuilder {
     return inst
   }
 
+  public func buildExtract(from source: AIRValue, index: Int, type: AIRType) -> ExtractInst {
+    let inst = ExtractInst(
+      source: source,
+      index: index,
+      type: type,
+      name: currentBlock!.nextRegisterName())
+    currentBlock!.instructions.append(inst)
+    return inst
+  }
+
   public func buildApply(callee: AIRValue, arguments: [AIRValue], type: AIRType) -> ApplyInst {
     let inst = ApplyInst(
       callee: callee,

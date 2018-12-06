@@ -221,6 +221,21 @@ public class AIREmitter: ASTVisitor {
       return
     }
 
+    if owner.type is NominalType {
+      // If the ownee isn't a method, but the owner's a nominal type, then the expression should
+      // "extract" a field from the owner.
+      let airTy = builder.unit.getType(of: owner.type!) as! AIRStructType
+      guard let index = airTy.members.firstIndex(where: { $0.key == node.ownee.name })
+        else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
+      let extract = builder.buildExtract(
+        from: stack.pop()!,
+        index: index,
+        type: builder.unit.getType(of: node.type!))
+      stack.push(extract)
+      return
+    }
+
+    // FIXME: Distinguish between stored and computed properties.
     fatalError("TODO")
   }
 
