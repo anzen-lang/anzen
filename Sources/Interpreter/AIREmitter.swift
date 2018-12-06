@@ -97,6 +97,12 @@ public class AIREmitter: ASTVisitor {
       // Set up the local register mapping.
       locals.push([:])
 
+      if node.kind == .constructor {
+        guard let selfSym = node.innerScope?.symbols["self"]?[0]
+          else { fatalError("no symbol for 'self' in constructor scope") }
+        locals.top![selfSym] = builder.buildAlloc(type: fnTy.codomain)
+      }
+
       // Create the function parameters.
       let parameterSymbols = node.captures + node.parameters.map({ $0.symbol! })
       for sym in parameterSymbols {
@@ -119,6 +125,11 @@ public class AIREmitter: ASTVisitor {
 
     // NOTE: Generic functions are represented unspecialized in AIR, so that borrow checking can be
     // performed only once, no matter the number of times the function is specialized.
+  }
+
+  public func visit(_ node: StructDecl) throws {
+    // Only visit function declarations.
+    try visit(node.body.statements.filter({ $0 is FunDecl }))
   }
 
   public func visit(_ node: BindingStmt) throws {
