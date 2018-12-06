@@ -132,7 +132,7 @@ public class AIRInterpreter {
 
     // Prepare the next stack frame.
     var nextFrame = Frame(returnCursor: cursor, returnName: inst.name)
-    for (i, arg) in (args + inst.arguments).enumerated() {
+    for (i, arg) in (args).enumerated() {
       nextFrame["\(i)"] = Reference(to: value(of: arg))
     }
     frames.push(nextFrame)
@@ -289,7 +289,7 @@ private struct StructInstance: CustomStringConvertible {
 
   init(type: AIRStructType) {
     self.type = type
-    self.payload = Array(repeating: Reference(), count: type.members.count)
+    self.payload = type.members.map { _ in Reference() }
   }
 
   let type: AIRStructType
