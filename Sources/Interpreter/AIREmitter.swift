@@ -97,10 +97,11 @@ public class AIREmitter: ASTVisitor {
       // Set up the local register mapping.
       locals.push([:])
 
+      let selfSym: Symbol? = node.innerScope?.symbols["self"]?[0]
       if node.kind == .constructor {
-        guard let selfSym = node.innerScope?.symbols["self"]?[0]
+        guard selfSym != nil
           else { fatalError("no symbol for 'self' in constructor scope") }
-        locals.top![selfSym] = builder.buildAlloc(type: fnTy.codomain)
+        locals.top![selfSym!] = builder.buildAlloc(type: fnTy.codomain)
       }
 
       // Create the function parameters.
@@ -113,6 +114,10 @@ public class AIREmitter: ASTVisitor {
       }
 
       try visit(body)
+
+      if node.kind == .constructor {
+        builder.buildReturn(value: locals.top![selfSym!])
+      }
 
       // Restore the insertion point.
       builder.currentBlock = previousBlock
