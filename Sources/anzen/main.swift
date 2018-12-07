@@ -6,6 +6,7 @@ import Darwin.C
 
 import ArgParse
 import AST
+import AnzenIR
 import AnzenLib
 import Interpreter
 import SystemKit
