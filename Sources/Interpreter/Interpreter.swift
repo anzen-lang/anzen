@@ -7,7 +7,7 @@ import Utils
 /// - Note: This interpreter operates under the assumption that the AIR units it is given are
 ///   correct with respect to type checking and borrow checking, and will unrecoverably fail if
 ///   that's not the case.
-public class AIRInterpreter {
+public class Interpreter {
 
   public init() {}
 

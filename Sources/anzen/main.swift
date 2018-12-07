@@ -114,7 +114,7 @@ if parseResult["show-air"] as? Bool ?? false {
 guard let mainFn = mainUnit.functions["main"]
   else { crash("no main function") }
 
-let interpreter = AIRInterpreter()
+let interpreter = Interpreter()
 interpreter.invoke(function: mainFn)
 let status: Int32 = 0
 
