@@ -20,6 +20,6 @@ let package = Package(
     .target(name: "Sema"        , dependencies: ["AST", "Parser", "Utils", "SystemKit"]),
     .target(name: "Utils"       , dependencies: ["SystemKit"]),
 
-    .testTarget(name: "SemaTests", dependencies: ["AnzenLib", "Sema"]),
+    .testTarget(name: "AnzenTests", dependencies: ["AnzenLib"]),
   ]
 )
