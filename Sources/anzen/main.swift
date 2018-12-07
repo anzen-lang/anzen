@@ -115,7 +115,7 @@ guard let mainFn = mainUnit.functions["main"]
   else { crash("no main function") }
 
 let interpreter = Interpreter()
-interpreter.invoke(function: mainFn)
+try interpreter.invoke(function: mainFn)
 let status: Int32 = 0
 
 // Exit with the interpreter's status.

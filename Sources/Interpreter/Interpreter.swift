@@ -9,11 +9,18 @@ import Utils
 ///   that's not the case.
 public class Interpreter {
 
-  public init() {}
+  public init(stdout: Console = System.out, stderr: Console = System.err) {
+    self.stdout = stdout
+    self.stderr = stderr
+  }
+
+  /// The standard output of the interpreter.
+  public let stdout: Console
+  /// The standard error of the interpreter.
+  public let stderr: Console
 
   /// The loaded functions.
   private var functions: [String: AIRFunction] = [:]
-
   /// The program cursor.
   private var cursor: Cursor?
   /// The stack frames.
@@ -23,80 +30,75 @@ public class Interpreter {
     functions.merge(unit.functions, uniquingKeysWith: { _, rhs in rhs })
   }
 
-  public func invoke(function: AIRFunction) {
+  public func invoke(function: AIRFunction) throws {
     cursor = Cursor(atEntryOf: function)
     frames.push(Frame())
 
     while let instruction = cursor?.next() {
       switch instruction {
-      case let inst as AllocInst        : execute(inst)
-      case let inst as MakeRefInst      : execute(inst)
-      case let inst as ExtractInst      : execute(inst)
-      case let inst as CopyInst         : execute(inst)
-      case let inst as MoveInst         : execute(inst)
-      case let inst as BindInst         : execute(inst)
-      case let inst as ApplyInst        : execute(inst)
-      case let inst as PartialApplyInst : execute(inst)
-      case let inst as DropInst         : execute(inst)
-      case let inst as ReturnInst       : execute(inst)
-      case let inst as BranchInst       : execute(inst)
-      case let inst as JumpInst         : execute(inst)
-      default                           : unreachable()
+      case let inst as AllocInst        : try execute(inst)
+      case let inst as MakeRefInst      : try execute(inst)
+      case let inst as ExtractInst      : try execute(inst)
+      case let inst as CopyInst         : try execute(inst)
+      case let inst as MoveInst         : try execute(inst)
+      case let inst as BindInst         : try execute(inst)
+      case let inst as ApplyInst        : try execute(inst)
+      case let inst as PartialApplyInst : try execute(inst)
+      case let inst as DropInst         : try execute(inst)
+      case let inst as ReturnInst       : try execute(inst)
+      case let inst as BranchInst       : try execute(inst)
+      case let inst as JumpInst         : try execute(inst)
+      default: throw RuntimeError("unexpected instruction '\(instruction.instDescription)'")
       }
     }
   }
 
-  private func panic(_ message: String) -> Never {
-    System.err.print("Fatal error: \(message)")
-    System.exit(status: 1)
-  }
-
-  private func execute(_ inst: AllocInst) {
+  private func execute(_ inst: AllocInst) throws {
     switch inst.type {
     case let ty as AIRStructType:
       frames.top![inst.id] = StructInstance(type: ty)
     default:
-      panic("no allocator for type '\(inst.type)'")
+      throw RuntimeError("no allocator for type '\(inst.type)'")
     }
   }
 
-  private func execute(_ inst: MakeRefInst) {
+  private func execute(_ inst: MakeRefInst) throws {
     frames.top![inst.id] = Reference()
   }
 
-  private func execute(_ inst: ExtractInst) {
-    guard let object = value(of: inst.source) as? StructInstance
-      else { panic("cannot extract from '\(inst.source)'") }
+  private func execute(_ inst: ExtractInst) throws {
+    guard let object = try value(of: inst.source) as? StructInstance
+      else { throw RuntimeError("cannot extract from '\(inst.source)'") }
     guard object.payload.count > inst.index
-      else { panic("index is out of bound") }
+      else { throw RuntimeError("index is out of bound") }
     frames.top![inst.id] = object.payload[inst.index]
   }
 
-  private func execute(_ inst: CopyInst) {
+  private func execute(_ inst: CopyInst) throws {
     guard let ref = frames.top![inst.target.id] as? Reference
-      else { panic("invalid or uninitialized register '\(inst.target.id)'") }
+      else { throw RuntimeError("invalid or uninitialized register '\(inst.target.id)'") }
 
     // FIXME: Call copy constructor.
-    ref.value = value(of: inst.source)
+    ref.value = try value(of: inst.source)
   }
 
-  private func execute(_ inst: MoveInst) {
+  private func execute(_ inst: MoveInst) throws {
     guard let ref = frames.top![inst.target.id] as? Reference
-      else { panic("invalid or uninitialized register '\(inst.target.id)'") }
+      else { throw RuntimeError("invalid or uninitialized register '\(inst.target.id)'") }
 
     switch inst.source {
     case let cst as AIRConstant:
       ref.value = cst.value
     case let reg as AIRRegister:
-      ref.value = value(of: reg)
+      ref.value = try value(of: reg)
     default:
-      panic("invalid r-value for move '\(inst.source)'")
+      throw RuntimeError("invalid r-value for move '\(inst.source)'")
     }
   }
 
-  private func execute(_ inst: BindInst) {
+  private func execute(_ inst: BindInst) throws {
     guard let ref = frames.top![inst.target.id] as? Reference
-      else { panic("invalid or uninitialized register '\(inst.target.id)'") }
+      else { throw RuntimeError("invalid or uninitialized register '\(inst.target.id)'") }
 
     switch inst.source {
     case let fn as AIRFunction:
@@ -104,15 +106,15 @@ public class Interpreter {
     case let reg as AIRRegister:
       frames.top![inst.target.id] = frames.top![reg.id]
     default:
-      panic("invalid r-value for bind '\(inst.source)'")
+      throw RuntimeError("invalid r-value for bind '\(inst.source)'")
     }
   }
 
-  private func execute(_ inst: ApplyInst) {
+  private func execute(_ inst: ApplyInst) throws {
     // Retrieve the function to be called, and all its arguments.
     let fn: AIRFunction
     var args = inst.arguments
-    switch value(of: inst.callee) {
+    switch try value(of: inst.callee) {
     case let thin as AIRFunction:
       fn = thin
     case let thick as Closure:
@@ -124,7 +126,7 @@ public class Interpreter {
 
     // Handle built-in funtions.
     guard !fn.name.starts(with: "__builtin") else {
-      let returnValue = applyBuiltin(name: fn.name, arguments: args)
+      let returnValue = try applyBuiltin(name: fn.name, arguments: args)
       if let value = returnValue {
         frames.top![inst.id] = value
       }
@@ -135,7 +137,7 @@ public class Interpreter {
     var nextFrame = Frame(returnCursor: cursor, returnID: inst.id)
     for (i, arg) in (args).enumerated() {
       // Notice the offset, so as to reserve %0 for `self`.
-      nextFrame[i + 1] = Reference(to: value(of: arg))
+      nextFrame[i + 1] = Reference(to: try value(of: arg))
     }
     frames.push(nextFrame)
 
@@ -143,21 +145,21 @@ public class Interpreter {
     cursor = Cursor(atEntryOf: fn)
   }
 
-  private func execute(_ inst: PartialApplyInst) {
+  private func execute(_ inst: PartialApplyInst) throws {
     frames.top![inst.id] = Closure(function: inst.function, arguments: inst.arguments)
   }
 
-  private func execute(_ inst: DropInst) {
+  private func execute(_ inst: DropInst) throws {
     frames.top![inst.value.id] = nil
     // FIXME: Call destructors.
   }
 
-  private func execute(_ inst: ReturnInst) {
+  private func execute(_ inst: ReturnInst) throws {
     // Move the return value (if any) onto the return register.
     if let retval = inst.value {
       if frames.count > 1 {
         // Note that the register in which we're about to write isn't supposed to exist yet.
-        frames[frames.count - 2][frames.top!.returnID!] = value(of: retval)
+        frames[frames.count - 2][frames.top!.returnID!] = try value(of: retval)
       }
 
       // FIXME: If the return value is to be passed by reference, we should copy the box itself.
@@ -170,18 +172,18 @@ public class Interpreter {
     frames.pop()
   }
 
-  private func execute(_ branch: BranchInst) {
-    let condition = value(of: branch.condition) as! Bool
+  private func execute(_ branch: BranchInst) throws {
+    let condition = try value(of: branch.condition) as! Bool
     cursor = condition
       ? Cursor(in: cursor!.function, atBeginningOf: branch.thenLabel)
       : Cursor(in: cursor!.function, atBeginningOf: branch.elseLabel)
   }
 
-  private func execute(_ jump: JumpInst) {
+  private func execute(_ jump: JumpInst) throws {
     cursor = Cursor(in: cursor!.function, atBeginningOf: jump.label)
   }
 
-  private func value(of airValue: AIRValue) -> Any {
+  private func value(of airValue: AIRValue) throws -> Any {
     switch airValue {
     case let cst as AIRConstant:
       return cst.value
@@ -189,12 +191,12 @@ public class Interpreter {
     case let reg as AIRRegister:
       if let ref = frames.top![reg.id] as? Reference {
         guard let val = ref.value
-          else { panic("memory error") }
+          else { throw RuntimeError("memory error") }
         return val
       } else if let val = frames.top![reg.id] {
         return val
       } else {
-        panic("invalid or uninitialized register '\(reg.id)'")
+        throw RuntimeError("invalid or uninitialized register '\(reg.id)'")
       }
 
     case let closure as Closure:
@@ -205,35 +207,35 @@ public class Interpreter {
     }
   }
 
-  private func applyBuiltin(name: String, arguments: [AIRValue]) -> Any? {
+  private func applyBuiltin(name: String, arguments: [AIRValue]) throws -> Any? {
     switch name {
     case "__builtin_print_F_a2n":
       assert(arguments.count == 1)
-      print(value(of: arguments[0]))
+      stdout.print(try value(of: arguments[0]))
       return nil
 
     case "__builtinIntblock_+_F_i2F_i2i":
       assert(arguments.count == 2)
-      let lhs = value(of: arguments[0]) as! Int
-      let rhs = value(of: arguments[1]) as! Int
+      let lhs = try value(of: arguments[0]) as! Int
+      let rhs = try value(of: arguments[1]) as! Int
       return lhs + rhs
 
     case "__builtinIntblock_-_F_i2F_i2i":
       assert(arguments.count == 2)
-      let lhs = value(of: arguments[0]) as! Int
-      let rhs = value(of: arguments[1]) as! Int
+      let lhs = try value(of: arguments[0]) as! Int
+      let rhs = try value(of: arguments[1]) as! Int
       return lhs - rhs
 
     case "__builtinIntblock_*_F_i2F_i2i":
       assert(arguments.count == 2)
-      let lhs = value(of: arguments[0]) as! Int
-      let rhs = value(of: arguments[1]) as! Int
+      let lhs = try value(of: arguments[0]) as! Int
+      let rhs = try value(of: arguments[1]) as! Int
       return lhs * rhs
 
     case "__builtinIntblock_<=_F_i2F_i2b":
       assert(arguments.count == 2)
-      let lhs = value(of: arguments[0]) as! Int
-      let rhs = value(of: arguments[1]) as! Int
+      let lhs = try value(of: arguments[0]) as! Int
+      let rhs = try value(of: arguments[1]) as! Int
       return lhs < rhs
 
     default:
