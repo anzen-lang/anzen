@@ -63,13 +63,25 @@ public class AIREmitter: ASTVisitor {
   public func visit(_ node: FunDecl) throws {
     // Get the type of the declared function.
     var fnTy = builder.unit.getFunctionType(of: node.type! as! FunctionType)
-    if !node.captures.isEmpty {
+
+    // Constructors and methods shall not have closures.
+    assert(
+      node.captures.isEmpty || (node.kind != .constructor && node.kind != .method),
+      "constructor and methods shall not have closures")
+
+    if node.symbol!.isMethod {
+      // Methods (and destructors?) are static functions that take the self symbol and return the
+      // "actual" method as a closure.
+      let symbols = node.innerScope!.symbols["self"]!
+      assert(symbols.count == 1)
+      let methTy = fnTy.codomain as! AIRFunctionType
+      fnTy = builder.unit.getFunctionType(
+        from: [builder.unit.getType(of: symbols[0].type!)] + methTy.domain,
+        to: methTy.codomain)
+    } else if !node.captures.isEmpty {
       // If the function captures symbols, we need to emit a context-free version of the it, which
       // gets the captured values as parameters. This boils down to extending the domain.
-      assert(node.captures.duplicates(groupedBy: { $0.name }).isEmpty)
-      let additional = node.captures
-        .sorted(by: { a, b in a.name < b.name })
-        .map({ builder.unit.getType(of: $0.type!) })
+      let additional = node.captures.map { builder.unit.getType(of: $0.type!) }
       fnTy = builder.unit.getFunctionType(from: additional + fnTy.domain, to: fnTy.codomain)
     }
 
@@ -82,9 +94,7 @@ public class AIREmitter: ASTVisitor {
       // Note that arguments are captured by reference in the current frame.
       locals.top![node.symbol!] = builder.buildPartialApply(
         function: fn,
-        arguments: node.captures
-          .sorted(by: { a, b in a.name < b.name })
-          .map({ locals.top![$0]! }),
+        arguments: node.captures.map { locals.top![$0]! },
         type: fnTy)
     }
 
@@ -99,9 +109,13 @@ public class AIREmitter: ASTVisitor {
 
       let selfSym: Symbol? = node.innerScope?.symbols["self"]?[0]
       if node.kind == .constructor {
-        guard selfSym != nil
-          else { fatalError("no symbol for 'self' in constructor scope") }
+        assert(selfSym != nil, "missing symbol for 'self' in constructor")
         locals.top![selfSym!] = builder.buildAlloc(type: fnTy.codomain, id: 0)
+      } else if node.symbol!.isMethod {
+        assert(selfSym != nil, "missing symbol for 'self' in method")
+        locals.top![selfSym!] = AIRParameter(
+          type: builder.unit.getType(of: selfSym!.type!),
+          id: builder.currentBlock!.nextRegisterID())
       }
 
       // Create the function parameters.
@@ -122,10 +136,6 @@ public class AIREmitter: ASTVisitor {
       // Restore the insertion point.
       builder.currentBlock = previousBlock
       locals.pop()
-
-      // FIXME: Handle closures.
-      // The idea would be to assign they symbol in the local regster mapping with a partial
-      // application that embeds the closure, pretty much the same way SIL does.
     }
 
     // NOTE: Generic functions are represented unspecialized in AIR, so that borrow checking can be
