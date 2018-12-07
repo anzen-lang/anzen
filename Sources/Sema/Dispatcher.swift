@@ -148,13 +148,26 @@ public final class Dispatcher: ASTTransformer {
     var choices = node.scope!.symbols[node.name]!
     assert(!choices.isEmpty)
 
-    // If the identifier has a function type, the actual symbol to which we'll dispatch it could be
-    // in any of the accessible scopes from `node.scope`, provided those symbols are overloadable,
-    // or in the member scope of a type defined in `node.scope`. Otherwise there has to be a non-
-    // overloadable symbol in `node.scope`.
     if node.type is FunctionType {
-      if choices[0].isOverloadable {
-        // Add overloaded symbols from each accessible scope to the list of choices.
+
+      // Note: there are various situations to consider if the identifier has a function type.
+      // * The identifier might refer to a functional property, in which case the only solution
+      //   is to dispatch to that property's symbol.
+      // * The identifier might refer to a function constructor, in which case we may dispatch to
+      //   any constructor symbol in the member scope of the type it refers to.
+      // * The identifier might refer directly to a function declaration, in which case we may
+      //   dispatch to any overloaded symbol in the accessible scope.
+
+      if !(choices[0].isOverloadable || choices[0].type is Metatype) {
+        // First case: the identifier refers to a property.
+        assert(choices.count == 1)
+        node.symbol = choices[0]
+      } else if let ty = (choices[0].type as? Metatype)?.type as? NominalType {
+        // Second case: the identifier refers to a constructor.
+        choices = ty.memberScope!.symbols["new"]!
+        node.symbol = inferSymbol(type: node.type!, choices: choices)
+      } else {
+        // Thid case: the identifier refers to a function.
         var scope = node.scope
         while let parent = scope?.parent {
           if let symbols = parent.symbols[node.name] {
@@ -164,25 +177,9 @@ public final class Dispatcher: ASTTransformer {
           }
           scope = parent
         }
-      } else {
-        assert(choices.count == 1)
-        guard let ty = (choices[0].type as? Metatype)?.type as? NominalType
-          else { fatalError() }
-        choices = ty.memberScope!.symbols["new"]!
+        node.symbol = inferSymbol(type: node.type!, choices: choices)
       }
 
-      // Filter out incompatible symbols.
-      choices = choices.filter { symbol in
-        let ty = symbol.isMethod
-          ? (symbol.type as! FunctionType).codomain
-          : symbol.type!
-        var bindings: [PlaceholderType: TypeBase] = [:]
-        return specializes(lhs: node.type!, rhs: ty, in: context, bindings: &bindings)
-      }
-
-      // FIXME: Disambiguise when there are several choices.
-      assert(choices.count > 0)
-      node.symbol = choices[0]
     } else {
       assert(choices.count == 1)
       node.symbol = choices[0]
@@ -201,6 +198,21 @@ public final class Dispatcher: ASTTransformer {
 
   private func reify(type: TypeBase?) -> TypeBase? {
     return type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+  }
+
+  private func inferSymbol(type: TypeBase, choices: [Symbol]) -> Symbol {
+    // Filter out incompatible symbols.
+    let compatible = choices.filter { symbol in
+      let ty = symbol.isMethod
+        ? (symbol.type as! FunctionType).codomain
+        : symbol.type!
+      var bindings: [PlaceholderType: TypeBase] = [:]
+      return specializes(lhs: type, rhs: ty, in: context, bindings: &bindings)
+    }
+
+    // FIXME: Disambiguise when there are several choices.
+    assert(compatible.count > 0)
+    return compatible[0]
   }
 
 }
