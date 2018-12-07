@@ -1,4 +1,4 @@
-import AST
+import SystemKit
 import Utils
 
 /// An interpreter for AIR code.
@@ -29,6 +29,8 @@ public class AIRInterpreter {
     while let instruction = cursor?.next() {
       switch instruction {
       case let inst as AllocInst        : execute(inst)
+      case let inst as MakeRefInst      : execute(inst)
+      case let inst as ExtractInst      : execute(inst)
       case let inst as CopyInst         : execute(inst)
       case let inst as MoveInst         : execute(inst)
       case let inst as BindInst         : execute(inst)
@@ -43,45 +45,76 @@ public class AIRInterpreter {
     }
   }
 
-  private func execute(_ newRef: AllocInst) {
-    frames.top![newRef.name] = Box(value: Null(), type: newRef.type)
+  private func panic(_ message: String) -> Never {
+    System.err.print("Fatal error: \(message)")
+    System.exit(status: 1)
   }
 
-  private func execute(_ copy: CopyInst) {
+  private func execute(_ inst: AllocInst) {
+    switch inst.type {
+    case let ty as AIRStructType:
+      frames.top![inst.id] = StructInstance(type: ty)
+    default:
+      panic("no allocator for type '\(inst.type)'")
+    }
+  }
+
+  private func execute(_ inst: MakeRefInst) {
+    frames.top![inst.id] = Reference()
+  }
+
+  private func execute(_ inst: ExtractInst) {
+    guard let object = value(of: inst.source) as? StructInstance
+      else { panic("cannot extract from '\(inst.source)'") }
+    guard object.payload.count > inst.index
+      else { panic("index is out of bound") }
+    frames.top![inst.id] = object.payload[inst.index]
+  }
+
+  private func execute(_ inst: CopyInst) {
+    guard let ref = frames.top![inst.target.id] as? Reference
+      else { panic("invalid or uninitialized register '\(inst.target.id)'") }
+
     // FIXME: Call copy constructor.
-    frames.top![copy.target.name]!.value = value(of: copy.source)
+    ref.value = value(of: inst.source)
   }
 
-  private func execute(_ move: MoveInst) {
-    switch move.source {
-    case let literal as AIRLiteral:
-      frames.top![move.target.name]!.value = literal.value
+  private func execute(_ inst: MoveInst) {
+    guard let ref = frames.top![inst.target.id] as? Reference
+      else { panic("invalid or uninitialized register '\(inst.target.id)'") }
+
+    switch inst.source {
+    case let cst as AIRConstant:
+      ref.value = cst.value
     case let reg as AIRRegister:
-      frames.top![move.target.name]!.value = frames.top![reg.name]!.value
+      ref.value = value(of: reg)
     default:
-      unreachable()
+      panic("invalid r-value for move '\(inst.source)'")
     }
   }
 
-  private func execute(_ bind: BindInst) {
-    switch bind.source {
+  private func execute(_ inst: BindInst) {
+    guard let ref = frames.top![inst.target.id] as? Reference
+      else { panic("invalid or uninitialized register '\(inst.target.id)'") }
+
+    switch inst.source {
     case let fn as AIRFunction:
-      frames.top![bind.target.name]!.value = fn
+      ref.value = fn
     case let reg as AIRRegister:
-      frames.top![bind.target.name] = frames.top![reg.name]
+      frames.top![inst.target.id] = frames.top![reg.id]
     default:
-      unreachable()
+      panic("invalid r-value for bind '\(inst.source)'")
     }
   }
 
-  private func execute(_ apply: ApplyInst) {
+  private func execute(_ inst: ApplyInst) {
     // Retrieve the function to be called, and all its arguments.
     let fn: AIRFunction
-    var args = apply.arguments
-    switch value(of: apply.callee) {
+    var args = inst.arguments
+    switch value(of: inst.callee) {
     case let thin as AIRFunction:
       fn = thin
-    case let thick as AIRClosure:
+    case let thick as Closure:
       fn = thick.function
       args = thick.arguments + args
     default:
@@ -92,16 +125,16 @@ public class AIRInterpreter {
     guard !fn.name.starts(with: "__builtin") else {
       let returnValue = applyBuiltin(name: fn.name, arguments: args)
       if let value = returnValue {
-        frames.top![apply.name] = Box(value: value, type: apply.type)
+        frames.top![inst.id] = value
       }
       return
     }
 
     // Prepare the next stack frame.
-    frames.top![apply.name] = Box(value: Null(), type: apply.type)
-    var nextFrame = Frame(returnCursor: cursor, returnName: apply.name)
-    for (i, arg) in apply.arguments.enumerated() {
-      nextFrame["\(i)"] = Box(value: value(of: arg), type: arg.type)
+    var nextFrame = Frame(returnCursor: cursor, returnID: inst.id)
+    for (i, arg) in (args).enumerated() {
+      // Notice the offset, so as to reserve %0 for `self`.
+      nextFrame[i + 1] = Reference(to: value(of: arg))
     }
     frames.push(nextFrame)
 
@@ -109,25 +142,21 @@ public class AIRInterpreter {
     cursor = Cursor(atEntryOf: fn)
   }
 
-  private func execute(_ partialApply: PartialApplyInst) {
-    frames.top![partialApply.name] = Box(
-      value: AIRClosure(
-        function: partialApply.function,
-        arguments: partialApply.arguments,
-        type: partialApply.type as! FunctionType),
-      type: partialApply.type)
+  private func execute(_ inst: PartialApplyInst) {
+    frames.top![inst.id] = Closure(function: inst.function, arguments: inst.arguments)
   }
 
-  private func execute(_ drop: DropInst) {
-    frames.top![drop.value.name] = nil
+  private func execute(_ inst: DropInst) {
+    frames.top![inst.value.id] = nil
     // FIXME: Call destructors.
   }
 
-  private func execute(_ ret: ReturnInst) {
+  private func execute(_ inst: ReturnInst) {
     // Move the return value (if any) onto the return register.
-    if let retval = ret.value {
+    if let retval = inst.value {
       if frames.count > 1 {
-        frames[frames.count - 2][frames.top!.returnName!]!.value = value(of: retval)
+        // Note that the register in which we're about to write isn't supposed to exist yet.
+        frames[frames.count - 2][frames.top!.returnID!] = value(of: retval)
       }
 
       // FIXME: If the return value is to be passed by reference, we should copy the box itself.
@@ -153,17 +182,21 @@ public class AIRInterpreter {
 
   private func value(of airValue: AIRValue) -> Any {
     switch airValue {
-    case let literal as AIRLiteral:
-      return literal.value
+    case let cst as AIRConstant:
+      return cst.value
 
-    case let register as AIRRegister:
-      guard let frame = frames.top
-        else { fatalError("trying to read a register outside of a frame") }
-      guard let box = frame[register.name]
-        else { fatalError("invalid register '\(register.name)'") }
-      return box.value
+    case let reg as AIRRegister:
+      if let ref = frames.top![reg.id] as? Reference {
+        guard let val = ref.value
+          else { panic("memory error") }
+        return val
+      } else if let val = frames.top![reg.id] {
+        return val
+      } else {
+        panic("invalid or uninitialized register '\(reg.id)'")
+      }
 
-    case let closure as AIRClosure:
+    case let closure as Closure:
       return closure
 
     default:
@@ -234,17 +267,52 @@ struct Cursor {
 
 }
 
-class Box {
+/// Represetns a reference.
+private class Reference: CustomStringConvertible {
 
-  public init(value: Any, type: TypeBase) {
+  init(to value: Any? = nil) {
+    assert(!(value is Reference))
     self.value = value
-    self.type = type
   }
 
-  var value: Any
-  let type: TypeBase
+  var value: Any? {
+    didSet { assert(!(value is Reference)) }
+  }
+
+  var description: String {
+    return "\(value ?? "null")"
+  }
 
 }
 
-private struct Null {
+/// Represents a struct type instance.
+private struct StructInstance: CustomStringConvertible {
+
+  init(type: AIRStructType) {
+    self.type = type
+    self.payload = type.members.map { _ in Reference() }
+  }
+
+  let type: AIRStructType
+  let payload: [Any]
+
+  var description: String {
+    let members = zip(type.members.keys, payload)
+      .map({ "\($0.0): \($0.1)" })
+      .joined(separator: ", ")
+    return "\(type)(\(members))"
+  }
+
+}
+
+/// Represents a function closure
+private struct Closure: CustomStringConvertible {
+
+  let function: AIRFunction
+  let arguments: [AIRValue]
+
+  var description: String {
+    return "(Function)"
+  }
+
 }

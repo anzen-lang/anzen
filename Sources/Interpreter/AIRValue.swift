@@ -1,14 +1,12 @@
-import AST
-
 /// The protocol for AIR values.
 ///
-/// An AIR value can be anything that represents a first-class value in AIR, such as, for instance,
-/// a literal or a register. Note that instructions that produce a value (e.g. `alloc`) are also
-/// represented as values themselves.
+/// This protocol represents any value a program may compute and use as compound of other values.
+/// Very intuitively, a literal is an AIR value, but so is `alloc` (i.e. the instruction that
+/// allocates register), as the latter represents the "value" of a register.
 public protocol AIRValue {
 
   /// The type of the value.
-  var type: TypeBase { get }
+  var type: AIRType { get }
   /// The text description of the value.
   var valueDescription: String { get }
 
@@ -19,59 +17,41 @@ public protocol AIRValue {
 /// An AIR register is an AIR value that can be represented as a register.
 public protocol AIRRegister: AIRValue {
 
-  /// The name of the register.
-  var name: String { get }
+  /// The ID of the register.
+  var id: Int { get }
 
 }
 
-/// Represents a function closure
-public struct AIRClosure: AIRValue {
+/// This represents a constant in AIR.
+public struct AIRConstant: AIRValue {
 
-  internal init(function: AIRFunction, arguments: [AIRValue], type: FunctionType) {
-    self.function = function
-    self.arguments = arguments
-    self.type = type
-  }
-
-  public let function: AIRFunction
-  public let arguments: [AIRValue]
-  public let type: TypeBase
-
-  public var valueDescription: String {
-    let arguments = self.arguments.map({ $0.valueDescription }).joined(separator: ", ")
-    return "closure($\(function.valueDescription), \(arguments)"
-  }
-
-}
-
-/// This represents a literal value in AIR.
-public struct AIRLiteral: AIRValue {
-
-  internal init(value: Bool, type: TypeBase) {
+  internal init(value: Bool) {
     self.value = value
-    self.type = type
+    self.type = AIRBuiltinType.bool
   }
 
-  internal init(value: Int, type: TypeBase) {
+  internal init(value: Int) {
     self.value = value
-    self.type = type
+    self.type = AIRBuiltinType.int
   }
 
-  internal init(value: Double, type: TypeBase) {
+  internal init(value: Double) {
     self.value = value
-    self.type = type
+    self.type = AIRBuiltinType.float
   }
 
-  internal init(value: String, type: TypeBase) {
+  internal init(value: String) {
     self.value = value
-    self.type = type
+    self.type = AIRBuiltinType.string
   }
 
   public let value: Any
-  public let type: TypeBase
+  public let type: AIRType
 
   public var valueDescription: String {
-    return value is String ? "\"\(value)\"" : "\(value)"
+    return value is String
+      ? "\"\(value)\""
+      : "\(value)"
   }
 
 }

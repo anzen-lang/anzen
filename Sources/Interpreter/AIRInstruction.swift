@@ -1,4 +1,3 @@
-import AST
 import Utils
 
 public protocol AIRInstruction {
@@ -23,8 +22,8 @@ public class InstructionBlock: Sequence {
   /// The instructions of the block.
   public var instructions: [AIRInstruction] = []
 
-  public func nextRegisterName() -> String {
-    return function.nextRegisterName()
+  public func nextRegisterID() -> Int {
+    return function.nextRegisterID()
   }
 
   public func makeIterator() -> Array<AIRInstruction>.Iterator {
@@ -37,18 +36,58 @@ public class InstructionBlock: Sequence {
 
 }
 
-/// This represents the allocation of a reference (i.e. a pointer), which is provided unintialized.
+/// This represents the allocation of an object.
 public struct AllocInst: AIRInstruction, AIRRegister {
 
-  public let type: TypeBase
-  public let name: String
+  public let type: AIRType
+  public let id: Int
 
   public var valueDescription: String {
-    return "%\(name)"
+    return "%\(id)"
   }
 
   public var instDescription: String {
-    return "%\(name) = alloc \(type)"
+    return "%\(id) = alloc \(type)"
+  }
+
+}
+
+/// This represents the allocation of a reference (i.e. a pointer), which is provided unintialized.
+public struct MakeRefInst: AIRInstruction, AIRRegister {
+
+  public let type: AIRType
+  public let id: Int
+
+  public var valueDescription: String {
+    return "%\(id)"
+  }
+
+  public var instDescription: String {
+    return "%\(id) = make_ref \(type)"
+  }
+
+}
+
+/// This represents the extraction of a reference from a composite type.
+///
+/// - Note: This intruction only extracts references that are part of the storage of the source
+///   (i.e. it doesn't handle computed properties).
+public struct ExtractInst: AIRInstruction, AIRRegister {
+
+  /// The composite type from which the extraction is performed.
+  public let source: AIRValue
+  /// The index of the reference to extract.
+  public let index: Int
+
+  public let type: AIRType
+  public let id: Int
+
+  public var valueDescription: String {
+    return "%\(id)"
+  }
+
+  public var instDescription: String {
+    return "%\(id) = extract \(source.valueDescription), \(index)"
   }
 
 }
@@ -56,27 +95,27 @@ public struct AllocInst: AIRInstruction, AIRRegister {
 /// This represents the application of a function.
 public struct ApplyInst: AIRInstruction, AIRRegister {
 
-  internal init(callee: AIRValue, arguments: [AIRValue], type: TypeBase, name: String) {
+  internal init(callee: AIRValue, arguments: [AIRValue], type: AIRType, id: Int) {
     self.callee = callee
     self.arguments = arguments
     self.type = type
-    self.name = name
+    self.id = id
   }
 
   public let callee: AIRValue
   public let arguments: [AIRValue]
-  public let type: TypeBase
-  public let name: String
+  public let type: AIRType
+  public let id: Int
 
   public var valueDescription: String {
-    return "%\(name)"
+    return "%\(id)"
   }
 
   public var instDescription: String {
     let args = arguments
       .map({ $0.valueDescription })
       .joined(separator: ", ")
-    return "%\(name) = apply \(callee.valueDescription), \(args)"
+    return "%\(id) = apply \(callee.valueDescription), \(args)"
   }
 
 }
@@ -90,18 +129,18 @@ public struct PartialApplyInst: AIRInstruction, AIRRegister {
 
   public let function: AIRFunction
   public let arguments: [AIRValue]
-  public let type: TypeBase
-  public let name: String
+  public let type: AIRType
+  public let id: Int
 
   public var valueDescription: String {
-    return "%\(name)"
+    return "%\(id)"
   }
 
   public var instDescription: String {
     let args = arguments
       .map({ $0.valueDescription })
       .joined(separator: ", ")
-    return "%\(name) = partial_apply \(function.valueDescription), \(args)"
+    return "%\(id) = partial_apply \(function.valueDescription), \(args)"
   }
 
 }
@@ -125,7 +164,7 @@ public struct ReturnInst: AIRInstruction {
 public struct CopyInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: AllocInst
+  public let target: AIRRegister
 
   public var instDescription: String {
     return "copy \(source.valueDescription), \(target.valueDescription)"
@@ -137,7 +176,7 @@ public struct CopyInst: AIRInstruction {
 public struct MoveInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: AllocInst
+  public let target: AIRRegister
 
   public var instDescription: String {
     return "move \(source.valueDescription), \(target.valueDescription)"
@@ -149,7 +188,7 @@ public struct MoveInst: AIRInstruction {
 public struct BindInst: AIRInstruction {
 
   public let source: AIRValue
-  public let target: AllocInst
+  public let target: AIRRegister
 
   public var instDescription: String {
     return "bind \(source.valueDescription), \(target.valueDescription)"
@@ -160,7 +199,7 @@ public struct BindInst: AIRInstruction {
 /// This represents a drop instruction.
 public struct DropInst: AIRInstruction {
 
-  public let value: AllocInst
+  public let value: MakeRefInst
 
   public var instDescription: String {
     return "drop \(value.valueDescription)"

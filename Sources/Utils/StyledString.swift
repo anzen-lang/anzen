@@ -1,3 +1,8 @@
+import SystemKit
+
+// Check for color support.
+let hasColorSupport = System.environment["TERM"] != nil
+
 /// A syled string.
 ///
 /// Styled string is a small utility struct that can perform various substring substitutions for
@@ -248,6 +253,9 @@ public struct PadRight: Style {
 public struct AnsiSRG: Style {
 
   public func apply(on subject: String, parameters: [Substring]) -> String {
+    guard hasColorSupport
+      else { return subject }
+
     return "\u{001B}[\(code)m\(subject)\u{001B}[0m"
   }
 
@@ -262,6 +270,9 @@ public struct AnsiSRG: Style {
 public struct AnsiRGB: Style {
 
   public func apply(on subject: String, parameters: [Substring]) -> String {
+    guard hasColorSupport
+      else { return subject }
+
     precondition(parameters.count == 3, "rgb requires 3 arguments")
     let values = parameters.map { (s) -> Int in
       guard let v = Int(s)

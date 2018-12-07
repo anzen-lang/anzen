@@ -12,15 +12,8 @@ import SystemKit
 
 // MARK: Helpers
 
-// Check for color support.
-let useColors = System.environment["TERM"] != nil
-
 func crash(_ message: String, status: Int32 = 1) -> Never {
-  if useColors {
-    System.err.print("error:".styled("red") + " \(message)")
-  } else {
-    System.err.print("error: \(message)")
-  }
+  System.err.print("error:".styled("red") + " \(message)")
   exit(status)
 }
 

@@ -103,12 +103,6 @@ public final class DefaultModuleLoader: ModuleLoader {
     var solver = ConstraintSolver(constraints: context.typeConstraints, in: context)
     let result = solver.solve()
 
-    if config.showTypedAST && (moduleID != .builtin) && (moduleID != .stdlib) {
-      let buffer = StringBuffer()
-      try! ASTDumper(to: buffer).visit(module)
-      logger?.debug(buffer.value)
-    }
-
     // --------------- //
     // Static Dispatch //
     // --------------- //
@@ -131,6 +125,12 @@ public final class DefaultModuleLoader: ModuleLoader {
     // Identify closure captures.
     let captureAnalyzer = CaptureAnalyzer()
     try! captureAnalyzer.visit(module)
+
+    if config.showTypedAST && (moduleID != .builtin) && (moduleID != .stdlib) {
+      let buffer = StringBuffer()
+      try! ASTDumper(to: buffer).visit(module)
+      logger?.debug(buffer.value)
+    }
 
     context.typeConstraints.removeAll()
     return module
