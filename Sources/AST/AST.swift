@@ -237,8 +237,8 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
 
   /// The scope delimited by this function.
   public var innerScope: Scope?
-  /// The capture set of the function.
-  public var captures: Set<Symbol> = []
+  /// The capture list of the function.
+  public var captures: [Symbol] = []
 
 }
 

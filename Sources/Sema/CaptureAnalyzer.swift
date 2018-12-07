@@ -13,6 +13,8 @@ public final class CaptureAnalyzer: ASTVisitor {
     functions.push(node)
     try! traverse(node)
     functions.pop()
+
+    assert(node.captures.duplicates(groupedBy: { $0.name }).isEmpty)
   }
 
   public func visit(_ node: SelectExpr) {
@@ -30,7 +32,9 @@ public final class CaptureAnalyzer: ASTVisitor {
         // nor the function itself, then it should figure in the capture set. However, note that
         // global function names will be included as well. Those should be removed in a later pass,
         // if it can be established they refer to thin functions.
-        fn.captures.insert(node.symbol!)
+        if !fn.captures.contains(node.symbol!) {
+          fn.captures.append(node.symbol!)
+        }
       } else {
         // If a function doesn't capture a particular symbol, neither will the outer ones.
         break
