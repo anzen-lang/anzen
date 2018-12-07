@@ -9,15 +9,15 @@ import Utils
 ///   that's not the case.
 public class Interpreter {
 
-  public init(stdout: Console = System.out, stderr: Console = System.err) {
+  public init(stdout: TextOutputStream = System.out, stderr: TextOutputStream = System.err) {
     self.stdout = stdout
     self.stderr = stderr
   }
 
   /// The standard output of the interpreter.
-  public let stdout: Console
+  public var stdout: TextOutputStream
   /// The standard error of the interpreter.
-  public let stderr: Console
+  public var stderr: TextOutputStream
 
   /// The loaded functions.
   private var functions: [String: AIRFunction] = [:]
@@ -211,7 +211,7 @@ public class Interpreter {
     switch name {
     case "__builtin_print_F_a2n":
       assert(arguments.count == 1)
-      stdout.print(try value(of: arguments[0]))
+      stdout.write(try "\(value(of: arguments[0]))\n")
       return nil
 
     case "__builtinIntblock_+_F_i2F_i2i":
