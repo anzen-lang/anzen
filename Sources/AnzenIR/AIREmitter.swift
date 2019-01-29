@@ -129,15 +129,8 @@ public class AIREmitter: ASTVisitor {
       fn.appendBlock(label: "entry")
       builder.currentBlock = fn.blocks.first?.value
 
-      // Create the exit block of the function.
-      let exitBlock = fn.appendBlock(label: "exit")
-      let returnReg = aznTy.codomain != NothingType.get
-        ? builder.buildMakeRef(type: airTy.codomain)
-        : nil
-
-      // Set up the local register map and the function frame.
+      // Set up the local register map.
       locals.push([:])
-      frames.push(Frame(exitBlock: exitBlock, returnRegister: returnReg))
 
       let selfSym: Symbol? = decl.innerScope?.symbols["self"]?[0]
       if decl.kind == .constructor {
@@ -158,6 +151,13 @@ public class AIREmitter: ASTVisitor {
           id: builder.currentBlock!.nextRegisterID())
         locals.top![sym] = paramref
       }
+
+      // Set up the function frame.
+      let exitBlock = fn.appendBlock(label: "exit")
+      let returnReg = aznTy.codomain != NothingType.get
+        ? builder.buildMakeRef(type: airTy.codomain)
+        : nil
+      frames.push(Frame(exitBlock: exitBlock, returnRegister: returnReg))
 
       try visit(body)
 
