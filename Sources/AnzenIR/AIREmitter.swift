@@ -12,10 +12,14 @@ public class AIREmitter: ASTVisitor {
 
   public var builder: AIRBuilder
 
-  private var stack: Stack<AIRValue> = []
-
+  private var stack : Stack<AIRValue> = []
   private var locals: Stack<[Symbol: AIRValue]> = []
+  private var frames: Stack<Frame> = []
 
+  /// The (unspecialized) generic functions available.
+  private var genericFunctions: [Symbol: FunDecl] = [:]
+  /// The specialization requests.
+  private var specRequests: [(symbol: Symbol, type: FunctionType)] = []
   /// Mapping used to emit the specialization of a generic function.
   internal var bindings: [PlaceholderType: TypeBase] = [:]
 
@@ -36,14 +40,18 @@ public class AIREmitter: ASTVisitor {
     }
 
     // Emit the AIR code for all generic specializations.
-    // FIMXE: Must be a sort of "while there are specialization requests" rather than a simple for
-    // loop, as specializing a function may create additional specialization requests.
-    for (symbol, specializations) in builder.unit.specializationRequests {
-      guard let decl = builder.unit.genericFunctions[symbol]
-        else { fatalError("\(symbol) is not a known generic function") }
-      for ty in specializations {
-        try emitFunction(decl: decl, withType: ty)
-      }
+    var done: [Symbol: [TypeBase]] = [:]
+    while let req = specRequests.popLast() {
+      // Skip the request if it was already done.
+      done[req.symbol] = done[req.symbol] ?? []
+      guard !done[req.symbol]!.contains(req.type)
+        else { continue }
+
+      // Emit the specialized function.
+      guard let decl = genericFunctions[req.symbol]
+        else { fatalError("\(req.symbol) is not a known generic function") }
+      try emitFunction(decl: decl, withType: req.type)
+      done[req.symbol]?.append(req.type)
     }
   }
 
@@ -104,7 +112,7 @@ public class AIREmitter: ASTVisitor {
     // Retrieve the function object.
     let mangledName = mangle(symbol: decl.symbol!, withType: aznTy)
     let fn = builder.unit.getFunction(name: mangledName, type: airTy)
-    assert(fn.blocks.isEmpty, "AIR for \(decl) already emitted")
+    assert(fn.blocks.isEmpty, "AIR for \(decl) with type \(airTy) already emitted")
 
     if !decl.captures.isEmpty {
       // Create the function closure.
@@ -121,8 +129,15 @@ public class AIREmitter: ASTVisitor {
       fn.appendBlock(label: "entry")
       builder.currentBlock = fn.blocks.first?.value
 
-      // Set up the local register mapping.
+      // Create the exit block of the function.
+      let exitBlock = fn.appendBlock(label: "exit")
+      let returnReg = aznTy.codomain != NothingType.get
+        ? builder.buildMakeRef(type: airTy.codomain)
+        : nil
+
+      // Set up the local register map and the function frame.
       locals.push([:])
+      frames.push(Frame(exitBlock: exitBlock, returnRegister: returnReg))
 
       let selfSym: Symbol? = decl.innerScope?.symbols["self"]?[0]
       if decl.kind == .constructor {
@@ -146,13 +161,28 @@ public class AIREmitter: ASTVisitor {
 
       try visit(body)
 
+      // The last instruction of the current block must be an unconditional jump to the exit block,
+      // which is not necessarily the case for function that may return implicitly, such as
+      // constructors and non-returning functions.
+      let lastInst = builder.currentBlock!.instructions.last as? JumpInst
+      if lastInst?.label != exitBlock.label {
+        builder.buildJump(label: exitBlock.label)
+      }
+      builder.currentBlock = frames.top!.exitBlock
+
+      // Emit the function return.
       if decl.kind == .constructor {
         builder.buildReturn(value: locals.top![selfSym!])
+      } else if aznTy.codomain != NothingType.get {
+        builder.buildReturn(value: frames.top!.returnRegister)
+      } else {
+        builder.buildReturn()
       }
 
       // Restore the insertion point.
       builder.currentBlock = previousBlock
       locals.pop()
+      frames.pop()
     }
 
     bindings = [:]
@@ -172,7 +202,7 @@ public class AIREmitter: ASTVisitor {
     let aznTy = node.type as! FunctionType
     guard aznTy.placeholders.isEmpty else {
       // AIR generation for generic functions is delayed until they are specialized in context.
-      builder.unit.genericFunctions[node.symbol!] = node
+      genericFunctions[node.symbol!] = node
       return
     }
 
@@ -193,33 +223,34 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: ReturnStmt) throws {
+    guard let frame = frames.top
+      else { fatalError("not in a function") }
     if let value = node.value {
       try visit(value)
-      builder.buildReturn(value: stack.pop()!)
-    } else {
-      builder.buildReturn()
+      builder.buildCopy(source: stack.pop()!, target: frame.returnRegister!)
     }
+    builder.buildJump(label: frame.exitBlock.label)
   }
 
   public func visit(_ node: IfExpr) throws {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }
-    let thenIB = currentFn.appendBlock(label: "then")
-    let elseIB = currentFn.appendBlock(label: "else")
-    let afterIB = currentFn.appendBlock(label: "after")
+    let yes   = currentFn.insertBlock(after: builder.currentBlock!, label: "yes")
+    let no    = currentFn.insertBlock(after: yes, label: "no")
+    let after = currentFn.insertBlock(after: no, label: "after")
 
     try visit(node.condition)
-    builder.buildBranch(condition: stack.pop()!, thenLabel: thenIB.label, elseLabel: elseIB.label)
+    builder.buildBranch(condition: stack.pop()!, thenLabel: yes.label, elseLabel: no.label)
 
-    builder.currentBlock = thenIB
+    builder.currentBlock = yes
     try visit(node.thenBlock)
-    builder.buildJump(label: afterIB.label)
+    builder.buildJump(label: after.label)
 
-    builder.currentBlock = elseIB
+    builder.currentBlock = no
     try node.elseBlock.map { try visit($0) }
-    builder.buildJump(label: afterIB.label)
+    builder.buildJump(label: after.label)
 
-    builder.currentBlock = afterIB
+    builder.currentBlock = after
   }
 
   public func visit(_ node: CallExpr) throws {
@@ -310,8 +341,7 @@ public class AIREmitter: ASTVisitor {
 
       // If the function symbol is generic, register the specialization request.
       if !(node.symbol?.type as! FunctionType).placeholders.isEmpty {
-        builder.unit.specializationRequests[node.symbol!] =
-          (builder.unit.specializationRequests[node.symbol!] ?? []) + [fnTy]
+        specRequests.append((symbol: node.symbol!, type: fnTy))
       }
 
       // locals.top![node.symbol!] = fn
@@ -338,5 +368,12 @@ public class AIREmitter: ASTVisitor {
   public func visit(_ node: Literal<String>) {
     stack.push(AIRConstant(value: node.value))
   }
+
+}
+
+private struct Frame {
+
+  let exitBlock: InstructionBlock
+  let returnRegister: MakeRefInst?
 
 }

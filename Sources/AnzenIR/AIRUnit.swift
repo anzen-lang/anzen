@@ -32,10 +32,6 @@ public class AIRUnit: CustomStringConvertible {
 
   /// The functions of the unit.
   public private(set) var functions: [String: AIRFunction] = [:]
-  /// The (unspecialized) generic functions of the unit.
-  public var genericFunctions: [Symbol: FunDecl] = [:]
-  /// The specialization requests.
-  public var specializationRequests: [Symbol: [FunctionType]] = [:]
 
   // MARK: Types
 
