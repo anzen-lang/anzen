@@ -374,7 +374,13 @@ public struct Parameter: Equatable, CustomStringConvertible {
 
 }
 
-/// Attempts to match a generic type with another type.
+/// Attempts to match a concrete type with a possibly generic one.
+///
+/// - Parameters:
+///     - lhs: The concrete type.
+///     - rhs: The possibly generic type.
+///     - context: An AST context.
+///     - bindings: A mapping that maps type placeholders in `lhs` with their equivalent in `rhs`.
 public func specializes(
   lhs: TypeBase,
   rhs: TypeBase,
