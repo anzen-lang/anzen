@@ -1,5 +1,4 @@
 import AST
-import Utils
 
 public class AIRUnit: CustomStringConvertible {
 
@@ -33,57 +32,20 @@ public class AIRUnit: CustomStringConvertible {
 
   /// The functions of the unit.
   public private(set) var functions: [String: AIRFunction] = [:]
+  /// The (unspecialized) generic functions of the unit.
+  public var genericFunctions: [Symbol: FunDecl] = [:]
+  /// The specialization requests.
+  public var specializationRequests: [Symbol: [FunctionType]] = [:]
 
   // MARK: Types
-
-  public func getType(of anzenType: TypeBase) -> AIRType {
-    switch anzenType {
-    case is AnythingType:
-      return .anything
-    case is NothingType:
-      return .nothing
-    case let ty as FunctionType:
-      return getFunctionType(of: ty)
-    case let ty as StructType where ty.isBuiltin:
-      return .builtin(named: ty.name)!
-    case let ty as StructType:
-      return getStructType(of: ty)
-    case let ty as Metatype:
-      return getType(of: ty.type).metatype
-    default:
-      fatalError("type '\(anzenType)' has no AIR representation")
-    }
-  }
-
-  public func getStructType(of anzenType: StructType) -> AIRStructType {
-    if let ty = structTypes[name] {
-      return ty
-    }
-
-    let ty = AIRStructType(name: anzenType.name, members: [:])
-    structTypes[name] = ty
-    ty.members = OrderedMap(anzenType.members.compactMap { mem in
-      mem.isOverloadable
-        ? nil
-        : (mem.name, getType(of: mem.type!))
-    })
-    return ty
-  }
 
   public func getStructType(name: String) -> AIRStructType {
     if let ty = structTypes[name] {
       return ty
     }
-
     let ty = AIRStructType(name: name, members: [:])
     structTypes[name] = ty
     return ty
-  }
-
-  public func getFunctionType(of anzenType: FunctionType) -> AIRFunctionType {
-    return getFunctionType(
-      from: anzenType.domain.map({ getType(of: $0.type) }),
-      to: getType(of: anzenType.codomain))
   }
 
   public func getFunctionType(from domain: [AIRType], to codomain: AIRType) -> AIRFunctionType {

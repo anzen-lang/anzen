@@ -16,10 +16,13 @@ public class AIREmitter: ASTVisitor {
 
   private var locals: Stack<[Symbol: AIRValue]> = []
 
+  /// Mapping used to emit the specialization of a generic function.
+  internal var bindings: [PlaceholderType: TypeBase] = [:]
+
   public func visit(_ node: ModuleDecl) throws {
     // Create the `main` function if the unit is supposed to be the program's entry.
     if builder.unit.isMain {
-      let mainFnType = builder.unit.getFunctionType(from: [], to: .nothing)
+      let mainFnType = getFunctionType(from: [], to: .nothing)
       let mainFn = builder.unit.getFunction(name: "main", type: mainFnType)
       mainFn.appendBlock(label: "entry")
       builder.currentBlock = mainFn.blocks.first?.value
@@ -30,6 +33,17 @@ public class AIREmitter: ASTVisitor {
 
     if builder.unit.isMain {
       locals.pop()
+    }
+
+    // Emit the AIR code for all generic specializations.
+    // FIMXE: Must be a sort of "while there are specialization requests" rather than a simple for
+    // loop, as specializing a function may create additional specialization requests.
+    for (symbol, specializations) in builder.unit.specializationRequests {
+      guard let decl = builder.unit.genericFunctions[symbol]
+        else { fatalError("\(symbol) is not a known generic function") }
+      for ty in specializations {
+        try emitFunction(decl: decl, withType: ty)
+      }
     }
   }
 
@@ -50,8 +64,102 @@ public class AIREmitter: ASTVisitor {
     }
   }
 
+  private func emitFunction(decl: FunDecl, withType type: FunctionType? = nil) throws {
+    // Specialize the type of the function symbol, if necessary.
+    let aznTy: FunctionType
+    if type != nil {
+      assert(bindings.isEmpty)
+      aznTy = type!
+      guard specializes(
+        lhs: aznTy, rhs: decl.symbol!.type!, in: builder.context, bindings: &bindings)
+      else { fatalError("type mismatch") }
+    } else {
+      aznTy = decl.symbol!.type as! FunctionType
+    }
+
+    // Get the AIR type of the function.
+    var airTy = getFunctionType(of: aznTy)
+
+    // Constructors and methods shall not have closures.
+    assert(
+      decl.captures.isEmpty || (decl.kind != .constructor && decl.kind != .method),
+      "constructor and methods shall not have closures")
+
+    if decl.symbol!.isMethod {
+      // Methods (and destructors?) are static functions that take the self symbol and return the
+      // "actual" method as a closure.
+      let symbols = decl.innerScope!.symbols["self"]!
+      assert(symbols.count == 1)
+      let methTy = airTy.codomain as! AIRFunctionType
+      airTy = getFunctionType(
+        from: [getType(of: symbols[0].type!)] + methTy.domain,
+        to: methTy.codomain)
+    } else if !decl.captures.isEmpty {
+      // If the function captures symbols, we need to emit a context-free version of the it, which
+      // gets the captured values as parameters. This boils down to extending the domain.
+      let additional = decl.captures.map { getType(of: $0.type!) }
+      airTy = getFunctionType(from: additional + airTy.domain, to: airTy.codomain)
+    }
+
+    // Retrieve the function object.
+    let mangledName = mangle(symbol: decl.symbol!, withType: aznTy)
+    let fn = builder.unit.getFunction(name: mangledName, type: airTy)
+    assert(fn.blocks.isEmpty, "AIR for \(decl) already emitted")
+
+    if !decl.captures.isEmpty {
+      // Create the function closure.
+      // Note that arguments are captured by reference in the current frame.
+      locals.top![decl.symbol!] = builder.buildPartialApply(
+        function: fn,
+        arguments: decl.captures.map { locals.top![$0]! },
+        type: airTy)
+    }
+
+    if let body = decl.body {
+      // Create the entry point of the function.
+      let previousBlock = builder.currentBlock
+      fn.appendBlock(label: "entry")
+      builder.currentBlock = fn.blocks.first?.value
+
+      // Set up the local register mapping.
+      locals.push([:])
+
+      let selfSym: Symbol? = decl.innerScope?.symbols["self"]?[0]
+      if decl.kind == .constructor {
+        assert(selfSym != nil, "missing symbol for 'self' in constructor")
+        locals.top![selfSym!] = builder.buildAlloc(type: airTy.codomain, id: 0)
+      } else if decl.symbol!.isMethod {
+        assert(selfSym != nil, "missing symbol for 'self' in method")
+        locals.top![selfSym!] = AIRParameter(
+          type: getType(of: selfSym!.type!),
+          id: builder.currentBlock!.nextRegisterID())
+      }
+
+      // Create the function parameters.
+      let parameterSymbols = decl.captures + decl.parameters.map({ $0.symbol! })
+      for sym in parameterSymbols {
+        let paramref = AIRParameter(
+          type: getType(of: sym.type!),
+          id: builder.currentBlock!.nextRegisterID())
+        locals.top![sym] = paramref
+      }
+
+      try visit(body)
+
+      if decl.kind == .constructor {
+        builder.buildReturn(value: locals.top![selfSym!])
+      }
+
+      // Restore the insertion point.
+      builder.currentBlock = previousBlock
+      locals.pop()
+    }
+
+    bindings = [:]
+  }
+
   public func visit(_ node: PropDecl) throws {
-    let ref = builder.buildMakeRef(type: builder.unit.getType(of: node.type!))
+    let ref = builder.buildMakeRef(type: getType(of: node.type!))
     locals.top![node.symbol!] = ref
 
     if let (op, value) = node.initialBinding {
@@ -61,85 +169,14 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: FunDecl) throws {
-    // Get the type of the declared function.
-    var fnTy = builder.unit.getFunctionType(of: node.type! as! FunctionType)
-
-    // Constructors and methods shall not have closures.
-    assert(
-      node.captures.isEmpty || (node.kind != .constructor && node.kind != .method),
-      "constructor and methods shall not have closures")
-
-    if node.symbol!.isMethod {
-      // Methods (and destructors?) are static functions that take the self symbol and return the
-      // "actual" method as a closure.
-      let symbols = node.innerScope!.symbols["self"]!
-      assert(symbols.count == 1)
-      let methTy = fnTy.codomain as! AIRFunctionType
-      fnTy = builder.unit.getFunctionType(
-        from: [builder.unit.getType(of: symbols[0].type!)] + methTy.domain,
-        to: methTy.codomain)
-    } else if !node.captures.isEmpty {
-      // If the function captures symbols, we need to emit a context-free version of the it, which
-      // gets the captured values as parameters. This boils down to extending the domain.
-      let additional = node.captures.map { builder.unit.getType(of: $0.type!) }
-      fnTy = builder.unit.getFunctionType(from: additional + fnTy.domain, to: fnTy.codomain)
+    let aznTy = node.type as! FunctionType
+    guard aznTy.placeholders.isEmpty else {
+      // AIR generation for generic functions is delayed until they are specialized in context.
+      builder.unit.genericFunctions[node.symbol!] = node
+      return
     }
 
-    // Retrieve the function object.
-    let fn = builder.unit.getFunction(name: mangle(symbol: node.symbol!), type: fnTy)
-    assert(fn.blocks.isEmpty, "AIR for \(node) already emitted")
-
-    if !node.captures.isEmpty {
-      // Create the function closure.
-      // Note that arguments are captured by reference in the current frame.
-      locals.top![node.symbol!] = builder.buildPartialApply(
-        function: fn,
-        arguments: node.captures.map { locals.top![$0]! },
-        type: fnTy)
-    }
-
-    if let body = node.body {
-      // Create the entry point of the function.
-      let previousBlock = builder.currentBlock
-      fn.appendBlock(label: "entry")
-      builder.currentBlock = fn.blocks.first?.value
-
-      // Set up the local register mapping.
-      locals.push([:])
-
-      let selfSym: Symbol? = node.innerScope?.symbols["self"]?[0]
-      if node.kind == .constructor {
-        assert(selfSym != nil, "missing symbol for 'self' in constructor")
-        locals.top![selfSym!] = builder.buildAlloc(type: fnTy.codomain, id: 0)
-      } else if node.symbol!.isMethod {
-        assert(selfSym != nil, "missing symbol for 'self' in method")
-        locals.top![selfSym!] = AIRParameter(
-          type: builder.unit.getType(of: selfSym!.type!),
-          id: builder.currentBlock!.nextRegisterID())
-      }
-
-      // Create the function parameters.
-      let parameterSymbols = node.captures + node.parameters.map({ $0.symbol! })
-      for sym in parameterSymbols {
-        let paramref = AIRParameter(
-          type: builder.unit.getType(of: sym.type!),
-          id: builder.currentBlock!.nextRegisterID())
-        locals.top![sym] = paramref
-      }
-
-      try visit(body)
-
-      if node.kind == .constructor {
-        builder.buildReturn(value: locals.top![selfSym!])
-      }
-
-      // Restore the insertion point.
-      builder.currentBlock = previousBlock
-      locals.pop()
-    }
-
-    // NOTE: Generic functions are represented unspecialized in AIR, so that borrow checking can be
-    // performed only once, no matter the number of times the function is specialized.
+    try emitFunction(decl: node)
   }
 
   public func visit(_ node: StructDecl) throws {
@@ -186,12 +223,12 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: CallExpr) throws {
-    let callee = builder.buildMakeRef(type: builder.unit.getType(of: node.callee.type!))
+    let callee = builder.buildMakeRef(type: getType(of: node.callee.type!))
     try visit(node.callee)
     builder.buildBind(source: stack.pop()!, target: callee)
 
     let argrefs = try node.arguments.map { (argument) -> MakeRefInst in
-      let argref = builder.buildMakeRef(type: builder.unit.getType(of: argument.type!))
+      let argref = builder.buildMakeRef(type: getType(of: argument.type!))
       try visit(argument.value)
       builder.build(assignment: argument.bindingOp, source: stack.pop()!, target: argref)
       return argref
@@ -200,7 +237,7 @@ public class AIREmitter: ASTVisitor {
     let apply = builder.buildApply(
       callee: callee,
       arguments: argrefs,
-      type: builder.unit.getType(of: node.type!))
+      type: getType(of: node.type!))
     stack.push(apply)
 
     // TODO: There's probably a way to optimize calls to built-in functions, so that we don't
@@ -220,9 +257,9 @@ public class AIREmitter: ASTVisitor {
         else { fatalError() }
       guard let fnTy = methTy.codomain as? FunctionType
         else { fatalError() }
-      let uncurriedTy = builder.unit.getFunctionType(
-        from: (methTy.domain + fnTy.domain).map({ builder.unit.getType(of: $0.type) }),
-        to: builder.unit.getType(of: fnTy.codomain))
+      let uncurriedTy = getFunctionType(
+        from: (methTy.domain + fnTy.domain).map({ getType(of: $0.type) }),
+        to: getType(of: fnTy.codomain))
 
       // Create the partial application of the uncurried function.
       let uncurried = builder.unit.getFunction(
@@ -231,7 +268,7 @@ public class AIREmitter: ASTVisitor {
       let partial = builder.buildPartialApply(
         function: uncurried,
         arguments: [stack.pop()!],
-        type: builder.unit.getType(of: node.type!))
+        type: getType(of: node.type!))
       stack.push(partial)
       return
     }
@@ -239,13 +276,13 @@ public class AIREmitter: ASTVisitor {
     if owner.type is NominalType {
       // If the ownee isn't a method, but the owner's a nominal type, then the expression should
       // "extract" a field from the owner.
-      let airTy = builder.unit.getType(of: owner.type!) as! AIRStructType
+      let airTy = getType(of: owner.type!) as! AIRStructType
       guard let index = airTy.members.firstIndex(where: { $0.key == node.ownee.name })
         else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
       let extract = builder.buildExtract(
         from: stack.pop()!,
         index: index,
-        type: builder.unit.getType(of: node.type!))
+        type: getType(of: node.type!))
       stack.push(extract)
       return
     }
@@ -263,15 +300,21 @@ public class AIREmitter: ASTVisitor {
 
     // The symbol might not be declared yet if it refers to a hoisted type or function. Otherwise,
     // an `undefined symbol` error would have been detected during semantic analysis.
-    if let fnTy = (node.symbol!.type as? FunctionType) {
+    if let fnTy = (node.type as? FunctionType) {
       // NOTE: Functions that capture symbols can't be hoisted, as the capture may happen after the
       // function call otherwise. Therefore, we don't have to handle partial applications (a.k.a.
       // function closures) here.
       let fn = builder.unit.getFunction(
-        name: mangle(symbol: node.symbol!),
-        type: builder.unit.getFunctionType(of: fnTy))
+        name: mangle(symbol: node.symbol!, withType: node.type),
+        type: getFunctionType(of: fnTy))
 
-      locals.top![node.symbol!] = fn
+      // If the function symbol is generic, register the specialization request.
+      if !(node.symbol?.type as! FunctionType).placeholders.isEmpty {
+        builder.unit.specializationRequests[node.symbol!] =
+          (builder.unit.specializationRequests[node.symbol!] ?? []) + [fnTy]
+      }
+
+      // locals.top![node.symbol!] = fn
       stack.push(fn)
       return
     }
