@@ -1,64 +1,84 @@
 public struct OrderedMap<Key, Value> where Key: Hashable {
 
-  public typealias Element = (key: Key, value: Value)
-  public typealias Index = Int
-
   public init() {
-    storage = []
-    keyToIndex = [:]
+    self.storage = [:]
+    self.order = []
   }
 
   public init<S>(_ elements: S) where S: Sequence, S.Element == (Key, Value) {
-    storage = Array(elements)
-    keyToIndex = Dictionary(
-      uniqueKeysWithValues: storage.enumerated().map({ ($0.element.key, $0.offset) }))
+    self.storage = [:]
+    self.order = []
+    for (key, value) in elements {
+      storage[key] = value
+      order.append(key)
+    }
   }
 
-  public var last: Element? {
-    return storage.last
+  private var storage: [Key: Value]
+  private var order: [Key]
+
+  public var keys: [Key] {
+    return order
   }
 
-  private var storage: [Element]
-  private var keyToIndex: [Key: Index]
-
-}
-
-extension OrderedMap: Collection {
-
-  public var startIndex: Index { return 0 }
-  public var endIndex  : Index { return storage.count }
-
-  public func index(after i: Int) -> Int {
-    return i + 1
+  public var values: [Value] {
+    return order.map { storage[$0]! }
   }
 
-  public subscript(i: Int) -> Element {
-    return storage[i]
+  public func index(of key: Key) -> Index? {
+    return order.firstIndex(of: key)
+  }
+
+  public mutating func insert(_ value: Value, forKey key: Key, at index: Index) {
+    // Make sure we don't set a duplicate key.
+    precondition(storage[key] == nil, "Key '\(key)' already exists")
+    storage[key] = value
+    order.insert(key, at: index)
   }
 
   public subscript(key: Key) -> Value? {
     get {
-      return keyToIndex[key].map { storage[$0].value }
+      return storage[key]
     }
     set {
-      if let index = keyToIndex[key] {
-        if let value = newValue {
-          storage[index] = (key, value)
-        } else {
-          storage.remove(at: index)
-          for i in index ..< storage.count {
-            keyToIndex[storage[i].key] = i
-          }
+      if let value = newValue {
+        if storage[key] == nil {
+          order.append(key)
         }
-      } else if let value = newValue {
-        keyToIndex[key] = storage.count
-        storage.append((key, value))
+        storage[key] = value
+      } else {
+        order.removeAll { $0 == key }
+        storage[key] = nil
       }
     }
   }
 
-  public var keys  : [Key]   { return map { $0.key } }
-  public var values: [Value] { return map { $0.value } }
+}
+
+extension OrderedMap: MutableCollection {
+
+  public typealias Index = Int
+  public typealias Element = (key: Key, value: Value)
+
+  public var startIndex: Index { return 0 }
+  public var endIndex: Index { return order.count }
+
+  public func index(after i: Index) -> Index {
+    return i + 1
+  }
+
+  public subscript(index: Index) -> Element {
+    get {
+      return (key: order[index], value: storage[order[index]]!)
+    } set {
+      if let i = self.index(of: newValue.key) {
+        // Make sure we don't set a duplicate key at a different index.
+        precondition(i == index, "Key '\(newValue.key)' already exists at index \(i)")
+      }
+      order[index] = newValue.key
+      storage[newValue.key] = newValue.value
+    }
+  }
 
 }
 
