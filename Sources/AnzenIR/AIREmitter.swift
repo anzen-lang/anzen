@@ -16,6 +16,8 @@ public class AIREmitter: ASTVisitor {
   private var locals: Stack<[Symbol: AIRValue]> = []
   private var frames: Stack<Frame> = []
 
+  /// The environment of thick functions, at the time of their declaration.
+  private var functionEnvs: [Symbol: [Symbol: AIRValue]] = [:]
   /// The (unspecialized) generic functions available.
   private var genericFunctions: [Symbol: FunDecl] = [:]
   /// The specialization requests.
@@ -88,11 +90,6 @@ public class AIREmitter: ASTVisitor {
     // Get the AIR type of the function.
     var airTy = getFunctionType(of: aznTy)
 
-    // Constructors and methods shall not have closures.
-    assert(
-      decl.captures.isEmpty || (decl.kind != .constructor && decl.kind != .method),
-      "constructor and methods shall not have closures")
-
     if decl.symbol!.isMethod {
       // Methods (and destructors?) are static functions that take the self symbol and return the
       // "actual" method as a closure.
@@ -113,15 +110,6 @@ public class AIREmitter: ASTVisitor {
     let mangledName = mangle(symbol: decl.symbol!, withType: aznTy)
     let fn = builder.unit.getFunction(name: mangledName, type: airTy)
     assert(fn.blocks.isEmpty, "AIR for \(decl) with type \(airTy) already emitted")
-
-    if !decl.captures.isEmpty {
-      // Create the function closure.
-      // Note that arguments are captured by reference in the current frame.
-      locals.top![decl.symbol!] = builder.buildPartialApply(
-        function: fn,
-        arguments: decl.captures.map { locals.top![$0]! },
-        type: airTy)
-    }
 
     if let body = decl.body {
       // Create the entry point of the function.
@@ -199,9 +187,28 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: FunDecl) throws {
+    // Thick functions must have their environment stored at the time of their declaration.
+    if !node.captures.isEmpty {
+      // Constructors and methods shall not have closures.
+      assert(
+        node.kind != .constructor && node.kind != .method,
+        "constructor and methods shall not have closures")
+
+      // NOTE:
+      // The code below creates the function environments that are used to build closures. For now
+      // we assume all captures to be made by reference, which is why we don't have to emit any
+      // additional code to handle variable bindings here. Customizable capture lists will however
+      // require such code to be emitted here.
+
+      // Create the function's environment.
+      // Note all specializations of a generic function necessarily share the same environment.
+      let env = Dictionary(uniqueKeysWithValues: node.captures.map {($0, locals.top![$0]!) })
+      functionEnvs[node.symbol!] = env
+    }
+
+    // AIR generation for generic functions is delayed until they are specialized in context.
     let aznTy = node.type as! FunctionType
     guard aznTy.placeholders.isEmpty else {
-      // AIR generation for generic functions is delayed until they are specialized in context.
       genericFunctions[node.symbol!] = node
       return
     }
@@ -329,23 +336,38 @@ public class AIREmitter: ASTVisitor {
       return
     }
 
-    // The symbol might not be declared yet if it refers to a hoisted type or function. Otherwise,
-    // an `undefined symbol` error would have been detected during semantic analysis.
-    if let fnTy = (node.type as? FunctionType) {
-      // NOTE: Functions that capture symbols can't be hoisted, as the capture may happen after the
-      // function call otherwise. Therefore, we don't have to handle partial applications (a.k.a.
-      // function closures) here.
-      let fn = builder.unit.getFunction(
-        name: mangle(symbol: node.symbol!, withType: node.type),
-        type: getFunctionType(of: fnTy))
+    // If the identifier's symbol isn't declared yet, it must refer to either a function or a type
+    // name (otherwise an `undefined symbol` error would have been catched by semantic analysis).
+    if let aznTy = (node.type as? FunctionType) {
+      let airTy = getFunctionType(of: aznTy)
 
-      // If the function symbol is generic, register the specialization request.
-      if !(node.symbol?.type as! FunctionType).placeholders.isEmpty {
-        specRequests.append((symbol: node.symbol!, type: fnTy))
+      if let env = functionEnvs[node.symbol!] {
+        // If the identifier refers to the name of a thick function, we've to create a closure. As
+        // thick functions aren't hoisted, we can assume to environment to have already been set.
+        let additional = env.keys.map { getType(of: $0.type!) }
+        let fnTy = getFunctionType(from: additional + airTy.domain, to: airTy.codomain)
+        let fn = builder.unit.getFunction(
+          name: mangle(symbol: node.symbol!, withType: aznTy),
+          type: fnTy)
+        let val = builder.buildPartialApply(
+          function: fn,
+          arguments: Array(env.values),
+          type: fnTy)
+        stack.push(val)
+      } else {
+        // If the identifier refers to the name of a thin function, then we just need to use the
+        // corresponding AIR function value.
+        let fn = builder.unit.getFunction(
+          name: mangle(symbol: node.symbol!, withType: aznTy),
+          type: airTy)
+        stack.push(fn)
       }
 
-      // locals.top![node.symbol!] = fn
-      stack.push(fn)
+      // In either case, if the function is generic, we must register a specialization request.
+      if !(node.symbol?.type as! FunctionType).placeholders.isEmpty {
+        specRequests.append((symbol: node.symbol!, type: aznTy))
+      }
+
       return
     }
 
