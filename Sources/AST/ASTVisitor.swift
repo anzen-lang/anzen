@@ -20,6 +20,7 @@ public protocol ASTVisitor {
 
   // MARK: Statements
 
+  func visit(_ node: WhileLoop)       throws
   func visit(_ node: BindingStmt)     throws
   func visit(_ node: ReturnStmt)      throws
 

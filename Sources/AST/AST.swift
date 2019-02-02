@@ -446,6 +446,27 @@ public final class ParamSign: Node {
 
 // MARK: Statements
 
+/// A while loop.
+public final class WhileLoop: Node {
+
+  public init(
+    condition: Expr,
+    body: Block,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
+    self.condition = condition
+    self.body = body
+    super.init(module: module, range: range)
+  }
+
+  /// The condition of the loop.
+  public var condition: Expr
+  /// The block of statements to execute as long as the condition is statisfied.
+  public var body: Node
+
+}
+
 /// A binding statement.
 ///
 /// - Note: Binding statements are also sometimes referred to as assignments.
