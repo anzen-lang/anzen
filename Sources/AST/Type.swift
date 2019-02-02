@@ -373,3 +373,62 @@ public struct Parameter: Equatable, CustomStringConvertible {
   }
 
 }
+
+/// Attempts to match a concrete type with a possibly generic one.
+///
+/// - Parameters:
+///     - lhs: The concrete type.
+///     - rhs: The possibly generic type.
+///     - context: An AST context.
+///     - bindings: A mapping that maps type placeholders in `lhs` with their equivalent in `rhs`.
+public func specializes(
+  lhs: TypeBase,
+  rhs: TypeBase,
+  in context: ASTContext,
+  bindings: inout [PlaceholderType: TypeBase]) -> Bool
+{
+  switch (lhs, rhs) {
+  case (_, _) where lhs == rhs:
+    return true
+
+  case (_, let right as PlaceholderType):
+    if let type = bindings[right] {
+      return specializes(lhs: lhs, rhs: type, in: context, bindings: &bindings)
+    }
+    bindings[right] = lhs
+    return true
+
+  case (let left as BoundGenericType, _):
+    let closed = left.unboundType is NominalType
+      ? left.unboundType
+      : left.close(using: left.bindings, in: context)
+    return specializes(lhs: closed, rhs: rhs, in: context, bindings: &bindings)
+
+  case (_, let right as BoundGenericType):
+    return specializes(lhs: right, rhs: lhs, in: context, bindings: &bindings)
+
+  case (let left as Metatype, let right as Metatype):
+    return specializes(lhs: left.type, rhs: right.type, in: context, bindings: &bindings)
+
+  case (let left as FunctionType, let right as FunctionType):
+    if left.placeholders.isEmpty && right.placeholders.isEmpty {
+      return left == right
+    }
+
+    guard left.domain.count == right.domain.count
+      else { return false }
+    for params in zip(left.domain, right.domain) {
+      guard params.0.label == params.1.label
+        else { return false }
+      guard specializes(lhs: params.0.type, rhs: params.1.type, in: context, bindings: &bindings)
+        else { return false }
+    }
+    return specializes(lhs: left.codomain, rhs: right.codomain, in: context, bindings: &bindings)
+
+  case (is TypeVariable, _), (_, is TypeVariable):
+    preconditionFailure("Unexpected type variable, did you forget to reify?")
+
+  default:
+    return false
+  }
+}

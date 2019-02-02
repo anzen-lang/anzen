@@ -215,7 +215,7 @@ public struct BranchInst: AIRInstruction {
   public let elseLabel: String
 
   public var instDescription: String {
-    return "branch \(condition.valueDescription) \(thenLabel) \(elseLabel)"
+    return "branch \(condition.valueDescription), \(thenLabel), \(elseLabel)"
   }
 
 }

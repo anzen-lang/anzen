@@ -14,6 +14,8 @@ public class AIRFunction: AIRValue {
 
   /// The instruction blocks of the function.
   public private(set) var blocks: OrderedMap<String, InstructionBlock> = [:]
+  /// The occurences of each label.
+  private var labelOccurences: [String: Int] = [:]
   /// The ID of the next unnamed virtual register.
   private var _nextRegisterID = 1
 
@@ -23,7 +25,19 @@ public class AIRFunction: AIRValue {
     assert(blocks[uniqueLabel] == nil)
 
     let ib = InstructionBlock(label: uniqueLabel, function: self)
-    blocks[label] = ib
+    blocks[uniqueLabel] = ib
+    return ib
+  }
+
+  @discardableResult
+  public func insertBlock(after block: InstructionBlock, label: String) -> InstructionBlock {
+    let uniqueLabel = uniquify(label)
+    assert(blocks[uniqueLabel] == nil)
+
+    let ib = InstructionBlock(label: uniqueLabel, function: self)
+    let index = blocks.index(of: block.label)
+    precondition(index != nil, "no block labeled '\(block.label)'")
+    blocks.insert(ib, forKey: uniqueLabel, at: index! + 1)
     return ib
   }
 
@@ -37,15 +51,10 @@ public class AIRFunction: AIRValue {
   }
 
   private func uniquify(_ label: String) -> String {
-    if blocks[label] == nil {
-      return label
-    }
-    let greatestID = blocks.compactMap({
-      $0.key.starts(with: label)
-        ? Int($0.key.dropFirst(label.count)) ?? 0
-        : nil
-    }).max() ?? 0
-    return "\(label)\(greatestID + 1)"
+    assert(!label.contains("#"))
+    let occ = labelOccurences[label] ?? 0
+    labelOccurences[label] = occ + 1
+    return "\(label)#\(occ)"
   }
 
 }

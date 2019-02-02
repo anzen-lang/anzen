@@ -1,21 +1,13 @@
 import XCTest
 
 import AST
+import AnzenIR
 import AnzenLib
-// import Utils
+import Interpreter
 import SystemKit
+import Utils
 
-class StringBuffer: TextOutputStream {
-
-  func write(_ string: String) {
-    storage.write(string)
-  }
-
-  var storage: String = ""
-
-}
-
-class SemaTests: XCTestCase {
+class InterpreterTests: XCTestCase {
 
   override func setUp() {
     guard let anzenPathname = System.environment["ANZENPATH"]
@@ -31,10 +23,10 @@ class SemaTests: XCTestCase {
   var anzenPath: Path = .workingDirectory
   var entryPath: Path = .workingDirectory
 
-  func testTypeInferenceFixtures() {
+  func testInterpreterFixtures() {
     var fixtures: [String: Path] = [:]
     var outputs: [String: Path] = [:]
-    for entry in entryPath.joined(with: "inference") {
+    for entry in entryPath.joined(with: "interpreter") {
       if entry.fileExtension == "anzen" {
         fixtures[String(entry.pathname.dropLast(6))] = entry
       } else if entry.fileExtension == "output" {
@@ -50,50 +42,43 @@ class SemaTests: XCTestCase {
         XCTFail("❌ failed to load '\(testCase.value.filename!)'")
         continue
       }
+
+      let unit = AIRUnit(name: module.id!.qualifiedName, isMain: true)
+      let builder = AIRBuilder(unit: unit, context: context)
+      let emitter = AIREmitter(builder: builder)
+
+      do {
+        try emitter.visit(module)
+      } catch {
+        XCTFail("❌ failed to load '\(testCase.value.filename!)'")
+        continue
+      }
+
+      guard let mainFn = unit.functions["main"] else {
+        XCTFail("❌ failed to load '\(testCase.value.filename!)'")
+        continue
+      }
+
       let testResult = StringBuffer()
-      try! ASTDumper(to: testResult).visit(module)
+      let interpreter = Interpreter(stdout: testResult)
+
+      do {
+        try interpreter.invoke(function: mainFn)
+      } catch {
+        // Explicitly silence errors.
+      }
 
       if let output = outputs[testCase.key] {
         let expectation = TextFile(path: output)
-        XCTAssertLinesEqual(try! expectation.read(), testResult.storage, path: testCase.value)
+        XCTAssertLinesEqual(try! expectation.read(), testResult.value, path: testCase.value)
         print("✅  regression test succeeded for '\(testCase.value.filename!)'")
       } else {
         let outputPath = Path(pathname: String(testCase.value.pathname.dropLast(6)) + ".output")
         let expectation = TextFile(path: outputPath)
-        try! expectation.write(testResult.storage)
+        try! expectation.write(testResult.value)
         print("⚠️  no oracle for '\(testCase.value.filename!)', regression test case created now")
       }
     }
   }
 
-  #if !os(macOS)
-  static var allTests = [
-    ("testTypeInferenceFixtures", testTypeInferenceFixtures),
-  ]
-  #endif
-
-}
-
-private func XCTAssertLinesEqual(_ lhs: String, _ rhs: String, path: Path) {
-  let lhsLines = lhs.split(separator: "\n")
-  let rhsLines = rhs.split(separator: "\n")
-
-  var errors: [(lineno: Int, lhs: String, rhs: String)] = []
-  for (i, (ll, rl)) in zip(lhsLines, rhsLines).enumerated() where ll != rl {
-    errors.append((lineno: i + 1, lhs: String(ll), rhs: String(rl)))
-  }
-
-  guard errors.isEmpty else {
-    XCTFail("⚠️  \(path.filename!)")
-    for (lineno, ll, rl) in errors {
-      print("  L\(lineno) | expected: " + ll.trimmingCharacters(in: [" "]).styled("green"))
-      print("  L\(lineno) | obtained: " + rl.trimmingCharacters(in: [" "]).styled("red"))
-    }
-    return
-  }
-
-  guard lhsLines.count == rhsLines.count else {
-    XCTFail("⚠️  \(path.filename!): different line count")
-    return
-  }
 }

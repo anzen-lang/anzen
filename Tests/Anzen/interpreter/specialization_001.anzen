@@ -1,0 +1,8 @@
+// Test generic function specialization.
+
+fun log<T>(message: T) {
+  print(message)
+}
+
+log(message <- "Hi")
+log(message <- 12)

@@ -6,6 +6,7 @@ import Darwin.C
 
 import ArgParse
 import AST
+import AnzenIR
 import AnzenLib
 import Interpreter
 import SystemKit
@@ -113,8 +114,8 @@ if parseResult["show-air"] as? Bool ?? false {
 guard let mainFn = mainUnit.functions["main"]
   else { crash("no main function") }
 
-let interpreter = AIRInterpreter()
-interpreter.invoke(function: mainFn)
+let interpreter = Interpreter()
+try interpreter.invoke(function: mainFn)
 let status: Int32 = 0
 
 // Exit with the interpreter's status.

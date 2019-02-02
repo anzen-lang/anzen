@@ -1,8 +1,9 @@
 import AST
 import Utils
 
-public func mangle(symbol: Symbol) -> String {
-  return "\(symbol.scope.mangled)_\(symbol.name)_\(mangle(type: symbol.type!))"
+public func mangle(symbol: Symbol, withType type: TypeBase? = nil) -> String {
+  let symTy = type ?? symbol.type!
+  return "\(symbol.scope.mangled)_\(symbol.name)_\(mangle(type: symTy))"
 }
 
 public func mangle(type: TypeBase) -> String {
@@ -16,16 +17,17 @@ public func mangle(type: TypeBase) -> String {
   case let nominalTy as NominalType:
     if nominalTy.isBuiltin {
       switch nominalTy.name {
-      case "Bool": return "b"
-      case "Int": return "i"
-      case "Float": return "f"
-      case "String": return "s"
+      case "Bool"   : return "b"
+      case "Int"    : return "i"
+      case "Float"  : return "f"
+      case "String" : return "s"
       default: break
       }
     }
     return "N" + nominalTy.decl.scope!.mangled + nominalTy.decl.name
 
   case let fnTy as AST.FunctionType:
+    assert(fnTy.placeholders.isEmpty)
     let domain = fnTy.domain.map { (param) -> String in
       return "\(param.label ?? "_")\(mangle(type: param.type))"
     }
