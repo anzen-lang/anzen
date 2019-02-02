@@ -14,6 +14,7 @@ public extension ASTTransformer {
     case let n as TypeIdent:       return try transform(n)
     case let n as FunSign:         return try transform(n)
     case let n as ParamSign:       return try transform(n)
+    case let n as WhileLoop:       return try transform(n)
     case let n as BindingStmt:     return try transform(n)
     case let n as ReturnStmt:      return try transform(n)
     case let n as IfExpr:          return try transform(n)
@@ -150,6 +151,16 @@ public extension ASTTransformer {
   }
 
   // MARK: Statements
+
+  func transform(_ node: WhileLoop) throws -> Node {
+    return try defaultTransform(node)
+  }
+
+  func defaultTransform(_ node: WhileLoop) throws -> WhileLoop {
+    node.condition = try transform(node.condition) as! Expr
+    node.body = try transform(node.body) as! Block
+    return node
+  }
 
   func transform(_ node: BindingStmt) throws -> Node {
     return try defaultTransform(node)

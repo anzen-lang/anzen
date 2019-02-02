@@ -242,6 +242,18 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: WhileLoop) throws {
+    self <<< indent <<< "(while"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(condition\n"
+      withIndentation { try visit(node.condition) }
+      self <<< ")\n" <<< indent <<< "(body\n"
+      withIndentation { try visit(node.body) }
+      self <<< ")"
+    }
+    self <<< ")"
+  }
+
   public func visit(_ node: BindingStmt) throws {
     self <<< indent <<< "(bind"
     withIndentation {
@@ -269,7 +281,9 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(if"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(then\n"
+      self <<< "\n" <<< indent <<< "(condition\n"
+      withIndentation { try visit(node.condition) }
+      self <<< ")\n" <<< indent <<< "(then\n"
       withIndentation { try visit(node.thenBlock) }
       self <<< ")"
       if let elseBlock = node.elseBlock {

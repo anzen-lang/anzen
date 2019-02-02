@@ -193,6 +193,17 @@ public final class ASTUnparser: ASTVisitor {
 //    try visit(node.typeAnnotation)
 //  }
 
+  public func visit(_ node: WhileLoop) throws {
+    var repr = StyledString("{while:magenta}").description
+    try visit(node.condition)
+    repr += " \(stack.pop()!)"
+
+    try visit(node.body)
+    repr += " \(stack.pop()!)"
+
+    stack.push(repr)
+  }
+
   public func visit(_ node: BindingStmt) throws {
     try visit(node.rvalue)
     try visit(node.lvalue)

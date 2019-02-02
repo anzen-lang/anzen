@@ -221,6 +221,25 @@ public class AIREmitter: ASTVisitor {
     try visit(node.body.statements.filter({ $0 is FunDecl }))
   }
 
+  public func visit(_ node: WhileLoop) throws {
+    guard let currentFn = builder.currentBlock?.function
+      else { fatalError("not in a function") }
+    let pre  = currentFn.insertBlock(after: builder.currentBlock!, label: "pre")
+    let yes  = currentFn.insertBlock(after: pre, label: "yes")
+    let post = currentFn.insertBlock(after: yes, label: "post")
+
+    builder.buildJump(label: pre.label)
+    builder.currentBlock = pre
+    try visit(node.condition)
+    builder.buildBranch(condition: stack.pop()!, thenLabel: yes.label, elseLabel: post.label)
+
+    builder.currentBlock = yes
+    try visit(node.body)
+    builder.buildJump(label: pre.label)
+
+    builder.currentBlock = post
+  }
+
   public func visit(_ node: BindingStmt) throws {
     try visit(node.lvalue)
     try visit(node.rvalue)
@@ -242,22 +261,22 @@ public class AIREmitter: ASTVisitor {
   public func visit(_ node: IfExpr) throws {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }
-    let yes   = currentFn.insertBlock(after: builder.currentBlock!, label: "yes")
-    let no    = currentFn.insertBlock(after: yes, label: "no")
-    let after = currentFn.insertBlock(after: no, label: "after")
+    let yes  = currentFn.insertBlock(after: builder.currentBlock!, label: "yes")
+    let no   = currentFn.insertBlock(after: yes, label: "no")
+    let post = currentFn.insertBlock(after: no, label: "post")
 
     try visit(node.condition)
     builder.buildBranch(condition: stack.pop()!, thenLabel: yes.label, elseLabel: no.label)
 
     builder.currentBlock = yes
     try visit(node.thenBlock)
-    builder.buildJump(label: after.label)
+    builder.buildJump(label: post.label)
 
     builder.currentBlock = no
     try node.elseBlock.map { try visit($0) }
-    builder.buildJump(label: after.label)
+    builder.buildJump(label: post.label)
 
-    builder.currentBlock = after
+    builder.currentBlock = post
   }
 
   public func visit(_ node: CallExpr) throws {
