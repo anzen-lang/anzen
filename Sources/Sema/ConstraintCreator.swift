@@ -78,6 +78,15 @@ public final class ConstraintCreator: ASTVisitor {
     }
   }
 
+  public func visit(_ node: WhileLoop) throws {
+    try visit(node.condition)
+    let bool = context.builtinTypes["Bool"]!
+    context.add(constraint:
+      .equality(t: node.condition.type!, u: bool, at: .location(node, .condition)))
+
+    try visit(node.body)
+  }
+
   public func visit(_ node: BindingStmt) throws {
     try visit(node.lvalue)
     try visit(node.rvalue)
@@ -96,7 +105,7 @@ public final class ConstraintCreator: ASTVisitor {
       try visit(elseBlock)
     }
 
-    // FIXME: Type if expression with either the type of their return statement or `Nothing`.
+    // FIXME: Type if-expressions with either the type of their return statement or `Nothing`.
   }
 
   public func visit(_ node: BinExpr) throws {
