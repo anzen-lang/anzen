@@ -47,6 +47,8 @@ extension Parser {
       return try parseStructDecl()
     case .interface:
       return try parseInterfaceDecl()
+    case .while:
+      return try parseWhileLoop()
     case .return:
       return try parseReturnStmt()
     default:
@@ -84,6 +86,26 @@ extension Parser {
       statements: statements,
       module: module,
       range: SourceRange(from: startToken.range.start, to: endToken.range.end))
+  }
+
+  /// Parses a while-loop.
+  func parseWhileLoop() throws -> WhileLoop {
+    guard let startToken = consume(.while)
+      else { throw unexpectedToken(expected: "while") }
+
+    // Parse the condition.
+    consumeNewlines()
+    let condition = try parseExpression()
+
+    // Parse a block of statements.
+    consumeNewlines()
+    let body = try parseStatementBlock()
+
+    return WhileLoop(
+      condition: condition,
+      body: body,
+      module: module,
+      range: SourceRange(from: startToken.range.start, to: body.range.end))
   }
 
   /// Parses a return statement.

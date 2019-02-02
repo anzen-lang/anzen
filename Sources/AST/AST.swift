@@ -446,7 +446,7 @@ public final class ParamSign: Node {
 
 // MARK: Statements
 
-/// A while loop.
+/// A while-loop.
 public final class WhileLoop: Node {
 
   public init(
