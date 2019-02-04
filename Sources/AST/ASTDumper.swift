@@ -323,7 +323,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
       self <<< "\n" <<< indent <<< "(left\n"
       withIndentation { try visit(node.left) }
       self <<< ")"
-      self <<< "\n" <<< indent <<< "(infix_operator \(node.op))\n"
+      self <<< "\n" <<< indent <<< "(infix_operator \(node.op))"
       self <<< "\n" <<< indent <<< "(right\n"
       withIndentation { try visit(node.right) }
       self <<< ")"
