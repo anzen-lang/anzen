@@ -28,6 +28,7 @@ public protocol ASTVisitor {
 
   func visit(_ node: IfExpr)          throws
   func visit(_ node: LambdaExpr)      throws
+  func visit(_ node: CastExpr)        throws
   func visit(_ node: BinExpr)         throws
   func visit(_ node: UnExpr)          throws
   func visit(_ node: CallExpr)        throws

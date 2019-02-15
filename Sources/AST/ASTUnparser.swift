@@ -235,6 +235,12 @@ public final class ASTUnparser: ASTVisitor {
     stack.push(repr)
   }
 
+  public func visit(_ node: CastExpr) throws {
+    try visit(node.operand)
+    try visit(node.signature)
+    stack.push("\(stack.pop()!) as \(stack.pop()!)")
+  }
+
   public func visit(_ node: BinExpr) throws {
     try visit(node.right)
     try visit(node.left)

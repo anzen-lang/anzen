@@ -209,6 +209,15 @@ public extension ASTVisitor {
     try visit(node.body)
   }
 
+  func visit(_ node: CastExpr) throws {
+    try traverse(node)
+  }
+
+  func traverse(_ node: CastExpr) throws {
+    try visit(node.operand)
+    try visit(node.signature)
+  }
+
   func visit(_ node: BinExpr) throws {
     try traverse(node)
   }

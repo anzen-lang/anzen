@@ -28,6 +28,7 @@ public protocol ASTTransformer {
 
   func transform(_ node: IfExpr)          throws -> Node
   func transform(_ node: LambdaExpr)      throws -> Node
+  func transform(_ node: CastExpr)        throws -> Node
   func transform(_ node: BinExpr)         throws -> Node
   func transform(_ node: UnExpr)          throws -> Node
   func transform(_ node: CallExpr)        throws -> Node

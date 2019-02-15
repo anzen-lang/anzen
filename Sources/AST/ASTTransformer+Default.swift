@@ -205,6 +205,16 @@ public extension ASTTransformer {
     return node
   }
 
+  func transform(_ node: CastExpr) throws -> Node {
+    return try defaultTransform(node)
+  }
+
+  func defaultTransform(_ node: CastExpr) throws -> CastExpr {
+    node.operand = try transform(node.operand) as! Expr
+    node.signature = try transform(node.signature) as! QualSign
+    return node
+  }
+
   func transform(_ node: BinExpr) throws -> Node {
     return try defaultTransform(node)
   }

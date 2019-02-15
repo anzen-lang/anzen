@@ -316,6 +316,20 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: CastExpr) throws {
+    self <<< indent <<< "(cast_expr"
+    self <<< " type='" <<< node.type <<< "'"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(operand\n"
+      withIndentation { try visit(node.operand) }
+      self <<< ")"
+      self <<< "\n" <<< indent <<< "(signature\n"
+      withIndentation { try visit(node.signature) }
+      self <<< ")"
+    }
+    self <<< ")"
+  }
+
   public func visit(_ node: BinExpr) throws {
     self <<< indent <<< "(bin_expr"
     self <<< " type='" <<< node.type <<< "'"

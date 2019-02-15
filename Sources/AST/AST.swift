@@ -582,6 +582,22 @@ public final class LambdaExpr: Expr {
 
 }
 
+/// A cast expression.
+public final class CastExpr: Expr {
+
+  public init(operand: Expr, signature: QualSign, module: ModuleDecl, range: SourceRange) {
+    self.operand = operand
+    self.signature = signature
+    super.init(module: module, range: range)
+  }
+
+  /// The operand of the expression.
+  public var operand: Expr
+  /// The type it is cast to.
+  public var signature: QualSign
+
+}
+
 /// A binary expression.
 public final class BinExpr: Expr {
 
