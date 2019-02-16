@@ -221,7 +221,7 @@ public final class ConstraintCreator: ASTVisitor {
 
   private func typeFromAnnotation(annotation: Node) -> TypeBase {
     switch annotation {
-    case let sign as QualSign:
+    case let sign as QualTypeSign:
       return sign.signature.map { typeFromAnnotation(annotation: $0) } ?? TypeVariable()
 
     case let ident as TypeIdent:

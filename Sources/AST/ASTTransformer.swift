@@ -13,7 +13,7 @@ public protocol ASTTransformer {
 
   // MARK: Type signatures
 
-  func transform(_ node: QualSign)        throws -> Node
+  func transform(_ node: QualTypeSign)    throws -> Node
   func transform(_ node: TypeIdent)       throws -> Node
   func transform(_ node: FunSign)         throws -> Node
   func transform(_ node: ParamSign)       throws -> Node

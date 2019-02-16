@@ -10,7 +10,7 @@ public extension ASTTransformer {
     case let n as ParamDecl:       return try transform(n)
     case let n as StructDecl:      return try transform(n)
     case let n as InterfaceDecl:   return try transform(n)
-    case let n as QualSign:        return try transform(n)
+    case let n as QualTypeSign:    return try transform(n)
     case let n as TypeIdent:       return try transform(n)
     case let n as FunSign:         return try transform(n)
     case let n as ParamSign:       return try transform(n)
@@ -64,7 +64,7 @@ public extension ASTTransformer {
   }
 
   func defaultTransform(_ node: PropDecl) throws -> PropDecl {
-    node.typeAnnotation = try node.typeAnnotation.map { try transform($0) as! QualSign }
+    node.typeAnnotation = try node.typeAnnotation.map { try transform($0) as! QualTypeSign }
     if let (op, value) = node.initialBinding {
       node.initialBinding = (op: op, value: try transform(value) as! Expr)
     }
@@ -87,7 +87,7 @@ public extension ASTTransformer {
   }
 
   func defaultTransform(_ node: ParamDecl) throws -> ParamDecl {
-    node.typeAnnotation = try node.typeAnnotation.map { try transform($0) as! QualSign }
+    node.typeAnnotation = try node.typeAnnotation.map { try transform($0) as! QualTypeSign }
     node.defaultValue = try node.defaultValue.map { try transform($0) as! Expr }
     return node
   }
@@ -112,11 +112,11 @@ public extension ASTTransformer {
 
   // MARK: Type signatures
 
-  func transform(_ node: QualSign) throws -> Node {
+  func transform(_ node: QualTypeSign) throws -> Node {
     return try defaultTransform(node)
   }
 
-  func defaultTransform(_ node: QualSign) throws -> QualSign {
+  func defaultTransform(_ node: QualTypeSign) throws -> QualTypeSign {
     node.signature = try node.signature.map(transform)
     return node
   }
@@ -211,7 +211,7 @@ public extension ASTTransformer {
 
   func defaultTransform(_ node: CastExpr) throws -> CastExpr {
     node.operand = try transform(node.operand) as! Expr
-    node.signature = try transform(node.signature) as! QualSign
+    node.signature = try transform(node.signature) as! Sign
     return node
   }
 

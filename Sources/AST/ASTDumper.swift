@@ -196,8 +196,8 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
-  public func visit(_ node: QualSign) throws {
-    self <<< indent <<< "(qual_sign"
+  public func visit(_ node: QualTypeSign) throws {
+    self <<< indent <<< "(qual_type_sign"
     if !node.qualifiers.isEmpty {
       self <<< " " + node.qualifiers.map({ $0.description }).sorted().joined(separator: " ")
     }

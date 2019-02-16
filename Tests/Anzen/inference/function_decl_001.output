@@ -3,8 +3,8 @@
     (parameters
       (param_decl 'x' type='Int' symbol='x' scope='inference.function_decl_001.mono'
         (type_annotation
-          (qual_sign
+          (qual_type_sign
             (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))
     (codomain
-      (qual_sign
+      (qual_type_sign
         (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))
