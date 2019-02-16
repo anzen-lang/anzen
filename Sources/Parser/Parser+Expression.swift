@@ -25,7 +25,18 @@ extension Parser {
       }
       consume()
 
-      // If an infix operator could be consumed, then we MUST parse a right operand.
+      if op == .as {
+        // If the infix operator is a cast operator, then we MUST parse a type signature.
+        let signature = try parseTypeSign()
+        expression = CastExpr(
+          operand: expression,
+          signature: signature,
+          module: module,
+          range: SourceRange(from: expression.range.start, to: signature.range.end))
+        continue
+      }
+
+      // Other infix operators work on expressions, so we MUST parse a right operand as such.
       let rightOperand = try parseAtom()
 
       // If the left operand is a binary expression, we should check the precedence of its operator
