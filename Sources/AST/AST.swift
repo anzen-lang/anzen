@@ -374,8 +374,13 @@ public final class QualTypeSign: Node {
 
 }
 
+/// Base class for node representing an unqualified type signatures.
+public class TypeSign: Node {
+
+}
+
 /// A type identifier.
-public final class TypeIdent: Node {
+public final class TypeIdent: TypeSign {
 
   public init(
     name: String,
@@ -403,7 +408,7 @@ public final class TypeIdent: Node {
 }
 
 /// A function type signature.
-public final class FunSign: Node {
+public final class FunSign: TypeSign {
 
   public init(parameters: [ParamSign], codomain: Node, module: ModuleDecl, range: SourceRange) {
     self.parameters = parameters
@@ -425,7 +430,7 @@ public final class FunSign: Node {
 }
 
 /// A parameter of a function type signature.
-public final class ParamSign: Node {
+public final class ParamSign: TypeSign {
 
   public init(label: String?, typeAnnotation: Node, module: ModuleDecl, range: SourceRange) {
     self.label = label
@@ -585,7 +590,7 @@ public final class LambdaExpr: Expr {
 /// A cast expression.
 public final class CastExpr: Expr {
 
-  public init(operand: Expr, signature: Sign, module: ModuleDecl, range: SourceRange) {
+  public init(operand: Expr, signature: TypeSign, module: ModuleDecl, range: SourceRange) {
     self.operand = operand
     self.signature = signature
     super.init(module: module, range: range)
@@ -594,7 +599,7 @@ public final class CastExpr: Expr {
   /// The operand of the expression.
   public var operand: Expr
   /// The type it is cast to.
-  public var signature: Sign
+  public var signature: TypeSign
 
 }
 

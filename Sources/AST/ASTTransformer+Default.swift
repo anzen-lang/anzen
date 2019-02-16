@@ -211,7 +211,7 @@ public extension ASTTransformer {
 
   func defaultTransform(_ node: CastExpr) throws -> CastExpr {
     node.operand = try transform(node.operand) as! Expr
-    node.signature = try transform(node.signature) as! Sign
+    node.signature = try transform(node.signature) as! TypeSign
     return node
   }
 

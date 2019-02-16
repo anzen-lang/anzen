@@ -52,7 +52,7 @@ extension Parser {
   }
 
   /// Parses an unqualified type signature.
-  func parseTypeSign() throws -> Node {
+  func parseTypeSign() throws -> TypeSign {
     switch peek().kind {
     case .identifier:
       return try parseTypeIdentifier()
