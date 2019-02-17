@@ -590,16 +590,16 @@ public final class LambdaExpr: Expr {
 /// A cast expression.
 public final class CastExpr: Expr {
 
-  public init(operand: Expr, signature: TypeSign, module: ModuleDecl, range: SourceRange) {
+  public init(operand: Expr, castType: TypeSign, module: ModuleDecl, range: SourceRange) {
     self.operand = operand
-    self.signature = signature
+    self.castType = castType
     super.init(module: module, range: range)
   }
 
   /// The operand of the expression.
   public var operand: Expr
   /// The type it is cast to.
-  public var signature: TypeSign
+  public var castType: TypeSign
 
 }
 

@@ -323,8 +323,8 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
       self <<< "\n" <<< indent <<< "(operand\n"
       withIndentation { try visit(node.operand) }
       self <<< ")"
-      self <<< "\n" <<< indent <<< "(signature\n"
-      withIndentation { try visit(node.signature) }
+      self <<< "\n" <<< indent <<< "(cast_type\n"
+      withIndentation { try visit(node.castType) }
       self <<< ")"
     }
     self <<< ")"

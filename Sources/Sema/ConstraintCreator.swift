@@ -13,7 +13,7 @@ public final class ConstraintCreator: ASTVisitor {
   public func visit(_ node: PropDecl) throws {
     var propType: TypeBase? = nil
     if let annotation = node.typeAnnotation {
-      propType = typeFromAnnotation(annotation: annotation)
+      propType = signatureToType(signature: annotation)
       context.add(constraint:
         .equality(t: node.type!, u: propType!, at: .location(node, .annotation)))
     }
@@ -44,7 +44,7 @@ public final class ConstraintCreator: ASTVisitor {
       codomain = selfMeta.type
     } else if node.codomain != nil {
       // The function has an explicit codomain annotation.
-      codomain = typeFromAnnotation(annotation: node.codomain!)
+      codomain = signatureToType(signature: node.codomain!)
     } else {
       // In the absence of explicit codomain annotation, use `Nothing`.
       codomain = NothingType.get
@@ -66,7 +66,7 @@ public final class ConstraintCreator: ASTVisitor {
     // Extract the type of the parameter from its annotation.
     var paramType: TypeBase? = nil
     if let annotation = node.typeAnnotation {
-      paramType = typeFromAnnotation(annotation: annotation)
+      paramType = signatureToType(signature: annotation)
       context.add(constraint:
         .equality(t: node.type!, u: paramType!, at: .location(node, .annotation)))
     }
@@ -106,6 +106,15 @@ public final class ConstraintCreator: ASTVisitor {
     }
 
     // FIXME: Type if-expressions with either the type of their return statement or `Nothing`.
+  }
+
+  public func visit(_ node: CastExpr) throws {
+    try visit(node.operand)
+    let castTy = signatureToType(signature: node.castType)
+
+    // Since it's a forced cast expression, there's no need to add any constraint between the
+    // operand and the target type.
+    node.type = castTy
   }
 
   public func visit(_ node: BinExpr) throws {
@@ -219,10 +228,10 @@ public final class ConstraintCreator: ASTVisitor {
     assert(node.type != nil)
   }
 
-  private func typeFromAnnotation(annotation: Node) -> TypeBase {
-    switch annotation {
+  private func signatureToType(signature: Node) -> TypeBase {
+    switch signature {
     case let sign as QualTypeSign:
-      return sign.signature.map { typeFromAnnotation(annotation: $0) } ?? TypeVariable()
+      return sign.signature.map { signatureToType(signature: $0) } ?? TypeVariable()
 
     case let ident as TypeIdent:
       // Type identifiers' symvols should have a metatype.
@@ -243,7 +252,7 @@ public final class ConstraintCreator: ASTVisitor {
             context.add(error: SAError.superfluousSpecialization(name: key), on: ident)
             return ErrorType.get
           }
-          bindings[placeholder] = typeFromAnnotation(annotation: value)
+          bindings[placeholder] = signatureToType(signature: value)
         }
 
         let closed: TypeBase

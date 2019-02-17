@@ -27,12 +27,12 @@ extension Parser {
 
       if op == .as {
         // If the infix operator is a cast operator, then we MUST parse a type signature.
-        let signature = try parseTypeSign()
+        let castType = try parseTypeSign()
         expression = CastExpr(
           operand: expression,
-          signature: signature,
+          castType: castType,
           module: module,
-          range: SourceRange(from: expression.range.start, to: signature.range.end))
+          range: SourceRange(from: expression.range.start, to: castType.range.end))
         continue
       }
 

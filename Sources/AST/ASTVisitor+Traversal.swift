@@ -19,6 +19,7 @@ public extension ASTVisitor {
     case let n as ReturnStmt:      try visit(n)
     case let n as IfExpr:          try visit(n)
     case let n as LambdaExpr:      try visit(n)
+    case let n as CastExpr:        try visit(n)
     case let n as BinExpr:         try visit(n)
     case let n as UnExpr:          try visit(n)
     case let n as CallExpr:        try visit(n)
@@ -215,7 +216,7 @@ public extension ASTVisitor {
 
   func traverse(_ node: CastExpr) throws {
     try visit(node.operand)
-    try visit(node.signature)
+    try visit(node.castType)
   }
 
   func visit(_ node: BinExpr) throws {

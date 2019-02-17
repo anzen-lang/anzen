@@ -19,6 +19,7 @@ public extension ASTTransformer {
     case let n as ReturnStmt:      return try transform(n)
     case let n as IfExpr:          return try transform(n)
     case let n as LambdaExpr:      return try transform(n)
+    case let n as CastExpr:        return try transform(n)
     case let n as BinExpr:         return try transform(n)
     case let n as UnExpr:          return try transform(n)
     case let n as CallExpr:        return try transform(n)
@@ -211,7 +212,7 @@ public extension ASTTransformer {
 
   func defaultTransform(_ node: CastExpr) throws -> CastExpr {
     node.operand = try transform(node.operand) as! Expr
-    node.signature = try transform(node.signature) as! TypeSign
+    node.castType = try transform(node.castType) as! TypeSign
     return node
   }
 

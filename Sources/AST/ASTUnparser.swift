@@ -237,7 +237,7 @@ public final class ASTUnparser: ASTVisitor {
 
   public func visit(_ node: CastExpr) throws {
     try visit(node.operand)
-    try visit(node.signature)
+    try visit(node.castType)
     stack.push("\(stack.pop()!) as \(stack.pop()!)")
   }
 
