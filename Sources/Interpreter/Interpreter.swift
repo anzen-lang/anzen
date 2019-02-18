@@ -42,6 +42,7 @@ public class Interpreter {
       case let inst as CopyInst         : try execute(inst)
       case let inst as MoveInst         : try execute(inst)
       case let inst as BindInst         : try execute(inst)
+      case let inst as UnsafeCastInst   : try execute(inst)
       case let inst as ApplyInst        : try execute(inst)
       case let inst as PartialApplyInst : try execute(inst)
       case let inst as DropInst         : try execute(inst)
@@ -108,6 +109,14 @@ public class Interpreter {
     default:
       throw RuntimeError("invalid r-value for bind '\(inst.source)'")
     }
+  }
+
+  private func execute(_ inst: UnsafeCastInst) throws {
+    let source = try value(of: inst.operand)
+
+    // NOTE: Just as C++'s reinterpret_cast, unsafe_cast should actually be a noop. We may however
+    // implement some assertion checks in the future.
+    frames.top![inst.id] = source
   }
 
   private func execute(_ inst: ApplyInst) throws {
