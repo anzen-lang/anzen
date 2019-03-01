@@ -279,6 +279,13 @@ public class AIREmitter: ASTVisitor {
     builder.currentBlock = post
   }
 
+  public func visit(_ node: CastExpr) throws {
+    try visit(node.operand)
+    let castTy = getType(of: node.type!)
+    let unsafeCast = builder.buildUnsafeCast(source: stack.pop()!, as: castTy)
+    stack.push(unsafeCast)
+  }
+
   public func visit(_ node: CallExpr) throws {
     let callee = builder.buildMakeRef(type: getType(of: node.callee.type!))
     try visit(node.callee)

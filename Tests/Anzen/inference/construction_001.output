@@ -6,11 +6,11 @@
             (parameters
               (param_decl 'x' type='Int' symbol='x' scope='inference.construction_001.Point.block.new'
                 (type_annotation
-                  (qual_sign
+                  (qual_type_sign
                     (type_identifier 'Int' type='Int.metatype' scope='__builtin'))))
               (param_decl 'y' type='Int' symbol='y' scope='inference.construction_001.Point.block.new'
                 (type_annotation
-                  (qual_sign
+                  (qual_type_sign
                     (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))
             (body
               (block inner_scope='inference.construction_001.Point.block.new.block'))))))

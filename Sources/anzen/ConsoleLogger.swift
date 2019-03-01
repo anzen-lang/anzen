@@ -26,7 +26,7 @@ public struct ConsoleLogger: Logger {
     case let parseError as ParseError:
       log(describe(parseError))
     default:
-      log("error:".styled("bold,red") + " \(error)\n")
+      log("error:".styled("bold,red") + " \(err)\n")
     }
   }
 

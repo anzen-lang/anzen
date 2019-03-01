@@ -8,7 +8,7 @@
             (parameters
               (param_decl 'value' type='T' symbol='value' scope='inference.construction_002.Box.block.new'
                 (type_annotation
-                  (qual_sign
+                  (qual_type_sign
                     (type_identifier 'T' type='T.metatype' scope='inference.construction_002.Box')))))
             (body
               (block inner_scope='inference.construction_002.Box.block.new.block'))))))

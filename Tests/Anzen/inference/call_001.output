@@ -3,19 +3,19 @@
     (parameters
       (param_decl 'x' type='Int' symbol='x' scope='inference.call_001.mono'
         (type_annotation
-          (qual_sign
+          (qual_type_sign
             (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))
     (codomain
-      (qual_sign
+      (qual_type_sign
         (type_identifier 'Int' type='Int.metatype' scope='__builtin'))))
   (function_decl 'mono' type='(x: Bool) -> Bool' symbol='mono' scope='inference.call_001' inner_scope='inference.call_001.mono'
     (parameters
       (param_decl 'x' type='Bool' symbol='x' scope='inference.call_001.mono'
         (type_annotation
-          (qual_sign
+          (qual_type_sign
             (type_identifier 'Bool' type='Bool.metatype' scope='__builtin')))))
     (codomain
-      (qual_sign
+      (qual_type_sign
         (type_identifier 'Bool' type='Bool.metatype' scope='__builtin'))))
   (prop_decl let 'a' type='Int' symbol='a' scope='inference.call_001'
     (initial_binding

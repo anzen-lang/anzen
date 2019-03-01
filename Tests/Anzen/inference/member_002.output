@@ -6,15 +6,15 @@
       (block inner_scope='inference.member_002.Box.block'
           (prop_decl let 'value' type='T' symbol='value' scope='inference.member_002.Box.block'
             (type_annotation
-              (qual_sign
+              (qual_type_sign
                 (type_identifier 'T' type='T.metatype' scope='inference.member_002.Box')))))))
   (prop_decl let 'box1' type='<T=Int>Box<T>' symbol='box1' scope='inference.member_002'
     (type_annotation
-      (qual_sign
+      (qual_type_sign
         (type_identifier 'Box' type='<T=Int>Box<T>.metatype' scope='inference.member_002'))))
   (prop_decl let 'box2' type='<T=String>Box<T>' symbol='box2' scope='inference.member_002'
     (type_annotation
-      (qual_sign
+      (qual_type_sign
         (type_identifier 'Box' type='<T=String>Box<T>.metatype' scope='inference.member_002'))))
   (prop_decl let 'val1' type='Int' symbol='val1' scope='inference.member_002'
     (initial_binding

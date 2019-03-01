@@ -36,7 +36,9 @@ extension Logger {
   }
 
   public func errors<S>(_ errs: S)  where S: Sequence, S.Element: Error {
-    _ = errs.map(error)
+    for err in errs {
+      error(err)
+    }
   }
 
 }

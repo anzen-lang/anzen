@@ -3,7 +3,7 @@ import AST
 extension Parser {
 
   /// Parses a qualified type signature.
-  func parseQualSign() throws -> QualSign {
+  func parseQualSign() throws -> QualTypeSign {
     // First, attempt to parse an enclosed signature.
     if peek().kind == .leftParen {
       let backtrackPosition = streamPosition
@@ -44,7 +44,7 @@ extension Parser {
 
     let start = firstQualifier?.range.start ?? sign!.range.start
     let end = sign?.range.end ?? firstQualifier!.range.end
-    return QualSign(
+    return QualTypeSign(
       qualifiers: qualifiers,
       signature: sign,
       module: module,
@@ -52,7 +52,7 @@ extension Parser {
   }
 
   /// Parses an unqualified type signature.
-  func parseTypeSign() throws -> Node {
+  func parseTypeSign() throws -> TypeSign {
     switch peek().kind {
     case .identifier:
       return try parseTypeIdentifier()

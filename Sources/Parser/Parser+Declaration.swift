@@ -14,7 +14,7 @@ extension Parser {
     var end = name.range.end
 
     // Parse the optional type annotation.
-    var annotation: QualSign? = nil
+    var annotation: QualTypeSign? = nil
     if consume(.colon, afterMany: .newline) != nil {
       consumeNewlines()
       annotation = try parseQualSign()
@@ -142,7 +142,7 @@ extension Parser {
     var end = second.range.end
 
     // Parse the optional type annotation.
-    var annotation: QualSign? = nil
+    var annotation: QualTypeSign? = nil
     if consume(.colon, afterMany: .newline) != nil {
       consumeNewlines()
       annotation = try parseQualSign()

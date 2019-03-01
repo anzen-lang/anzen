@@ -68,6 +68,26 @@ public struct MakeRefInst: AIRInstruction, AIRRegister {
 
 }
 
+/// This represents an unsafe cast expression.
+public struct UnsafeCastInst: AIRInstruction, AIRRegister {
+
+  /// The operand of the case expression.
+  public let operand: AIRValue
+  /// The type to which the operand shall be casted.
+  public let type: AIRType
+
+  public let id: Int
+
+  public var valueDescription: String {
+    return "%\(id)"
+  }
+
+  public var instDescription: String {
+    return "%\(id) = unsafe_cast \(operand.valueDescription) to \(type)"
+  }
+
+}
+
 /// This represents the extraction of a reference from a composite type.
 ///
 /// - Note: This intruction only extracts references that are part of the storage of the source

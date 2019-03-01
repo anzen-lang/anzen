@@ -10,7 +10,7 @@ public extension ASTVisitor {
     case let n as ParamDecl:       try visit(n)
     case let n as StructDecl:      try visit(n)
     case let n as InterfaceDecl:   try visit(n)
-    case let n as QualSign:        try visit(n)
+    case let n as QualTypeSign:    try visit(n)
     case let n as TypeIdent:       try visit(n)
     case let n as FunSign:         try visit(n)
     case let n as ParamSign:       try visit(n)
@@ -19,6 +19,7 @@ public extension ASTVisitor {
     case let n as ReturnStmt:      try visit(n)
     case let n as IfExpr:          try visit(n)
     case let n as LambdaExpr:      try visit(n)
+    case let n as CastExpr:        try visit(n)
     case let n as BinExpr:         try visit(n)
     case let n as UnExpr:          try visit(n)
     case let n as CallExpr:        try visit(n)
@@ -118,11 +119,11 @@ public extension ASTVisitor {
 
   // MARK: Type signatures
 
-  func visit(_ node: QualSign) throws {
+  func visit(_ node: QualTypeSign) throws {
     try traverse(node)
   }
 
-  func traverse(_ node: QualSign) throws {
+  func traverse(_ node: QualTypeSign) throws {
     if let signature = node.signature {
       try visit(signature)
     }
@@ -207,6 +208,15 @@ public extension ASTVisitor {
       try visit(codomain)
     }
     try visit(node.body)
+  }
+
+  func visit(_ node: CastExpr) throws {
+    try traverse(node)
+  }
+
+  func traverse(_ node: CastExpr) throws {
+    try visit(node.operand)
+    try visit(node.castType)
   }
 
   func visit(_ node: BinExpr) throws {

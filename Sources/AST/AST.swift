@@ -162,7 +162,7 @@ public final class PropDecl: NamedDecl {
     name: String,
     attributes: Set<MemberAttribute> = [],
     reassignable: Bool = false,
-    typeAnnotation: QualSign? = nil,
+    typeAnnotation: QualTypeSign? = nil,
     initialBinding: (op: BindingOperator, value: Expr)? = nil,
     module: ModuleDecl,
     range: SourceRange)
@@ -179,7 +179,7 @@ public final class PropDecl: NamedDecl {
   /// Whether or not the property is reassignable (i.e. declared with `var` or `let`).
   public var reassignable: Bool
   /// The type annotation of the property.
-  public var typeAnnotation: QualSign?
+  public var typeAnnotation: QualTypeSign?
   /// The initial binding value of the property.
   public var initialBinding: (op: BindingOperator, value: Expr)?
 
@@ -248,7 +248,7 @@ public final class ParamDecl: NamedDecl {
   public init(
     label: String?,
     name: String,
-    typeAnnotation: QualSign?,
+    typeAnnotation: QualTypeSign?,
     defaultValue: Expr? = nil,
     module: ModuleDecl,
     range: SourceRange)
@@ -262,7 +262,7 @@ public final class ParamDecl: NamedDecl {
   /// The label of the parameter.
   public var label: String?
   /// The type annotation of the parameter.
-  public var typeAnnotation: QualSign?
+  public var typeAnnotation: QualTypeSign?
   /// The default value of the parameter.
   public var defaultValue: Expr?
 
@@ -350,7 +350,7 @@ public enum TypeQualifier: CustomStringConvertible {
 ///
 /// Qualified type signature comprise a semantic type definition (e.g. a type identifier) and a set
 /// of type qualifiers.
-public final class QualSign: Node {
+public final class QualTypeSign: Node {
 
   public init(
     qualifiers: Set<TypeQualifier>,
@@ -374,8 +374,13 @@ public final class QualSign: Node {
 
 }
 
+/// Base class for node representing an unqualified type signatures.
+public class TypeSign: Node {
+
+}
+
 /// A type identifier.
-public final class TypeIdent: Node {
+public final class TypeIdent: TypeSign {
 
   public init(
     name: String,
@@ -403,7 +408,7 @@ public final class TypeIdent: Node {
 }
 
 /// A function type signature.
-public final class FunSign: Node {
+public final class FunSign: TypeSign {
 
   public init(parameters: [ParamSign], codomain: Node, module: ModuleDecl, range: SourceRange) {
     self.parameters = parameters
@@ -425,7 +430,7 @@ public final class FunSign: Node {
 }
 
 /// A parameter of a function type signature.
-public final class ParamSign: Node {
+public final class ParamSign: TypeSign {
 
   public init(label: String?, typeAnnotation: Node, module: ModuleDecl, range: SourceRange) {
     self.label = label
@@ -439,7 +444,7 @@ public final class ParamSign: Node {
   /// The type annotation of the property.
   ///
   /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
-  ///   signature (i.e. an instance of `QualSign`, `FunSign` or `StructSign`).
+  ///   signature (i.e. an instance of `QualTypeSign`, `TypeSign`).
   public var typeAnnotation: Node
 
 }
@@ -579,6 +584,22 @@ public final class LambdaExpr: Expr {
 
   /// The body of the lambda.
   public var body: Block
+
+}
+
+/// A cast expression.
+public final class CastExpr: Expr {
+
+  public init(operand: Expr, castType: TypeSign, module: ModuleDecl, range: SourceRange) {
+    self.operand = operand
+    self.castType = castType
+    super.init(module: module, range: range)
+  }
+
+  /// The operand of the expression.
+  public var operand: Expr
+  /// The type it is cast to.
+  public var castType: TypeSign
 
 }
 

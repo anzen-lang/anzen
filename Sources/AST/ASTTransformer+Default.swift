@@ -10,7 +10,7 @@ public extension ASTTransformer {
     case let n as ParamDecl:       return try transform(n)
     case let n as StructDecl:      return try transform(n)
     case let n as InterfaceDecl:   return try transform(n)
-    case let n as QualSign:        return try transform(n)
+    case let n as QualTypeSign:    return try transform(n)
     case let n as TypeIdent:       return try transform(n)
     case let n as FunSign:         return try transform(n)
     case let n as ParamSign:       return try transform(n)
@@ -19,6 +19,7 @@ public extension ASTTransformer {
     case let n as ReturnStmt:      return try transform(n)
     case let n as IfExpr:          return try transform(n)
     case let n as LambdaExpr:      return try transform(n)
+    case let n as CastExpr:        return try transform(n)
     case let n as BinExpr:         return try transform(n)
     case let n as UnExpr:          return try transform(n)
     case let n as CallExpr:        return try transform(n)
@@ -64,7 +65,7 @@ public extension ASTTransformer {
   }
 
   func defaultTransform(_ node: PropDecl) throws -> PropDecl {
-    node.typeAnnotation = try node.typeAnnotation.map { try transform($0) as! QualSign }
+    node.typeAnnotation = try node.typeAnnotation.map { try transform($0) as! QualTypeSign }
     if let (op, value) = node.initialBinding {
       node.initialBinding = (op: op, value: try transform(value) as! Expr)
     }
@@ -87,7 +88,7 @@ public extension ASTTransformer {
   }
 
   func defaultTransform(_ node: ParamDecl) throws -> ParamDecl {
-    node.typeAnnotation = try node.typeAnnotation.map { try transform($0) as! QualSign }
+    node.typeAnnotation = try node.typeAnnotation.map { try transform($0) as! QualTypeSign }
     node.defaultValue = try node.defaultValue.map { try transform($0) as! Expr }
     return node
   }
@@ -112,11 +113,11 @@ public extension ASTTransformer {
 
   // MARK: Type signatures
 
-  func transform(_ node: QualSign) throws -> Node {
+  func transform(_ node: QualTypeSign) throws -> Node {
     return try defaultTransform(node)
   }
 
-  func defaultTransform(_ node: QualSign) throws -> QualSign {
+  func defaultTransform(_ node: QualTypeSign) throws -> QualTypeSign {
     node.signature = try node.signature.map(transform)
     return node
   }
@@ -202,6 +203,16 @@ public extension ASTTransformer {
     node.parameters = try node.parameters.map(transform) as! [ParamDecl]
     node.codomain = try node.codomain.map(transform)
     node.body = try transform(node.body) as! Block
+    return node
+  }
+
+  func transform(_ node: CastExpr) throws -> Node {
+    return try defaultTransform(node)
+  }
+
+  func defaultTransform(_ node: CastExpr) throws -> CastExpr {
+    node.operand = try transform(node.operand) as! Expr
+    node.castType = try transform(node.castType) as! TypeSign
     return node
   }
 

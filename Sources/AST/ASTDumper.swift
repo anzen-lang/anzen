@@ -196,8 +196,8 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
-  public func visit(_ node: QualSign) throws {
-    self <<< indent <<< "(qual_sign"
+  public func visit(_ node: QualTypeSign) throws {
+    self <<< indent <<< "(qual_type_sign"
     if !node.qualifiers.isEmpty {
       self <<< " " + node.qualifiers.map({ $0.description }).sorted().joined(separator: " ")
     }
@@ -316,6 +316,20 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: CastExpr) throws {
+    self <<< indent <<< "(cast_expr"
+    self <<< " type='" <<< node.type <<< "'"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(operand\n"
+      withIndentation { try visit(node.operand) }
+      self <<< ")"
+      self <<< "\n" <<< indent <<< "(cast_type\n"
+      withIndentation { try visit(node.castType) }
+      self <<< ")"
+    }
+    self <<< ")"
+  }
+
   public func visit(_ node: BinExpr) throws {
     self <<< indent <<< "(bin_expr"
     self <<< " type='" <<< node.type <<< "'"
@@ -323,7 +337,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
       self <<< "\n" <<< indent <<< "(left\n"
       withIndentation { try visit(node.left) }
       self <<< ")"
-      self <<< "\n" <<< indent <<< "(infix_operator \(node.op))\n"
+      self <<< "\n" <<< indent <<< "(infix_operator \(node.op))"
       self <<< "\n" <<< indent <<< "(right\n"
       withIndentation { try visit(node.right) }
       self <<< ")"

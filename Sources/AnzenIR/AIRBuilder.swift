@@ -27,6 +27,19 @@ public class AIRBuilder {
     return inst
   }
 
+  public func buildUnsafeCast(
+    source: AIRValue,
+    as castType: AIRType,
+    id: Int? = nil) -> UnsafeCastInst
+  {
+    let inst = UnsafeCastInst(
+      operand: source,
+      type: castType,
+      id: id ?? currentBlock!.nextRegisterID())
+    currentBlock!.instructions.append(inst)
+    return inst
+  }
+
   public func buildExtract(
     from source: AIRValue,
     index: Int,

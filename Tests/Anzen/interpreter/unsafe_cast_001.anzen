@@ -1,0 +1,4 @@
+// Test a simple unsafe cast.
+
+let x: Anything = 99
+print(x as Int)

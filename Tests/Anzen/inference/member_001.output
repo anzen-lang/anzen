@@ -4,15 +4,15 @@
       (block inner_scope='inference.member_001.Point.block'
           (prop_decl let 'x' type='Int' symbol='x' scope='inference.member_001.Point.block'
             (type_annotation
-              (qual_sign
+              (qual_type_sign
                 (type_identifier 'Int' type='Int.metatype' scope='__builtin'))))
           (prop_decl let 'y' type='Int' symbol='y' scope='inference.member_001.Point.block'
             (type_annotation
-              (qual_sign
+              (qual_type_sign
                 (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))))
   (prop_decl let 'p' type='Point' symbol='p' scope='inference.member_001'
     (type_annotation
-      (qual_sign
+      (qual_type_sign
         (type_identifier 'Point' type='Point.metatype' scope='inference.member_001'))))
   (prop_decl let 'x' type='Int' symbol='x' scope='inference.member_001'
     (initial_binding
