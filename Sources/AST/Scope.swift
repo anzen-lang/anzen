@@ -65,8 +65,8 @@ public class Scope {
 
 extension Scope: Hashable {
 
-  public var hashValue: Int {
-    return self.id
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(id)
   }
 
   public static func == (lhs: Scope, rhs: Scope) -> Bool {

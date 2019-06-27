@@ -123,7 +123,7 @@ public final class NameBinder: ASTVisitor {
 
   private func findScope(declaring name: String) -> Scope? {
     let candidates = scopes
-    guard let index = candidates.index(where: { $0.symbols[name] != nil })
+    guard let index = candidates.firstIndex(where: { $0.symbols[name] != nil })
       else { return nil }
 
     if underDeclaration[scopes[index]] == name {

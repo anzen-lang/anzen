@@ -114,8 +114,8 @@ public final class TypeVariable: TypeBase, Hashable, CustomStringConvertible {
     return self
   }
 
-  public var hashValue: Int {
-    return id
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(id)
   }
 
   public var description: String {
