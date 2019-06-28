@@ -18,10 +18,13 @@ public class AIREmitter: ASTVisitor {
 
   /// The environment of thick functions, at the time of their declaration.
   private var functionEnvs: [Symbol: [Symbol: AIRValue]] = [:]
-  /// The (unspecialized) generic functions available.
-  private var genericFunctions: [Symbol: FunDecl] = [:]
+
+  /// The (unspecialized) generic type declarations available in the module.
+  private var genericTypes: [Symbol: NamedDecl] = [:]
+
   /// The specialization requests.
-  private var specRequests: [(symbol: Symbol, type: FunctionType)] = []
+  private var funSpecRequests: [(symbol: Symbol, type: FunctionType)] = []
+
   /// Mapping used to emit the specialization of a generic function.
   internal var bindings: [PlaceholderType: TypeBase] = [:]
 
@@ -43,17 +46,17 @@ public class AIREmitter: ASTVisitor {
 
     // Emit the AIR code for all generic specializations.
     var done: [Symbol: [TypeBase]] = [:]
-    while let req = specRequests.popLast() {
+    while let req = funSpecRequests.popLast() {
       // Skip the request if it was already done.
       done[req.symbol] = done[req.symbol] ?? []
       guard !done[req.symbol]!.contains(req.type)
         else { continue }
 
       // Emit the specialized function.
-      guard let decl = genericFunctions[req.symbol]
-        else { fatalError("\(req.symbol) is not a known generic function") }
-      try emitFunction(decl: decl, withType: req.type)
-      done[req.symbol]?.append(req.type)
+      if let decl = genericTypes[req.symbol] as? FunDecl {
+        try emitFunction(decl: decl, withType: req.type)
+        done[req.symbol]?.append(req.type)
+      }
     }
   }
 
@@ -132,12 +135,16 @@ public class AIREmitter: ASTVisitor {
       }
 
       // Create the function parameters.
-      let parameterSymbols = decl.captures + decl.parameters.map({ $0.symbol! })
-      for sym in parameterSymbols {
+      for sym in decl.captures {
         let paramref = AIRParameter(
-          type: getType(of: sym.type!),
-          id: builder.currentBlock!.nextRegisterID())
+          type: getType(of: sym.type!), id: builder.currentBlock!.nextRegisterID())
         locals.top![sym] = paramref
+      }
+      for (paramDecl, paramSign) in zip(decl.parameters, aznTy.domain) {
+        let paramref = AIRParameter(
+          type: getType(of: paramSign.type),
+          id: builder.currentBlock!.nextRegisterID())
+        locals.top![paramDecl.symbol!] = paramref
       }
 
       // Set up the function frame.
@@ -209,7 +216,7 @@ public class AIREmitter: ASTVisitor {
     // AIR generation for generic functions is delayed until they are specialized in context.
     let aznTy = node.type as! FunctionType
     guard aznTy.placeholders.isEmpty else {
-      genericFunctions[node.symbol!] = node
+      genericTypes[node.symbol!] = node
       return
     }
 
@@ -217,6 +224,13 @@ public class AIREmitter: ASTVisitor {
   }
 
   public func visit(_ node: StructDecl) throws {
+    // AIR generation for generic types is delayed until they are specialized in context.
+    let aznTy = (node.type as! Metatype).type as! NominalType
+    guard aznTy.placeholders.isEmpty else {
+      genericTypes[node.symbol!] = node
+      return
+    }
+
     // Only visit function declarations.
     try visit(node.body.statements.filter({ $0 is FunDecl }))
   }
@@ -337,22 +351,19 @@ public class AIREmitter: ASTVisitor {
       return
     }
 
-    if owner.type is NominalType {
-      // If the ownee isn't a method, but the owner's a nominal type, then the expression should
-      // "extract" a field from the owner.
-      let airTy = getType(of: owner.type!) as! AIRStructType
-      guard let index = airTy.members.firstIndex(where: { $0.key == node.ownee.name })
-        else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
-      let extract = builder.buildExtract(
-        from: stack.pop()!,
-        index: index,
-        type: getType(of: node.type!))
-      stack.push(extract)
-      return
-    }
-
     // FIXME: Distinguish between stored and computed properties.
-    fatalError("TODO")
+
+    // If the ownee isn't a method, but the owner's a nominal type, then the expression should
+    // "extract" a field from the owner.
+    guard let airTy = getType(of: owner.type!) as? AIRStructType
+      else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
+    guard let index = airTy.members.firstIndex(where: { $0.key == node.ownee.name })
+      else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
+    let extract = builder.buildExtract(
+      from: stack.pop()!,
+      index: index,
+      type: getType(of: node.type!))
+    stack.push(extract)
   }
 
   public func visit(_ node: Ident) throws {
@@ -363,7 +374,7 @@ public class AIREmitter: ASTVisitor {
     }
 
     // If the identifier's symbol isn't declared yet, it must refer to either a function or a type
-    // name (otherwise an `undefined symbol` error would have been catched by semantic analysis).
+    // constructor (or an `undefined symbol` error would have raised during semantic analysis).
     if let aznTy = (node.type as? FunctionType) {
       let airTy = getFunctionType(of: aznTy)
 
@@ -391,7 +402,7 @@ public class AIREmitter: ASTVisitor {
 
       // In either case, if the function is generic, we must register a specialization request.
       if !(node.symbol?.type as! FunctionType).placeholders.isEmpty {
-        specRequests.append((symbol: node.symbol!, type: aznTy))
+        funSpecRequests.append((symbol: node.symbol!, type: aznTy))
       }
 
       return

@@ -33,7 +33,7 @@ public class AIRType: Equatable {
     "Int"     : .int,
     "Float"   : .float,
     "String"  : .string,
-    ]
+  ]
 
 }
 

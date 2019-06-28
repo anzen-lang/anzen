@@ -34,6 +34,16 @@ public func mangle(type: TypeBase) -> String {
     let codomain = mangle(type: fnTy.codomain)
     return "F\(domain.joined())2\(codomain)"
 
+  case let ty as BoundGenericType:
+    var suffix = ""
+    for placeholder in ty.bindings.keys.sorted(by: { (a, b) in a.name < b.name }) {
+      suffix += placeholder.name + mangle(type: ty.bindings[placeholder]!)
+    }
+    return mangle(type: ty.unboundType) + suffix
+
+  case let ty as PlaceholderType:
+    return ty.name
+
   default:
     unreachable()
   }
