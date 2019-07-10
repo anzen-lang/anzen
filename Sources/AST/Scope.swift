@@ -40,14 +40,16 @@ public class Scope {
     name: String,
     type: TypeBase?,
     isOverloadable: Bool = false,
-    isMethod: Bool = false) -> Symbol
+    isMethod: Bool = false,
+    isStatic: Bool = false) -> Symbol
   {
     if symbols[name] == nil {
       symbols[name] = []
     }
     precondition(symbols[name]!.all(satisfy: { $0.isOverloadable }))
     let symbol = Symbol(
-      name: name, scope: self, type: type, isOverloadable: isOverloadable, isMethod: isMethod)
+      name: name, scope: self, type: type,
+      isOverloadable: isOverloadable, isMethod: isMethod, isStatic: isStatic)
     symbols[name]!.append(symbol)
     return symbol
   }

@@ -43,24 +43,20 @@ public final class ModuleDecl: Node, ScopeDelimiter {
     self.module = self
   }
 
-  /// Looks up for a (possibly overloaded) declaration set at the module scope.
-  public func lookupDecl(_ name: String) -> [Node] {
-    return statements.filter { ($0 as? NamedDecl)?.name == name }
-  }
-
-  /// List of type declarations of the module.
+  /// List of the type declarations in the module.
   public var typeDecls: [NominalTypeDecl] {
-    let finder = TypeDeclFinder()
-    try! finder.visit(self)
-    return finder.declarations
+    return statements.compactMap { $0 as? NominalTypeDecl }
   }
 
-  /// List of top-level function declarations of the module.
+  /// List of the function declarations in the module.
   public var funDecls: [FunDecl] {
-    let finder = FunDeclFinder()
-    try! finder.visit(self)
-    return finder.declarations
+    return statements.compactMap { $0 as? FunDecl }
   }
+
+  /// Type, property and function declarations in the module.
+  ///
+  /// - Warning: This property is initialized during semantic analysis.
+  public var declarations: [Symbol: NamedDecl] = [:]
 
   /// Stores the statements of the module.
   public var statements: [Node]
@@ -68,28 +64,6 @@ public final class ModuleDecl: Node, ScopeDelimiter {
   public var id: ModuleIdentifier?
   /// The scope delimited by the module.
   public var innerScope: Scope?
-
-}
-
-private class TypeDeclFinder: ASTVisitor {
-
-  func visit(_ node: StructDecl) throws {
-    declarations.append(node)
-    try traverse(node)
-  }
-
-  var declarations: [NominalTypeDecl] = []
-
-}
-
-private class FunDeclFinder: ASTVisitor {
-
-  func visit(_ node: FunDecl) throws {
-    declarations.append(node)
-    try traverse(node)
-  }
-
-  var declarations: [FunDecl] = []
 
 }
 

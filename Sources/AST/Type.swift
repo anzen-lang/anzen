@@ -106,14 +106,6 @@ public final class TypeVariable: TypeBase, Hashable, CustomStringConvertible {
     return BoundGenericType(unboundType: self, bindings: bindings)
   }
 
-  /// Closes the type, effectively replacing its placeholders with their given substitution.
-  public override func close(
-    using bindings: [PlaceholderType: TypeBase] = [:],
-    in context: ASTContext) -> TypeBase
-  {
-    return self
-  }
-
   public func hash(into hasher: inout Hasher) {
     hasher.combine(id)
   }
@@ -147,8 +139,7 @@ public final class PlaceholderType: TypeBase, Hashable, CustomStringConvertible 
     using bindings: [PlaceholderType: TypeBase] = [:],
     in context: ASTContext) -> TypeBase
   {
-    assert(bindings.keys.contains(self), "partial specializations aren't supported yet")
-    return bindings[self]!
+    return bindings[self] ?? self
   }
 
   public func hash(into hasher: inout Hasher) {
@@ -187,10 +178,10 @@ public final class BoundGenericType: TypeBase, CustomStringConvertible {
     using bindings: [PlaceholderType: TypeVariable] = [:],
     in context: ASTContext) -> TypeBase
   {
-    let updatedBindings = [PlaceholderType: TypeBase](
-      uniqueKeysWithValues: self.bindings.map({ (key, value) in
-        (key, (value as? PlaceholderType).flatMap({ bindings[$0] }) ?? value)
-      }))
+    var updatedBindings: [PlaceholderType: TypeBase] = [:]
+    for (placeholder, value) in self.bindings {
+      updatedBindings[placeholder] = bindings[placeholder] ?? value
+    }
     return BoundGenericType(unboundType: unboundType, bindings: updatedBindings)
   }
 
@@ -199,14 +190,30 @@ public final class BoundGenericType: TypeBase, CustomStringConvertible {
     using bindings: [PlaceholderType: TypeBase] = [:],
     in context: ASTContext) -> TypeBase
   {
-    let updatedBindings = Dictionary(
-      uniqueKeysWithValues: self.bindings.map({ (key, value) in
-        (key, (value as? PlaceholderType).flatMap({ bindings[$0] }) ?? value)
-      }))
+    var updatedBindings: [PlaceholderType: TypeBase] = [:]
+    for (placeholder, value) in self.bindings {
+      updatedBindings[placeholder] = bindings[placeholder] ?? value
+    }
     return unboundType.close(using: updatedBindings, in: context)
   }
 
   public var description: String {
+    if let nominalType = unboundType as? NominalType {
+      var specializations = nominalType.placeholders.map { (placeholder) -> String in
+        if let binding = bindings[placeholder] {
+          return "\(placeholder.name)=\(binding)"
+        } else {
+          return "\(placeholder.name)"
+        }
+      }
+
+      for placeholder in Set(bindings.keys).subtracting(nominalType.placeholders) {
+        specializations.append("\(placeholder.name)=\(bindings[placeholder]!)")
+      }
+
+      return nominalType.name + "<" + specializations.joined(separator: ", ") + ">"
+    }
+
     let placeholders = bindings.map({ "\($0.key)=\($0.value)" }).joined(separator: ", ")
     return "<\(placeholders)>\(unboundType)"
   }
@@ -247,7 +254,16 @@ public class NominalType: TypeBase, GenericType, Hashable, CustomStringConvertib
     using bindings: [PlaceholderType: TypeVariable] = [:],
     in context: ASTContext) -> TypeBase
   {
-    unreachable()
+    // Make sure the type needs to be open.
+    guard !placeholders.isEmpty
+      else { return self }
+
+    var updatedBindings = bindings
+    for placeholder in placeholders {
+      updatedBindings[placeholder] = updatedBindings[placeholder] ?? TypeVariable()
+    }
+
+    return BoundGenericType(unboundType: self, bindings: updatedBindings)
   }
 
   /// Closes the type, effectively replacing its placeholders with their given substitution.
@@ -316,15 +332,11 @@ public final class FunctionType: TypeBase, GenericType, CustomStringConvertible 
     using bindings: [PlaceholderType: TypeVariable] = [:],
     in context: ASTContext) -> TypeBase
   {
-    // Make sure the type needs to be open.
-    guard !placeholders.isEmpty
-      else { return self }
+    var updatedBindings = bindings
+    for placeholder in placeholders {
+      updatedBindings[placeholder] = updatedBindings[placeholder] ?? TypeVariable()
+    }
 
-    // As functions do not need to retain which types their placeholders were bound to, opening one
-    // amounts to create a new monomorphic version where placeholder are substituted.
-    let updatedBindings = bindings.merging(
-      placeholders.map { (key: $0, value: TypeVariable()) },
-      uniquingKeysWith: { lhs, _ in lhs })
     return context.getFunctionType(
       from: domain.map({
         Parameter(label: $0.label, type: $0.type.open(using: updatedBindings, in: context))
@@ -341,7 +353,9 @@ public final class FunctionType: TypeBase, GenericType, CustomStringConvertible 
       Parameter(label: $0.label, type: $0.type.close(using: bindings, in: context))
     }
     let codomain = self.codomain.close(using: bindings, in: context)
-    return context.getFunctionType(from: domain, to: codomain)
+
+    let remainingPlaceholders = self.placeholders.filter { bindings[$0] == nil }
+    return context.getFunctionType(from: domain, to: codomain, placeholders: remainingPlaceholders)
   }
 
   public var description: String {
@@ -411,9 +425,9 @@ public func specializes(
     return specializes(lhs: left.type, rhs: right.type, in: context, bindings: &bindings)
 
   case (let left as FunctionType, let right as FunctionType):
-    if left.placeholders.isEmpty && right.placeholders.isEmpty {
-      return left == right
-    }
+//    if left.placeholders.isEmpty && right.placeholders.isEmpty {
+//      return left == right
+//    }
 
     guard left.domain.count == right.domain.count
       else { return false }

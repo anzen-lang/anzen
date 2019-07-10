@@ -1,37 +1,9 @@
-#if os(Linux)
-import Glibc
-#else
-import Darwin.C
-#endif
-
 import ArgParse
 import AST
 import AnzenIR
 import AnzenLib
 import Interpreter
 import SystemKit
-
-// MARK: Helpers
-
-func crash(_ message: String, status: Int32 = 1) -> Never {
-  System.err.print("error:".styled("red") + " \(message)")
-  exit(status)
-}
-
-extension ArgumentParser {
-
-  func parseCommandLine() -> ArgumentParser.ParseResult {
-    do {
-      return try parse(CommandLine.arguments)
-    } catch .invalidArity(let argument, let provided) as ArgumentParserError {
-      let arity = argument.arity.map({ "\($0)" }) ?? "1"
-      crash("'\(argument.name)' expects \(arity) argument(s), got \(provided)")
-    } catch {
-      crash("\(error)")
-    }
-  }
-
-}
 
 // MARK: Command line parsing
 
@@ -46,7 +18,7 @@ let parser: ArgumentParser = [
 
   // Option flags.
   .flag("show-type-constraints", description: "Show the generated type constraints"),
-  .flag("show-air", description: "Show the Anzen IR"),
+  .flag("show-air", description: "Show the module's Anzen IR"),
   .flag("help", alias: "h", description: "Display available options"),
 ]
 
@@ -54,7 +26,7 @@ let parseResult = parser.parseCommandLine()
 guard !(parseResult["help"] as! Bool) else {
   var stdout = System.out
   parser.printUsage(to: &stdout)
-  exit(0)
+  System.exit(status: 0)
 }
 
 // MARK: Module compilation
@@ -94,15 +66,12 @@ let context = ASTContext(anzenPath: anzenPath, moduleLoader: loader)
 
 // Load the given input file as the main module.
 guard let mainModule = context.getModule(moduleID: .local(mainPath))
-  else { exit(1) }
+  else { System.exit(status: 1) }
 
 // MARK: AIR code generation
 
 // Compile the module into AIR.
-let mainUnit = AIRUnit(name: mainModule.id!.qualifiedName, isMain: true)
-let builder = AIRBuilder(unit: mainUnit, context: context)
-let emitter = AIREmitter(builder: builder)
-try emitter.visit(mainModule)
+let mainUnit = emitUnit(mainModule, context: context, isMain: true)
 
 if parseResult["show-air"] as? Bool ?? false {
   System.err.print(mainUnit)
@@ -116,7 +85,3 @@ guard let mainFn = mainUnit.functions["main"]
 
 let interpreter = Interpreter()
 try interpreter.invoke(function: mainFn)
-let status: Int32 = 0
-
-// Exit with the interpreter's status.
-exit(status)

@@ -2,15 +2,12 @@ import AST
 
 public class AIRUnit: CustomStringConvertible {
 
-  public init(name: String, isMain: Bool = false) {
+  public init(name: String) {
     self.name = name
-    self.isMain = isMain
   }
 
   /// The name of the unit.
   public let name: String
-  /// Whether or not the unit is the program's entry.
-  public let isMain: Bool
 
   public var description: String {
     return functions.values.map(prettyPrint).sorted().joined(separator: "\n")

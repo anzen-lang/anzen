@@ -1,12 +1,12 @@
 import AST
 import Utils
 
-/// Visitor that annotates expressions with their reified type (as inferred by the type solver), and
-/// associates identifiers with their corresponding symbol.
+/// Visitor that annotates expressions with their reified type (as inferred by the type solver),
+/// and associates identifiers with their corresponding symbol.
 ///
 /// The main purpose of this pass is to resolve identifiers' symbols, so as to know which variable,
-/// function or type they refer to. The choice is based on the inferred type of the identifier,
-/// which is why this pass also reifies all types.
+/// function or type they refer to. The choice is based on the identifier's inferred type, which is
+/// why this pass also reifies all types.
 ///
 /// Dispatching may fail if the pass is unable to unambiguously resolve an identifier's symbol,
 /// which may happen in the presence of function declarations whose normalized (and specialized)
@@ -115,9 +115,9 @@ public final class Dispatcher: ASTTransformer {
       ? node.owner!.type!
       : node.type!
 
-    // Now that the owner's type has been inferred, we can determine the scope of the ownee. Note
-    // that we can expect the owner to be either a nominal type or the metatype of a nominal type,
-    // as other types may not have members.
+    // Once the owner's type's been inferred, we can determine the scope of the ownee. We can
+    // expect the owner to be either a nominal type or the metatype of a nominal type, as other
+    // types don't have members.
     switch ownerTy {
     case let nominal as NominalType:
       node.ownee.scope = nominal.memberScope
@@ -203,7 +203,7 @@ public final class Dispatcher: ASTTransformer {
   private func inferSymbol(type: TypeBase, choices: [Symbol]) -> Symbol {
     // Filter out incompatible symbols.
     let compatible = choices.filter { symbol in
-      let ty = symbol.isMethod
+      let ty = symbol.isMethod && !symbol.isStatic
         ? (symbol.type as! FunctionType).codomain
         : symbol.type!
       var bindings: [PlaceholderType: TypeBase] = [:]

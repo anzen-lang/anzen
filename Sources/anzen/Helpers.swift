@@ -1,4 +1,10 @@
 import ArgParse
+import SystemKit
+
+func crash(_ message: String, status: Int32 = 1) -> Never {
+  System.err.print("error:".styled("red") + " \(message)")
+  System.exit(status: status)
+}
 
 extension ArgumentParser {
 

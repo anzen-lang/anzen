@@ -1,191 +1,171 @@
 import AST
 import Utils
 
-/// Emits the Anzen Intermediate Representation of a unit (i.e. module).
-///
-/// - Note: Modules processed by this visitor are expected to have been type-checked.
-public class AIREmitter: ASTVisitor {
+/// Emits the Anzen's Intermediate Representation of a module.
+public func emitUnit(_ module: ModuleDecl, context: ASTContext, isMain: Bool = false) -> AIRUnit {
+  let unit = AIRUnit(name: module.id?.qualifiedName ?? "__air_unit")
+  let builder = AIRBuilder(unit: unit, context: context)
 
-  public init(builder: AIRBuilder) {
-    self.builder = builder
-  }
+  var requestedImpl: [(FunDecl, FunctionType)] = []
+  var processedImpl: [Symbol: [TypeBase]] = [:]
 
-  public var builder: AIRBuilder
-
-  private var stack : Stack<AIRValue> = []
-  private var locals: Stack<[Symbol: AIRValue]> = []
-  private var frames: Stack<Frame> = []
-
-  /// The environment of thick functions, at the time of their declaration.
-  private var functionEnvs: [Symbol: [Symbol: AIRValue]] = [:]
-
-  /// The (unspecialized) generic type declarations available in the module.
-  private var genericTypes: [Symbol: NamedDecl] = [:]
-
-  /// The specialization requests.
-  private var funSpecRequests: [(symbol: Symbol, type: FunctionType)] = []
-
-  /// Mapping used to emit the specialization of a generic function.
-  internal var bindings: [PlaceholderType: TypeBase] = [:]
-
-  public func visit(_ node: ModuleDecl) throws {
+  if isMain {
     // Create the `main` function if the unit is supposed to be the program's entry.
-    if builder.unit.isMain {
-      let mainFnType = getFunctionType(from: [], to: .nothing)
-      let mainFn = builder.unit.getFunction(name: "main", type: mainFnType)
-      mainFn.appendBlock(label: "entry")
-      builder.currentBlock = mainFn.blocks.first?.value
-      locals.push([:])
-    }
+    let mainFnType = unit.getFunctionType(from: [], to: .nothing)
+    let mainFn = builder.unit.getFunction(name: "main", type: mainFnType)
+    mainFn.appendBlock(label: "entry")
+    let exitBlock = mainFn.appendBlock(label: "exit")
 
-    try emitBlock(statements: node.statements)
+    let emitter = AIREmitter(builder: builder, function: mainFn)
+    try! emitter.visit(module.statements)
 
-    if builder.unit.isMain {
-      locals.pop()
-    }
+    builder.buildJump(label: exitBlock.label)
+    builder.currentBlock = exitBlock
+    builder.buildReturn()
 
-    // Emit the AIR code for all generic specializations.
-    var done: [Symbol: [TypeBase]] = [:]
-    while let req = funSpecRequests.popLast() {
-      // Skip the request if it was already done.
-      done[req.symbol] = done[req.symbol] ?? []
-      guard !done[req.symbol]!.contains(req.type)
-        else { continue }
-
-      // Emit the specialized function.
-      if let decl = genericTypes[req.symbol] as? FunDecl {
-        try emitFunction(decl: decl, withType: req.type)
-        done[req.symbol]?.append(req.type)
-      }
-    }
+    requestedImpl = emitter.requestedImpl
+  } else {
+    fatalError("TODO")
   }
 
-  public func visit(_ node: Block) throws {
-    try emitBlock(statements: node.statements)
-  }
+  while let (decl, type) = requestedImpl.popLast() {
+    guard processedImpl[decl.symbol!]?.first(where: { $0 == type }) == nil
+      else { continue }
 
-  private func emitBlock(statements: [Node]) throws {
-    // Process all statements.
-    for statement in statements {
-      try visit(statement)
-
-      // Call expressions may be used as a statement, without being bound to any l-value.
-      if stack.pop() is MakeRefInst {
-        guard statement is CallExpr && stack.isEmpty
-          else { fatalError("unconsumed r-value(s)") }
-      }
-    }
-  }
-
-  private func emitFunction(decl: FunDecl, withType type: FunctionType? = nil) throws {
-    // Specialize the type of the function symbol, if necessary.
-    let aznTy: FunctionType
-    if type != nil {
-      assert(bindings.isEmpty)
-      aznTy = type!
-      guard specializes(
-        lhs: aznTy, rhs: decl.symbol!.type!, in: builder.context, bindings: &bindings)
+    var bindings: [PlaceholderType: TypeBase] = [:]
+    guard specializes(lhs: type, rhs: decl.type!, in: context, bindings: &bindings)
       else { fatalError("type mismatch") }
-    } else {
-      aznTy = decl.symbol!.type as! FunctionType
-    }
+
+    let emitter = AIREmitter(
+      builder: builder,
+      decl: decl,
+      type: type,
+      bindings: bindings)
+    requestedImpl.append(contentsOf: emitter.requestedImpl)
+  }
+
+  return unit
+}
+
+/// AST visitor for emitting AIR instructions.
+class AIREmitter: ASTVisitor {
+
+  let builder: AIRBuilder
+  private var stack: Stack<AIRValue> = []
+  private var locals: [Symbol: AIRValue] = [:]
+  private var retReg: AIRRegister? = nil
+
+  /// The type bindings.
+  var bindings: [PlaceholderType: TypeBase]
+
+  /// The environment in which thick higher-order functions are declared.
+  private var thinkFunctionEnvironment: [Symbol: [Symbol: AIRValue]] = [:]
+
+  /// The functions for which an implementation should be provided.
+  var requestedImpl: [(FunDecl, FunctionType)] = []
+
+  init(
+    builder: AIRBuilder,
+    function: AIRFunction,
+    bindings: [PlaceholderType: TypeBase] = [:])
+  {
+    self.builder = builder
+    self.builder.currentBlock = function.blocks.values.first
+    self.bindings = bindings
+  }
+
+  init(
+    builder: AIRBuilder,
+    decl: FunDecl,
+    type: FunctionType,
+    bindings: [PlaceholderType: TypeBase] = [:])
+  {
+    self.builder = builder
+    self.bindings = bindings
 
     // Get the AIR type of the function.
-    var airTy = getFunctionType(of: aznTy)
+    var fnType = emitType(of: type)
 
-    if decl.symbol!.isMethod {
-      // Methods (and destructors?) are static functions that take the self symbol and return the
-      // "actual" method as a closure.
+    if decl.kind == .method || decl.kind == .destructor {
+      // Methods and destructors are lowered into static functions that take the self symbol and
+      // return the "actual" method as a closure.
       let symbols = decl.innerScope!.symbols["self"]!
       assert(symbols.count == 1)
-      let methTy = airTy.codomain as! AIRFunctionType
-      airTy = getFunctionType(
-        from: [getType(of: symbols[0].type!)] + methTy.domain,
+      let methTy = fnType.codomain as! AIRFunctionType
+      fnType = builder.unit.getFunctionType(
+        from: fnType.domain + methTy.domain,
         to: methTy.codomain)
     } else if !decl.captures.isEmpty {
       // If the function captures symbols, we need to emit a context-free version of the it, which
       // gets the captured values as parameters. This boils down to extending the domain.
-      let additional = decl.captures.map { getType(of: $0.type!) }
-      airTy = getFunctionType(from: additional + airTy.domain, to: airTy.codomain)
+      let additional = decl.captures.map { emitType(of: $0.type!) }
+      fnType = builder.unit.getFunctionType(from: additional + fnType.domain, to: fnType.codomain)
     }
 
     // Retrieve the function object.
-    let mangledName = mangle(symbol: decl.symbol!, withType: aznTy)
-    let fn = builder.unit.getFunction(name: mangledName, type: airTy)
-    assert(fn.blocks.isEmpty, "AIR for \(decl) with type \(airTy) already emitted")
+    let fn = builder.unit.getFunction(
+      name: mangle(symbol: decl.symbol!, withType: type),
+      type: fnType)
+
+    guard fn.blocks.isEmpty
+      else { return }
 
     if let body = decl.body {
-      // Create the entry point of the function.
-      let previousBlock = builder.currentBlock
-      fn.appendBlock(label: "entry")
-      builder.currentBlock = fn.blocks.first?.value
+      builder.currentBlock = fn.appendBlock(label: "entry")
+      let exitBlock = fn.appendBlock(label: "exit")
 
-      // Set up the local register map.
-      locals.push([:])
-
+      // Handle self in constructor and methods.
       let selfSym: Symbol? = decl.innerScope?.symbols["self"]?[0]
       if decl.kind == .constructor {
         assert(selfSym != nil, "missing symbol for 'self' in constructor")
-        locals.top![selfSym!] = builder.buildAlloc(type: airTy.codomain, id: 0)
+        locals[selfSym!] = builder.buildAlloc(type: fnType.codomain, id: 0)
       } else if decl.symbol!.isMethod {
         assert(selfSym != nil, "missing symbol for 'self' in method")
-        locals.top![selfSym!] = AIRParameter(
-          type: getType(of: selfSym!.type!),
+        locals[selfSym!] = AIRParameter(
+          type: fnType.domain[0],
           id: builder.currentBlock!.nextRegisterID())
       }
 
       // Create the function parameters.
       for sym in decl.captures {
         let paramref = AIRParameter(
-          type: getType(of: sym.type!), id: builder.currentBlock!.nextRegisterID())
-        locals.top![sym] = paramref
+          type: emitType(of: sym.type!), id: builder.currentBlock!.nextRegisterID())
+        locals[sym] = paramref
       }
-      for (paramDecl, paramSign) in zip(decl.parameters, aznTy.domain) {
+      for (paramDecl, paramSign) in zip(decl.parameters, type.domain) {
         let paramref = AIRParameter(
-          type: getType(of: paramSign.type),
+          type: emitType(of: paramSign.type),
           id: builder.currentBlock!.nextRegisterID())
-        locals.top![paramDecl.symbol!] = paramref
+        locals[paramDecl.symbol!] = paramref
       }
 
-      // Set up the function frame.
-      let exitBlock = fn.appendBlock(label: "exit")
-      let returnReg = aznTy.codomain != NothingType.get
-        ? builder.buildMakeRef(type: airTy.codomain)
+      retReg = type.codomain != NothingType.get
+        ? builder.buildMakeRef(type: fnType.codomain)
         : nil
-      frames.push(Frame(exitBlock: exitBlock, returnRegister: returnReg))
 
-      try visit(body)
+      try! visit(body)
 
-      // The last instruction of the current block must be an unconditional jump to the exit block,
-      // which is not necessarily the case for function that may return implicitly, such as
-      // constructors and non-returning functions.
+      // The last instruction of the current block must be an unconditional jump to the exit block.
       let lastInst = builder.currentBlock!.instructions.last as? JumpInst
       if lastInst?.label != exitBlock.label {
         builder.buildJump(label: exitBlock.label)
       }
-      builder.currentBlock = frames.top!.exitBlock
+      builder.currentBlock = exitBlock
 
       // Emit the function return.
       if decl.kind == .constructor {
-        builder.buildReturn(value: locals.top![selfSym!])
-      } else if aznTy.codomain != NothingType.get {
-        builder.buildReturn(value: frames.top!.returnRegister)
+        builder.buildReturn(value: locals[selfSym!])
+      } else if type.codomain != NothingType.get {
+        builder.buildReturn(value: retReg!)
       } else {
         builder.buildReturn()
       }
-
-      // Restore the insertion point.
-      builder.currentBlock = previousBlock
-      locals.pop()
-      frames.pop()
     }
-
-    bindings = [:]
   }
 
-  public func visit(_ node: PropDecl) throws {
-    let ref = builder.buildMakeRef(type: getType(of: node.type!))
-    locals.top![node.symbol!] = ref
+  func visit(_ node: PropDecl) throws {
+    let ref = builder.buildMakeRef(type: emitType(of: node.type!))
+    locals[node.symbol!] = ref
 
     if let (op, value) = node.initialBinding {
       try visit(value)
@@ -193,7 +173,7 @@ public class AIREmitter: ASTVisitor {
     }
   }
 
-  public func visit(_ node: FunDecl) throws {
+  func visit(_ node: FunDecl) throws {
     // Thick functions must have their environment stored at the time of their declaration.
     if !node.captures.isEmpty {
       // Constructors and methods shall not have closures.
@@ -201,112 +181,101 @@ public class AIREmitter: ASTVisitor {
         node.kind != .constructor && node.kind != .method,
         "constructor and methods shall not have closures")
 
-      // NOTE:
-      // The code below creates the function environments that are used to build closures. For now
-      // we assume all captures to be made by reference, which is why we don't have to emit any
-      // additional code to handle variable bindings here. Customizable capture lists will however
-      // require such code to be emitted here.
+      // Implementation note:
+      //
+      // Higher-order functions are defunctionalized, and represented as partial applications to
+      // deal with captured references. Therefore the declaration's environment has to be saved
+      // so that the captured references can be injected into the partial application later on.
+      //
+      // Notice that for now all captures are assumed by alias. Other strategies will require
+      // assigment instructions to be emitted here.
 
-      // Create the function's environment.
-      // Note all specializations of a generic function necessarily share the same environment.
-      let env = Dictionary(uniqueKeysWithValues: node.captures.map {($0, locals.top![$0]!) })
-      functionEnvs[node.symbol!] = env
+      let env = Dictionary(uniqueKeysWithValues: node.captures.map {($0, locals[$0]!) })
+      thinkFunctionEnvironment[node.symbol!] = env
     }
-
-    // AIR generation for generic functions is delayed until they are specialized in context.
-    let aznTy = node.type as! FunctionType
-    guard aznTy.placeholders.isEmpty else {
-      genericTypes[node.symbol!] = node
-      return
-    }
-
-    try emitFunction(decl: node)
   }
 
-  public func visit(_ node: StructDecl) throws {
-    // AIR generation for generic types is delayed until they are specialized in context.
-    let aznTy = (node.type as! Metatype).type as! NominalType
-    guard aznTy.placeholders.isEmpty else {
-      genericTypes[node.symbol!] = node
-      return
-    }
-
-    // Only visit function declarations.
-    try visit(node.body.statements.filter({ $0 is FunDecl }))
+  func visit(_ node: StructDecl) throws {
   }
 
-  public func visit(_ node: WhileLoop) throws {
+  func visit(_ node: WhileLoop) throws {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }
-    let pre  = currentFn.insertBlock(after: builder.currentBlock!, label: "pre")
-    let yes  = currentFn.insertBlock(after: pre, label: "yes")
-    let post = currentFn.insertBlock(after: yes, label: "post")
 
-    builder.buildJump(label: pre.label)
-    builder.currentBlock = pre
+    let test = currentFn.insertBlock(after: builder.currentBlock!, label: "test")
+    let cont = currentFn.insertBlock(after: test, label: "cont")
+    let post = currentFn.insertBlock(after: cont, label: "post")
+
+    builder.buildJump(label: test.label)
+    builder.currentBlock = test
     try visit(node.condition)
-    builder.buildBranch(condition: stack.pop()!, thenLabel: yes.label, elseLabel: post.label)
+    builder.buildBranch(condition: stack.pop()!, thenLabel: cont.label, elseLabel: post.label)
 
-    builder.currentBlock = yes
+    builder.currentBlock = cont
     try visit(node.body)
-    builder.buildJump(label: pre.label)
+    builder.buildJump(label: test.label)
 
     builder.currentBlock = post
   }
 
-  public func visit(_ node: BindingStmt) throws {
+  func visit(_ node: BindingStmt) throws {
     try visit(node.lvalue)
+    let lvalue = stack.pop() as! AIRRegister
     try visit(node.rvalue)
     let rvalue = stack.pop()!
-    let lvalue = stack.pop() as! AIRRegister
     builder.build(assignment: node.op, source: rvalue, target: lvalue)
   }
 
-  public func visit(_ node: ReturnStmt) throws {
-    guard let frame = frames.top
-      else { fatalError("not in a function") }
-    if let value = node.value {
-      try visit(value)
-      builder.buildCopy(source: stack.pop()!, target: frame.returnRegister!)
-    }
-    builder.buildJump(label: frame.exitBlock.label)
-  }
-
-  public func visit(_ node: IfExpr) throws {
+  func visit(_ node: ReturnStmt) throws {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }
-    let yes  = currentFn.insertBlock(after: builder.currentBlock!, label: "yes")
-    let no   = currentFn.insertBlock(after: yes, label: "no")
-    let post = currentFn.insertBlock(after: no, label: "post")
+
+    if let value = node.value {
+      try visit(value)
+      builder.buildCopy(source: stack.pop()!, target: retReg!)
+    }
+
+    builder.buildJump(label: currentFn.blocks.values.last!.label)
+  }
+
+  func visit(_ node: IfExpr) throws {
+    guard let currentFn = builder.currentBlock?.function
+      else { fatalError("not in a function") }
+
+    let then = currentFn.insertBlock(after: builder.currentBlock!, label: "then")
+    let els_ = currentFn.insertBlock(after: then, label: "else")
+    let post = currentFn.insertBlock(after: els_, label: "post")
 
     try visit(node.condition)
-    builder.buildBranch(condition: stack.pop()!, thenLabel: yes.label, elseLabel: no.label)
+    builder.buildBranch(condition: stack.pop()!, thenLabel: then.label, elseLabel: els_.label)
 
-    builder.currentBlock = yes
+    builder.currentBlock = then
     try visit(node.thenBlock)
     builder.buildJump(label: post.label)
 
-    builder.currentBlock = no
-    try node.elseBlock.map { try visit($0) }
+    builder.currentBlock = els_
+    if let elseBlock = node.elseBlock {
+      try visit(elseBlock)
+    }
     builder.buildJump(label: post.label)
 
     builder.currentBlock = post
   }
 
-  public func visit(_ node: CastExpr) throws {
+  func visit(_ node: CastExpr) throws {
     try visit(node.operand)
-    let castTy = getType(of: node.type!)
+    let castTy = emitType(of: node.type!)
     let unsafeCast = builder.buildUnsafeCast(source: stack.pop()!, as: castTy)
     stack.push(unsafeCast)
   }
 
-  public func visit(_ node: CallExpr) throws {
-    let callee = builder.buildMakeRef(type: getType(of: node.callee.type!))
+  func visit(_ node: CallExpr) throws {
+    let callee = builder.buildMakeRef(type: emitType(of: node.callee.type!))
     try visit(node.callee)
     builder.buildBind(source: stack.pop()!, target: callee)
 
     let argrefs = try node.arguments.map { (argument) -> MakeRefInst in
-      let argref = builder.buildMakeRef(type: getType(of: argument.type!))
+      let argref = builder.buildMakeRef(type: emitType(of: argument.type!))
       try visit(argument.value)
       builder.build(assignment: argument.bindingOp, source: stack.pop()!, target: argref)
       return argref
@@ -315,7 +284,7 @@ public class AIREmitter: ASTVisitor {
     let apply = builder.buildApply(
       callee: callee,
       arguments: argrefs,
-      type: getType(of: node.type!))
+      type: emitType(of: node.type!))
     stack.push(apply)
 
     // TODO: There's probably a way to optimize calls to built-in functions, so that we don't
@@ -323,21 +292,19 @@ public class AIREmitter: ASTVisitor {
     // check if the callee's a select whose owner has a built-in type.
   }
 
-  public func visit(_ node: SelectExpr) throws {
+  func visit(_ node: SelectExpr) throws {
     guard let owner = node.owner
       else { fatalError("Support for implicit not implemented") }
     try visit(owner)
 
+    // FIXME: What about static methods?
     if node.ownee.symbol!.isMethod {
       // Methods have types of the form `(_: Self) -> FnTy`, so they must be loaded as a partial
       // application of an uncurried function, taking `self` as its first parameter.
-      guard let methTy = node.ownee.symbol!.type as? FunctionType
-        else { fatalError() }
-      guard let fnTy = methTy.codomain as? FunctionType
-        else { fatalError() }
-      let uncurriedTy = getFunctionType(
-        from: (methTy.domain + fnTy.domain).map({ getType(of: $0.type) }),
-        to: getType(of: fnTy.codomain))
+      let fnTy = emitType(of: node.ownee.type!) as! AIRFunctionType
+      let uncurriedTy = emitType(
+        from: [emitType(of: owner.type!)] + fnTy.domain,
+        to: fnTy.codomain)
 
       // Create the partial application of the uncurried function.
       let uncurried = builder.unit.getFunction(
@@ -346,8 +313,14 @@ public class AIREmitter: ASTVisitor {
       let partial = builder.buildPartialApply(
         function: uncurried,
         arguments: [stack.pop()!],
-        type: getType(of: node.type!))
+        type: emitType(of: node.type!))
       stack.push(partial)
+
+      let decl = builder.context.declarations[node.ownee.symbol!]
+      let anzenType = builder.context.getFunctionType(
+        from: [Parameter(label: nil, type: node.owner!.type!)],
+        to: node.ownee.type!)
+      requestedImpl.append((decl as! FunDecl, anzenType))
       return
     }
 
@@ -355,61 +328,54 @@ public class AIREmitter: ASTVisitor {
 
     // If the ownee isn't a method, but the owner's a nominal type, then the expression should
     // "extract" a field from the owner.
-    guard let airTy = getType(of: owner.type!) as? AIRStructType
+    guard let airTy = emitType(of: owner.type!) as? AIRStructType
       else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
     guard let index = airTy.members.firstIndex(where: { $0.key == node.ownee.name })
       else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
     let extract = builder.buildExtract(
       from: stack.pop()!,
       index: index,
-      type: getType(of: node.type!))
+      type: emitType(of: node.type!))
     stack.push(extract)
   }
 
   public func visit(_ node: Ident) throws {
     // Look for the node's symbol in the accessible scopes.
-    if let value = locals.top![node.symbol!] {
+    if let value = locals[node.symbol!] {
       stack.push(value)
       return
     }
 
-    // If the identifier's symbol isn't declared yet, it must refer to either a function or a type
-    // constructor (or an `undefined symbol` error would have raised during semantic analysis).
-    if let aznTy = (node.type as? FunctionType) {
-      let airTy = getFunctionType(of: aznTy)
+    // If the identifier's symbol isn't declared yet, it either refers to a function or a type
+    // constructor (an `undefined symbol` error would have raised during semantic analysis).
+    guard let aznTy = (node.type as? FunctionType)
+      else { fatalError() }
 
-      if let env = functionEnvs[node.symbol!] {
-        // If the identifier refers to the name of a thick function, we've to create a closure. As
-        // thick functions aren't hoisted, we can assume to environment to have already been set.
-        let additional = env.keys.map { getType(of: $0.type!) }
-        let fnTy = getFunctionType(from: additional + airTy.domain, to: airTy.codomain)
-        let fn = builder.unit.getFunction(
-          name: mangle(symbol: node.symbol!, withType: aznTy),
-          type: fnTy)
-        let val = builder.buildPartialApply(
-          function: fn,
-          arguments: Array(env.values),
-          type: fnTy)
-        stack.push(val)
-      } else {
-        // If the identifier refers to the name of a thin function, then we just need to use the
-        // corresponding AIR function value.
-        let fn = builder.unit.getFunction(
-          name: mangle(symbol: node.symbol!, withType: aznTy),
-          type: airTy)
-        stack.push(fn)
-      }
-
-      // In either case, if the function is generic, we must register a specialization request.
-      if !(node.symbol?.type as! FunctionType).placeholders.isEmpty {
-        funSpecRequests.append((symbol: node.symbol!, type: aznTy))
-      }
-
-      return
+    let airTy = emitType(of: aznTy)
+    if let env = thinkFunctionEnvironment[node.symbol!] {
+      // If the identifier refers to the name of a thick function, we've to create a closure. As
+      // thick functions aren't hoisted, we can assume to environment to have already been set.
+      let additional = env.keys.map { emitType(of: $0.type!) }
+      let fnTy = emitType(from: additional + airTy.domain, to: airTy.codomain)
+      let fn = builder.unit.getFunction(
+        name: mangle(symbol: node.symbol!, withType: aznTy),
+        type: fnTy)
+      let val = builder.buildPartialApply(
+        function: fn,
+        arguments: Array(env.values),
+        type: fnTy)
+      stack.push(val)
+    } else {
+      // If the identifier refers to the name of a thin function, then we just need to use the
+      // corresponding AIR function value.
+      let fn = builder.unit.getFunction(
+        name: mangle(symbol: node.symbol!, withType: aznTy),
+        type: airTy)
+      stack.push(fn)
     }
 
-    // FIXME: Hoist type declarations.
-    fatalError()
+    let decl = builder.context.declarations[node.symbol!]
+    requestedImpl.append((decl as! FunDecl, aznTy))
   }
 
   public func visit(_ node: Literal<Bool>) {
@@ -427,12 +393,5 @@ public class AIREmitter: ASTVisitor {
   public func visit(_ node: Literal<String>) {
     stack.push(AIRConstant(value: node.value))
   }
-
-}
-
-private struct Frame {
-
-  let exitBlock: InstructionBlock
-  let returnRegister: MakeRefInst?
 
 }
