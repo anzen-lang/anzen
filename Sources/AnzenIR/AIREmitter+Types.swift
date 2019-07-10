@@ -70,7 +70,13 @@ extension AIREmitter {
     }
 
     let previousBindings = bindings
-    bindings.merge(anzenType.bindings) { _, rhs in rhs }
+    for (key, value) in anzenType.bindings {
+      if let placeholder = value as? PlaceholderType {
+        bindings[key] = bindings[placeholder] ?? placeholder
+      } else {
+        bindings[key] = value
+      }
+    }
     defer { bindings = previousBindings }
 
     let ty = builder.unit.getStructType(name: mangledName)

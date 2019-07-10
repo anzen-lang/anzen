@@ -301,6 +301,10 @@ class AIREmitter: ASTVisitor {
     if node.ownee.symbol!.isMethod {
       // Methods have types of the form `(_: Self) -> FnTy`, so they must be loaded as a partial
       // application of an uncurried function, taking `self` as its first parameter.
+      let anzenType = builder.context.getFunctionType(
+        from: [Parameter(label: nil, type: node.owner!.type!)],
+        to: node.ownee.type!)
+
       let fnTy = emitType(of: node.ownee.type!) as! AIRFunctionType
       let uncurriedTy = emitType(
         from: [emitType(of: owner.type!)] + fnTy.domain,
@@ -308,7 +312,7 @@ class AIREmitter: ASTVisitor {
 
       // Create the partial application of the uncurried function.
       let uncurried = builder.unit.getFunction(
-        name: mangle(symbol: node.ownee.symbol!),
+        name: mangle(symbol: node.ownee.symbol!, withType: anzenType),
         type: uncurriedTy)
       let partial = builder.buildPartialApply(
         function: uncurried,
@@ -317,9 +321,6 @@ class AIREmitter: ASTVisitor {
       stack.push(partial)
 
       let decl = builder.context.declarations[node.ownee.symbol!]
-      let anzenType = builder.context.getFunctionType(
-        from: [Parameter(label: nil, type: node.owner!.type!)],
-        to: node.ownee.type!)
       requestedImpl.append((decl as! FunDecl, anzenType))
       return
     }
