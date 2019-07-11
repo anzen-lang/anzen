@@ -71,7 +71,8 @@ guard let mainModule = context.getModule(moduleID: .local(mainPath))
 // MARK: AIR code generation
 
 // Compile the module into AIR.
-let mainUnit = emitUnit(mainModule, context: context, isMain: true)
+let emissionDriver = AIREmissionDriver()
+let mainUnit = emissionDriver.emitMainUnit(mainModule, context: context)
 
 if parseResult["show-air"] as? Bool ?? false {
   System.err.print(mainUnit)

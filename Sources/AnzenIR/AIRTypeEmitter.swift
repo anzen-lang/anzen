@@ -1,7 +1,10 @@
 import AST
 import Utils
 
-extension AIREmitter {
+struct TypeEmitter {
+
+  let builder: AIRBuilder
+  let typeBindings: [PlaceholderType: TypeBase]
 
   func emitType(of anzenType: TypeBase) -> AIRType {
     switch anzenType {
@@ -26,7 +29,7 @@ extension AIREmitter {
       return emitType(of: ty.type).metatype
 
     case let ty as PlaceholderType:
-      return emitType(of: bindings[ty]!)
+      return emitType(of: typeBindings[ty]!)
 
     case let ty as BoundGenericType where ty.unboundType is StructType:
       return emitType(of: ty)
@@ -69,20 +72,20 @@ extension AIREmitter {
       return ty
     }
 
-    let previousBindings = bindings
+    let ty = builder.unit.getStructType(name: mangledName)
+
+    var updatedBindings = typeBindings
     for (key, value) in anzenType.bindings {
       if let placeholder = value as? PlaceholderType {
-        bindings[key] = bindings[placeholder] ?? placeholder
+        updatedBindings[key] = typeBindings[placeholder] ?? placeholder
       } else {
-        bindings[key] = value
+        updatedBindings[key] = value
       }
     }
-    defer { bindings = previousBindings }
-
-    let ty = builder.unit.getStructType(name: mangledName)
+    let subEmitter = TypeEmitter(builder: builder, typeBindings: updatedBindings)
     for symbol in structType.members {
       if !symbol.isOverloadable {
-        ty.members[symbol.name] = emitType(of: symbol.type!)
+        ty.members[symbol.name] = subEmitter.emitType(of: symbol.type!)
       }
     }
 
