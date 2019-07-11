@@ -34,6 +34,7 @@ public extension ASTTransformer {
     case let n as Literal<Int>:    return try transform(n)
     case let n as Literal<Double>: return try transform(n)
     case let n as Literal<String>: return try transform(n)
+    case let n as UnparsableInput: return try transform(n)
     default:
       fatalError("unexpected node during generic transform")
     }
@@ -327,5 +328,12 @@ public extension ASTTransformer {
   func transform(_ node: Literal<String>) throws -> Node {
     return node
   }
+
+  // MARK: Input errors
+
+  func transform(_ node: UnparsableInput) throws -> Node {
+    return node
+  }
+
 
 }

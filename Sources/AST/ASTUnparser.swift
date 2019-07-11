@@ -382,6 +382,10 @@ public final class ASTUnparser: ASTVisitor {
     stack.push("\"\(node.value)\"".styled("green"))
   }
 
+  public func visit(_ node: UnparsableInput) {
+    stack.push("<unparsable input>")
+  }
+
   private func comment(_ text: String) -> String {
     return "\(text)".styled("dimmed")
   }

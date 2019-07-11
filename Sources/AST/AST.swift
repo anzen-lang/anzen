@@ -788,3 +788,14 @@ public final class EnclosedExpr: Expr {
   var expression: Node
 
 }
+
+/// An unparsable sequence of tokens in the source input.
+///
+/// The node is used by the parser to represent unparsable sequences of tokens.
+public final class UnparsableInput: Node {
+
+  public init(module: ModuleDecl, range: SourceRange) {
+    super.init(module: module, range: range)
+  }
+
+}

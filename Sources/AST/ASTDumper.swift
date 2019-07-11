@@ -499,6 +499,10 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     }
   }
 
+  public func visit(_ node: UnparsableInput) {
+    self <<< "(unparsable input)"
+  }
+
   fileprivate func withIndentation(body: () throws -> Void) {
     level += 1
     try! body()
