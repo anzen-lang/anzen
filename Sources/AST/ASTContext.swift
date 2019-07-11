@@ -1,7 +1,7 @@
 import Utils
 import SystemKit
 
-/// Cass that holds metadata to be associated with an AST.
+/// Class that holds an AST's metadata.
 public final class ASTContext {
 
   public init(anzenPath: Path, moduleLoader: ModuleLoader) {
@@ -51,6 +51,12 @@ public final class ASTContext {
   public var builtinModule: ModuleDecl { return loadedModules[.builtin]! }
   /// The standard library module.
   public var stdlibModule: ModuleDecl { return loadedModules[.stdlib]! }
+
+  public var declarations: [Symbol: NamedDecl] {
+    return loadedModules.values.reduce([:]) { (res, module) in
+      res.merging(module.declarations) { _, rhs in rhs }
+    }
+  }
 
   // MARK: Types
 

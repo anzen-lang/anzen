@@ -65,7 +65,7 @@ public struct StyledString: CustomStringConvertible, ExpressibleByStringLiteral 
         var subject = ""
 
         var i = expression.startIndex
-        while let end = expression.suffix(from: i).index(of: ":") {
+        while let end = expression.suffix(from: i).firstIndex(of: ":") {
           subject += String(expression[i ..< end])
 
           let next = expression.index(after: end)

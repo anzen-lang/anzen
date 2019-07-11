@@ -28,6 +28,10 @@ public struct ConstraintSolver {
   public mutating func solve() -> SolverResult {
     let stopwatch = Stopwatch()
 
+    // FIXME: Instead of returning upon failure, we should bind variables to `<type error>` and try
+    // to solve the remainder of the constraints. This would allow more comprehensive diagnostics
+    // as it would let us detect additional errors as well.
+
     while let constraint = constraints.popLast() {
       guard (SOLVER_TIMEOUT == nil) || (stopwatch.elapsed < SOLVER_TIMEOUT!) else {
         return .failure([
@@ -42,10 +46,6 @@ public struct ConstraintSolver {
             SolverFailure(constraint: reify(constraint: constraint), cause: .typeMismatch),
           ])
         }
-
-        // FIXME: Instead of returning upon failure, we should bind variables to `<type error>` and
-        // try to solve the remainder of the constraints. This would make for more comprehensive
-        // diagnostics as it would let us detect additional errors as well.
 
       case .member:
         guard solve(member: constraint) == .success else {
@@ -147,9 +147,8 @@ public struct ConstraintSolver {
       b = assumptions.reify(type: b, in: context).open(in: context)
     }
 
-    // Close bound generic types, if the unbound type has already been infered. If that's not the
-    // case, the constraint has to be postponed, as we have no way to determine the final closing
-    // of the bound generic represents.
+    // Close bound generic types, unless the underlying unbound type hasn't been inferred yet, in
+    // which case the constraint should be postponed.
     if let bound = a as? BoundGenericType {
       let unbound = assumptions.reify(type: bound.unboundType, in: context)
       if unbound is TypeVariable {
@@ -275,6 +274,7 @@ public struct ConstraintSolver {
   private mutating func solve(member constraint: Constraint) -> TypeMatchResult {
     var owner = assumptions.substitution(for: constraint.types!.t)
     var bindings: [PlaceholderType: TypeBase]? = nil
+
     if let bound = owner as? BoundGenericType {
       owner = assumptions.substitution(for: bound.unboundType)
       bindings = bound.bindings
@@ -294,11 +294,20 @@ public struct ConstraintSolver {
 
       // Create a disjunction of membership constraints for each overloaded member.
       let choices = members.map { (member) -> Constraint in
-        // If the owner is a bound generic type, close the found member with the same bindings.
-        var u = bindings != nil
-          ? assumptions.reify(type: member.type!, in: context).close(using: bindings!, in: context)
-          : member.type!
-        if member.isMethod {
+        var u = assumptions.reify(type: member.type!, in: context)
+
+        // Close the member's type with the bindings of its owner.
+        if bindings != nil {
+          u = u.close(using: bindings!, in: context)
+        }
+
+        // Open generic members which don't get completely specialized by their owner.
+        if let generic = u as? GenericType, !generic.placeholders.isEmpty {
+          u = u.open(in: context)
+        }
+
+        // Extract the actual type of non-static method members.
+        if member.isMethod && !member.isStatic {
           u = (u as! FunctionType).codomain
         }
 

@@ -29,6 +29,7 @@ public final class DefaultModuleLoader: ModuleLoader {
   public let config: DebugConfig
 
   public func load(_ moduleID: ModuleIdentifier, in context: ASTContext) -> ModuleDecl? {
+
     // ------- //
     // Parsing //
     // ------- //
@@ -53,9 +54,9 @@ public final class DefaultModuleLoader: ModuleLoader {
     // Scoping //
     // ------- //
 
-    // Note that semantic analysis passes do not raise with an error is something goes wrong, but
-    // rather add the errors they encountered in the AST context. This is why we run the visitors
-    // unsafely with `!`, but check if there's anything in `context.errors` after each pass.
+    // Note that semantic analysis passes do not raise with errors if something goes wrong, but
+    // rather add the errors encountered in the AST context. This is why we run the visitors
+    // unsafely, and check if there's anything in `context.errors` after each pass.
 
     // Symbol creation.
     let symbolCreator = SymbolCreator(context: context)

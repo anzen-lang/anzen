@@ -1,0 +1,179 @@
+import AST
+
+/// A driver for a module's AIR code emitting.
+public class AIREmissionDriver {
+
+  private var requestedImpl: [(FunDecl, FunctionType)] = []
+  private var processedImpl: Set<String> = []
+
+  public init() {}
+
+  public func emitMainUnit(_ module: ModuleDecl, context: ASTContext) -> AIRUnit {
+    let unit = AIRUnit(name: module.id?.qualifiedName ?? "__air_unit")
+    let builder = AIRBuilder(unit: unit, context: context)
+
+    // Emit the main function's prologue.
+    let mainFnType = unit.getFunctionType(from: [], to: .nothing)
+    let mainFn = builder.unit.getFunction(name: "main", type: mainFnType)
+    mainFn.appendBlock(label: "entry")
+    builder.currentBlock = mainFn.appendBlock(label: "exit")
+    builder.buildReturn()
+
+    // Emit the main function's body.
+    emitFunctionBody(
+      builder: builder,
+      function: mainFn,
+      locals: [:],
+      returnRegister: nil,
+      body: module.statements,
+      typeEmitter: TypeEmitter(builder: builder, typeBindings: [:]))
+
+    // Emit the implementation requests.
+    emitImplementationRequests(builder: builder)
+
+    return unit
+  }
+
+  private func emitFunctionPrologue(
+    builder: AIRBuilder,
+    name: String,
+    declaration: FunDecl,
+    type: FunctionType,
+    typeEmitter: TypeEmitter)
+    -> (function: AIRFunction, locals: [Symbol: AIRValue], returnRegister: AIRRegister?)
+  {
+    var fnType = typeEmitter.emitType(of: type)
+
+    if declaration.kind == .method || declaration.kind == .destructor {
+      // Methods and destructors are lowered into static functions that take the self symbol and
+      // return the "actual" method as a closure.
+      let symbols = declaration.innerScope!.symbols["self"]!
+      assert(symbols.count == 1)
+      let methTy = fnType.codomain as! AIRFunctionType
+      fnType = builder.unit.getFunctionType(
+        from: fnType.domain + methTy.domain,
+        to: methTy.codomain)
+    } else if !declaration.captures.isEmpty {
+      // If the function captures symbols, we need to emit a context-free version of the it, which
+      // gets the captured values as parameters. This boils down to extending the domain.
+      let additional = declaration.captures.map { typeEmitter.emitType(of: $0.type!) }
+      fnType = builder.unit.getFunctionType(from: additional + fnType.domain, to: fnType.codomain)
+    }
+
+    // Retrieve the function object.
+    let function = builder.unit.getFunction(name: name, type: fnType)
+
+    assert(function.blocks.isEmpty)
+
+    builder.currentBlock = function.appendBlock(label: "entry")
+
+    // Create the function's locals.
+    var locals: [Symbol: AIRValue] = [:]
+
+    // Handle self for constructors, desctructors and methods.
+    if declaration.kind != .regular {
+      let selfSymbol = declaration.innerScope!.symbols["self"]![0]
+      locals[selfSymbol] = declaration.kind == .constructor
+        ? builder.buildAlloc(type: fnType.codomain, id: 0)
+        : AIRParameter(type: fnType.domain[0], id: builder.currentBlock!.nextRegisterID())
+    }
+
+    // Create the function parameters captured by closure.
+    for sym in declaration.captures {
+      let paramref = AIRParameter(
+        type: typeEmitter.emitType(of: sym.type!), id: builder.currentBlock!.nextRegisterID())
+      locals[sym] = paramref
+    }
+
+    // Create the function parameters.
+    for (paramDecl, paramSign) in zip(declaration.parameters, type.domain) {
+      let paramref = AIRParameter(
+        type: typeEmitter.emitType(of: paramSign.type),
+        id: builder.currentBlock!.nextRegisterID())
+      locals[paramDecl.symbol!] = paramref
+    }
+
+    // Create the return register.
+    let returnRegister: AIRRegister?
+    if declaration.kind == .constructor {
+      let selfSymbol = declaration.innerScope!.symbols["self"]![0]
+      returnRegister = locals[selfSymbol] as? AIRRegister
+    } else if type.codomain != NothingType.get {
+      returnRegister = builder.buildMakeRef(type: fnType.codomain, id: 0)
+    } else {
+      returnRegister = nil
+    }
+
+    // Emit the function return.
+    builder.currentBlock = function.appendBlock(label: "exit")
+    if returnRegister != nil {
+      builder.buildReturn(value: returnRegister!)
+    } else {
+      builder.buildReturn()
+    }
+
+    return (function, locals, returnRegister)
+  }
+
+  private func emitFunctionBody(
+    builder: AIRBuilder,
+    function: AIRFunction,
+    locals: [Symbol: AIRValue],
+    returnRegister: AIRRegister?,
+    body: [Node],
+    typeEmitter: TypeEmitter)
+  {
+    // Set the builder's cursor.
+    builder.currentBlock = function.blocks.first?.value
+
+    // Emit the function's body.
+    let emitter = AIREmitter(
+      builder: builder,
+      locals: locals,
+      returnRegister: returnRegister,
+      typeEmitter: typeEmitter)
+    try! emitter.visit(body)
+
+    // Make sure the last instruction is a jump to the exit block.
+    if !(builder.currentBlock!.instructions.last is JumpInst) {
+      builder.buildJump(label: function.blocks.last!.value.label)
+    }
+
+    // Save the implementation requests.
+    requestedImpl.append(contentsOf: emitter.requestedImpl)
+  }
+
+  private func emitImplementationRequests(builder: AIRBuilder) {
+    while let (decl, type) = requestedImpl.popLast() {
+      let mangledName = mangle(symbol: decl.symbol!, withType: type)
+      guard !processedImpl.contains(mangledName)
+        else { continue }
+      processedImpl.insert(mangledName)
+
+      guard let functionBody = decl.body
+        else { continue }
+
+      var typeBindings: [PlaceholderType: TypeBase] = [:]
+      guard specializes(lhs: type, rhs: decl.type!, in: builder.context, bindings: &typeBindings)
+        else { fatalError("type mismatch") }
+
+      let typeEmitter = TypeEmitter(builder: builder, typeBindings: typeBindings)
+
+      let (function, locals, returnRegister) = emitFunctionPrologue(
+        builder: builder,
+        name: mangledName,
+        declaration: decl,
+        type: type,
+        typeEmitter: typeEmitter)
+
+      emitFunctionBody(
+        builder: builder,
+        function: function,
+        locals: locals,
+        returnRegister: returnRegister,
+        body: functionBody.statements,
+        typeEmitter: typeEmitter)
+    }
+  }
+
+}

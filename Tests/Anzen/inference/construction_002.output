@@ -4,7 +4,7 @@
       (placeholder T))
     (body
       (block inner_scope='inference.construction_002.Box.block'
-          (constructor_decl 'new' type='<T> (value: T) -> <T=T>Box<T>' symbol='new' scope='inference.construction_002.Box.block' inner_scope='inference.construction_002.Box.block.new'
+          (constructor_decl 'new' type='<T> (value: T) -> Box<T=T>' symbol='new' scope='inference.construction_002.Box.block' inner_scope='inference.construction_002.Box.block.new'
             (parameters
               (param_decl 'value' type='T' symbol='value' scope='inference.construction_002.Box.block.new'
                 (type_annotation
@@ -12,22 +12,22 @@
                     (type_identifier 'T' type='T.metatype' scope='inference.construction_002.Box')))))
             (body
               (block inner_scope='inference.construction_002.Box.block.new.block'))))))
-  (prop_decl let 'int_box' type='<T=Int>Box<T>' symbol='int_box' scope='inference.construction_002'
+  (prop_decl let 'int_box' type='Box<T=Int>' symbol='int_box' scope='inference.construction_002'
     (initial_binding
       (binding_operator =)
-      (call type='<T=Int>Box<T>'
+      (call type='Box<T=Int>'
         (callee
-          (identifier 'Box' type='(value: Int) -> <T=Int>Box<T>' scope='inference.construction_002'))
+          (identifier 'Box' type='(value: Int) -> Box<T=Int>' scope='inference.construction_002'))
         (arguments
           (call_arg 'value' type='Int'
             (binding_operator =)
             (int_literal 0 type='Int'))))))
-  (prop_decl let 'string_box' type='<T=String>Box<T>' symbol='string_box' scope='inference.construction_002'
+  (prop_decl let 'string_box' type='Box<T=String>' symbol='string_box' scope='inference.construction_002'
     (initial_binding
       (binding_operator =)
-      (call type='<T=String>Box<T>'
+      (call type='Box<T=String>'
         (callee
-          (identifier 'Box' type='(value: String) -> <T=String>Box<T>' scope='inference.construction_002'))
+          (identifier 'Box' type='(value: String) -> Box<T=String>' scope='inference.construction_002'))
         (arguments
           (call_arg 'value' type='String'
             (binding_operator =)

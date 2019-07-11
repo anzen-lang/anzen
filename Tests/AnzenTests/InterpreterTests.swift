@@ -43,17 +43,8 @@ class InterpreterTests: XCTestCase {
         continue
       }
 
-      let unit = AIRUnit(name: module.id!.qualifiedName, isMain: true)
-      let builder = AIRBuilder(unit: unit, context: context)
-      let emitter = AIREmitter(builder: builder)
-
-      do {
-        try emitter.visit(module)
-      } catch {
-        XCTFail("❌ failed to load '\(testCase.value.filename!)'")
-        continue
-      }
-
+      let driver = AIREmissionDriver()
+      let unit = driver.emitMainUnit(module, context: context)
       guard let mainFn = unit.functions["main"] else {
         XCTFail("❌ failed to load '\(testCase.value.filename!)'")
         continue

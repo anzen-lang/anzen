@@ -2,13 +2,14 @@
 public class Symbol {
 
   internal init(
-    name: String, scope: Scope, type: TypeBase?, isOverloadable: Bool, isMethod: Bool)
+    name: String, scope: Scope, type: TypeBase?, isOverloadable: Bool, isMethod: Bool, isStatic: Bool)
   {
     self.name = name
     self.scope = scope
     self.type = type
     self.isOverloadable = isOverloadable
     self.isMethod = isMethod
+    self.isStatic = isStatic
   }
 
   /// The name of the symbol.
@@ -19,6 +20,8 @@ public class Symbol {
   public let isOverloadable: Bool
   /// Indicates whether the symbol is associated with a method.
   public let isMethod: Bool
+  /// Indicates whether the symbol is associated with a static member.
+  public let isStatic: Bool
   /// The scope that defines this symbol.
   public unowned let scope: Scope
 

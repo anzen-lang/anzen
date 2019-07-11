@@ -68,6 +68,9 @@ public final class SymbolCreator: ASTVisitor {
     let scope = scopes.top!
     node.symbol = scope.create(name: node.name, type: TypeVariable())
     try traverse(node)
+
+    // Register the property's declaration.
+    node.module.declarations[node.symbol!] = node
   }
 
   public func visit(_ node: FunDecl) throws {
@@ -108,11 +111,6 @@ public final class SymbolCreator: ASTVisitor {
     }) ?? []
     functionPlaceholders.insert(contentsOf: inheritedPlaceholders, at: 0)
 
-    let functionType = context.getFunctionType(
-      from: parameters,
-      to: TypeVariable(),
-      placeholders: functionPlaceholders)
-
     switch node.kind {
     case .constructor, .destructor, .method:
       // If the function is a type member, we have to inject `self` into its inner scope.
@@ -120,18 +118,46 @@ public final class SymbolCreator: ASTVisitor {
       let selfTy = (typeScope.symbols["Self"]!.first!.type as! Metatype).type
       innerScope.create(name: "self", type: selfTy)
 
-      if node.kind == .method {
-        // Method types should actually look like `(_: Self) -> (A -> B)`, where `(A -> B)` is the
-        // type of the declared function and `Self` is the type in which the function's defined.
-        let methTy = context.getFunctionType(from: [Parameter(type: selfTy)], to: functionType)
+      switch node.kind {
+      case .constructor:
+        // Constructor types actually look like `A -> Self`, where `A` are the parameters of the
+        // declared function.
+        let ctorTy = context.getFunctionType(
+          from: parameters,
+          to: selfTy,
+          placeholders: functionPlaceholders)
+        node.symbol = scope.create(
+          name: node.name, type: ctorTy, isOverloadable: true, isMethod: true, isStatic: true)
+
+      case .method:
+        // Method types actually look like `(_: Self) -> (A -> B)`, where `(A -> B)` is the type
+        // of the declared function.
+        let methTy = context.getFunctionType(
+          from: [Parameter(type: selfTy)],
+          to: context.getFunctionType(from: parameters, to: TypeVariable()),
+          placeholders: functionPlaceholders)
         node.symbol = scope.create(
           name: node.name, type: methTy, isOverloadable: true, isMethod: true)
-      } else {
-        node.symbol = scope.create(name: node.name, type: functionType, isOverloadable: true)
+
+      case .destructor:
+        // Destructor types actually look like `(_: Self) -> (() -> Nothing)`.
+        assert(parameters.isEmpty)
+        let dtorTy = context.getFunctionType(
+          from: [Parameter(type: selfTy)],
+          to: context.getFunctionType(from: [], to: NothingType.get))
+        node.symbol = scope.create(
+          name: node.name, type: dtorTy, isMethod: true)
+
+      default:
+        break
       }
 
     default:
-      node.symbol = scope.create(name: node.name, type: functionType, isOverloadable: true)
+      let fnTy = context.getFunctionType(
+        from: parameters,
+        to: TypeVariable(),
+        placeholders: functionPlaceholders)
+      node.symbol = scope.create(name: node.name, type: fnTy, isOverloadable: true)
     }
 
     // Visit the function's body.
@@ -139,6 +165,9 @@ public final class SymbolCreator: ASTVisitor {
       try visit(body)
     }
     scopes.pop()
+
+    // Register the function's declaration.
+    node.module.declarations[node.symbol!] = node
   }
 
   public func visit(_ node: ParamDecl) throws {
@@ -230,6 +259,9 @@ public final class SymbolCreator: ASTVisitor {
     // Create the body of the declared type.
     let members = node.body.statements.compactMap({ ($0 as? NamedDecl)?.symbol })
     declaredType.members = members
+
+    // Register the type's declaration.
+    node.module.declarations[node.symbol!] = node
   }
 
   private func canBeDeclared(node: NamedDecl) -> Bool {
