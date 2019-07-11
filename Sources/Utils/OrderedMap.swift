@@ -55,7 +55,7 @@ public struct OrderedMap<Key, Value> where Key: Hashable {
 
 }
 
-extension OrderedMap: MutableCollection {
+extension OrderedMap: BidirectionalCollection, MutableCollection {
 
   public typealias Index = Int
   public typealias Element = (key: Key, value: Value)
@@ -65,6 +65,10 @@ extension OrderedMap: MutableCollection {
 
   public func index(after i: Index) -> Index {
     return i + 1
+  }
+
+  public func index(before i: Index) -> Index {
+    return i - 1
   }
 
   public subscript(index: Index) -> Element {
