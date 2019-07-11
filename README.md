@@ -1,42 +1,28 @@
 # Anzen
 
-Anzen is a programming language that aims at bridging the gap between
-modern programming and software verification.
+Anzen is a general purpose programming language that aims to make assignments easier to understand and manipulate.
+Its most distinguishing characteristic is that it features three different assignment operators.
+These are independent of their operands' types and provide the following strategies:
 
-Anzen is simple and intuitive
+- An aliasing operator `&-` assigns an alias on the object on its right to the reference on its left.
+  Its semantics is the closest to what is generally understood as an assignment in languages that abstract over pointers (e.g. Python or Java).
+- A copy operator `:=` assigns a deep copy of the object's value on its right to the reference on its left.
+  If the left operand was already bound to an object, the copy operator mutates its value rather than reassigning the reference to a different one.
+- A move operator `<-` moves the object on its right to the reference on its left.
+  If the right operand was a reference, the move operator removes its binding, effectively leaving it unusable until it is reassigned.
 
-```anzen
-print("Hello, World!")
-```
-
-yet it handles very abstract concepts
-
-```anzen
-switch (a, b) {
-  when (let x, let y)
-    where x is Comparable
-      and type(of x) == type(of y)
-    {
-      print("{x} < {y} = {x < y}")
-    }
-  else {
-    print("{x} and {y} can't be compared")
-  }
-}
-```
-
-and can be entirely statically verified
+Here is an example:
 
 ```anzen
-function f(_ a: Int) -> Int
-  where a > 0
-  {
-    return a * 2
-  }
+let x: @mut <- "Hello, World!"
+let y &- x
 
-let x = f(-9)
-# error: main.anzen:7:9
-# 'f(-9)' does not respect the contract 'a > 0'
+print(y)
+// Prints "Hello, World!"
+
+x := "Hi, Universe!"
+print(y)
+// Prints "Hi, Universe!"
 ```
 
 ## Run the tests
