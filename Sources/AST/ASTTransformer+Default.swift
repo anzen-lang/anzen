@@ -129,7 +129,9 @@ public extension ASTTransformer {
 
   func defaultTransform(_ node: TypeIdent) throws -> TypeIdent {
     node.specializations = try Dictionary(
-      uniqueKeysWithValues: node.specializations.map({ try ($0, transform($1)) }))
+      uniqueKeysWithValues: node.specializations.map({
+        try ($0, transform($1) as! QualTypeSign)
+      }))
     return node
   }
 
@@ -281,7 +283,9 @@ public extension ASTTransformer {
 
   func defaultTransform(_ node: Ident) throws -> Ident {
     node.specializations = try Dictionary(
-      uniqueKeysWithValues: node.specializations.map({ try ($0, transform($1)) }))
+      uniqueKeysWithValues: node.specializations.map({
+        try ($0, transform($1) as! QualTypeSign)
+      }))
     return node
   }
 

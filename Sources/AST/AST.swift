@@ -358,7 +358,7 @@ public final class TypeIdent: TypeSign {
 
   public init(
     name: String,
-    specializations: [String: Node] = [:],
+    specializations: [String: QualTypeSign] = [:],
     module: ModuleDecl,
     range: SourceRange)
   {
@@ -370,7 +370,7 @@ public final class TypeIdent: TypeSign {
   /// The name of the type.
   public var name: String
   /// The specialization list of the type.
-  public var specializations: [String: Node]
+  public var specializations: [String: QualTypeSign]
   /// The symbol associated with the declaration.
   public var symbol: Symbol?
   /// The scope in which the declaration is defined.
@@ -696,7 +696,7 @@ public final class Ident: Expr {
 
   public init(
     name: String,
-    specializations: [String: Node] = [:],
+    specializations: [String: QualTypeSign] = [:],
     module: ModuleDecl,
     range: SourceRange)
   {
@@ -708,7 +708,7 @@ public final class Ident: Expr {
   /// The name of the identifier.
   public var name: String
   /// The specialization list of the identifier.
-  public var specializations: [String: Node]
+  public var specializations: [String: QualTypeSign]
   /// The scope in which the identifier's defined.
   public var scope: Scope?
 

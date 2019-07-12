@@ -84,12 +84,16 @@ extension Parser {
 
     errors.append(contentsOf: signatureParseResult.errors)
 
+    let range = qualifiers.isEmpty
+      ? signature.range
+      : SourceRange(from: qualifiers.first!.range.start, to: signature.range.end)
+
     return Result(
       value: QualTypeSign(
         qualifiers: Set(qualifiers.map({ $0.value })),
         signature: signature,
         module: module,
-        range: SourceRange(from: qualifiers.first!.range.start, to: signature.range.end)),
+        range: range),
       errors: errors)
   }
 
@@ -170,7 +174,7 @@ extension Parser {
   }
 
   /// Parses a specialization list.
-  func parseSpecializationList() -> Result<[(Token, Node)]?> {
+  func parseSpecializationList() -> Result<[(Token, QualTypeSign)]?> {
     // The first token should be a left angle bracket.
     guard consume(.lt) != nil else {
       defer { consume() }
@@ -183,7 +187,7 @@ extension Parser {
     let argumentsParseResult = parseList(delimitedBy: .gt, parsingElementWith: parseSpecArg)
     errors.append(contentsOf: argumentsParseResult.errors)
 
-    guard consume(.rightParen) != nil else {
+    guard consume(.gt) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
       return Result(value: nil, errors: errors + [unexpectedToken(expected: ">")])
     }
@@ -192,7 +196,7 @@ extension Parser {
   }
 
   /// Parses a specialization argument.
-  func parseSpecArg() -> Result<(Token, Node)?> {
+  func parseSpecArg() -> Result<(Token, QualTypeSign)?> {
     // Parse the name of the placeholder.
     guard let name = consume(.identifier) else {
       defer { consume() }
