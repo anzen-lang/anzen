@@ -1,6 +1,6 @@
 import AST
 
-/// Enumerates the kinds of tokens.
+/// A category of lexical token.
 public enum TokenKind: String {
 
   // MARK: Literals
@@ -35,7 +35,8 @@ public enum TokenKind: String {
   case ne     = "!="
   case peq    = "==="
   case pne    = "!=="
-  case copy   = "="
+  case assign = "="
+  case copy   = ":="
   case ref    = "&-"
   case move   = "<-"
   case arrow  = "->"
@@ -96,7 +97,9 @@ public enum TokenKind: String {
 
 }
 
-/// Represents a token.
+/// A lexical token of the Anzen language.
+///
+/// A lexical token is a chunk of the text input to which a syntactic meaning is assigned.
 public struct Token {
 
   public init(kind: TokenKind, value: String? = nil, range: SourceRange) {

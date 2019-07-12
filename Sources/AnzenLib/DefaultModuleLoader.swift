@@ -35,14 +35,20 @@ public final class DefaultModuleLoader: ModuleLoader {
     // ------- //
 
     let file = locate(moduleID: moduleID, in: context)
-    var module: ModuleDecl
+    let parser: Parser
     do {
-      module = try Parser(source: file).parse()
-      module.id = moduleID
+      parser = try Parser(source: file)
     } catch {
       logger?.error(error)
       return nil
     }
+
+    let parseResult = parser.parse()
+    guard parseResult.errors.isEmpty else {
+      logger?.errors(parseResult.errors.sorted(by: { a, b in a.range.start < b.range.start }))
+      return nil
+    }
+    var module = parseResult.value
 
     if config.showRawAST && (moduleID != .builtin) && (moduleID != .stdlib) {
       let buffer = StringBuffer()

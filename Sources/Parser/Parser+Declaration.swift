@@ -4,48 +4,60 @@ import Utils
 extension Parser {
 
   /// Parses a property declaration.
-  func parsePropDecl() throws -> PropDecl {
-    guard let startToken = consume(if: { $0.kind == .let || $0.kind == .var })
-      else { throw unexpectedToken(expected: "let") }
+  func parsePropDecl() -> Result<PropDecl?> {
+    // The first token must be `let` or `var`.
+    guard let startToken = consume(if: { $0.kind == .let || $0.kind == .var }) else {
+      defer { consumeUpToNextStatementDelimiter() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "let")])
+    }
 
     // Parse the name of the property.
-    guard let name = consume(.identifier, afterMany: .newline)
-      else { throw parseFailure(.expectedIdentifier) }
-    var end = name.range.end
+    guard let name = consume(.identifier, afterMany: .newline) else {
+      defer { consumeUpToNextStatementDelimiter() }
+      return Result(value: nil, errors: [parseFailure(.expectedIdentifier)])
+    }
 
-    // Parse the optional type annotation.
-    var annotation: QualTypeSign? = nil
+    var errors: [ParseError] = []
+    let propDecl = PropDecl(
+      name: name.value!,
+      reassignable: startToken.kind == .var,
+      module: module,
+      range: SourceRange(from: startToken.range.start, to: name.range.end))
+
+    // Attempt to parse a type annotation.
     if consume(.colon, afterMany: .newline) != nil {
       consumeNewlines()
-      annotation = try parseQualSign()
-      end = annotation!.range.end
+      let parseResult = parseQualSign()
+      errors.append(contentsOf: parseResult.errors)
+
+      if let signature = parseResult.value {
+        propDecl.typeAnnotation = signature
+        propDecl.range = SourceRange(from: propDecl.range.start, to: signature.range.end)
+      }
     }
 
-    // Parse the optional initial binding value.
-    var initialBinding: (op: BindingOperator, value: Expr)? = nil
-    let backtrackPosition = streamPosition
-    consumeNewlines()
-    if let op = consume()?.asBindingOperator {
+    // Attempt to Parse an initial binding expression.
+    if let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) {
       consumeNewlines()
-      let value = try parseExpression()
-      initialBinding = (op, value)
-      end = value.range.end
-    } else {
-      rewind(to: backtrackPosition)
+      let parseResult = parseExpression()
+      errors.append(contentsOf: parseResult.errors)
+
+      if let expression = parseResult.value {
+        propDecl.initialBinding = (operatorToken.asBindingOperator!, expression)
+        propDecl.range = SourceRange(from: propDecl.range.start, to: expression.range.end)
+      }
     }
 
-    return PropDecl(
-      name: name.value!, reassignable: startToken.kind == .var, typeAnnotation: annotation,
-      initialBinding: initialBinding,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: end))
+    return Result(value: propDecl, errors: errors)
   }
 
   /// Parses a function declaration.
-  func parseFunDecl() throws -> FunDecl {
+  func parseFunDecl() -> Result<FunDecl?> {
     let startToken: Token
     let name: String
     let kind: FunctionKind
+
+    var errors: [ParseError] = []
 
     if let funToken = consume(.fun) {
       startToken = funToken
@@ -58,7 +70,8 @@ extension Parser {
       } else if let op = consume(if: { $0.isPrefixOperator || $0.isInfixOperator }) {
         name = op.kind.rawValue
       } else {
-        throw parseFailure(.expectedIdentifier)
+        name = ""
+        errors.append(parseFailure(.expectedIdentifier))
       }
     } else if let newToken = consume(.new) {
       startToken = newToken
@@ -69,172 +82,187 @@ extension Parser {
       name = "del"
       kind = .destructor
     } else {
-      throw unexpectedToken(expected: "fun")
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "fun")])
     }
 
-    // Parse the optional list of generic placeholders.
-    var placeholders: [String] = []
-    if consume(.lt, afterMany: .newline) != nil {
-      let keys = try parseList(delimitedBy: .comma) { () -> Token in
-        guard let name = consume(.identifier)
-          else { throw parseFailure(.expectedIdentifier) }
-        return name
+    // Attempt to parse the list of generic placeholders.
+    let placeholdersParseResult = parsePlaceholderList()
+    let placeholders = placeholdersParseResult.value
+    errors.append(contentsOf: placeholdersParseResult.errors)
+
+    // Parse a parameter list.
+    var parameters: [ParamDecl] = []
+    consumeNewlines()
+    if consume(.leftParen) == nil {
+      errors.append(unexpectedToken(expected: "("))
+    } else {
+      let parametersParseResult = parseList(
+        delimitedBy: .rightParen,
+        parsingElementWith: parseParamDecl)
+      errors.append(contentsOf: parametersParseResult.errors)
+
+      parameters = parametersParseResult.value
+      if consume(.rightParen) == nil {
+        errors.append(unexpectedToken(expected: ")"))
       }
-
-      // Make sure there's no duplicate key.
-      let duplicates = keys.duplicates { $0.value! }
-      guard duplicates.isEmpty else {
-        let key = duplicates.first!
-        throw ParseError(.duplicateKey(key: key.value!), range: key.range)
-      }
-
-      // Consume the delimiter of the list.
-      guard consume(.gt) != nil
-        else { throw unexpectedToken(expected: ">") }
-
-      placeholders = keys.map { $0.value! }
     }
 
-    // Parse the parameter list.
-    guard consume(.leftParen, afterMany: .newline) != nil
-      else { throw unexpectedToken(expected: "(") }
-    let parameters = try parseList(delimitedBy: .rightParen, parsingElementWith: parseParamDecl)
-    guard var end = consume(.rightParen)?.range.end
-      else { throw unexpectedToken(expected: ")") }
-
-    // Parse the optional codomain.
+    // Attempt to parse a codomain.
     var codomain: Node? = nil
     if consume(.arrow, afterMany: .newline) != nil {
       consumeNewlines()
-      codomain = try parseQualSign()
-      end = codomain!.range.end
+      let backtrackPosition = streamPosition
+      let codomainParseResult = parseQualSign()
+      errors.append(contentsOf: codomainParseResult.errors)
+
+      if let signature = codomainParseResult.value {
+        codomain = signature
+      } else {
+        rewind(to: backtrackPosition)
+        consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .leftBrace) })
+      }
     }
 
-    // Parse the optional function body.
-    let backtrackPosition = streamPosition
-    consumeNewlines()
-    let block = try? parseStatementBlock()
-    if block == nil {
-      rewind(to: backtrackPosition)
-    } else {
-      end = block!.range.end
+    // Attempt to the body of the lambda.
+    var body: Block?
+    if let bodyParseResult = attempt(parseStatementBlock) {
+      body = bodyParseResult.value
+      errors.append(contentsOf: bodyParseResult.errors)
     }
 
-    return FunDecl(
-      name: name,
-      kind: kind,
-      placeholders: placeholders,
-      parameters: parameters,
-      codomain: codomain,
-      body: block,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: end))
+    let end = body?.range.end ?? codomain?.range.end ?? startToken.range.end
+    return Result(
+      value: FunDecl(
+        name: name,
+        kind: kind,
+        placeholders: placeholders,
+        parameters: parameters,
+        codomain: codomain,
+        body: body,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: end)),
+      errors: errors)
   }
 
   /// Parses a parameter declaration.
-  func parseParamDecl() throws -> ParamDecl {
+  func parseParamDecl() -> Result<ParamDecl?> {
     // Attempt to parse the label and formal name of the parameter, the last being required.
-    guard let first = consume(.underscore) ?? consume(.identifier)
-      else { throw unexpectedToken(expected: "identifier") }
-    let second = consume(.identifier, afterMany: .newline) ?? first
-    guard second.kind != .underscore
-      else { throw parseFailure(.expectedIdentifier) }
-    var end = second.range.end
-
-    // Parse the optional type annotation.
-    var annotation: QualTypeSign? = nil
-    if consume(.colon, afterMany: .newline) != nil {
-      consumeNewlines()
-      annotation = try parseQualSign()
-      end = annotation!.range.end
+    guard let first = consume(.underscore) ?? consume(.identifier) else {
+      consume()
+      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
     }
 
-    // Parse the optional initial binding value.
-    var defaultValue: Expr? = nil
-    let backtrackPosition = streamPosition
-    if consume(.copy, afterMany: .newline) != nil {
-      consumeNewlines()
-      defaultValue = try parseExpression()
-      end = defaultValue!.range.end
-    } else {
-      rewind(to: backtrackPosition)
+    let second = consume(.identifier, afterMany: .newline) ?? first
+    guard second.kind != .underscore else {
+      return Result(value: nil, errors: [parseFailure(.expectedIdentifier)])
     }
 
     let label = first.kind == .underscore
       ? nil
       : first.value
 
-    return ParamDecl(
+    var errors: [ParseError] = []
+    let paramDecl = ParamDecl(
       label: label,
       name: second.value!,
-      typeAnnotation: annotation,
-      defaultValue: defaultValue,
       module: module,
-      range: SourceRange(from: first.range.start, to: end))
+      range: SourceRange(from: first.range.start, to: second.range.end))
+
+    // Attempt to parse a type annotation.
+    if consume(.colon, afterMany: .newline) != nil {
+      consumeNewlines()
+      let annotationParseResult = parseQualSign()
+      errors.append(contentsOf: annotationParseResult.errors)
+
+      if let signature = annotationParseResult.value {
+        paramDecl.typeAnnotation = signature
+        paramDecl.range = SourceRange(from: paramDecl.range.start, to: signature.range.end)
+      }
+    }
+
+    // Attempt to Parse a default binding expression.
+    if consume(.assign, afterMany: .newline) != nil {
+      consumeNewlines()
+      let parseResult = parseExpression()
+      errors.append(contentsOf: parseResult.errors)
+
+      if let expression = parseResult.value {
+        paramDecl.defaultValue = expression
+        paramDecl.range = SourceRange(from: paramDecl.range.start, to: expression.range.end)
+      }
+    }
+
+    return Result(value: paramDecl, errors: errors)
   }
 
   /// Parses a struct declaration.
-  func parseStructDecl() throws -> StructDecl {
-    guard let startToken = consume(.struct)
-      else { throw unexpectedToken(expected: "struct") }
+  func parseStructDecl() -> Result<StructDecl?> {
+    // The first token should be `struct`.
+    guard let startToken = consume(.struct) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "struct")])
+    }
 
-    let type = try parseNominalType()
+    let nominalTypeParseResult = parseNominalType()
+    guard let nominalType = nominalTypeParseResult.value else {
+      return Result(value: nil, errors: nominalTypeParseResult.errors)
+    }
 
-    return StructDecl(
-      name: type.name,
-      placeholders: type.placeholders,
-      body: type.body,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: type.body.range.end))
+    return Result(
+      value: StructDecl(
+        name: nominalType.name,
+        body: nominalType.body,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: nominalType.body.range.end)),
+      errors: nominalTypeParseResult.errors)
   }
 
   /// Parses an interface declaration.
-  func parseInterfaceDecl() throws -> InterfaceDecl {
-    guard let startToken = consume(.interface)
-      else { throw unexpectedToken(expected: "interface") }
+  func parseInterfaceDecl() -> Result<InterfaceDecl?> {
+    // The first token should be `interface`.
+    guard let startToken = consume(.interface) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "interface")])
+    }
 
-    let type = try parseNominalType()
+    let nominalTypeParseResult = parseNominalType()
+    guard let nominalType = nominalTypeParseResult.value else {
+      return Result(value: nil, errors: nominalTypeParseResult.errors)
+    }
 
-    return InterfaceDecl(
-      name: type.name,
-      placeholders: type.placeholders,
-      body: type.body,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: type.body.range.end))
+    return Result(
+      value: InterfaceDecl(
+        name: nominalType.name,
+        body: nominalType.body,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: nominalType.body.range.end)),
+      errors: nominalTypeParseResult.errors)
   }
 
   /// Helper that factorizes nominal type parsing.
-  func parseNominalType() throws -> NominalType {
+  func parseNominalType() -> Result<NominalType?> {
     // Parse the name of the type.
-    guard let name = consume(.identifier, afterMany: .newline)?.value
-      else { throw parseFailure(.expectedIdentifier) }
-
-    // Parse the optional list of generic placeholders.
-    var placeholders: [String] = []
-    if consume(.lt, afterMany: .newline) != nil {
-      let keys = try parseList(delimitedBy: .comma) { () -> Token in
-        guard let name = consume(.identifier)
-          else { throw parseFailure(.expectedIdentifier) }
-        return name
-      }
-
-      // Make sure there's no duplicate key.
-      let duplicates = keys.duplicates { $0.value! }
-      guard duplicates.isEmpty else {
-        let key = duplicates.first!
-        throw ParseError(.duplicateKey(key: key.value!), range: key.range)
-      }
-
-      // Consume the delimiter of the list.
-      guard consume(.gt) != nil
-        else { throw unexpectedToken(expected: ">") }
-
-      placeholders = keys.map { $0.value! }
+    guard let name = consume(.identifier)?.value else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
     }
+
+    var errors: [ParseError] = []
+
+    // Attempt to parse the list of generic placeholders.
+    let placeholdersParseResult = parsePlaceholderList()
+    let placeholders = placeholdersParseResult.value
+    errors.append(contentsOf: placeholdersParseResult.errors)
 
     // Parse the body of the type.
     consumeNewlines()
-    let body = try parseStatementBlock()
+    let bodyParseResult = parseStatementBlock()
+    errors.append(contentsOf: bodyParseResult.errors)
+
+    guard let body = bodyParseResult.value else {
+      return Result(value: nil, errors: errors)
+    }
 
     // Mark all regular functions as methods.
     for stmt in body.statements {
@@ -243,7 +271,41 @@ extension Parser {
       }
     }
 
-    return NominalType(name: name, placeholders: placeholders, body: body)
+    return Result(
+      value: NominalType(name: name, placeholders: placeholders, body: body),
+      errors: errors)
+  }
+
+  /// Helper to parse list of generic placeholders.
+  func parsePlaceholderList() -> Result<[String]> {
+    var errors: [ParseError] = []
+
+    var placeholders: [String] = []
+    if consume(.lt, afterMany: .newline) != nil {
+      let namesParseResult = parseList(delimitedBy: .gt) { () -> Result<Token?> in
+        guard let token = consume(.identifier) else {
+          return Result(value: nil, errors: [parseFailure(.expectedIdentifier)])
+        }
+        return Result(value: token, errors: [])
+      }
+      errors.append(contentsOf: namesParseResult.errors)
+
+      // Parse the list's delimiter.
+      if consume(.gt) == nil {
+        errors.append(unexpectedToken(expected: ">"))
+      }
+
+      for token in namesParseResult.value {
+        // Make sure there's no duplicate key.
+        guard !placeholders.contains(token.value!) else {
+          errors.append(ParseError(.duplicateKey(key: token.value!), range: token.range))
+          continue
+        }
+        placeholders.append(token.value!)
+      }
+    }
+
+    return Result(value: placeholders, errors: errors)
   }
 
 }

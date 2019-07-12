@@ -3,9 +3,13 @@ import Foundation
 import AST
 import Utils
 
-/// Lexer for the tokens of the Anzen language.
+/// A lexer for the tokens of the Anzen language.
+///
+/// This structure provides an interface to turn a text buffer into a stream of tokens. It is
+/// intended for forward lexing only, and does not have any support for buffering and/or seeking.
 public struct Lexer {
 
+  /// Creates a new lexer instance for the specified input buffer.
   public init(source: TextInputBuffer) throws {
     currentLocation = SourceLocation(source: source)
     characters = try source.read().unicodeScalars
@@ -74,6 +78,7 @@ public struct Lexer {
 
   /// The stream of characters.
   var characters: String.UnicodeScalarView
+
   /// The current character index in the stream.
   var charIndex: String.UnicodeScalarView.Index
 
@@ -265,6 +270,7 @@ extension Lexer: IteratorProtocol, Sequence {
         var kind: TokenKind? = nil
 
         switch value {
+        case ":=": kind = .copy
         case "&-": kind = .ref
         case "<-": kind = .move
         case "->": kind = .arrow
@@ -297,7 +303,7 @@ extension Lexer: IteratorProtocol, Sequence {
       case "}": kind = .rightBrace
       case "[": kind = .leftBracket
       case "]": kind = .rightBracket
-      case "=": kind = .copy
+      case "=": kind = .assign
       case "<": kind = .lt
       case ">": kind = .gt
       case "+": kind = .add
@@ -319,24 +325,24 @@ extension Lexer: IteratorProtocol, Sequence {
 }
 
 /// Returns whether or not the given character is a whitespace.
-func isWhitespace(_ char: UnicodeScalar) -> Bool {
+private func isWhitespace(_ char: UnicodeScalar) -> Bool {
   return char == " " || char == "\t"
 }
 
 /// Returns whether or not the given character is a statement delimiter.
-func isStatementDelimiter(_ char: UnicodeScalar) -> Bool {
+private func isStatementDelimiter(_ char: UnicodeScalar) -> Bool {
   return char == "\n" || char == ";"
 }
 
 /// Returns whether or not the given charater is a digit.
-func isDigit(_ char: UnicodeScalar) -> Bool {
+private func isDigit(_ char: UnicodeScalar) -> Bool {
   return CharacterSet.decimalDigits.contains(char)
 }
 
 /// Returns whetehr or not the given character is an alphanumeric characters, or `_`.
-func isAlnumOrUnderscore(_ char: UnicodeScalar) -> Bool {
+private func isAlnumOrUnderscore(_ char: UnicodeScalar) -> Bool {
   return char == "_" || CharacterSet.alphanumerics.contains(char)
 }
 
 /// Set of operator symbols.
-let operatorChars = Set<UnicodeScalar>(".,:!?(){}[]<>-*/%+-=&".unicodeScalars)
+private let operatorChars = Set<UnicodeScalar>(".,:!?(){}[]<>-*/%+-=&".unicodeScalars)

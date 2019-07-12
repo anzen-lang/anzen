@@ -1,5 +1,8 @@
 import AST
 
+/// A syntax error.
+///
+/// A syntax error is an error that occurs when trying to interpret syntactically invalid code.
 public enum SyntaxError: Error, CustomStringConvertible {
 
   /// Occurs when parsing mapping literals or specialization lists with duplicate keys.
@@ -40,8 +43,13 @@ public enum SyntaxError: Error, CustomStringConvertible {
 
 }
 
+/// A parse error.
+///
+/// A parse error occurs when a parser encounters a syntactically invalid sequence of tokens. It
+/// describes of a syntax error (its cause) and the location where the latter occured.
 public struct ParseError: Error, CustomStringConvertible {
 
+  /// Creates a new parse error instance with the given cause and range.
   public init(_ cause: SyntaxError, range: SourceRange) {
     self.cause = cause
     self.range = range
