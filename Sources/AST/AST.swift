@@ -222,7 +222,7 @@ public final class ParamDecl: NamedDecl {
   public init(
     label: String?,
     name: String,
-    typeAnnotation: QualTypeSign?,
+    typeAnnotation: QualTypeSign? = nil,
     defaultValue: Expr? = nil,
     module: ModuleDecl,
     range: SourceRange)
