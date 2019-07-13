@@ -28,7 +28,10 @@ extension Parser {
         rewind(to: backtrackPosition)
         break
       }
+
+      // Commit to parsing a binary expression.
       consume()
+      consumeNewlines()
 
       if infixOperator == .as {
         // If the infix operator is a cast operator, then we MUST parse a type signature.
@@ -197,7 +200,7 @@ extension Parser {
     // trailers to start at the same line. The rationale is that it doing otherwise could easily
     // make some portions of code *look* ambiguous.
     trailer:while true {
-      if let startToken = consume([.leftParen, .leftBracket]) {
+      if consume(.leftParen) != nil {
         let argumentsParseResult = parseList(
           delimitedBy: .rightParen,
           parsingElementWith: parseCallArg)
@@ -208,22 +211,33 @@ extension Parser {
         if endToken == nil {
           errors.append(unexpectedToken(expected: ")"))
         }
-
         let end = endToken?.range.end ?? expression.range.end
 
-        if startToken.kind == .leftBracket {
-          expression = CallExpr(
-            callee: expression,
-            arguments: argumentsParseResult.value,
-            module: module,
-            range: SourceRange(from: expression.range.start, to: end))
-        } else {
-          expression = SubscriptExpr(
-            callee: expression,
-            arguments: argumentsParseResult.value,
-            module: module,
-            range: SourceRange(from: expression.range.start, to: end))
+        expression = CallExpr(
+          callee: expression,
+          arguments: argumentsParseResult.value,
+          module: module,
+          range: SourceRange(from: expression.range.start, to: end))
+
+        continue trailer
+      } else if consume(.leftBracket) != nil {
+        let argumentsParseResult = parseList(
+          delimitedBy: .rightBracket,
+          parsingElementWith: parseCallArg)
+        errors.append(contentsOf: argumentsParseResult.errors)
+
+        // Consume the delimiter of the list.
+        let endToken = consume(.rightBracket)
+        if endToken == nil {
+          errors.append(unexpectedToken(expected: "]"))
         }
+        let end = endToken?.range.end ?? expression.range.end
+
+        expression = SubscriptExpr(
+          callee: expression,
+          arguments: argumentsParseResult.value,
+          module: module,
+          range: SourceRange(from: expression.range.start, to: end))
 
         continue trailer
       }
@@ -400,6 +414,17 @@ extension Parser {
         parsingElementWith: parseParamDecl)
       errors.append(contentsOf: parametersParseResult.errors)
 
+      // Make sure there are no duplicate parameters.
+      var existing: Set<String> = []
+      for parameter in parametersParseResult.value {
+        guard !existing.contains(parameter.name) else {
+          errors.append(
+            ParseError(.duplicateParameter(name: parameter.name), range: parameter.range))
+          continue
+        }
+        existing.insert(parameter.name)
+      }
+
       parameters = parametersParseResult.value
       if consume(.rightParen) == nil {
         errors.append(unexpectedToken(expected: ")"))
@@ -503,7 +528,7 @@ extension Parser {
 
     // Parse the array elements.
     let elementsParseResult = parseList(
-      delimitedBy: .rightBrace,
+      delimitedBy: .rightBracket,
       parsingElementWith: parseExpression)
     errors.append(contentsOf: elementsParseResult.errors)
 
@@ -527,8 +552,8 @@ extension Parser {
   /// complicates error reporting. We choose to commit on whether we're parsing a map or a set
   /// literal based on the successful parsing of the first element.
   ///
-  /// Note also that maps are preferred. Therefore `{}` is parsed as an empty map literal rather
-  /// than an empty set literal.
+  /// Note that a colon is required to distinguish between empty set literals and map literals, so
+  /// that `{}` is parsed as an empty set literal and `{:}` is parser as the empty map literal.
   func parseMapOrSetLiteral() -> Result<Expr?> {
     // The first token must be brace bracket.
     guard let startToken = consume(.leftBrace) else {
@@ -536,8 +561,24 @@ extension Parser {
       return Result(value: nil, errors: [unexpectedToken(expected: "{")])
     }
 
-    // If the next consumable token is the right delimiter, we've got an empty map.
+    // If the next consumable token is the right delimiter, we've got an empty set literal.
     if let endToken = consume(.rightBrace, afterMany: .newline) {
+      return Result(
+        value: SetLiteral(
+          elements: [],
+          module: module,
+          range: SourceRange(from: startToken.range.start, to: endToken.range.start)),
+        errors: [])
+    }
+
+    // If the next consumable token is a colon, we've probably got an empty map literal.
+    if consume(.colon, afterMany: .newline) != nil {
+      // Commit to parsing the empty map literal.
+      guard let endToken = consume(.rightBrace, afterMany: .newline) else {
+        defer { consumeUpToNextStatementDelimiter() }
+        return Result(value: nil, errors: [unexpectedToken(expected: "}")])
+      }
+
       return Result(
         value: MapLiteral(
           elements: [:],
@@ -549,14 +590,15 @@ extension Parser {
     var errors: [ParseError] = []
 
     // Attempt to parse a map element.
+    consumeNewlines()
     let backtrackPosition = streamPosition
-    let mapElementParseResult = parseMapElement()
+    let firstMapElementParseResult = parseMapElement()
     rewind(to: backtrackPosition)
 
-    if mapElementParseResult.value != nil {
+    if let firstMapElement = firstMapElementParseResult.value {
       // Commit to parsing a map literal.
-      let elementsParseResult = parseMapElements()
-      errors.append(contentsOf: elementsParseResult.errors)
+      let mapElementsParseResult = parseMapElements()
+      errors.append(contentsOf: mapElementsParseResult.errors)
 
       // Parse the expression's delimiter.
       guard let endToken = consume(.rightBrace) else {
@@ -566,16 +608,16 @@ extension Parser {
 
       return Result(
         value: MapLiteral(
-          elements: elementsParseResult.value,
+          elements: mapElementsParseResult.value,
           module: module,
           range: SourceRange(from: startToken.range.start, to: endToken.range.end)),
         errors: errors)
     } else {
       // Commit to parsing a set literal.
-      let elementsParseResult = parseList(
+      let setElementsParseResult = parseList(
         delimitedBy: .rightBrace,
         parsingElementWith: parseExpression)
-      errors.append(contentsOf: elementsParseResult.errors)
+      errors.append(contentsOf: setElementsParseResult.errors)
 
       // Parse the expression's delimiter.
       guard let endToken = consume(.rightBrace) else {
@@ -585,7 +627,7 @@ extension Parser {
 
       return Result(
         value: SetLiteral(
-          elements: elementsParseResult.value,
+          elements: setElementsParseResult.value,
           module: module,
           range: SourceRange(from: startToken.range.start, to: endToken.range.end)),
         errors: errors)

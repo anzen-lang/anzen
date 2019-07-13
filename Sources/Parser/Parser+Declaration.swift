@@ -102,6 +102,17 @@ extension Parser {
         parsingElementWith: parseParamDecl)
       errors.append(contentsOf: parametersParseResult.errors)
 
+      // Make sure there are no duplicate parameters.
+      var existing: Set<String> = []
+      for parameter in parametersParseResult.value {
+        guard !existing.contains(parameter.name) else {
+          errors.append(
+            ParseError(.duplicateParameter(name: parameter.name), range: parameter.range))
+          continue
+        }
+        existing.insert(parameter.name)
+      }
+
       parameters = parametersParseResult.value
       if consume(.rightParen) == nil {
         errors.append(unexpectedToken(expected: ")"))

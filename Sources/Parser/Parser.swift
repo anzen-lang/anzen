@@ -90,7 +90,7 @@ public class Parser {
     rethrows -> Result<[Element]>
   {
     // Skip leading new lines.
-    consumeMany { $0.kind == .newline }
+    consumeNewlines()
 
     var elements: [Element] = []
     var errors: [ParseError] = []
