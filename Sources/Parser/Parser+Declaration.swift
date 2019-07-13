@@ -301,6 +301,7 @@ extension Parser {
     if consume(.lt, afterMany: .newline) != nil {
       let namesParseResult = parseList(delimitedBy: .gt) { () -> Result<Token?> in
         guard let token = consume(.identifier) else {
+          defer { consume() }
           return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
         }
         return Result(value: token, errors: [])

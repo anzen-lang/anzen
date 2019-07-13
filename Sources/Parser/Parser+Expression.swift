@@ -193,6 +193,7 @@ extension Parser {
         range: SourceRange(from: startLocation, to: delimiter!.range.end))
 
     default:
+      defer { consume() }
       return Result(value: nil, errors: [unexpectedToken(expected: "expression")])
     }
 
