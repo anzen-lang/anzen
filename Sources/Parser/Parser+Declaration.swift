@@ -14,7 +14,7 @@ extension Parser {
     // Parse the name of the property.
     guard let name = consume(.identifier, afterMany: .newline) else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: [parseFailure(.expectedIdentifier)])
+      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
     }
 
     var errors: [ParseError] = []
@@ -73,7 +73,7 @@ extension Parser {
         name = op.kind.rawValue
       } else {
         name = ""
-        errors.append(parseFailure(.expectedIdentifier))
+        errors.append(unexpectedToken(expected: "identifier"))
       }
     } else if let newToken = consume(.new) {
       startToken = newToken
@@ -168,7 +168,7 @@ extension Parser {
 
     let second = consume(.identifier, afterMany: .newline) ?? first
     guard second.kind != .underscore else {
-      return Result(value: nil, errors: [parseFailure(.expectedIdentifier)])
+      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
     }
 
     let label = first.kind == .underscore
@@ -301,7 +301,7 @@ extension Parser {
     if consume(.lt, afterMany: .newline) != nil {
       let namesParseResult = parseList(delimitedBy: .gt) { () -> Result<Token?> in
         guard let token = consume(.identifier) else {
-          return Result(value: nil, errors: [parseFailure(.expectedIdentifier)])
+          return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
         }
         return Result(value: token, errors: [])
       }

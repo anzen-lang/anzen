@@ -9,8 +9,6 @@ public enum SyntaxError: Error, CustomStringConvertible {
   case duplicateKey(key: String)
   /// Occurs when parsing parameter lists with duplicate entries.
   case duplicateParameter(name: String)
-  /// Occurs when the parser fails to parse an identifier.
-  case expectedIdentifier
   /// Occurs when the parser fails to parse the member of a select expression.
   case expectedMember
   /// Occurs when the parser fails to parse a statement delimiter.
@@ -28,8 +26,6 @@ public enum SyntaxError: Error, CustomStringConvertible {
       return "duplicate key '\(key)'"
     case let .duplicateParameter(name):
       return "duplicate parameter '\(name)'"
-    case .expectedIdentifier:
-      return "expected identifier"
     case .expectedMember:
       return "expected member name following '.'"
     case .expectedStatementDelimiter:
