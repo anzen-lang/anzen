@@ -47,7 +47,6 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
 
   public func visit(_ node: PropDecl) throws {
     self <<< indent <<< "(prop_decl"
-    self <<< node.reassignable ? " var" : " let"
     if !node.attributes.isEmpty {
       self <<< " " + node.attributes.map({ $0.rawValue }).sorted().joined(separator: " ")
     }

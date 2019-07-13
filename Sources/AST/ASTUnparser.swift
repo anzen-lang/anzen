@@ -38,7 +38,7 @@ public final class ASTUnparser: ASTVisitor {
       repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
       repr += " "
     }
-    repr += (node.reassignable ? "var " : "let ").styled("magenta")
+    repr += (node.attributes.contains(.reassignable) ? "var " : "let ").styled("magenta")
     repr += node.name
 
     if includeType {

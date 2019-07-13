@@ -135,14 +135,12 @@ public final class PropDecl: NamedDecl {
   public init(
     name: String,
     attributes: Set<MemberAttribute> = [],
-    reassignable: Bool = false,
     typeAnnotation: QualTypeSign? = nil,
     initialBinding: (op: BindingOperator, value: Expr)? = nil,
     module: ModuleDecl,
     range: SourceRange)
   {
     self.attributes = attributes
-    self.reassignable = reassignable
     self.typeAnnotation = typeAnnotation
     self.initialBinding = initialBinding
     super.init(name: name, module: module, range: range)
@@ -150,8 +148,6 @@ public final class PropDecl: NamedDecl {
 
   /// The member attributes of the property.
   public var attributes: Set<MemberAttribute>
-  /// Whether or not the property is reassignable (i.e. declared with `var` or `let`).
-  public var reassignable: Bool
   /// The type annotation of the property.
   public var typeAnnotation: QualTypeSign?
   /// The initial binding value of the property.
