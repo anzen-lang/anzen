@@ -3,7 +3,12 @@ import Utils
 
 /// A recursive descent parser for the Anzen language.
 ///
-/// This structure provides an interface to turn a stream of tokens into an abstract syntax tree.
+/// This structure provides an interface to turn a stream of tokens into an AST.
+///
+/// In order to create the most complete error reports possible, the parser does not stop when it
+/// encounters a syntax error. Instead, it saves the error before moving into a "degraded" mode in
+/// which it skips tokens until it can find the beginning the next construct. It follows that the
+/// result of an input's parsing is a (possibly incomplete) AST and a set of errors.
 public class Parser {
 
   /// The result of construction's parsing.
