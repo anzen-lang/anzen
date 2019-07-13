@@ -90,7 +90,7 @@ extension Parser {
     // The first token should be left brace.
     guard let startToken = consume(.leftBrace) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "{")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'{'")])
     }
 
     var errors: [ParseError] = []
@@ -121,7 +121,7 @@ extension Parser {
 
       // Make sure we didn't reach the end of the stream.
       guard peek().kind != .eof else {
-        errors.append(unexpectedToken(expected: "}"))
+        errors.append(unexpectedToken(expected: "'}'"))
         break
       }
     }
@@ -140,7 +140,7 @@ extension Parser {
     // The first token should be `return`.
     guard let startToken = consume(.while) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "while")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'while'")])
     }
 
     var errors: [ParseError] = []
@@ -188,7 +188,7 @@ extension Parser {
     // The first token should be `return`.
     guard let startToken = consume(.return) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "return")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'return'")])
     }
 
     var errors: [ParseError] = []

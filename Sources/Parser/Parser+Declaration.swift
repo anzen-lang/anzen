@@ -8,7 +8,7 @@ extension Parser {
     // The first token must be `let` or `var`.
     guard let startToken = consume(if: { $0.kind == .let || $0.kind == .var }) else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "let")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'let'")])
     }
 
     // Parse the name of the property.
@@ -85,7 +85,7 @@ extension Parser {
       kind = .destructor
     } else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "fun")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'fun'")])
     }
 
     // Attempt to parse the list of generic placeholders.
@@ -97,7 +97,7 @@ extension Parser {
     var parameters: [ParamDecl] = []
     consumeNewlines()
     if consume(.leftParen) == nil {
-      errors.append(unexpectedToken(expected: "("))
+      errors.append(unexpectedToken(expected: "'('"))
     } else {
       let parametersParseResult = parseList(
         delimitedBy: .rightParen,
@@ -117,7 +117,7 @@ extension Parser {
 
       parameters = parametersParseResult.value
       if consume(.rightParen) == nil {
-        errors.append(unexpectedToken(expected: ")"))
+        errors.append(unexpectedToken(expected: "')'"))
       }
     }
 
@@ -214,7 +214,7 @@ extension Parser {
     // The first token should be `struct`.
     guard let startToken = consume(.struct) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "struct")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'struct'")])
     }
 
     consumeNewlines()
@@ -238,7 +238,7 @@ extension Parser {
     // The first token should be `interface`.
     guard let startToken = consume(.interface) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "interface")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'interface'")])
     }
 
     consumeNewlines()
@@ -309,7 +309,7 @@ extension Parser {
 
       // Parse the list's delimiter.
       if consume(.gt) == nil {
-        errors.append(unexpectedToken(expected: ">"))
+        errors.append(unexpectedToken(expected: "'>'"))
       }
 
       for token in namesParseResult.value {

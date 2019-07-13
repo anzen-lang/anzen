@@ -35,9 +35,13 @@ public enum SyntaxError: Error, CustomStringConvertible {
     case .unexpectedEOS:
       return "unexpected end of stream"
     case let .unexpectedToken(expected: expected, got: found):
-      return expected != nil
-        ? "expected '\(expected!)', found '\(found)'"
-        : "unexpected token '\(found)'"
+      if expected != nil {
+        return found.kind != .newline
+          ? "expected \(expected!), found '\(found)'"
+          : "expected \(expected!)"
+      } else {
+        return "unexpected token '\(found)'"
+      }
     }
   }
 

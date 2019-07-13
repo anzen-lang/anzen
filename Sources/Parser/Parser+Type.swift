@@ -23,7 +23,7 @@ extension Parser {
             defer { consumeUpToNextStatementDelimiter() }
             return Result(
               value: nil,
-              errors: enclosedParseResult.errors + [unexpectedToken(expected: ")")])
+              errors: enclosedParseResult.errors + [unexpectedToken(expected: "')'")])
           }
 
           enclosed.range = SourceRange(from: start, to: delimiter.range.end)
@@ -123,7 +123,7 @@ extension Parser {
             defer { consumeUpToNextStatementDelimiter() }
             return Result(
               value: nil,
-              errors: enclosedParseResult.errors + [unexpectedToken(expected: ")")])
+              errors: enclosedParseResult.errors + [unexpectedToken(expected: "')'")])
           }
 
           enclosed.range = SourceRange(from: start, to: delimiter.range.end)
@@ -191,7 +191,7 @@ extension Parser {
 
     guard consume(.gt) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: errors + [unexpectedToken(expected: ">")])
+      return Result(value: nil, errors: errors + [unexpectedToken(expected: "'>'")])
     }
 
     return Result(value: argumentsParseResult.value, errors: errors)
@@ -210,7 +210,7 @@ extension Parser {
     // Parse the signature to which it should map.
     guard consume(.assign, afterMany: .newline) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "=")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'='")])
     }
 
     consumeNewlines()
@@ -228,7 +228,7 @@ extension Parser {
     // The first token should be left parenthesis.
     guard let startToken = consume(.leftParen) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "(")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'('")])
     }
 
     var errors: [ParseError] = []
@@ -241,13 +241,13 @@ extension Parser {
 
     guard consume(.rightParen) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: errors + [unexpectedToken(expected: ")")])
+      return Result(value: nil, errors: errors + [unexpectedToken(expected: "')'")])
     }
 
     // Parse the codomain.
     guard consume(.arrow, afterMany: .newline) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: errors + [unexpectedToken(expected: "->")])
+      return Result(value: nil, errors: errors + [unexpectedToken(expected: "'->'")])
     }
 
     consumeNewlines()
@@ -279,7 +279,7 @@ extension Parser {
     // Parse the qualified signature of the parameter.
     guard consume(.colon, afterMany: .newline) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: [unexpectedToken(expected: ":")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "':'")])
     }
 
     consumeNewlines()

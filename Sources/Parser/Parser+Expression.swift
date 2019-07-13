@@ -184,7 +184,7 @@ extension Parser {
 
       let delimiter = consume(.rightParen, afterMany: .newline)
       if delimiter == nil {
-        errors.append(unexpectedToken(expected: ")"))
+        errors.append(unexpectedToken(expected: "')'"))
       }
 
       expression = EnclosedExpr(
@@ -209,7 +209,7 @@ extension Parser {
         // Consume the delimiter of the list.
         let endToken = consume(.rightParen)
         if endToken == nil {
-          errors.append(unexpectedToken(expected: ")"))
+          errors.append(unexpectedToken(expected: "')'"))
         }
         let end = endToken?.range.end ?? expression.range.end
 
@@ -229,7 +229,7 @@ extension Parser {
         // Consume the delimiter of the list.
         let endToken = consume(.rightBracket)
         if endToken == nil {
-          errors.append(unexpectedToken(expected: "]"))
+          errors.append(unexpectedToken(expected: "']'"))
         }
         let end = endToken?.range.end ?? expression.range.end
 
@@ -333,7 +333,7 @@ extension Parser {
     // The first token should be `if`.
     guard let startToken = consume(.if) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "if")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'if'")])
     }
 
     var errors: [ParseError] = []
@@ -400,7 +400,7 @@ extension Parser {
     // The first token should be `fun`.
     guard let startToken = consume(.fun) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "fun")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'fun'")])
     }
 
     var errors: [ParseError] = []
@@ -427,7 +427,7 @@ extension Parser {
 
       parameters = parametersParseResult.value
       if consume(.rightParen) == nil {
-        errors.append(unexpectedToken(expected: ")"))
+        errors.append(unexpectedToken(expected: "')'"))
       }
     }
 
@@ -521,7 +521,7 @@ extension Parser {
     // The first token must be left bracket.
     guard let startToken = consume(.leftBracket) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "[")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'['")])
     }
 
     var errors: [ParseError] = []
@@ -535,7 +535,7 @@ extension Parser {
     // Parse the expression's delimiter.
     guard let endToken = consume(.rightBracket) else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: errors + [unexpectedToken(expected: "]")])
+      return Result(value: nil, errors: errors + [unexpectedToken(expected: "']'")])
     }
 
     return Result(
@@ -558,7 +558,7 @@ extension Parser {
     // The first token must be brace bracket.
     guard let startToken = consume(.leftBrace) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "{")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "'{'")])
     }
 
     // If the next consumable token is the right delimiter, we've got an empty set literal.
@@ -576,7 +576,7 @@ extension Parser {
       // Commit to parsing the empty map literal.
       guard let endToken = consume(.rightBrace, afterMany: .newline) else {
         defer { consumeUpToNextStatementDelimiter() }
-        return Result(value: nil, errors: [unexpectedToken(expected: "}")])
+        return Result(value: nil, errors: [unexpectedToken(expected: "'}'")])
       }
 
       return Result(
@@ -603,7 +603,7 @@ extension Parser {
       // Parse the expression's delimiter.
       guard let endToken = consume(.rightBrace) else {
         defer { consumeUpToNextStatementDelimiter() }
-        return Result(value: nil, errors: errors + [unexpectedToken(expected: "}")])
+        return Result(value: nil, errors: errors + [unexpectedToken(expected: "'}'")])
       }
 
       return Result(
@@ -622,7 +622,7 @@ extension Parser {
       // Parse the expression's delimiter.
       guard let endToken = consume(.rightBrace) else {
         defer { consumeUpToNextStatementDelimiter() }
-        return Result(value: nil, errors: errors + [unexpectedToken(expected: "}")])
+        return Result(value: nil, errors: errors + [unexpectedToken(expected: "'}'")])
       }
 
       return Result(
@@ -670,7 +670,7 @@ extension Parser {
     // Parse the value of the element.
     guard consume(.colon, afterMany: .newline) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: [unexpectedToken(expected: ":")])
+      return Result(value: nil, errors: [unexpectedToken(expected: "':'")])
     }
 
     consumeNewlines()
