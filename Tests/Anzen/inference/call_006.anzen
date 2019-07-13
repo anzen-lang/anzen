@@ -9,10 +9,10 @@ fun overloaded(x: Int) -> Int
 fun overloaded(x: Bool) -> Bool
 
 // The type of `a` should be `Int`, as the result of calling `(x: Int) -> Int`.
-let a = overloaded(x = 0)
+let a := overloaded(x := 0)
 
 // The type of `b` should be `Bool`, as the result of calling `(x: Bool) -> Bool`.
-let b = overloaded(x = true)
+let b := overloaded(x := true)
 
 // The type of `c` should be `String`, as the result of calling `<T>(x: T) -> T`.
-let c = overloaded(x = "Hello")
+let c := overloaded(x := "Hello")

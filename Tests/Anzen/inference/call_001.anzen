@@ -8,5 +8,5 @@
 fun mono(x: Int) -> Int
 fun mono(x: Bool) -> Bool
 
-let a = mono(x = 0)
-let b = mono(x = true)
+let a := mono(x := 0)
+let b := mono(x := true)

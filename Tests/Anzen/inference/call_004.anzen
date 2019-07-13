@@ -7,7 +7,7 @@
 fun poly<T, U>(x: T, y: U) -> T
 
 // The type of `a` should be `Int`, as `x` has type `Int`.
-let a = poly(x = 0, y = true)
+let a := poly(x := 0, y := true)
 
 // The type of `b` should be `Bool`, as`x`has type `Bool`.
-let b = poly(x = true, y = 0)
+let b := poly(x := true, y := 0)

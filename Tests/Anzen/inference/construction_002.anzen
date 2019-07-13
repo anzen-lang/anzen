@@ -8,7 +8,7 @@ struct Box<T> {
 }
 
 // Box<T = Int>
-let int_box = Box(value = 0)
+let int_box := Box(value := 0)
 
 // Box<T = String>
-let string_box = Box(value = "Hello, World!")
+let string_box := Box(value := "Hello, World!")

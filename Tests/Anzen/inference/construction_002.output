@@ -12,23 +12,23 @@
                     (type_identifier 'T' type='T.metatype' scope='inference.construction_002.Box')))))
             (body
               (block inner_scope='inference.construction_002.Box.block.new.block'))))))
-  (prop_decl let 'int_box' type='Box<T=Int>' symbol='int_box' scope='inference.construction_002'
+  (prop_decl 'int_box' type='Box<T=Int>' symbol='int_box' scope='inference.construction_002'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='Box<T=Int>'
         (callee
           (identifier 'Box' type='(value: Int) -> Box<T=Int>' scope='inference.construction_002'))
         (arguments
           (call_arg 'value' type='Int'
-            (binding_operator =)
+            (binding_operator :=)
             (int_literal 0 type='Int'))))))
-  (prop_decl let 'string_box' type='Box<T=String>' symbol='string_box' scope='inference.construction_002'
+  (prop_decl 'string_box' type='Box<T=String>' symbol='string_box' scope='inference.construction_002'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='Box<T=String>'
         (callee
           (identifier 'Box' type='(value: String) -> Box<T=String>' scope='inference.construction_002'))
         (arguments
           (call_arg 'value' type='String'
-            (binding_operator =)
+            (binding_operator :=)
             (string_literal "Hello, World!" type='String')))))))

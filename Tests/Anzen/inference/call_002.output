@@ -12,16 +12,16 @@
     (codomain
       (qual_type_sign
         (type_identifier 'Anything' type='Anything.metatype' scope='__builtin'))))
-  (prop_decl let 'a' type='Anything' symbol='a' scope='inference.call_002'
+  (prop_decl 'a' type='Anything' symbol='a' scope='inference.call_002'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='Anything'
         (callee
           (identifier 'mono' type='(x: Anything, y: Anything) -> Anything' scope='inference.call_002'))
         (arguments
           (call_arg 'x' type='Int'
-            (binding_operator =)
+            (binding_operator :=)
             (int_literal 0 type='Int'))
           (call_arg 'y' type='Bool'
-            (binding_operator =)
+            (binding_operator :=)
             (bool_literal true type='Bool')))))))

@@ -10,29 +10,29 @@
     (codomain
       (qual_type_sign
         (type_identifier 'T' type='T.metatype' scope='inference.call_003.poly'))))
-  (prop_decl let 'a' type='Int' symbol='a' scope='inference.call_003'
+  (prop_decl 'a' type='Int' symbol='a' scope='inference.call_003'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='Int'
         (callee
           (identifier 'poly' type='(x: Int) -> Int' scope='inference.call_003'))
         (arguments
           (call_arg 'x' type='Int'
-            (binding_operator =)
+            (binding_operator :=)
             (int_literal 0 type='Int'))))))
-  (prop_decl let 'b' type='Bool' symbol='b' scope='inference.call_003'
+  (prop_decl 'b' type='Bool' symbol='b' scope='inference.call_003'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='Bool'
         (callee
           (identifier 'poly' type='(x: Bool) -> Bool' scope='inference.call_003'))
         (arguments
           (call_arg 'x' type='Bool'
-            (binding_operator =)
+            (binding_operator :=)
             (call type='Bool'
               (callee
                 (identifier 'poly' type='(x: Bool) -> Bool' scope='inference.call_003'))
               (arguments
                 (call_arg 'x' type='Bool'
-                  (binding_operator =)
+                  (binding_operator :=)
                   (bool_literal true type='Bool'))))))))))

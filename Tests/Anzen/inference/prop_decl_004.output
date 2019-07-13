@@ -4,15 +4,15 @@
       (placeholder T))
     (body
       (block inner_scope='inference.prop_decl_004.Box.block'
-          (prop_decl let 'value' type='T' symbol='value' scope='inference.prop_decl_004.Box.block'
+          (prop_decl 'value' type='T' symbol='value' scope='inference.prop_decl_004.Box.block'
             (type_annotation
               (qual_type_sign
                 (type_identifier 'T' type='T.metatype' scope='inference.prop_decl_004.Box')))))))
-  (prop_decl let 'box1' type='Box<T=Int>' symbol='box1' scope='inference.prop_decl_004'
+  (prop_decl 'box1' type='Box<T=Int>' symbol='box1' scope='inference.prop_decl_004'
     (type_annotation
       (qual_type_sign
         (type_identifier 'Box' type='Box<T=Int>.metatype' scope='inference.prop_decl_004'))))
-  (prop_decl let 'box2' type='Box<T=Box<T=Int>>' symbol='box2' scope='inference.prop_decl_004'
+  (prop_decl 'box2' type='Box<T=Box<T=Int>>' symbol='box2' scope='inference.prop_decl_004'
     (type_annotation
       (qual_type_sign
         (type_identifier 'Box' type='Box<T=Box<T=Int>>.metatype' scope='inference.prop_decl_004')))))

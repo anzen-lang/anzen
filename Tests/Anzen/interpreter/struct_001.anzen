@@ -11,14 +11,14 @@ struct Point {
   let y: Int
 
   fun get_x() -> Int {
-    return self.x
+    return := self.x
   }
 
 }
 
 let p <- Point(x <- 1, y <- 2)
 let f <- p.get_x
-let a = p.x
+let a := p.x
 
 print(p.get_x())
 print(f())

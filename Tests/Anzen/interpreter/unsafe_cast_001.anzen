@@ -1,4 +1,4 @@
 // Test a simple unsafe cast.
 
-let x: Anything = 99
+let x: Anything := 42
 print(x as Int)
