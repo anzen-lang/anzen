@@ -7,11 +7,11 @@
 fun poly<T>(x: T, y: T) -> T
 
 // The type of `a` should be `Int`, as both `x` and `y` have type `Int`.
-let a = poly(x = 0, y = 0)
+let a := poly(x := 0, y := 0)
 
 // The type of `b` should be `Bool`, as both `x` and `y` have type `Bool`.
-let b = poly(x = true, y = false)
+let b := poly(x := true, y := false)
 
 // The type of `b` should be `Anything`, as the join of `Int` and `Bool` (i.e. the type of `x` and
 // `y` respectively) is `Anything.`
-let c = poly(x = 0, y = false)
+let c := poly(x := 0, y := false)

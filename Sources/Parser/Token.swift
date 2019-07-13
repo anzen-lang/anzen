@@ -1,6 +1,6 @@
 import AST
 
-/// Enumerates the kinds of tokens.
+/// A category of lexical token.
 public enum TokenKind: String {
 
   // MARK: Literals
@@ -22,40 +22,41 @@ public enum TokenKind: String {
   case not
   case and
   case or
-  case add    = "+"
-  case sub    = "-"
-  case mul    = "*"
-  case div    = "/"
-  case mod    = "%"
-  case lt     = "<"
-  case le     = "<="
-  case ge     = ">="
-  case gt     = ">"
-  case eq     = "=="
-  case ne     = "!="
-  case peq    = "==="
-  case pne    = "!=="
-  case copy   = "="
-  case ref    = "&-"
-  case move   = "<-"
-  case arrow  = "->"
+  case add              = "+"
+  case sub              = "-"
+  case mul              = "*"
+  case div              = "/"
+  case mod              = "%"
+  case lt               = "<"
+  case le               = "<="
+  case ge               = ">="
+  case gt               = ">"
+  case eq               = "=="
+  case ne               = "!="
+  case peq              = "==="
+  case pne              = "!=="
+  case assign           = "="
+  case copy             = ":="
+  case ref              = "&-"
+  case move             = "<-"
+  case arrow            = "->"
 
-  case dot
-  case comma
-  case colon
-  case semicolon
-  case exclamationMark
-  case questionMark
-  case ellipsis
+  case dot              = "."
+  case comma            = ","
+  case colon            = ":"
+  case semicolon        = ";"
+  case exclamationMark  = "!"
+  case questionMark     = "?"
+  case ellipsis         = "..."
   case newline
   case eof
 
-  case leftParen
-  case rightParen
-  case leftBrace
-  case rightBrace
-  case leftBracket
-  case rightBracket
+  case leftParen        = "("
+  case rightParen       = ")"
+  case leftBrace        = "{"
+  case rightBrace       = "}"
+  case leftBracket      = "["
+  case rightBracket     = "]"
 
   // MARK: Keywords
 
@@ -96,7 +97,9 @@ public enum TokenKind: String {
 
 }
 
-/// Represents a token.
+/// A lexical token of the Anzen language.
+///
+/// A lexical token is a chunk of the text input to which a syntactic meaning is assigned.
 public struct Token {
 
   public init(kind: TokenKind, value: String? = nil, range: SourceRange) {

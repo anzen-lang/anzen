@@ -34,6 +34,7 @@ public extension ASTTransformer {
     case let n as Literal<Int>:    return try transform(n)
     case let n as Literal<Double>: return try transform(n)
     case let n as Literal<String>: return try transform(n)
+    case let n as UnparsableInput: return try transform(n)
     default:
       fatalError("unexpected node during generic transform")
     }
@@ -128,7 +129,9 @@ public extension ASTTransformer {
 
   func defaultTransform(_ node: TypeIdent) throws -> TypeIdent {
     node.specializations = try Dictionary(
-      uniqueKeysWithValues: node.specializations.map({ try ($0, transform($1)) }))
+      uniqueKeysWithValues: node.specializations.map({
+        try ($0, transform($1) as! QualTypeSign)
+      }))
     return node
   }
 
@@ -178,7 +181,10 @@ public extension ASTTransformer {
   }
 
   func defaultTransform(_ node: ReturnStmt) throws -> ReturnStmt {
-    node.value = try node.value.map { try transform($0) as! Expr }
+    if let (op, value) = node.binding {
+      let newValue = try transform(value)
+      node.binding = (op, newValue as! Expr)
+    }
     return node
   }
 
@@ -280,7 +286,9 @@ public extension ASTTransformer {
 
   func defaultTransform(_ node: Ident) throws -> Ident {
     node.specializations = try Dictionary(
-      uniqueKeysWithValues: node.specializations.map({ try ($0, transform($1)) }))
+      uniqueKeysWithValues: node.specializations.map({
+        try ($0, transform($1) as! QualTypeSign)
+      }))
     return node
   }
 
@@ -325,6 +333,12 @@ public extension ASTTransformer {
   }
 
   func transform(_ node: Literal<String>) throws -> Node {
+    return node
+  }
+
+  // MARK: Input errors
+
+  func transform(_ node: UnparsableInput) throws -> Node {
     return node
   }
 

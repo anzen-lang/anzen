@@ -4,7 +4,7 @@
       (placeholder T))
     (body
       (block inner_scope='inference.call_007.Box.block'
-          (prop_decl let 'clone' type='Box<T=T>' symbol='clone' scope='inference.call_007.Box.block'
+          (prop_decl 'clone' type='Box<T=T>' symbol='clone' scope='inference.call_007.Box.block'
             (type_annotation
               (qual_type_sign
                 (type_identifier 'Self' type='Box<T=T>.metatype' scope='inference.call_007.Box'))))
@@ -17,13 +17,13 @@
             (codomain
               (qual_type_sign
                 (type_identifier 'T' type='T.metatype' scope='inference.call_007.Box')))))))
-  (prop_decl let 'box' type='Box<T=Int>' symbol='box' scope='inference.call_007'
+  (prop_decl 'box' type='Box<T=Int>' symbol='box' scope='inference.call_007'
     (type_annotation
       (qual_type_sign
         (type_identifier 'Box' type='Box<T=Int>.metatype' scope='inference.call_007'))))
-  (prop_decl let 'val' type='Int' symbol='val' scope='inference.call_007'
+  (prop_decl 'val' type='Int' symbol='val' scope='inference.call_007'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='Int'
         (callee
           (select type='(x: Box<T=Int>) -> Int'
@@ -33,5 +33,5 @@
               (identifier 'f' type='(x: Box<T=Int>) -> Int' scope='inference.call_007.Box.block'))))
         (arguments
           (call_arg 'x' type='Box<T=Int>'
-            (binding_operator =)
+            (binding_operator :=)
             (identifier 'box' type='Box<T=Int>' scope='inference.call_007')))))))

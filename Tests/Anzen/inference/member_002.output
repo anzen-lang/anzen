@@ -4,29 +4,29 @@
       (placeholder T))
     (body
       (block inner_scope='inference.member_002.Box.block'
-          (prop_decl let 'value' type='T' symbol='value' scope='inference.member_002.Box.block'
+          (prop_decl 'value' type='T' symbol='value' scope='inference.member_002.Box.block'
             (type_annotation
               (qual_type_sign
                 (type_identifier 'T' type='T.metatype' scope='inference.member_002.Box')))))))
-  (prop_decl let 'box1' type='Box<T=Int>' symbol='box1' scope='inference.member_002'
+  (prop_decl 'box1' type='Box<T=Int>' symbol='box1' scope='inference.member_002'
     (type_annotation
       (qual_type_sign
         (type_identifier 'Box' type='Box<T=Int>.metatype' scope='inference.member_002'))))
-  (prop_decl let 'box2' type='Box<T=String>' symbol='box2' scope='inference.member_002'
+  (prop_decl 'box2' type='Box<T=String>' symbol='box2' scope='inference.member_002'
     (type_annotation
       (qual_type_sign
         (type_identifier 'Box' type='Box<T=String>.metatype' scope='inference.member_002'))))
-  (prop_decl let 'val1' type='Int' symbol='val1' scope='inference.member_002'
+  (prop_decl 'val1' type='Int' symbol='val1' scope='inference.member_002'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (select type='Int'
         (owner
           (identifier 'box1' type='Box<T=Int>' scope='inference.member_002'))
         (ownee
           (identifier 'value' type='Int' scope='inference.member_002.Box.block')))))
-  (prop_decl let 'val2' type='String' symbol='val2' scope='inference.member_002'
+  (prop_decl 'val2' type='String' symbol='val2' scope='inference.member_002'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (select type='String'
         (owner
           (identifier 'box2' type='Box<T=String>' scope='inference.member_002'))

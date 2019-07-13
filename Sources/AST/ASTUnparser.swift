@@ -38,7 +38,7 @@ public final class ASTUnparser: ASTVisitor {
       repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
       repr += " "
     }
-    repr += (node.reassignable ? "var " : "let ").styled("magenta")
+    repr += (node.attributes.contains(.reassignable) ? "var " : "let ").styled("magenta")
     repr += node.name
 
     if includeType {
@@ -212,9 +212,9 @@ public final class ASTUnparser: ASTVisitor {
 
   public func visit(_ node: ReturnStmt) throws {
     var repr = "return".styled("magenta")
-    if let value = node.value {
+    if let (op, value) = node.binding {
       try visit(value)
-      repr += " \(stack.pop()!)"
+      repr += " \(op) \(stack.pop()!)"
     }
     stack.push(repr)
   }
@@ -380,6 +380,10 @@ public final class ASTUnparser: ASTVisitor {
 
   public func visit(_ node: Literal<String>) {
     stack.push("\"\(node.value)\"".styled("green"))
+  }
+
+  public func visit(_ node: UnparsableInput) {
+    stack.push("<unparsable input>")
   }
 
   private func comment(_ text: String) -> String {

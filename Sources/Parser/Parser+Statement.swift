@@ -3,67 +3,97 @@ import AST
 extension Parser {
 
   /// Parses a single statement.
-  func parseStatement() throws -> Node {
+  func parseStatement() -> Result<Node?> {
     switch peek().kind {
     case .static, .mutating:
       // If the statement starts with a member attribute, it can describe either a property or a
       // function declaration. Hence we need to parse all attributes before we can desambiguise.
       let startToken = peek()
       var attributes: Set<MemberAttribute> = []
+
       attrs:while true {
         consumeNewlines()
         switch peek().kind {
         case .static:
           consume()
           attributes.insert(.static)
+
         case .mutating:
           consume()
           attributes.insert(.mutating)
+
         case .let, .var, .fun:
           break attrs
+
         default:
-          throw unexpectedToken(expected: "property of function declaration")
+          // As the next token does not indicate a property or a method declaration, we should give
+          // up until the end of the line.
+          consumeMany(while: { !$0.isStatementDelimiter })
+          return Result(
+            value: nil,
+            errors: [unexpectedToken(expected: "property of function declaration")])
         }
       }
 
-      // The next consummable token should be `let`, `var` or `fun`.
-      let decl = try parseStatement()
-      decl.range = SourceRange(from: startToken.range.start, to: decl.range.end)
-      if let propDecl = decl as? PropDecl {
-        propDecl.attributes.formUnion(attributes)
-      } else if let funDecl = decl as? FunDecl {
-        funDecl.attributes.formUnion(attributes)
-      } else {
-        assertionFailure()
+      let parseResult = parseStatement()
+      guard let declaration = parseResult.value else {
+        return parseResult
+      }
+      assert(declaration is PropDecl || declaration is FunDecl)
+
+      declaration.range =  SourceRange(from: startToken.range.start, to: declaration.range.end)
+      if let propertyDeclaration = declaration as? PropDecl {
+        propertyDeclaration.attributes.formUnion(attributes)
+      } else if let methodDeclaration = declaration as? FunDecl {
+        methodDeclaration.attributes.formUnion(attributes)
       }
 
-      return decl
+      return Result(value: declaration, errors: parseResult.errors)
 
     case .let, .var:
-      return try parsePropDecl()
+      let parseResult = parsePropDecl()
+      return Result(value: parseResult.value, errors: parseResult.errors)
+
     case .fun, .new, .del:
-      return try parseFunDecl()
+      let parseResult = parseFunDecl()
+      return Result(value: parseResult.value, errors: parseResult.errors)
+
     case .struct:
-      return try parseStructDecl()
+      let parseResult = parseStructDecl()
+      return Result(value: parseResult.value, errors: parseResult.errors)
+
     case .interface:
-      return try parseInterfaceDecl()
+      let parseResult = parseInterfaceDecl()
+      return Result(value: parseResult.value, errors: parseResult.errors)
+
     case .while:
-      return try parseWhileLoop()
+      let parseResult = parseWhileLoop()
+      return Result(value: parseResult.value, errors: parseResult.errors)
+
     case .return:
-      return try parseReturnStmt()
+      let parseResult = parseReturnStmt()
+      return Result(value: parseResult.value, errors: parseResult.errors)
+
     default:
       // Attempt to parse a binding statement before falling back to an expression.
-      if let binding = attempt(parseBindingStmt) {
-        return binding
+      if let parseResult = attempt(parseBindingStmt) {
+        return Result(value: parseResult.value, errors: parseResult.errors)
       }
-      return try parseExpression()
+
+      let parseResult = parseExpression()
+      return Result(value: parseResult.value, errors: parseResult.errors)
     }
   }
 
   /// Parses a block of statements, delimited by braces.
-  func parseStatementBlock() throws -> Block {
-    guard let startToken = consume(.leftBrace)
-      else { throw unexpectedToken(expected: "{") }
+  func parseStatementBlock() -> Result<Block?> {
+    // The first token should be left brace.
+    guard let startToken = consume(.leftBrace) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'{'")])
+    }
+
+    var errors: [ParseError] = []
 
     // Skip trailing new lines.
     consumeNewlines()
@@ -71,81 +101,164 @@ extension Parser {
     // Parse as many statements as possible
     var statements: [Node] = []
     while peek().kind != .rightBrace {
-      statements.append(try parseStatement())
+      // Parse a statement.
+      let statementParseResult = parseStatement()
+      errors.append(contentsOf: statementParseResult.errors)
+      if let statement = statementParseResult.value {
+        statements.append(statement)
+      }
 
       // If the next token isn't the block delimiter, we MUST parse a statement delimiter.
       if peek().kind != .rightBrace {
-        guard peek().isStatementDelimiter
-          else { throw parseFailure(.expectedStatementDelimiter) }
+        guard peek().isStatementDelimiter else {
+          errors.append(parseFailure(.expectedStatementDelimiter))
+          consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .rightBrace) })
+          continue
+        }
+
         consumeNewlines()
+      }
+
+      // Make sure we didn't reach the end of the stream.
+      guard peek().kind != .eof else {
+        errors.append(unexpectedToken(expected: "'}'"))
+        break
       }
     }
 
-    let endToken = consume(.rightBrace)!
-    return Block(
-      statements: statements,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: endToken.range.end))
+    let endToken = consume()!
+    return Result(
+      value: Block(
+        statements: statements,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: endToken.range.end)),
+      errors: errors)
   }
 
   /// Parses a while-loop.
-  func parseWhileLoop() throws -> WhileLoop {
-    guard let startToken = consume(.while)
-      else { throw unexpectedToken(expected: "while") }
+  func parseWhileLoop() -> Result<WhileLoop?> {
+    // The first token should be `return`.
+    guard let startToken = consume(.while) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'while'")])
+    }
+
+    var errors: [ParseError] = []
 
     // Parse the condition.
+    let backtrackPosition = streamPosition
     consumeNewlines()
-    let condition = try parseExpression()
+    let conditionParseResult = parseExpression()
+    errors.append(contentsOf: conditionParseResult.errors)
 
-    // Parse a block of statements.
+    var condition: Expr?
+    if let expression = conditionParseResult.value {
+      condition = expression
+    } else {
+      // Although we cannot create a conditional node without successfully parsing its condition,
+      // we'll attempt to parse the remainder of the expression anyway.
+      rewind(to: backtrackPosition)
+      consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .leftBrace) })
+    }
+
+    // Parse the first block of statements (i.e. the "then" clause).
     consumeNewlines()
-    let body = try parseStatementBlock()
+    let thenParseResult = parseStatementBlock()
+    errors.append(contentsOf: thenParseResult.errors)
 
-    return WhileLoop(
-      condition: condition,
-      body: body,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: body.range.end))
+    guard let body = thenParseResult.value else {
+      return Result(value: nil, errors: errors)
+    }
+
+    guard condition != nil else {
+      return Result(value: nil, errors: errors)
+    }
+
+    return Result(
+      value: WhileLoop(
+        condition: condition!,
+        body: body,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: body.range.end)),
+      errors: errors)
   }
 
   /// Parses a return statement.
-  func parseReturnStmt() throws -> ReturnStmt {
-    guard let startToken = consume(.return)
-      else { throw unexpectedToken(expected: "return") }
-
-    // Parse an optional return value.
-    if let value = attempt(parseExpression) {
-      return ReturnStmt(
-        value: value,
-        module: module,
-        range: SourceRange(from: startToken.range.start, to: value.range.end))
-    } else {
-      return ReturnStmt(
-        module: module,
-        range: startToken.range)
+  func parseReturnStmt() -> Result<ReturnStmt?> {
+    // The first token should be `return`.
+    guard let startToken = consume(.return) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'return'")])
     }
+
+    var errors: [ParseError] = []
+
+    // Attempt to parse a return value.
+    if let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) {
+      consumeNewlines()
+      let parseResult = parseExpression()
+      errors.append(contentsOf: parseResult.errors)
+
+      if let expression = parseResult.value {
+        let binding = (operatorToken.asBindingOperator!, expression)
+        return Result(
+          value: ReturnStmt(
+            binding: binding,
+            module: module,
+            range: SourceRange(from: startToken.range.start, to: expression.range.end)),
+          errors: errors)
+      }
+    } else if let assignOperator = consume(.assign, afterMany: .newline) {
+      // Catch invalid uses of the "assign" token in lieu of a binding operator.
+      errors.append(ParseError(
+        .unexpectedToken(expected: "binding operator", got: assignOperator),
+        range: assignOperator.range))
+
+      // Parse the expression in case it contains syntax errors as well.
+      let parseResult = parseExpression()
+      errors.append(contentsOf: parseResult.errors)
+    }
+
+    return Result(value: ReturnStmt(module: module, range: startToken.range), errors: [])
   }
 
   /// Parses a binding statement.
-  func parseBindingStmt() throws -> BindingStmt {
+  func parseBindingStmt() -> Result<BindingStmt?> {
+    var errors: [ParseError] = []
+
     // Parse the left operand.
-    let left = try parseExpression()
+    let leftParseResult = parseExpression()
+    errors.append(contentsOf: leftParseResult.errors)
+
+    guard let lvalue = leftParseResult.value else {
+      consumeUpToNextStatementDelimiter()
+      return Result(value: nil, errors: errors)
+    }
 
     // Parse the binding operator.
-    consumeNewlines()
-    guard let op = peek().asBindingOperator
-      else { throw unexpectedToken(expected: "binding operator") }
-    consume()
+    guard let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) else {
+      consumeUpToNextStatementDelimiter()
+      return Result(value: nil, errors: errors + [unexpectedToken(expected: "binding operator")])
+    }
 
     // Parse the right operand.
     consumeNewlines()
-    let right = try parseExpression()
-    return BindingStmt(
-      lvalue: left,
-      op: op,
-      rvalue: right,
-      module: module,
-      range: SourceRange(from: left.range.start, to: right.range.end))
+    let rightParseResult = parseExpression()
+    errors.append(contentsOf: leftParseResult.errors)
+
+    guard let rvalue = rightParseResult.value else {
+      consumeUpToNextStatementDelimiter()
+      return Result(value: nil, errors: errors)
+    }
+
+    return Result(
+      value: BindingStmt(
+        lvalue: lvalue,
+        op: operatorToken.asBindingOperator!,
+        rvalue: rvalue,
+        module: module,
+        range: SourceRange(from: lvalue.range.start, to: rvalue.range.end)),
+      errors: errors)
   }
 
 }

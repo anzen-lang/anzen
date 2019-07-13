@@ -14,16 +14,16 @@
                     (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))
             (body
               (block inner_scope='inference.construction_001.Point.block.new.block'))))))
-  (prop_decl let 'pt' type='Point' symbol='pt' scope='inference.construction_001'
+  (prop_decl 'pt' type='Point' symbol='pt' scope='inference.construction_001'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='Point'
         (callee
           (identifier 'Point' type='(x: Int, y: Int) -> Point' scope='inference.construction_001'))
         (arguments
           (call_arg 'x' type='Int'
-            (binding_operator =)
+            (binding_operator :=)
             (int_literal 0 type='Int'))
           (call_arg 'y' type='Int'
-            (binding_operator =)
+            (binding_operator :=)
             (int_literal 0 type='Int')))))))

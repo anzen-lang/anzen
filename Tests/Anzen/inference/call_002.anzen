@@ -6,4 +6,4 @@
 
 fun mono(x: Anything, y: Anything) -> Anything
 
-let a = mono(x = 0, y = true)
+let a := mono(x := 0, y := true)

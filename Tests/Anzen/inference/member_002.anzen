@@ -7,5 +7,5 @@ struct Box<T> {
 let box1: Box<T=Int>
 let box2: Box<T=String>
 
-let val1 = box1.value
-let val2 = box2.value
+let val1 := box1.value
+let val2 := box2.value

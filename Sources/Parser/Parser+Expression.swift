@@ -10,24 +10,38 @@ extension Parser {
   /// Because this parser is implemented as a recursive descent parser, a particular attention must
   /// be made as to how expressions can be parsed witout triggering infinite recursions, due to the
   /// left-recursion of the related production rules.
-  func parseExpression() throws -> Expr {
+  func parseExpression() -> Result<Expr?> {
     // Parse the left operand.
-    var expression = try parseAtom()
+    let atomParseResult = parseAtom()
+    var errors = atomParseResult.errors
+
+    guard var expression = atomParseResult.value else {
+      return Result(value: nil, errors: errors)
+    }
 
     // Attempt to parse the remainder of a binary expression.
     while true {
       // Attempt to consume an infix operator.
       let backtrackPosition = streamPosition
       consumeNewlines()
-      guard let op = peek().asInfixOperator else {
+      guard let infixOperator = peek().asInfixOperator else {
         rewind(to: backtrackPosition)
         break
       }
-      consume()
 
-      if op == .as {
+      // Commit to parsing a binary expression.
+      consume()
+      consumeNewlines()
+
+      if infixOperator == .as {
         // If the infix operator is a cast operator, then we MUST parse a type signature.
-        let castType = try parseTypeSign()
+        let signatureParseResult = parseTypeSign()
+        errors.append(contentsOf: signatureParseResult.errors)
+
+        guard let castType = signatureParseResult.value else {
+          return Result(value: expression, errors: errors)
+        }
+
         expression = CastExpr(
           operand: expression,
           castType: castType,
@@ -36,16 +50,21 @@ extension Parser {
         continue
       }
 
-      // Other infix operators work on expressions, so we MUST parse a right operand as such.
-      let rightOperand = try parseAtom()
+      // Other infix operators work on expressions, so we MUST parse a right operand.
+      let rightParseResult = parseAtom()
+      errors.append(contentsOf: rightParseResult.errors)
+
+      guard let rightOperand = rightParseResult.value else {
+        return Result(value: nil, errors: errors)
+      }
 
       // If the left operand is a binary expression, we should check the precedence of its operator
       // and potentially reorder the operands.
-      if let binExpr = expression as? BinExpr, binExpr.op.precedence < op.precedence {
+      if let binExpr = expression as? BinExpr, binExpr.op.precedence < infixOperator.precedence {
         let left = binExpr.left
         let right = BinExpr(
           left: binExpr.right,
-          op: op,
+          op: infixOperator,
           right: rightOperand,
           module: module,
           range: SourceRange(from: binExpr.right.range.start, to: rightOperand.range.end))
@@ -58,73 +77,124 @@ extension Parser {
       } else {
         expression = BinExpr(
           left: expression,
-          op: op,
+          op: infixOperator,
           right: rightOperand,
           module: module,
           range: SourceRange(from: expression.range.start, to: rightOperand.range.end))
       }
     }
 
-    return expression
+    return Result(value: expression, errors: errors)
   }
 
   /// Parses an atom.
-  func parseAtom() throws -> Expr {
+  func parseAtom() -> Result<Expr?> {
     let token = peek()
     let startLocation = token.range.start
 
     var expression: Expr
+    var errors: [ParseError] = []
+
     switch token.kind {
     case .integer:
       consume()
       expression = Literal(value: Int(token.value!)!, module: module, range: token.range)
+
     case .float:
       consume()
       expression = Literal(value: Double(token.value!)!, module: module, range: token.range)
+
     case .string:
       consume()
       expression = Literal(value: token.value!, module: module, range: token.range)
+
     case .bool:
       consume()
       expression = Literal(value: token.value == "true", module: module, range: token.range)
 
     case _ where token.isPrefixOperator:
-      expression = try parseUnExpr()
+      let parseResult = parseUnExpr()
+      errors = parseResult.errors
+      guard let node = parseResult.value else {
+        return Result(value: nil, errors: errors)
+      }
+      expression = node
+
     case .identifier:
-      expression = try parseIdentifier()
+      let parseResult = parseIdentifier()
+      errors = parseResult.errors
+      guard let node = parseResult.value else {
+        return Result(value: nil, errors: errors)
+      }
+      expression = node
+
     case .if:
-      expression = try parseIfExpr()
+      let parseResult = parseIfExpr()
+      errors = parseResult.errors
+      guard let node = parseResult.value else {
+        return Result(value: nil, errors: errors)
+      }
+      expression = node
+
     case .fun:
-      expression = try parseLambdaExpr()
+      let parseResult = parseLambdaExpr()
+      errors = parseResult.errors
+      guard let node = parseResult.value else {
+        return Result(value: nil, errors: errors)
+      }
+      expression = node
+
     case .leftBracket:
-      expression = try parseArrayLiteral()
+      let parseResult = parseArrayLiteral()
+      errors = parseResult.errors
+      guard let node = parseResult.value else {
+        return Result(value: nil, errors: errors)
+      }
+      expression = node
+
     case .leftBrace:
-      expression = try attempt(parseMapLiteral) ?? parseSetLiteral()
+      let parseResult = parseMapOrSetLiteral()
+      errors = parseResult.errors
+      guard let node = parseResult.value else {
+        return Result(value: nil, errors: errors)
+      }
+      expression = node
 
     case .dot:
       consume()
-      guard peek().kind == .identifier || peek().isPrefixOperator || peek().isInfixOperator
-        else { throw parseFailure(.expectedMember) }
-      let ident = try parseIdentifier(allowOperators: true)
+      let identifierParseResult = parseIdentifier(allowOperators: true)
+      errors.append(contentsOf: identifierParseResult.errors)
+      guard let identifier = identifierParseResult.value else {
+        return Result(value: nil, errors: errors)
+      }
 
       expression = SelectExpr(
-        ownee: ident,
+        ownee: identifier,
         module: module,
-        range: SourceRange(from: token.range.start, to: ident.range.end))
+        range: SourceRange(from: token.range.start, to: identifier.range.end))
 
     case .leftParen:
       consume()
       consumeNewlines()
-      let enclosed = try parseExpression()
-      guard let delimiter = consume(.rightParen, afterMany: .newline)
-        else { throw unexpectedToken(expected: ")") }
+      let enclosedParseResult = parseExpression()
+      errors.append(contentsOf: enclosedParseResult.errors)
+      guard let enclosed = enclosedParseResult.value else {
+        return Result(value: nil, errors: errors)
+      }
+
+      let delimiter = consume(.rightParen, afterMany: .newline)
+      if delimiter == nil {
+        errors.append(unexpectedToken(expected: "')'"))
+      }
+
       expression = EnclosedExpr(
         enclosing: enclosed,
         module: module,
-        range: SourceRange(from: startLocation, to: delimiter.range.end))
+        range: SourceRange(from: startLocation, to: delimiter!.range.end))
 
     default:
-      throw unexpectedToken(expected: "expression")
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "expression")])
     }
 
     // NOTE: Although it wouldn't make the grammar ambiguous otherwise, notice that we require
@@ -132,30 +202,44 @@ extension Parser {
     // make some portions of code *look* ambiguous.
     trailer:while true {
       if consume(.leftParen) != nil {
-        let args = try parseList(delimitedBy: .rightParen, parsingElementWith: parseCallArg)
+        let argumentsParseResult = parseList(
+          delimitedBy: .rightParen,
+          parsingElementWith: parseCallArg)
+        errors.append(contentsOf: argumentsParseResult.errors)
 
         // Consume the delimiter of the list.
-        guard let endToken = consume(.rightParen)
-          else { throw unexpectedToken(expected: ")") }
+        let endToken = consume(.rightParen)
+        if endToken == nil {
+          errors.append(unexpectedToken(expected: "')'"))
+        }
+        let end = endToken?.range.end ?? expression.range.end
 
         expression = CallExpr(
           callee: expression,
-          arguments: args,
+          arguments: argumentsParseResult.value,
           module: module,
-          range: SourceRange(from: expression.range.start, to: endToken.range.end))
+          range: SourceRange(from: expression.range.start, to: end))
+
         continue trailer
       } else if consume(.leftBracket) != nil {
-        let args = try parseList(delimitedBy: .rightBracket, parsingElementWith: parseCallArg)
+        let argumentsParseResult = parseList(
+          delimitedBy: .rightBracket,
+          parsingElementWith: parseCallArg)
+        errors.append(contentsOf: argumentsParseResult.errors)
 
         // Consume the delimiter of the list.
-        guard let endToken = consume(.rightBracket)
-          else { throw unexpectedToken(expected: ")") }
+        let endToken = consume(.rightBracket)
+        if endToken == nil {
+          errors.append(unexpectedToken(expected: "']'"))
+        }
+        let end = endToken?.range.end ?? expression.range.end
 
         expression = SubscriptExpr(
           callee: expression,
-          arguments: args,
+          arguments: argumentsParseResult.value,
           module: module,
-          range: SourceRange(from: expression.range.start, to: endToken.range.end))
+          range: SourceRange(from: expression.range.start, to: end))
+
         continue trailer
       }
 
@@ -164,15 +248,18 @@ extension Parser {
       // consuming possibly significant new lines.
       let backtrackPosition = streamPosition
       if consume(.dot, afterMany: .newline) != nil {
-        guard peek().kind == .identifier || peek().isPrefixOperator || peek().isInfixOperator
-          else { throw parseFailure(.expectedMember) }
-        let ident = try parseIdentifier(allowOperators: true)
+        let identifierParseResult = parseIdentifier(allowOperators: true)
+        errors.append(contentsOf: identifierParseResult.errors)
+        guard let identifier = identifierParseResult.value else {
+          return Result(value: nil, errors: errors)
+        }
 
         expression = SelectExpr(
           owner: expression,
-          ownee: ident,
+          ownee: identifier,
           module: module,
-          range: SourceRange(from: expression.range.start, to: ident.range.end))
+          range: SourceRange(from: expression.range.start, to: identifier.range.end))
+
         continue trailer
       }
 
@@ -181,216 +268,420 @@ extension Parser {
       break
     }
 
-    return expression
+    return Result(value: expression, errors: errors)
   }
 
   /// Parses an unary expression.
-  func parseUnExpr() throws -> UnExpr {
-    guard let op = consume(), op.isPrefixOperator
-      else { throw unexpectedToken(expected: "unary operator") }
+  func parseUnExpr() -> Result<UnExpr?> {
+    // The first token must be an unary operator.
+    guard let operatorToken = consume(if: { $0.isPrefixOperator }) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "unary operator")])
+    }
 
-    let operand = try parseExpression()
-    return UnExpr(
-      op: op.asPrefixOperator!,
-      operand: operand,
-      module: module,
-      range: SourceRange(from: op.range.start, to: operand.range.end))
+    // Parse the expression.
+    let operandParseResult = parseExpression()
+    guard let operand = operandParseResult.value else {
+      return Result(value: nil, errors: operandParseResult.errors)
+    }
+
+    return Result(
+      value: UnExpr(
+        op: operatorToken.asPrefixOperator!,
+        operand: operand,
+        module: module,
+        range: SourceRange(from: operatorToken.range.start, to: operand.range.end)),
+      errors: operandParseResult.errors)
   }
 
   /// Parses an identifier.
-  func parseIdentifier(allowOperators: Bool = false) throws -> Ident {
-    let ident: Ident
+  func parseIdentifier(allowOperators: Bool = false) -> Result<Ident?> {
+    let identifier: Ident
+    var errors: [ParseError] = []
+
+    // The first token is either an identifier or an operator (provided `allowsOperator` is set).
     if let name = consume(.identifier) {
-      ident = Ident(name: name.value!, module: module, range: name.range)
+      identifier = Ident(name: name.value!, module: module, range: name.range)
     } else if allowOperators, let op = consume(if: { $0.isPrefixOperator || $0.isInfixOperator }) {
-      ident = Ident(name: op.kind.rawValue, module: module, range: op.range)
+      identifier = Ident(name: op.kind.rawValue, module: module, range: op.range)
     } else {
-      throw unexpectedToken(expected: "identifier")
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
     }
 
-    // Attempt to parse the specialization list.
+    // Attempt to parse a specialization list.
     let backtrackPosition = streamPosition
     consumeNewlines()
-    if peek().kind == .lt, let keysAndValues = attempt(parseSpecializationList) {
-      // Make sure there's no duplicate key.
-      let duplicates = keysAndValues.duplicates { $0.0.value! }
-      guard duplicates.isEmpty else {
-        let key = duplicates.first!.0
-        throw ParseError(.duplicateKey(key: key.value!), range: key.range)
+    if peek().kind == .lt, let specializationsParseResult = attempt(parseSpecializationList) {
+      errors.append(contentsOf: specializationsParseResult.errors)
+      for (token, value) in specializationsParseResult.value {
+        // Make sure there are no duplicate keys.
+        guard identifier.specializations[token.value!] == nil else {
+          errors.append(ParseError(.duplicateKey(key: token.value!), range: token.range))
+          continue
+        }
+        identifier.specializations[token.value!] = value
       }
-      ident.specializations = Dictionary(
-        uniqueKeysWithValues: keysAndValues.map({ ($0.0.value!, $0.1) }))
     } else {
       rewind(to: backtrackPosition)
     }
 
-    return ident
+    return Result(value: identifier, errors: errors)
   }
 
   /// Parses a conditional expression.
-  func parseIfExpr() throws -> IfExpr {
-    guard let startToken = consume(.if)
-      else { throw unexpectedToken(expected: "if") }
+  func parseIfExpr() -> Result<IfExpr?> {
+    // The first token should be `if`.
+    guard let startToken = consume(.if) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'if'")])
+    }
+
+    var errors: [ParseError] = []
 
     // Parse the condition.
+    let backtrackPosition = streamPosition
     consumeNewlines()
-    let condition = try parseExpression()
+    let conditionParseResult = parseExpression()
+    errors.append(contentsOf: conditionParseResult.errors)
 
-    // Parse a block of statements.
+    var condition: Expr?
+    if let expression = conditionParseResult.value {
+      condition = expression
+    } else {
+      // Although we cannot create a conditional node without successfully parsing its condition,
+      // we'll attempt to parse the remainder of the expression anyway.
+      rewind(to: backtrackPosition)
+      consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .leftBrace) })
+    }
+
+    // Parse the first block of statements (i.e. the "then" clause).
     consumeNewlines()
-    let thenBlock = try parseStatementBlock()
+    let thenParseResult = parseStatementBlock()
+    errors.append(contentsOf: thenParseResult.errors)
 
-    // Parse the optional else block.
-    let elseBlock = attempt { () -> Node in
-      guard consume(.else, afterMany: .newline) != nil
-        else { throw unexpectedToken(expected: "else") }
+    guard let thenBlock = thenParseResult.value else {
+      return Result(value: nil, errors: errors)
+    }
 
+    // Attempt to parse an optional else block.
+    var elseBlock: Node?
+    if consume(.else, afterMany: .newline) != nil {
+      // Commit to parse the else block.
       consumeNewlines()
-      if let block = attempt(parseIfExpr) {
-        return block
+
+      if peek().kind == .if {
+        let conditionalElseParseResult = parseIfExpr()
+        errors.append(contentsOf: conditionParseResult.errors)
+        elseBlock = conditionalElseParseResult.value
       } else {
-        return try parseStatementBlock()
+        let elseParseResult = parseStatementBlock()
+        errors.append(contentsOf: conditionParseResult.errors)
+        elseBlock = elseParseResult.value
       }
     }
 
+    guard condition != nil else {
+      return Result(value: nil, errors: errors)
+    }
+
     let end = elseBlock?.range.end ?? thenBlock.range.end
-    return IfExpr(
-      condition: condition,
-      thenBlock: thenBlock,
-      elseBlock: elseBlock,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: end))
+    return Result(
+      value: IfExpr(
+        condition: condition!,
+        thenBlock: thenBlock,
+        elseBlock: elseBlock,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: end)),
+      errors: errors)
   }
 
   /// Parses a lambda expression.
-  func parseLambdaExpr() throws -> LambdaExpr {
-    guard let startToken = consume(.fun)
-      else { throw unexpectedToken(expected: "fun") }
-
-    // Parse the optional parameter list.
-    var parameters: [ParamDecl] = []
-    if consume(.leftParen, afterMany: .newline) != nil {
-      parameters = try parseList(delimitedBy: .rightParen, parsingElementWith: parseParamDecl)
-      guard consume(.rightParen) != nil
-        else { throw unexpectedToken(expected: ")") }
+  func parseLambdaExpr() -> Result<LambdaExpr?> {
+    // The first token should be `fun`.
+    guard let startToken = consume(.fun) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'fun'")])
     }
 
-    // Parse the optional codomain.
-    var codomain: Node? = nil
+    var errors: [ParseError] = []
+
+    // Attempt to parse a parameter list.
+    var parameters: [ParamDecl] = []
+    if consume(.leftParen, afterMany: .newline) != nil {
+      // Commit to parse a parameter list.
+      let parametersParseResult = parseList(
+        delimitedBy: .rightParen,
+        parsingElementWith: parseParamDecl)
+      errors.append(contentsOf: parametersParseResult.errors)
+
+      // Make sure there are no duplicate parameters.
+      var existing: Set<String> = []
+      for parameter in parametersParseResult.value {
+        guard !existing.contains(parameter.name) else {
+          errors.append(
+            ParseError(.duplicateParameter(name: parameter.name), range: parameter.range))
+          continue
+        }
+        existing.insert(parameter.name)
+      }
+
+      parameters = parametersParseResult.value
+      if consume(.rightParen) == nil {
+        errors.append(unexpectedToken(expected: "')'"))
+      }
+    }
+
+    // Attempt to parse a codomain.
+    var codomain: Node?
     if consume(.arrow, afterMany: .newline) != nil {
       consumeNewlines()
-      codomain = try parseQualSign()
+      let backtrackPosition = streamPosition
+      let codomainParseResult = parseQualSign()
+      errors.append(contentsOf: codomainParseResult.errors)
+
+      if let signature = codomainParseResult.value {
+        codomain = signature
+      } else {
+        rewind(to: backtrackPosition)
+        consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .leftBrace) })
+      }
     }
 
     // Parse the body of the lambda.
     consumeNewlines()
-    let block = try parseStatementBlock()
+    let blockParseResult = parseStatementBlock()
+    errors.append(contentsOf: blockParseResult.errors)
 
-    return LambdaExpr(
-      parameters: parameters,
-      codomain: codomain,
-      body: block,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: block.range.end))
+    guard let body = blockParseResult.value else {
+      return Result(value: nil, errors: errors)
+    }
+
+    return Result(
+      value: LambdaExpr(
+        parameters: parameters,
+        codomain: codomain,
+        body: body,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: body.range.end)),
+      errors: errors)
   }
 
   /// Parses a call argument.
-  func parseCallArg() throws -> CallArg {
-    // Parse the optional label and binding operator of the argument.
-    var label: Token? = nil
-    var bindingOperator: BindingOperator? = nil
+  func parseCallArg() -> Result<CallArg?> {
+    var errors: [ParseError] = []
 
+    // Attempt to parse an explicit parameter assignment (i.e. `label operator expression`).
     let backtrackPosition = streamPosition
     if let token = consume(.identifier) {
-      consumeNewlines()
-      if let op = peek().asBindingOperator {
-        consume()
-        label = token
-        bindingOperator = op
+      // Attempt to parse a binding operator.
+      if let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) {
+        // Commit to parsing an explicit parameter assignment (i.e. `label operator expression`).
         consumeNewlines()
+        let parseResult = parseExpression()
+        errors.append(contentsOf: parseResult.errors)
+
+        guard let expression = parseResult.value else {
+          return Result(value: nil, errors: errors)
+        }
+
+        return Result(
+          value: CallArg(
+            label: token.value,
+            bindingOp: operatorToken.asBindingOperator!,
+            value: expression,
+            module: module,
+            range: SourceRange(from: token.range.start, to: expression.range.end)),
+          errors: errors)
       } else {
+        // If we couldn't parse the remainder of an explicit parameter assignment, we rewind an
+        // attempt to parse a simple expression instead.
         rewind(to: backtrackPosition)
       }
     }
 
-    // Read the argument's value.
-    let value = try parseExpression()
-    let start = label?.range.start ?? value.range.start
-    let arg = CallArg(
-      label: label?.value,
-      bindingOp: bindingOperator ?? .copy,
-      value: value,
-      module: module,
-      range: SourceRange(from: start, to: value.range.end))
-    return arg
+    // Parse the argument's value.
+    let argumentParseResult = parseExpression()
+    errors.append(contentsOf: argumentParseResult.errors)
+
+    guard let value = argumentParseResult.value else {
+      return Result(value: nil, errors: errors)
+    }
+
+    return Result(
+      value: CallArg(
+        label: nil, bindingOp: .copy,
+        value: value,
+        module: module,
+        range: value.range),
+      errors: errors)
   }
 
   /// Parses an array literal.
-  func parseArrayLiteral() throws -> ArrayLiteral {
-    guard let startToken = consume(.leftBracket)
-      else { throw unexpectedToken(expected: "[") }
-    let elements = try parseList(delimitedBy: .rightBracket, parsingElementWith: parseExpression)
-    guard let endToken = consume(.rightBracket)
-      else { throw unexpectedToken(expected: "]") }
-
-    return ArrayLiteral(
-      elements: elements,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: endToken.range.end))
-  }
-
-  /// Parses a set literal.
-  func parseSetLiteral() throws -> SetLiteral {
-    guard let startToken = consume(.leftBrace)
-      else { throw unexpectedToken(expected: "{") }
-    let elements = try parseList(delimitedBy: .rightBrace, parsingElementWith: parseExpression)
-    guard let endToken = consume(.rightBrace)
-      else { throw unexpectedToken(expected: "}") }
-
-    return SetLiteral(
-      elements: elements,
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: endToken.range.end))
-  }
-
-  /// Parses a map literal.
-  func parseMapLiteral() throws -> MapLiteral {
-    guard let startToken = consume(.leftBrace)
-      else { throw unexpectedToken(expected: "{") }
-    let keysAndValues = try parseList(delimitedBy: .rightBrace, parsingElementWith: parseMapElement)
-
-    // Make sure there's no duplicate key.
-    let duplicates = keysAndValues.duplicates { $0.0.value! }
-    guard duplicates.isEmpty else {
-      let key = duplicates.first!.0
-      throw ParseError(.duplicateKey(key: key.value!), range: key.range)
+  func parseArrayLiteral() -> Result<ArrayLiteral?> {
+    // The first token must be left bracket.
+    guard let startToken = consume(.leftBracket) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'['")])
     }
 
-    // Consume the delimiter of the list.
-    guard let endToken = consume(.rightBrace)
-      else { throw unexpectedToken(expected: "}") }
+    var errors: [ParseError] = []
 
-    return MapLiteral(
-      elements: Dictionary.init(
-        uniqueKeysWithValues: keysAndValues.map({ ($0.0.value!, $0.1) })),
-      module: module,
-      range: SourceRange(from: startToken.range.start, to: endToken.range.end))
+    // Parse the array elements.
+    let elementsParseResult = parseList(
+      delimitedBy: .rightBracket,
+      parsingElementWith: parseExpression)
+    errors.append(contentsOf: elementsParseResult.errors)
+
+    // Parse the expression's delimiter.
+    guard let endToken = consume(.rightBracket) else {
+      defer { consumeUpToNextStatementDelimiter() }
+      return Result(value: nil, errors: errors + [unexpectedToken(expected: "']'")])
+    }
+
+    return Result(
+      value: ArrayLiteral(
+        elements: elementsParseResult.value,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: endToken.range.end)),
+      errors: errors)
+  }
+
+  /// Parses a map or set literal.
+  ///
+  /// Map and set liteals are similar in that they are a list of elements enclosed in braces, which
+  /// complicates error reporting. We choose to commit on whether we're parsing a map or a set
+  /// literal based on the successful parsing of the first element.
+  ///
+  /// Note that a colon is required to distinguish between empty set literals and map literals, so
+  /// that `{}` is parsed as an empty set literal and `{:}` is parser as the empty map literal.
+  func parseMapOrSetLiteral() -> Result<Expr?> {
+    // The first token must be brace bracket.
+    guard let startToken = consume(.leftBrace) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'{'")])
+    }
+
+    // If the next consumable token is the right delimiter, we've got an empty set literal.
+    if let endToken = consume(.rightBrace, afterMany: .newline) {
+      return Result(
+        value: SetLiteral(
+          elements: [],
+          module: module,
+          range: SourceRange(from: startToken.range.start, to: endToken.range.start)),
+        errors: [])
+    }
+
+    // If the next consumable token is a colon, we've probably got an empty map literal.
+    if consume(.colon, afterMany: .newline) != nil {
+      // Commit to parsing the empty map literal.
+      guard let endToken = consume(.rightBrace, afterMany: .newline) else {
+        defer { consumeUpToNextStatementDelimiter() }
+        return Result(value: nil, errors: [unexpectedToken(expected: "'}'")])
+      }
+
+      return Result(
+        value: MapLiteral(
+          elements: [:],
+          module: module,
+          range: SourceRange(from: startToken.range.start, to: endToken.range.start)),
+        errors: [])
+    }
+
+    var errors: [ParseError] = []
+
+    // Attempt to parse a map element.
+    consumeNewlines()
+    let backtrackPosition = streamPosition
+    let firstMapElementParseResult = parseMapElement()
+    rewind(to: backtrackPosition)
+
+    if let firstMapElement = firstMapElementParseResult.value {
+      // Commit to parsing a map literal.
+      let mapElementsParseResult = parseMapElements()
+      errors.append(contentsOf: mapElementsParseResult.errors)
+
+      // Parse the expression's delimiter.
+      guard let endToken = consume(.rightBrace) else {
+        defer { consumeUpToNextStatementDelimiter() }
+        return Result(value: nil, errors: errors + [unexpectedToken(expected: "'}'")])
+      }
+
+      return Result(
+        value: MapLiteral(
+          elements: mapElementsParseResult.value,
+          module: module,
+          range: SourceRange(from: startToken.range.start, to: endToken.range.end)),
+        errors: errors)
+    } else {
+      // Commit to parsing a set literal.
+      let setElementsParseResult = parseList(
+        delimitedBy: .rightBrace,
+        parsingElementWith: parseExpression)
+      errors.append(contentsOf: setElementsParseResult.errors)
+
+      // Parse the expression's delimiter.
+      guard let endToken = consume(.rightBrace) else {
+        defer { consumeUpToNextStatementDelimiter() }
+        return Result(value: nil, errors: errors + [unexpectedToken(expected: "'}'")])
+      }
+
+      return Result(
+        value: SetLiteral(
+          elements: setElementsParseResult.value,
+          module: module,
+          range: SourceRange(from: startToken.range.start, to: endToken.range.end)),
+        errors: errors)
+    }
+  }
+
+  /// Parses a sequence of key/value pairs as the elements of a map literal.
+  func parseMapElements() -> Result<[String: Expr]> {
+    var errors: [ParseError] = []
+
+    // Parse the map elements.
+    let elementsParseResult = parseList(
+      delimitedBy: .rightBrace,
+      parsingElementWith: parseMapElement)
+    errors.append(contentsOf: elementsParseResult.errors)
+
+    var elements: [String: Expr] = [:]
+    for (token, value) in elementsParseResult.value {
+      // Make sure there are no duplicate keys.
+      guard elements[token.value!] == nil else {
+        errors.append(ParseError(.duplicateKey(key: token.value!), range: token.range))
+        continue
+      }
+      elements[token.value!] = value
+    }
+
+    return Result(value: elements, errors: errors)
   }
 
   /// Parses a map literal element.
-  func parseMapElement() throws -> (Token, Expr) {
+  func parseMapElement() -> Result<(Token, Expr)?> {
     // Parse the key of the element.
-    guard let key = consume(.identifier)
-      else { throw unexpectedToken(expected: "identifier") }
+    guard let key = consume(.identifier) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
+    }
 
-    // Parse the `:` symbol.
-    guard consume(.colon, afterMany: .newline) != nil
-      else { throw unexpectedToken(expected: ":") }
+    var errors: [ParseError] = []
 
-    // Parse the value it should maps to.
+    // Parse the value of the element.
+    guard consume(.colon, afterMany: .newline) != nil else {
+      defer { consumeUpToNextStatementDelimiter() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "':'")])
+    }
+
     consumeNewlines()
-    let value = try parseExpression()
-    return (key, value)
+    let valueParseResult = parseExpression()
+    errors.append(contentsOf: valueParseResult.errors)
+    guard let value = valueParseResult.value else {
+      return Result(value: nil, errors: errors)
+    }
+
+    return Result(value: (key, value), errors: errors)
   }
 
 }

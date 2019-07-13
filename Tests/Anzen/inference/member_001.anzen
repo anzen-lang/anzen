@@ -6,4 +6,4 @@ struct Point {
 }
 
 let p: Point
-let x = p.x
+let x := p.x

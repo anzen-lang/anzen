@@ -6,4 +6,4 @@ struct Box<T> {
 }
 
 let box: Box<T=Int>
-let val = box.f(x=box)
+let val := box.f(x := box)

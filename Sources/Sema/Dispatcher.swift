@@ -141,7 +141,9 @@ public final class Dispatcher: ASTTransformer {
   public func transform(_ node: Ident) throws -> Node {
     node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
     node.specializations = try Dictionary(
-      uniqueKeysWithValues: node.specializations.map({ try ($0, transform($1)) }))
+      uniqueKeysWithValues: node.specializations.map({
+        try ($0, transform($1) as! QualTypeSign)
+      }))
 
     assert(node.scope != nil)
     assert(node.scope!.symbols[node.name] != nil)

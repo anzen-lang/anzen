@@ -4,4 +4,4 @@ struct Point {
   new(x: Int, y: Int) {}
 }
 
-let pt = Point(x = 0, y = 0)
+let pt := Point(x := 0, y := 0)

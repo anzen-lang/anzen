@@ -13,4 +13,3 @@ disabled_rules: # rule identifiers to exclude from running
   - type_body_length
 excluded: # paths to ignore during linting
   - .build
-  - Sources/Interpreter

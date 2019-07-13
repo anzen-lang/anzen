@@ -85,4 +85,3 @@ public struct AIRParameter: AIRRegister {
   }
 
 }
-

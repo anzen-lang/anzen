@@ -179,7 +179,7 @@ public extension ASTVisitor {
   }
 
   func traverse(_ node: ReturnStmt) throws {
-    if let value = node.value {
+    if let (_, value) = node.binding {
       try visit(value)
     }
   }
@@ -315,6 +315,11 @@ public extension ASTVisitor {
   }
 
   func visit(_ node: Literal<String>) throws {
+  }
+
+  // MARK: Input errors
+
+  func visit(_ node: UnparsableInput) throws {
   }
 
 }

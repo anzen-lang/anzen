@@ -47,7 +47,6 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
 
   public func visit(_ node: PropDecl) throws {
     self <<< indent <<< "(prop_decl"
-    self <<< node.reassignable ? " var" : " let"
     if !node.attributes.isEmpty {
       self <<< " " + node.attributes.map({ $0.rawValue }).sorted().joined(separator: " ")
     }
@@ -270,9 +269,13 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
 
   public func visit(_ node: ReturnStmt) throws {
     self <<< indent <<< "(return"
-    if let value = node.value {
-      self <<< "\n"
-      withIndentation { try visit(value) }
+    if let (op, value) = node.binding {
+      self <<< "\n" <<< indent <<< "(binding\n"
+      withIndentation {
+        self <<< indent <<< "(binding_operator \(op))\n"
+        try visit(value)
+      }
+      self <<< ")"
     }
     self <<< ")"
   }
@@ -497,6 +500,10 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
         self <<< "\n"
       }
     }
+  }
+
+  public func visit(_ node: UnparsableInput) {
+    self <<< "(unparsable input)"
   }
 
   fileprivate func withIndentation(body: () throws -> Void) {

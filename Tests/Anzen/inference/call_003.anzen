@@ -6,5 +6,5 @@
 
 fun poly<T>(x: T) -> T
 
-let a = poly(x = 0)
-let b = poly(x = poly(x = true))
+let a := poly(x := 0)
+let b := poly(x := poly(x := true))

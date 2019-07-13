@@ -135,14 +135,12 @@ public final class PropDecl: NamedDecl {
   public init(
     name: String,
     attributes: Set<MemberAttribute> = [],
-    reassignable: Bool = false,
     typeAnnotation: QualTypeSign? = nil,
     initialBinding: (op: BindingOperator, value: Expr)? = nil,
     module: ModuleDecl,
     range: SourceRange)
   {
     self.attributes = attributes
-    self.reassignable = reassignable
     self.typeAnnotation = typeAnnotation
     self.initialBinding = initialBinding
     super.init(name: name, module: module, range: range)
@@ -150,8 +148,6 @@ public final class PropDecl: NamedDecl {
 
   /// The member attributes of the property.
   public var attributes: Set<MemberAttribute>
-  /// Whether or not the property is reassignable (i.e. declared with `var` or `let`).
-  public var reassignable: Bool
   /// The type annotation of the property.
   public var typeAnnotation: QualTypeSign?
   /// The initial binding value of the property.
@@ -222,7 +218,7 @@ public final class ParamDecl: NamedDecl {
   public init(
     label: String?,
     name: String,
-    typeAnnotation: QualTypeSign?,
+    typeAnnotation: QualTypeSign? = nil,
     defaultValue: Expr? = nil,
     module: ModuleDecl,
     range: SourceRange)
@@ -358,7 +354,7 @@ public final class TypeIdent: TypeSign {
 
   public init(
     name: String,
-    specializations: [String: Node] = [:],
+    specializations: [String: QualTypeSign] = [:],
     module: ModuleDecl,
     range: SourceRange)
   {
@@ -370,7 +366,7 @@ public final class TypeIdent: TypeSign {
   /// The name of the type.
   public var name: String
   /// The specialization list of the type.
-  public var specializations: [String: Node]
+  public var specializations: [String: QualTypeSign]
   /// The symbol associated with the declaration.
   public var symbol: Symbol?
   /// The scope in which the declaration is defined.
@@ -476,13 +472,17 @@ public final class BindingStmt: Node {
 /// A return statement.
 public final class ReturnStmt: Node {
 
-  public init(value: Expr? = nil, module: ModuleDecl, range: SourceRange) {
-    self.value = value
+  public init(
+    binding: (op: BindingOperator, value: Expr)? = nil,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
+    self.binding = binding
     super.init(module: module, range: range)
   }
 
-  /// The value of the return statement.
-  public var value: Expr?
+  /// The binding of the return statement.
+  public var binding: (op: BindingOperator, value: Expr)?
 
 }
 
@@ -696,7 +696,7 @@ public final class Ident: Expr {
 
   public init(
     name: String,
-    specializations: [String: Node] = [:],
+    specializations: [String: QualTypeSign] = [:],
     module: ModuleDecl,
     range: SourceRange)
   {
@@ -708,7 +708,7 @@ public final class Ident: Expr {
   /// The name of the identifier.
   public var name: String
   /// The specialization list of the identifier.
-  public var specializations: [String: Node]
+  public var specializations: [String: QualTypeSign]
   /// The scope in which the identifier's defined.
   public var scope: Scope?
 
@@ -785,6 +785,17 @@ public final class EnclosedExpr: Expr {
   }
 
   /// The enclosed expression.
-  var expression: Node
+  public var expression: Node
+
+}
+
+/// An unparsable sequence of tokens in the source input.
+///
+/// The node is used by the parser to represent unparsable sequences of tokens.
+public final class UnparsableInput: Node {
+
+  public init(module: ModuleDecl, range: SourceRange) {
+    super.init(module: module, range: range)
+  }
 
 }

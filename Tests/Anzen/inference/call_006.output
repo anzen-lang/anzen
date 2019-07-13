@@ -28,33 +28,33 @@
     (codomain
       (qual_type_sign
         (type_identifier 'Bool' type='Bool.metatype' scope='__builtin'))))
-  (prop_decl let 'a' type='Int' symbol='a' scope='inference.call_006'
+  (prop_decl 'a' type='Int' symbol='a' scope='inference.call_006'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='Int'
         (callee
           (identifier 'overloaded' type='(x: Int) -> Int' scope='inference.call_006'))
         (arguments
           (call_arg 'x' type='Int'
-            (binding_operator =)
+            (binding_operator :=)
             (int_literal 0 type='Int'))))))
-  (prop_decl let 'b' type='Bool' symbol='b' scope='inference.call_006'
+  (prop_decl 'b' type='Bool' symbol='b' scope='inference.call_006'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='Bool'
         (callee
           (identifier 'overloaded' type='(x: Bool) -> Bool' scope='inference.call_006'))
         (arguments
           (call_arg 'x' type='Bool'
-            (binding_operator =)
+            (binding_operator :=)
             (bool_literal true type='Bool'))))))
-  (prop_decl let 'c' type='String' symbol='c' scope='inference.call_006'
+  (prop_decl 'c' type='String' symbol='c' scope='inference.call_006'
     (initial_binding
-      (binding_operator =)
+      (binding_operator :=)
       (call type='String'
         (callee
           (identifier 'overloaded' type='(x: String) -> String' scope='inference.call_006'))
         (arguments
           (call_arg 'x' type='String'
-            (binding_operator =)
+            (binding_operator :=)
             (string_literal "Hello" type='String')))))))

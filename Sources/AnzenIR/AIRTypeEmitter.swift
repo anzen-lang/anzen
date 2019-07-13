@@ -83,10 +83,8 @@ struct TypeEmitter {
       }
     }
     let subEmitter = TypeEmitter(builder: builder, typeBindings: updatedBindings)
-    for symbol in structType.members {
-      if !symbol.isOverloadable {
-        ty.members[symbol.name] = subEmitter.emitType(of: symbol.type!)
-      }
+    for symbol in structType.members where !symbol.isOverloadable {
+      ty.members[symbol.name] = subEmitter.emitType(of: symbol.type!)
     }
 
     return ty
