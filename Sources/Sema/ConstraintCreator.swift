@@ -11,7 +11,7 @@ public final class ConstraintCreator: ASTVisitor {
   public let context: ASTContext
 
   public func visit(_ node: PropDecl) throws {
-    var propType: TypeBase? = nil
+    var propType: TypeBase?
     if let annotation = node.typeAnnotation {
       propType = signatureToType(signature: annotation)
       context.add(constraint:
@@ -64,7 +64,7 @@ public final class ConstraintCreator: ASTVisitor {
 
   public func visit(_ node: ParamDecl) throws {
     // Extract the type of the parameter from its annotation.
-    var paramType: TypeBase? = nil
+    var paramType: TypeBase?
     if let annotation = node.typeAnnotation {
       paramType = signatureToType(signature: annotation)
       context.add(constraint:

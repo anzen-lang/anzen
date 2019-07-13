@@ -39,8 +39,7 @@ public class AIREmissionDriver {
     name: String,
     declaration: FunDecl,
     type: FunctionType,
-    typeEmitter: TypeEmitter)
-    -> (function: AIRFunction, locals: [Symbol: AIRValue], returnRegister: AIRRegister?)
+    typeEmitter: TypeEmitter) -> FunctionPrologue
   {
     var fnType = typeEmitter.emitType(of: type)
 
@@ -112,9 +111,10 @@ public class AIREmissionDriver {
       builder.buildReturn()
     }
 
-    return (function, locals, returnRegister)
+    return FunctionPrologue(function: function, locals: locals, returnRegister: returnRegister)
   }
 
+  // swiftlint:disable function_parameter_count
   private func emitFunctionBody(
     builder: AIRBuilder,
     function: AIRFunction,
@@ -142,6 +142,7 @@ public class AIREmissionDriver {
     // Save the implementation requests.
     requestedImpl.append(contentsOf: emitter.requestedImpl)
   }
+  // swiftlint:enable function_parameter_count
 
   private func emitImplementationRequests(builder: AIRBuilder) {
     while let (decl, type) = requestedImpl.popLast() {
@@ -159,7 +160,7 @@ public class AIREmissionDriver {
 
       let typeEmitter = TypeEmitter(builder: builder, typeBindings: typeBindings)
 
-      let (function, locals, returnRegister) = emitFunctionPrologue(
+      let prologue = emitFunctionPrologue(
         builder: builder,
         name: mangledName,
         declaration: decl,
@@ -168,12 +169,20 @@ public class AIREmissionDriver {
 
       emitFunctionBody(
         builder: builder,
-        function: function,
-        locals: locals,
-        returnRegister: returnRegister,
+        function: prologue.function,
+        locals: prologue.locals,
+        returnRegister: prologue.returnRegister,
         body: functionBody.statements,
         typeEmitter: typeEmitter)
     }
   }
+
+}
+
+private struct FunctionPrologue {
+
+  let function: AIRFunction
+  let locals: [Symbol: AIRValue]
+  let returnRegister: AIRRegister?
 
 }

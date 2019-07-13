@@ -165,7 +165,7 @@ extension Lexer: IteratorProtocol, Sequence {
     if isAlnumOrUnderscore(c) {
       let chars = String(take(while: isAlnumOrUnderscore))
       let kind: TokenKind
-      var value: String? = nil
+      var value: String?
 
       // Check for keywords and operators.
       switch chars {
@@ -249,7 +249,7 @@ extension Lexer: IteratorProtocol, Sequence {
       // Check for operators made of a 3 characters.
       if let c1 = char(at: 1), let c2 = char(at: 2) {
         let value = String(c) + String(c1) + String(c2)
-        var kind: TokenKind? = nil
+        var kind: TokenKind?
 
         switch value {
         case "===": kind = .peq
@@ -267,7 +267,7 @@ extension Lexer: IteratorProtocol, Sequence {
       // Check for operators made of 2 characters.
       if let c1 = char(at: 1) {
         let value = String(c) + String(c1)
-        var kind: TokenKind? = nil
+        var kind: TokenKind?
 
         switch value {
         case ":=": kind = .copy
@@ -288,7 +288,7 @@ extension Lexer: IteratorProtocol, Sequence {
       }
 
       // Check for operators made of a single character.
-      var value: String? = nil
+      var value: String?
       let kind: TokenKind
 
       switch c {

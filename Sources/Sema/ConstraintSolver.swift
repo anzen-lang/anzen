@@ -273,7 +273,7 @@ public struct ConstraintSolver {
   /// Attempts to solve `T[.name] ~= U`.
   private mutating func solve(member constraint: Constraint) -> TypeMatchResult {
     var owner = assumptions.substitution(for: constraint.types!.t)
-    var bindings: [PlaceholderType: TypeBase]? = nil
+    var bindings: [PlaceholderType: TypeBase]?
 
     if let bound = owner as? BoundGenericType {
       owner = assumptions.substitution(for: bound.unboundType)

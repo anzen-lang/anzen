@@ -42,13 +42,13 @@ protocol OptionalConvertible {
 
   associatedtype Wrapped
 
-  var optional: Optional<Wrapped> { get }
+  var optional: Wrapped? { get }
 
 }
 
 extension Optional: OptionalConvertible {
 
-  var optional: Optional<Wrapped> { return self }
+  var optional: Wrapped? { return self }
 
 }
 

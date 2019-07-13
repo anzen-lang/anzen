@@ -131,7 +131,7 @@ extension Parser {
     }
 
     // Attempt to parse a codomain.
-    var codomain: Node? = nil
+    var codomain: Node?
     if consume(.arrow, afterMany: .newline) != nil {
       consumeNewlines()
       let backtrackPosition = streamPosition

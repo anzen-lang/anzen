@@ -345,7 +345,7 @@ extension Parser {
     let conditionParseResult = parseExpression()
     errors.append(contentsOf: conditionParseResult.errors)
 
-    var condition: Expr? = nil
+    var condition: Expr?
     if let expression = conditionParseResult.value {
       condition = expression
     } else {
@@ -365,7 +365,7 @@ extension Parser {
     }
 
     // Attempt to parse an optional else block.
-    var elseBlock: Node? = nil
+    var elseBlock: Node?
     if consume(.else, afterMany: .newline) != nil {
       // Commit to parse the else block.
       consumeNewlines()
@@ -433,7 +433,7 @@ extension Parser {
     }
 
     // Attempt to parse a codomain.
-    var codomain: Node? = nil
+    var codomain: Node?
     if consume(.arrow, afterMany: .newline) != nil {
       consumeNewlines()
       let backtrackPosition = streamPosition

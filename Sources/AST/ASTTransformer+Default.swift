@@ -342,5 +342,4 @@ public extension ASTTransformer {
     return node
   }
 
-
 }

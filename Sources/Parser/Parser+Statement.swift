@@ -151,7 +151,7 @@ extension Parser {
     let conditionParseResult = parseExpression()
     errors.append(contentsOf: conditionParseResult.errors)
 
-    var condition: Expr? = nil
+    var condition: Expr?
     if let expression = conditionParseResult.value {
       condition = expression
     } else {
