@@ -20,7 +20,9 @@ extension Parser {
     var errors: [ParseError] = []
     let propDecl = PropDecl(
       name: name.value!,
-      reassignable: startToken.kind == .var,
+      attributes: startToken.kind == .var
+        ? [.reassignable]
+        : [],
       module: module,
       range: SourceRange(from: startToken.range.start, to: name.range.end))
 
@@ -215,6 +217,7 @@ extension Parser {
       return Result(value: nil, errors: [unexpectedToken(expected: "struct")])
     }
 
+    consumeNewlines()
     let nominalTypeParseResult = parseNominalType()
     guard let nominalType = nominalTypeParseResult.value else {
       return Result(value: nil, errors: nominalTypeParseResult.errors)
@@ -223,6 +226,7 @@ extension Parser {
     return Result(
       value: StructDecl(
         name: nominalType.name,
+        placeholders: nominalType.placeholders,
         body: nominalType.body,
         module: module,
         range: SourceRange(from: startToken.range.start, to: nominalType.body.range.end)),
@@ -237,6 +241,7 @@ extension Parser {
       return Result(value: nil, errors: [unexpectedToken(expected: "interface")])
     }
 
+    consumeNewlines()
     let nominalTypeParseResult = parseNominalType()
     guard let nominalType = nominalTypeParseResult.value else {
       return Result(value: nil, errors: nominalTypeParseResult.errors)
@@ -245,6 +250,7 @@ extension Parser {
     return Result(
       value: InterfaceDecl(
         name: nominalType.name,
+        placeholders: nominalType.placeholders,
         body: nominalType.body,
         module: module,
         range: SourceRange(from: startToken.range.start, to: nominalType.body.range.end)),

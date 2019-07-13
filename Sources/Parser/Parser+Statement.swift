@@ -36,13 +36,15 @@ extension Parser {
       }
 
       let parseResult = parseStatement()
-      guard let declaration = parseResult.value else { return parseResult }
+      guard let declaration = parseResult.value else {
+        return parseResult
+      }
       assert(declaration is PropDecl || declaration is FunDecl)
 
       declaration.range =  SourceRange(from: startToken.range.start, to: declaration.range.end)
       if let propertyDeclaration = declaration as? PropDecl {
         propertyDeclaration.attributes.formUnion(attributes)
-      } else if let methodDeclaration = declaration as? PropDecl {
+      } else if let methodDeclaration = declaration as? FunDecl {
         methodDeclaration.attributes.formUnion(attributes)
       }
 

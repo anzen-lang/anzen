@@ -13,8 +13,9 @@ extension Parser {
       // If we failed to parse a function signature, attempt to parse an enclosed signature.
       guard let signature = functionSignatureParseResult.value else {
         rewind(to: backtrackPosition)
-        let start = consume()!.range.start
+        let start = consume(.leftParen)!.range.start
 
+        consumeNewlines()
         let enclosedParseResult = parseQualSign()
         if let enclosed = enclosedParseResult.value {
           // Commit to this path if an enclosed signature could be parsed.
@@ -112,8 +113,9 @@ extension Parser {
       // If we failed to parse a function signature, attempt to parse an enclosed signature.
       guard let signature = functionSignatureParseResult.value else {
         rewind(to: backtrackPosition)
-        let start = consume()!.range.start
+        let start = consume(.leftParen)!.range.start
 
+        consumeNewlines()
         let enclosedParseResult = parseTypeSign()
         if let enclosed = enclosedParseResult.value {
           // Commit to this path if an enclosed signature could be parsed.

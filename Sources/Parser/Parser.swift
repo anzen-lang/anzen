@@ -235,7 +235,7 @@ extension Parser {
 
   /// Consume all tokens until the next statement delimiter.
   func consumeUpToNextStatementDelimiter() {
-    consumeMany(while: { !$0.isStatementDelimiter })
+    consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .eof) })
   }
 
   /// Rewinds the token stream by the given number of positions.
