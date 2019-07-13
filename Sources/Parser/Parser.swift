@@ -142,7 +142,8 @@ extension Parser {
 
   /// Returns the token 1 position ahead, without consuming the stream.
   func peek() -> Token {
-    assert((streamPosition) < stream.count)
+    guard streamPosition < stream.count
+      else { return stream.last! }
     return stream[streamPosition]
   }
 
