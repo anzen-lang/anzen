@@ -785,7 +785,7 @@ public final class EnclosedExpr: Expr {
   }
 
   /// The enclosed expression.
-  var expression: Node
+  public var expression: Node
 
 }
 
