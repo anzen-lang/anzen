@@ -81,7 +81,7 @@ public enum InfixOperator: String, CustomStringConvertible {
 /// Enumeration of the binding operators.
 public enum BindingOperator: String, CustomStringConvertible {
 
-  case copy = "="
+  case copy = ":="
   case ref  = "&-"
   case move = "<-"
 
