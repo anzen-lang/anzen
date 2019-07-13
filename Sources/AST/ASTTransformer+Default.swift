@@ -181,7 +181,10 @@ public extension ASTTransformer {
   }
 
   func defaultTransform(_ node: ReturnStmt) throws -> ReturnStmt {
-    node.value = try node.value.map { try transform($0) as! Expr }
+    if let (op, value) = node.binding {
+      let newValue = try transform(value)
+      node.binding = (op, newValue as! Expr)
+    }
     return node
   }
 

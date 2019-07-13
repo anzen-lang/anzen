@@ -472,13 +472,17 @@ public final class BindingStmt: Node {
 /// A return statement.
 public final class ReturnStmt: Node {
 
-  public init(value: Expr? = nil, module: ModuleDecl, range: SourceRange) {
-    self.value = value
+  public init(
+    binding: (op: BindingOperator, value: Expr)? = nil,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
+    self.binding = binding
     super.init(module: module, range: range)
   }
 
-  /// The value of the return statement.
-  public var value: Expr?
+  /// The binding of the return statement.
+  public var binding: (op: BindingOperator, value: Expr)?
 
 }
 

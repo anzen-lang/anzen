@@ -189,17 +189,26 @@ extension Parser {
       return Result(value: nil, errors: [unexpectedToken(expected: "return")])
     }
 
+    var errors: [ParseError] = []
+
     // Attempt to parse a return value.
-    if let valueParseResult = attempt(parseExpression) {
-      return Result(
-        value: ReturnStmt(
-          value: valueParseResult.value,
-          module: module,
-          range: SourceRange(from: startToken.range.start, to: valueParseResult.value.range.end)),
-        errors: valueParseResult.errors)
-    } else {
-      return Result(value: ReturnStmt(module: module, range: startToken.range), errors: [])
+    if let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) {
+      consumeNewlines()
+      let parseResult = parseExpression()
+      errors.append(contentsOf: parseResult.errors)
+
+      if let expression = parseResult.value {
+        let binding = (operatorToken.asBindingOperator!, expression)
+        return Result(
+          value: ReturnStmt(
+            binding: binding,
+            module: module,
+            range: SourceRange(from: startToken.range.start, to: expression.range.end)),
+          errors: errors)
+      }
     }
+
+    return Result(value: ReturnStmt(module: module, range: startToken.range), errors: [])
   }
 
   /// Parses a binding statement.

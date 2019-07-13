@@ -36,7 +36,7 @@ extension Parser {
       }
     }
 
-    // Attempt to Parse an initial binding expression.
+    // Attempt to parse an initial binding expression.
     if let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) {
       consumeNewlines()
       let parseResult = parseExpression()

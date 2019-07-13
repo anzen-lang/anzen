@@ -269,9 +269,13 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
 
   public func visit(_ node: ReturnStmt) throws {
     self <<< indent <<< "(return"
-    if let value = node.value {
-      self <<< "\n"
-      withIndentation { try visit(value) }
+    if let (op, value) = node.binding {
+      self <<< "\n" <<< indent <<< "(binding\n"
+      withIndentation {
+        self <<< indent <<< "(binding_operator \(op))\n"
+        try visit(value)
+      }
+      self <<< ")"
     }
     self <<< ")"
   }

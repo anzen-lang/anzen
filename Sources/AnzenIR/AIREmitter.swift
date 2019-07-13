@@ -100,9 +100,9 @@ class AIREmitter: ASTVisitor {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }
 
-    if let value = node.value {
+    if let (op, value) = node.binding {
       try visit(value)
-      builder.buildCopy(source: stack.pop()!, target: returnRegister!)
+      builder.build(assignment: op, source: stack.pop()!, target: returnRegister!)
     }
 
     builder.buildJump(label: currentFn.blocks.values.last!.label)

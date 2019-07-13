@@ -212,9 +212,9 @@ public final class ASTUnparser: ASTVisitor {
 
   public func visit(_ node: ReturnStmt) throws {
     var repr = "return".styled("magenta")
-    if let value = node.value {
+    if let (op, value) = node.binding {
       try visit(value)
-      repr += " \(stack.pop()!)"
+      repr += " \(op) \(stack.pop()!)"
     }
     stack.push(repr)
   }
