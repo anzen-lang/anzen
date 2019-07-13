@@ -21,5 +21,6 @@ let package = Package(
     .target(name: "Utils"       , dependencies: ["SystemKit"]),
 
     .testTarget(name: "AnzenTests", dependencies: ["AnzenLib"]),
+    .testTarget(name: "ParserTests", dependencies: ["Parser"]),
   ]
 )
