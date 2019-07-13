@@ -48,6 +48,15 @@ extension Parser {
         propDecl.initialBinding = (operatorToken.asBindingOperator!, expression)
         propDecl.range = SourceRange(from: propDecl.range.start, to: expression.range.end)
       }
+    } else if let assignOperator = consume(.assign, afterMany: .newline) {
+      // Catch invalid uses of the "assign" token in lieu of a binding operator.
+      errors.append(ParseError(
+        .unexpectedToken(expected: "binding operator", got: assignOperator),
+        range: assignOperator.range))
+
+      // Parse the expression in case it contains syntax errors as well.
+      let parseResult = parseExpression()
+      errors.append(contentsOf: parseResult.errors)
     }
 
     return Result(value: propDecl, errors: errors)

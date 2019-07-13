@@ -208,6 +208,15 @@ extension Parser {
             range: SourceRange(from: startToken.range.start, to: expression.range.end)),
           errors: errors)
       }
+    } else if let assignOperator = consume(.assign, afterMany: .newline) {
+      // Catch invalid uses of the "assign" token in lieu of a binding operator.
+      errors.append(ParseError(
+        .unexpectedToken(expected: "binding operator", got: assignOperator),
+        range: assignOperator.range))
+
+      // Parse the expression in case it contains syntax errors as well.
+      let parseResult = parseExpression()
+      errors.append(contentsOf: parseResult.errors)
     }
 
     return Result(value: ReturnStmt(module: module, range: startToken.range), errors: [])

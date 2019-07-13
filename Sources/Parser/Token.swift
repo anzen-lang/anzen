@@ -22,41 +22,41 @@ public enum TokenKind: String {
   case not
   case and
   case or
-  case add    = "+"
-  case sub    = "-"
-  case mul    = "*"
-  case div    = "/"
-  case mod    = "%"
-  case lt     = "<"
-  case le     = "<="
-  case ge     = ">="
-  case gt     = ">"
-  case eq     = "=="
-  case ne     = "!="
-  case peq    = "==="
-  case pne    = "!=="
-  case assign = "="
-  case copy   = ":="
-  case ref    = "&-"
-  case move   = "<-"
-  case arrow  = "->"
+  case add              = "+"
+  case sub              = "-"
+  case mul              = "*"
+  case div              = "/"
+  case mod              = "%"
+  case lt               = "<"
+  case le               = "<="
+  case ge               = ">="
+  case gt               = ">"
+  case eq               = "=="
+  case ne               = "!="
+  case peq              = "==="
+  case pne              = "!=="
+  case assign           = "="
+  case copy             = ":="
+  case ref              = "&-"
+  case move             = "<-"
+  case arrow            = "->"
 
-  case dot
-  case comma
-  case colon
-  case semicolon
-  case exclamationMark
-  case questionMark
-  case ellipsis
+  case dot              = "."
+  case comma            = ","
+  case colon            = ":"
+  case semicolon        = ";"
+  case exclamationMark  = "!"
+  case questionMark     = "?"
+  case ellipsis         = "..."
   case newline
   case eof
 
-  case leftParen
-  case rightParen
-  case leftBrace
-  case rightBrace
-  case leftBracket
-  case rightBracket
+  case leftParen        = "("
+  case rightParen       = ")"
+  case leftBrace        = "{"
+  case rightBrace       = "}"
+  case leftBracket      = "["
+  case rightBracket     = "]"
 
   // MARK: Keywords
 
