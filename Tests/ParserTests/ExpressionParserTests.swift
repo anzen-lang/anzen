@@ -116,6 +116,7 @@ class ExpressionParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: Ident.self))
     if let identifier = pr.value as? Ident {
       assertThat(identifier.name, .equals("x"))
+      assertThat(identifier.specializations, .isEmpty)
     }
 
     pr = parse("Map<Key=String, Value=Int>", with: Parser.parseExpression)
@@ -181,19 +182,15 @@ class ExpressionParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: LambdaExpr.self))
     if let lambda = pr.value as? LambdaExpr {
       assertThat(lambda.parameters, .count(3))
-      if lambda.parameters.count > 0 {
+      if lambda.parameters.count > 2 {
         assertThat(lambda.parameters[0].label, .equals("a"))
         assertThat(lambda.parameters[0].name, .equals("a"))
         assertThat(lambda.parameters[0].typeAnnotation, .not(.isNil))
-      }
 
-      if lambda.parameters.count > 1 {
         assertThat(lambda.parameters[1].label, .isNil)
         assertThat(lambda.parameters[1].name, .equals("b"))
         assertThat(lambda.parameters[1].typeAnnotation, .not(.isNil))
-      }
 
-      if lambda.parameters.count > 2 {
         assertThat(lambda.parameters[2].label, .equals("c"))
         assertThat(lambda.parameters[2].name, .equals("d"))
         assertThat(lambda.parameters[2].typeAnnotation, .not(.isNil))
