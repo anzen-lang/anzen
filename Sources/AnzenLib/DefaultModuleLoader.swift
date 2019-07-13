@@ -49,6 +49,7 @@ public final class DefaultModuleLoader: ModuleLoader {
       return nil
     }
     var module = parseResult.value
+    module.id = moduleID
 
     if config.showRawAST && (moduleID != .builtin) && (moduleID != .stdlib) {
       let buffer = StringBuffer()
