@@ -187,10 +187,11 @@ extension Parser {
         errors.append(unexpectedToken(expected: "')'"))
       }
 
+      let end = delimiter?.range.end ?? enclosed.range.end
       expression = EnclosedExpr(
         enclosing: enclosed,
         module: module,
-        range: SourceRange(from: startLocation, to: delimiter!.range.end))
+        range: SourceRange(from: startLocation, to: end))
 
     default:
       defer { consume() }
