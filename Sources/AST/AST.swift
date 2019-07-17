@@ -43,14 +43,24 @@ public final class ModuleDecl: Node, ScopeDelimiter {
     self.module = self
   }
 
-  /// List of the type declarations in the module.
-  public var typeDecls: [NominalTypeDecl] {
-    return statements.compactMap { $0 as? NominalTypeDecl }
+  /// All top-level type declarations in the module.
+  public var typeDeclarations: [String: NominalTypeDecl] {
+    return Dictionary(
+      uniqueKeysWithValues: statements.compactMap { (statement) -> (String, NominalTypeDecl)? in
+        guard let declaration = statement as? NominalTypeDecl
+          else { return nil }
+        return (declaration.name, declaration)
+      })
   }
 
-  /// List of the function declarations in the module.
-  public var funDecls: [FunDecl] {
-    return statements.compactMap { $0 as? FunDecl }
+  /// All top-level function declarations in the module.
+  public var functionDeclarations: [String: FunDecl] {
+    return Dictionary(
+      uniqueKeysWithValues: statements.compactMap { (statement) -> (String, FunDecl)? in
+        guard let declaration = statement as? FunDecl
+          else { return nil }
+        return (declaration.name, declaration)
+    })
   }
 
   /// Type, property and function declarations in the module.
