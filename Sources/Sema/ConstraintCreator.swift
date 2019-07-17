@@ -121,6 +121,19 @@ public final class ConstraintCreator: ASTVisitor {
     try visit(node.left)
     try visit(node.right)
 
+    // Pointer identity operators are not implemented by a special built-in function rather than by
+    // methods of the left operand. They do not fix any constraint on the left and right operand,
+    // as any pair of references can be checked for identity.
+    if node.op == .peq || node.op == .pne {
+      let bool = context.builtinTypes["Bool"]!
+      let anything = AnythingType.get
+      node.type = bool
+      node.operatorType = context.getFunctionType(
+        from: [Parameter(type: anything), Parameter(type: anything)],
+        to: bool)
+      return
+    }
+
     // Infix operators are implemented as methods of the left operand, meaning the left operand
     // should have a method `(_: R) -> T`, where:
     // - `R` is a type right right operand conforms to
