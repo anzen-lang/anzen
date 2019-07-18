@@ -197,6 +197,9 @@ public class Interpreter {
     case let cst as AIRConstant:
       return cst.value
 
+    case let fun as AIRFunction:
+      return fun
+
     case let reg as AIRRegister:
       if let ref = frames.top![reg.id] as? Reference {
         guard let val = ref.value
