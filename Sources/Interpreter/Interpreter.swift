@@ -170,10 +170,6 @@ public class Interpreter {
         // Note that the register in which we're about to write isn't supposed to exist yet.
         frames[frames.count - 2][frames.top!.returnID!] = try value(of: retval)
       }
-
-      // FIXME: If the return value is to be passed by reference, we should copy the box itself.
-      // Note that implementing this functionality will most likely require an additional flag in
-      // `ReturnInst` to indicate that the function returns a borrowed argument.
     }
 
     // Pop the current frame.
