@@ -19,16 +19,10 @@ public class Interpreter {
   /// The standard error of the interpreter.
   public var stderr: TextOutputStream
 
-  /// The loaded functions.
-  private var functions: [String: AIRFunction] = [:]
   /// The program cursor.
   private var cursor: Cursor?
   /// The stack frames.
   private var frames: Stack<Frame> = []
-
-  public func load(unit: AIRUnit) {
-    functions.merge(unit.functions, uniquingKeysWith: { _, rhs in rhs })
-  }
 
   public func invoke(function: AIRFunction) throws {
     cursor = Cursor(atEntryOf: function)
@@ -56,108 +50,123 @@ public class Interpreter {
 
   private func execute(_ inst: AllocInst) throws {
     switch inst.type {
-    case let ty as AIRStructType:
-      frames.top![inst.id] = StructInstance(type: ty)
+    case let type as AIRStructType:
+      frames.top![inst.id] = Reference(
+        to: ValuePointer(to: StructInstance(type: type)),
+        type: type)
     default:
       throw RuntimeError("no allocator for type '\(inst.type)'")
     }
   }
 
   private func execute(_ inst: MakeRefInst) throws {
-    frames.top![inst.id] = Reference()
+    frames.top![inst.id] = Reference(type: inst.type)
   }
 
   private func execute(_ inst: ExtractInst) throws {
-    guard let object = try value(of: inst.source) as? StructInstance
-      else { throw RuntimeError("cannot extract from '\(inst.source)'") }
-    guard object.payload.count > inst.index
-      else { throw RuntimeError("index is out of bound") }
-    frames.top![inst.id] = object.payload[inst.index]
+    // Dereference the struct instance.
+    let container = try valueContainer(of: inst.source)
+    guard let instance = container as? StructInstance
+      else { throw RuntimeError("'\(container)' is not a struct instance") }
+
+    // Extract the requested field.
+    guard instance.payload.count > inst.index
+      else { throw RuntimeError("struct field index is out of bound") }
+    frames.top![inst.id] = instance.payload[inst.index]
   }
 
   private func execute(_ inst: CopyInst) throws {
-    guard let ref = frames.top![inst.target.id] as? Reference
+    guard let targetReference = frames.top![inst.target.id]
       else { throw RuntimeError("invalid or uninitialized register '\(inst.target.id)'") }
 
-    // FIXME: Call copy constructor.
-    ref.value = try value(of: inst.source)
+    let sourceContainer = try valueContainer(of: inst.source).copy()
+
+    if let valuePointer = targetReference.pointer {
+      valuePointer.pointee = sourceContainer
+    } else {
+      targetReference.pointer = ValuePointer(to: sourceContainer)
+    }
   }
 
   private func execute(_ inst: MoveInst) throws {
-    guard let ref = frames.top![inst.target.id] as? Reference
+    guard let targetReference = frames.top![inst.target.id]
       else { throw RuntimeError("invalid or uninitialized register '\(inst.target.id)'") }
 
-    switch inst.source {
-    case let cst as AIRConstant:
-      ref.value = cst.value
-    case let reg as AIRRegister:
-      ref.value = try value(of: reg)
-    default:
-      throw RuntimeError("invalid r-value for move '\(inst.source)'")
+    let sourceContainer = try valueContainer(of: inst.source)
+
+    if let valuePointer = targetReference.pointer {
+      valuePointer.pointee = sourceContainer
+    } else {
+      targetReference.pointer = ValuePointer(to: sourceContainer)
     }
   }
 
   private func execute(_ inst: BindInst) throws {
-    guard let ref = frames.top![inst.target.id] as? Reference
+    guard let targetReference = frames.top![inst.target.id]
       else { throw RuntimeError("invalid or uninitialized register '\(inst.target.id)'") }
 
     switch inst.source {
-    case let fn as AIRFunction:
-      ref.value = fn
+    case let fun as AIRFunction:
+      targetReference.pointer = ValuePointer(to: FunctionValue(function: fun))
     case let reg as AIRRegister:
-      frames.top![inst.target.id] = frames.top![reg.id]
+      targetReference.pointer = frames.top![reg.id]?.pointer
     default:
       throw RuntimeError("invalid r-value for bind '\(inst.source)'")
     }
   }
 
   private func execute(_ inst: UnsafeCastInst) throws {
-    let source = try value(of: inst.operand)
+    // Retrieve the operand's pointer.
+    let valuePointer: ValuePointer
+    switch inst.operand {
+    case let reg as AIRRegister:
+      guard let sourceReference = frames.top![reg.id]
+        else { throw RuntimeError("invalid or uninitialized register '\(reg.id)'") }
+      guard sourceReference.pointer != nil
+        else { throw RuntimeError("access to uninitialized memory") }
+      valuePointer = sourceReference.pointer!
+
+    default:
+      valuePointer = ValuePointer(to: try valueContainer(of: inst.operand))
+    }
 
     // NOTE: Just as C++'s reinterpret_cast, unsafe_cast should actually be a noop. We may however
     // implement some assertion checks in the future.
-    frames.top![inst.id] = source
+    frames.top![inst.id] = Reference(to: valuePointer, type: inst.type)
   }
 
   private func execute(_ inst: ApplyInst) throws {
     // Retrieve the function to be called, and all its arguments.
-    let fn: AIRFunction
-    var args = inst.arguments
-    switch try value(of: inst.callee) {
-    case let thin as AIRFunction:
-      fn = thin
-    case let thick as Closure:
-      fn = thick.function
-      args = thick.arguments + args
-    default:
-      unreachable()
-    }
+    let container = try valueContainer(of: inst.callee)
+    guard let calleeContainer = container as? FunctionValue
+      else { throw RuntimeError("'\(container)' is not a function") }
+
+    let function = calleeContainer.function
+    let arguments = calleeContainer.closure + inst.arguments
 
     // Handle built-in funtions.
-    guard !fn.name.starts(with: "__builtin") else {
-      let returnValue = try applyBuiltin(name: fn.name, arguments: args)
-      if let value = returnValue {
-        frames.top![inst.id] = value
-      }
+    if function.name.starts(with: "__builtin") {
+      frames.top![inst.id] = try applyBuiltin(name: function.name, arguments: arguments)
       return
     }
 
     // Prepare the next stack frame. Notice the offset, so as to reserve %0 for `self`.
     var nextFrame = Frame(returnCursor: cursor, returnID: inst.id)
-    for (i, arg) in (args).enumerated() {
-      switch arg {
+    for (i, argument) in arguments.enumerated() {
+      switch argument {
       case let cst as AIRConstant:
-        // Create a new reference, with ownership (TODO).
-        nextFrame[i + 1] = Reference(to: cst.value)
+        // Create a new reference, with ownership.
+        let value = PrimitiveValue(cst.value as! PrimitiveType)
+        nextFrame[i + 1] = Reference(to: ValuePointer(to: value), type: argument.type)
 
       case let fun as AIRFunction:
-        // Create a new reference, without ownership (TODO).
-        nextFrame[i + 1] = Reference(to: fun)
+        // Create a new reference, without ownership.
+        let value = FunctionValue(function: fun)
+        nextFrame[i + 1] = Reference(to: ValuePointer(to: value), type: argument.type)
 
       case let reg as AIRRegister:
         // Take the reference, as is.
         nextFrame[i + 1] = frames.top![reg.id]
-        assert(nextFrame[i + 1] is Reference)
 
       default:
         unreachable()
@@ -166,11 +175,12 @@ public class Interpreter {
     frames.push(nextFrame)
 
     // Jump into the function.
-    cursor = Cursor(atEntryOf: fn)
+    cursor = Cursor(atEntryOf: function)
   }
 
   private func execute(_ inst: PartialApplyInst) throws {
-    frames.top![inst.id] = Closure(function: inst.function, arguments: inst.arguments)
+    let value = FunctionValue(function: inst.function, closure: inst.arguments)
+    frames.top![inst.id] = Reference(to: ValuePointer(to: value), type: inst.type)
   }
 
   private func execute(_ inst: DropInst) throws {
@@ -179,11 +189,12 @@ public class Interpreter {
   }
 
   private func execute(_ inst: ReturnInst) throws {
-    // Move the return value (if any) onto the return register.
-    if let retval = inst.value {
+    // Assign the return value (if any) onto the return register.
+    if let returnValue = inst.value {
       if frames.count > 1 {
-        // Note that the register in which we're about to write isn't supposed to exist yet.
-        frames[frames.count - 2][frames.top!.returnID!] = try value(of: retval)
+        frames[frames.count - 2][frames.top!.returnID!] = Reference(
+          to: ValuePointer(to: try valueContainer(of: returnValue)),
+          type: returnValue.type)
       }
     }
 
@@ -193,7 +204,10 @@ public class Interpreter {
   }
 
   private func execute(_ branch: BranchInst) throws {
-    let condition = try value(of: branch.condition) as! Bool
+    let container = try valueContainer(of: branch.condition)
+    guard let condition = (container as? PrimitiveValue)?.value as? Bool
+      else { throw RuntimeError("'\(container)' is not a boolean value") }
+
     cursor = condition
       ? Cursor(in: cursor!.function, atBeginningOf: branch.thenLabel)
       : Cursor(in: cursor!.function, atBeginningOf: branch.elseLabel)
@@ -203,114 +217,64 @@ public class Interpreter {
     cursor = Cursor(in: cursor!.function, atBeginningOf: jump.label)
   }
 
-  private func value(of airValue: AIRValue) throws -> Any {
+  private func valueContainer(of airValue: AIRValue) throws -> ValueContainer {
     switch airValue {
     case let cst as AIRConstant:
-      return cst.value
+      return PrimitiveValue(cst.value as! PrimitiveType)
 
     case let fun as AIRFunction:
-      return fun
+      return FunctionValue(function: fun)
 
     case let reg as AIRRegister:
-      if let ref = frames.top![reg.id] as? Reference {
-        guard let val = ref.value
-          else { throw RuntimeError("memory error") }
-        return val
-      } else if let val = frames.top![reg.id] {
-        return val
-      } else {
-        throw RuntimeError("invalid or uninitialized register '\(reg.id)'")
-      }
+      guard let reference = frames.top![reg.id]
+        else { throw RuntimeError("invalid or uninitialized register '\(reg.id)'") }
+      guard let valuePointer = reference.pointer
+        else { throw RuntimeError("access to uninitialized memory") }
+      return valuePointer.pointee
 
     default:
       unreachable()
     }
   }
 
-  private func applyBuiltin(name: String, arguments: [AIRValue]) throws -> Any? {
+  private func applyBuiltin(name: String, arguments: [AIRValue]) throws -> Reference? {
     switch name {
     case "__builtin_print_F_a2n":
       assert(arguments.count == 1)
-      stdout.write(try "\(value(of: arguments[0]))\n")
+      stdout.write(try "\(valueContainer(of: arguments[0]))\n")
       return nil
 
     case "__builtinIntblock_+_F_i2F_i2i":
       assert(arguments.count == 2)
-      let lhs = try value(of: arguments[0]) as! Int
-      let rhs = try value(of: arguments[1]) as! Int
-      return lhs + rhs
+      let lhs = (try valueContainer(of: arguments[0]) as! PrimitiveValue).value as! Int
+      let rhs = (try valueContainer(of: arguments[1]) as! PrimitiveValue).value as! Int
+      let res = PrimitiveValue(lhs + rhs)
+      return Reference(to: ValuePointer(to: res), type: res.type)
 
     case "__builtinIntblock_-_F_i2F_i2i":
       assert(arguments.count == 2)
-      let lhs = try value(of: arguments[0]) as! Int
-      let rhs = try value(of: arguments[1]) as! Int
-      return lhs - rhs
+      let lhs = (try valueContainer(of: arguments[0]) as! PrimitiveValue).value as! Int
+      let rhs = (try valueContainer(of: arguments[1]) as! PrimitiveValue).value as! Int
+      let res = PrimitiveValue(lhs - rhs)
+      return Reference(to: ValuePointer(to: res), type: res.type)
 
     case "__builtinIntblock_*_F_i2F_i2i":
       assert(arguments.count == 2)
-      let lhs = try value(of: arguments[0]) as! Int
-      let rhs = try value(of: arguments[1]) as! Int
-      return lhs * rhs
+      let lhs = (try valueContainer(of: arguments[0]) as! PrimitiveValue).value as! Int
+      let rhs = (try valueContainer(of: arguments[1]) as! PrimitiveValue).value as! Int
+      let res = PrimitiveValue(lhs * rhs)
+      return Reference(to: ValuePointer(to: res), type: res.type)
 
     case "__builtinIntblock_<=_F_i2F_i2b":
       assert(arguments.count == 2)
-      let lhs = try value(of: arguments[0]) as! Int
-      let rhs = try value(of: arguments[1]) as! Int
-      return lhs < rhs
+      let lhs = (try valueContainer(of: arguments[0]) as! PrimitiveValue).value as! Int
+      let rhs = (try valueContainer(of: arguments[1]) as! PrimitiveValue).value as! Int
+      let res = PrimitiveValue(lhs < rhs)
+      return Reference(to: ValuePointer(to: res), type: res.type)
 
     default:
       fatalError("unimplemented built-in function '\(name)'")
     }
-  }
-
-}
-
-/// Represents a reference.
-private class Reference: CustomStringConvertible {
-
-  init(to value: Any? = nil) {
-    assert(!(value is Reference))
-    self.value = value
-  }
-
-  var value: Any? {
-    didSet { assert(!(value is Reference)) }
-  }
-
-  var description: String {
-    return "\(value ?? "null")"
-  }
-
-}
-
-/// Represents a struct type instance.
-private struct StructInstance: CustomStringConvertible {
-
-  init(type: AIRStructType) {
-    self.type = type
-    self.payload = type.members.map { _ in Reference() }
-  }
-
-  let type: AIRStructType
-  let payload: [Any]
-
-  var description: String {
-    let members = zip(type.members.keys, payload)
-      .map({ "\($0.0): \($0.1)" })
-      .joined(separator: ", ")
-    return "\(type)(\(members))"
-  }
-
-}
-
-/// Represents a function closure
-private struct Closure: CustomStringConvertible {
-
-  let function: AIRFunction
-  let arguments: [AIRValue]
-
-  var description: String {
-    return "(Function)"
   }
 
 }
