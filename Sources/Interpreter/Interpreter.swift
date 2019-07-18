@@ -142,11 +142,26 @@ public class Interpreter {
       return
     }
 
-    // Prepare the next stack frame.
+    // Prepare the next stack frame. Notice the offset, so as to reserve %0 for `self`.
     var nextFrame = Frame(returnCursor: cursor, returnID: inst.id)
     for (i, arg) in (args).enumerated() {
-      // Notice the offset, so as to reserve %0 for `self`.
-      nextFrame[i + 1] = Reference(to: try value(of: arg))
+      switch arg {
+      case let cst as AIRConstant:
+        // Create a new reference, with ownership (TODO).
+        nextFrame[i + 1] = Reference(to: cst.value)
+
+      case let fun as AIRFunction:
+        // Create a new reference, without ownership (TODO).
+        nextFrame[i + 1] = Reference(to: fun)
+
+      case let reg as AIRRegister:
+        // Take the reference, as is.
+        nextFrame[i + 1] = frames.top![reg.id]
+        assert(nextFrame[i + 1] is Reference)
+
+      default:
+        unreachable()
+      }
     }
     frames.push(nextFrame)
 
@@ -250,7 +265,7 @@ public class Interpreter {
 
 }
 
-/// Represetns a reference.
+/// Represents a reference.
 private class Reference: CustomStringConvertible {
 
   init(to value: Any? = nil) {
