@@ -208,9 +208,6 @@ public class Interpreter {
         throw RuntimeError("invalid or uninitialized register '\(reg.id)'")
       }
 
-    case let closure as Closure:
-      return closure
-
     default:
       unreachable()
     }
