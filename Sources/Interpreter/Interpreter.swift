@@ -243,44 +243,73 @@ public class Interpreter {
     }
   }
 
+  // MARK: Built-in functions
+
   private func applyBuiltin(name: String, arguments: [AIRValue]) throws -> Reference? {
-    switch name {
-    case "__builtin_print_F_a2n":
-      assert(arguments.count == 1)
-      stdout.write(try "\(valueContainer(of: arguments[0]))\n")
-      return nil
+    guard let function = Interpreter.builtinFunctions[name]
+      else { fatalError("unimplemented built-in function '\(name)'") }
 
-    case "__builtinIntblock_+_F_i2F_i2i":
-      assert(arguments.count == 2)
-      let lhs = (try valueContainer(of: arguments[0]) as! PrimitiveValue).value as! Int
-      let rhs = (try valueContainer(of: arguments[1]) as! PrimitiveValue).value as! Int
-      let res = PrimitiveValue(lhs + rhs)
-      return Reference(to: ValuePointer(to: res), type: res.type)
-
-    case "__builtinIntblock_-_F_i2F_i2i":
-      assert(arguments.count == 2)
-      let lhs = (try valueContainer(of: arguments[0]) as! PrimitiveValue).value as! Int
-      let rhs = (try valueContainer(of: arguments[1]) as! PrimitiveValue).value as! Int
-      let res = PrimitiveValue(lhs - rhs)
-      return Reference(to: ValuePointer(to: res), type: res.type)
-
-    case "__builtinIntblock_*_F_i2F_i2i":
-      assert(arguments.count == 2)
-      let lhs = (try valueContainer(of: arguments[0]) as! PrimitiveValue).value as! Int
-      let rhs = (try valueContainer(of: arguments[1]) as! PrimitiveValue).value as! Int
-      let res = PrimitiveValue(lhs * rhs)
-      return Reference(to: ValuePointer(to: res), type: res.type)
-
-    case "__builtinIntblock_<=_F_i2F_i2b":
-      assert(arguments.count == 2)
-      let lhs = (try valueContainer(of: arguments[0]) as! PrimitiveValue).value as! Int
-      let rhs = (try valueContainer(of: arguments[1]) as! PrimitiveValue).value as! Int
-      let res = PrimitiveValue(lhs < rhs)
-      return Reference(to: ValuePointer(to: res), type: res.type)
-
-    default:
-      fatalError("unimplemented built-in function '\(name)'")
-    }
+    let argumentContainers = try arguments.map(valueContainer)
+    return try function(argumentContainers)
   }
 
+  private typealias BuiltinFunction = ([ValueContainer?]) throws -> Reference?
+
+  private static var builtinFunctions: [String: BuiltinFunction] = {
+    var result: [String: BuiltinFunction] = [:]
+
+    // print
+    result["__builtin_print_F_a2n"] = { (arguments: [ValueContainer?]) in
+      print(arguments[0] ?? "null")
+      return nil
+    }
+
+    // Int
+    result["__builtinIntblock_+_F_i2F_i2i"] = {
+      primitiveBinaryFunction($0, with: (+) as (Int, Int) -> Int)
+    }
+    result["__builtinIntblock_-_F_i2F_i2i"] = {
+      primitiveBinaryFunction($0, with: (-) as (Int, Int) -> Int)
+    }
+    result["__builtinIntblock_*_F_i2F_i2i"] = {
+      primitiveBinaryFunction($0, with: (*) as (Int, Int) -> Int)
+    }
+    result["__builtinIntblock_/_F_i2F_i2i"] = {
+      primitiveBinaryFunction($0, with: (/) as (Int, Int) -> Int)
+    }
+    result["__builtinIntblock_<_F_i2F_i2b"] = {
+      primitiveBinaryFunction($0, with: (<) as (Int, Int) -> Bool)
+    }
+    result["__builtinIntblock_<=_F_i2F_i2b"] = {
+      primitiveBinaryFunction($0, with: (<=) as (Int, Int) -> Bool)
+    }
+    result["__builtinIntblock_==_F_i2F_i2b"] = {
+      primitiveBinaryFunction($0, with: (==) as (Int, Int) -> Bool)
+    }
+    result["__builtinIntblock_!=_F_i2F_i2b"] = {
+      primitiveBinaryFunction($0, with: (!=) as (Int, Int) -> Bool)
+    }
+    result["__builtinIntblock_>=_F_i2F_i2b"] = {
+      primitiveBinaryFunction($0, with: (>=) as (Int, Int) -> Bool)
+    }
+    result["__builtinIntblock_>_F_i2F_i2b"] = {
+      primitiveBinaryFunction($0, with: (>) as (Int, Int) -> Bool)
+    }
+
+    return result
+  }()
+
+}
+
+private func primitiveBinaryFunction<T, U>(
+  _ arguments: [ValueContainer?], with fn: (T, T) -> U) -> Reference?
+  where U: PrimitiveType
+{
+  guard let a = (arguments[0] as? PrimitiveValue)?.value as? T
+    else { return nil }
+  guard let b = (arguments[1] as? PrimitiveValue)?.value as? T
+    else { return nil }
+
+  let res = PrimitiveValue(fn(a, b))
+  return Reference(to: ValuePointer(to: res), type: res.type)
 }
