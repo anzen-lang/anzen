@@ -20,6 +20,7 @@ public protocol ASTTransformer {
 
   // MARK: Statements
 
+  func transform(_ node: Directive)       throws -> Node
   func transform(_ node: WhileLoop)       throws -> Node
   func transform(_ node: BindingStmt)     throws -> Node
   func transform(_ node: ReturnStmt)      throws -> Node

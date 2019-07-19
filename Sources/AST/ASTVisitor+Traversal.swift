@@ -14,6 +14,7 @@ public extension ASTVisitor {
     case let n as TypeIdent:       try visit(n)
     case let n as FunSign:         try visit(n)
     case let n as ParamSign:       try visit(n)
+    case let n as Directive:       try visit(n)
     case let n as WhileLoop:       try visit(n)
     case let n as BindingStmt:     try visit(n)
     case let n as ReturnStmt:      try visit(n)
@@ -155,6 +156,9 @@ public extension ASTVisitor {
   }
 
   // MARK: Statements
+
+  func visit(_ node: Directive) throws {
+  }
 
   func visit(_ node: WhileLoop) throws {
     try traverse(node)

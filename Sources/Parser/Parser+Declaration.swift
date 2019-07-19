@@ -171,7 +171,7 @@ extension Parser {
   func parseParamDecl() -> Result<ParamDecl?> {
     // Attempt to parse the label and formal name of the parameter, the last being required.
     guard let first = consume(.underscore) ?? consume(.identifier) else {
-      consume()
+      defer { consume() }
       return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
     }
 

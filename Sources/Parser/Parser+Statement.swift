@@ -5,6 +5,41 @@ extension Parser {
   /// Parses a single statement.
   func parseStatement() -> Result<Node?> {
     switch peek().kind {
+    case .hashMark:
+      // Currently, only function declarations can be annotated with compiler directives. Therefore
+      // we can simply parse a sequence of directives, followed by a function declaration, and add
+      // the directives to the latter. In the future, directives might be more difficult to handle
+      // as some may affect the parser's state (e.g. conditional compilation).
+
+      // Parse a sequence of directives.
+      var directives: [Directive] = []
+      var errors: [ParseError] = []
+      repeat {
+        consumeNewlines()
+        guard let parseResult = attempt(parseDirective)
+          else { break }
+
+        errors.append(contentsOf: parseResult.errors)
+        directives.append(parseResult.value)
+      } while true
+
+      // Parse a function declaration.
+      consumeNewlines()
+      let parseResult = parseStatement()
+      errors.append(contentsOf: parseResult.errors)
+
+      guard parseResult.value != nil else { return parseResult }
+      guard let declaration = parseResult.value as? FunDecl else {
+        return Result(
+          value: parseResult.value,
+          errors: errors + [
+            unexpectedConstruction(expected: "function declaration", got: parseResult.value!),
+          ])
+      }
+
+      declaration.directives = directives
+      return Result(value: declaration, errors: errors)
+
     case .static, .mutating:
       // If the statement starts with a member attribute, it can describe either a property or a
       // function declaration. Hence we need to parse all attributes before we can desambiguise.
@@ -36,12 +71,11 @@ extension Parser {
       }
 
       let parseResult = parseStatement()
-      guard let declaration = parseResult.value else {
-        return parseResult
-      }
+      guard let declaration = parseResult.value
+        else { return parseResult }
       assert(declaration is PropDecl || declaration is FunDecl)
 
-      declaration.range =  SourceRange(from: startToken.range.start, to: declaration.range.end)
+      declaration.range = SourceRange(from: startToken.range.start, to: declaration.range.end)
       if let propertyDeclaration = declaration as? PropDecl {
         propertyDeclaration.attributes.formUnion(attributes)
       } else if let methodDeclaration = declaration as? FunDecl {
@@ -258,6 +292,57 @@ extension Parser {
         rvalue: rvalue,
         module: module,
         range: SourceRange(from: lvalue.range.start, to: rvalue.range.end)),
+      errors: errors)
+  }
+
+  /// Parses a directive.
+  func parseDirective() -> Result<Directive?> {
+    // The first token should be `#`.
+    guard let startToken = consume(.hashMark) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'#'")])
+    }
+
+    // Notice that we require the directive's name and arguments to start at the same line.
+
+    // Parse the name of the directive.
+    guard let name = consume(.identifier) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
+    }
+
+    // Attempt to parse an argument list.
+    var arguments: [String] = []
+    var errors: [ParseError] = []
+    var end = name.range.end
+
+    if consume(.leftParen) != nil {
+      // Commit to parse an argument list.
+      let argumentsParseResult = parseList(delimitedBy: TokenKind.rightParen) {
+        () -> Result<String?> in
+          guard let argument = consume(.identifier) else {
+            defer { consume() }
+            return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
+          }
+
+          end = argument.range.end
+          return Result(value: argument.value, errors: [])
+      }
+
+      arguments = argumentsParseResult.value
+      if let delimiter = consume(.rightParen) {
+        end = delimiter.range.end
+      } else {
+        errors.append(unexpectedToken(expected: "')'"))
+      }
+    }
+
+    return Result(
+      value: Directive(
+        name: name.value!,
+        arguments: arguments,
+        module: module,
+        range: SourceRange(from: name.range.start, to: end)),
       errors: errors)
   }
 

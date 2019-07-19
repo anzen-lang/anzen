@@ -17,6 +17,8 @@ public enum SyntaxError: Error, CustomStringConvertible {
   case invalidQualifier(value: String)
   /// Occurs when the parser unexpectedly depletes the stream.
   case unexpectedEOS
+  /// Occurs when the parser encounters an unexpected syntactic construction.
+  case unexpectedConstruction(expected: String?, got: Node)
   /// Occurs when the parser encounters an unexpected token.
   case unexpectedToken(expected: String?, got: Token)
 
@@ -34,6 +36,12 @@ public enum SyntaxError: Error, CustomStringConvertible {
       return "invalid qualifier '\(value)'"
     case .unexpectedEOS:
       return "unexpected end of stream"
+    case let .unexpectedConstruction(expected: expected, got: found):
+      if expected != nil {
+        return "expected \(expected!), found \(found)"
+      } else {
+        return "unexpected \(found)"
+      }
     case let .unexpectedToken(expected: expected, got: found):
       if expected != nil {
         return found.kind != .newline

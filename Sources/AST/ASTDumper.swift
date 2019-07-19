@@ -89,6 +89,11 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< " scope='" <<< node.scope <<< "'"
     self <<< " inner_scope='" <<< node.innerScope <<< "'"
     withIndentation {
+      if !node.directives.isEmpty {
+        self <<< "\n" <<< indent <<< "(directives\n"
+        withIndentation { try visit(node.directives) }
+        self <<< ")"
+      }
       if !node.placeholders.isEmpty {
         self <<< "\n" <<< indent <<< "(placeholders\n"
         withIndentation {
@@ -237,6 +242,15 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
       self <<< "\n" <<< indent <<< "(type_annotation\n"
       withIndentation { try visit(node.typeAnnotation) }
       self <<< ")"
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: Directive) throws {
+    self <<< indent <<< "(directive"
+    self <<< " '\(node.name)'"
+    if !node.arguments.isEmpty {
+      self <<< " " + node.arguments.joined(separator: " ")
     }
     self <<< ")"
   }

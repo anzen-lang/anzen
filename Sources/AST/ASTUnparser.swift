@@ -59,6 +59,14 @@ public final class ASTUnparser: ASTVisitor {
 
   public func visit(_ node: FunDecl) throws {
     var repr = ""
+    if !node.directives.isEmpty {
+      let directives = try node.directives.map { (directive) -> String in
+        try visit(directive)
+        return stack.pop()!
+      }
+      repr += "\(str(items: directives, separator: " "))"
+      repr += "\n"
+    }
     if !node.attributes.isEmpty {
       repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
       repr += " "
@@ -192,6 +200,15 @@ public final class ASTUnparser: ASTVisitor {
 //    write(str(node.label) + " ")
 //    try visit(node.typeAnnotation)
 //  }
+
+  public func visit(_ node: Directive) throws {
+    var repr = "#".styled("magenta") + node.name.styled("magenta")
+    if !node.arguments.isEmpty {
+      repr += "(\(str(items: node.arguments)))"
+    }
+
+    stack.push(repr)
+  }
 
   public func visit(_ node: WhileLoop) throws {
     var repr = StyledString("{while:magenta}").description

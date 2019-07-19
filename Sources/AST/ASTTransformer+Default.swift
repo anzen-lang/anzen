@@ -14,6 +14,7 @@ public extension ASTTransformer {
     case let n as TypeIdent:       return try transform(n)
     case let n as FunSign:         return try transform(n)
     case let n as ParamSign:       return try transform(n)
+    case let n as Directive:       return try transform(n)
     case let n as WhileLoop:       return try transform(n)
     case let n as BindingStmt:     return try transform(n)
     case let n as ReturnStmt:      return try transform(n)
@@ -77,6 +78,7 @@ public extension ASTTransformer {
   }
 
   func defaultTransform(_ node: FunDecl) throws -> FunDecl {
+    node.directives = try node.directives.map(transform) as! [Directive]
     node.parameters = try node.parameters.map(transform) as! [ParamDecl]
     node.codomain = try node.codomain.map(transform)
     node.body = try node.body.map { try transform($0) as! Block }
@@ -154,6 +156,10 @@ public extension ASTTransformer {
   }
 
   // MARK: Statements
+
+  func transform(_ node: Directive) throws -> Node {
+    return node
+  }
 
   func transform(_ node: WhileLoop) throws -> Node {
     return try defaultTransform(node)
