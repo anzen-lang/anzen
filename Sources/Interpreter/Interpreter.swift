@@ -246,7 +246,7 @@ public class Interpreter {
   // MARK: Built-in functions
 
   private func applyBuiltin(name: String, arguments: [AIRValue]) throws -> Reference? {
-    guard let function = Interpreter.builtinFunctions[name]
+    guard let function = builtinFunctions[name]
       else { fatalError("unimplemented built-in function '\(name)'") }
 
     let argumentContainers = try arguments.map(valueContainer)
@@ -255,12 +255,26 @@ public class Interpreter {
 
   private typealias BuiltinFunction = ([ValueContainer?]) throws -> Reference?
 
-  private static var builtinFunctions: [String: BuiltinFunction] = {
+  private lazy var builtinFunctions: [String: BuiltinFunction] = {
     var result: [String: BuiltinFunction] = [:]
+
+    // Reference identity checks.
+    result["__builtin_===_Flhsarhsa2b"] = { (arguments: [ValueContainer?]) in
+      let res = PrimitiveValue(arguments[0] === arguments[1])
+      return Reference(to: ValuePointer(to: res), type: res.type)
+    }
+    result["__builtin_!==_Flhsarhsa2b"] = { (arguments: [ValueContainer?]) in
+      let res = PrimitiveValue(arguments[0] !== arguments[1])
+      return Reference(to: ValuePointer(to: res), type: res.type)
+    }
 
     // print
     result["__builtin_print_F_a2n"] = { (arguments: [ValueContainer?]) in
-      print(arguments[0] ?? "null")
+      if let container = arguments[0] {
+        self.stdout.write("\(container)\n")
+      } else {
+        self.stdout.write("null\n")
+      }
       return nil
     }
 
