@@ -317,9 +317,4 @@ public extension ASTVisitor {
   func visit(_ node: Literal<String>) throws {
   }
 
-  // MARK: Input errors
-
-  func visit(_ node: UnparsableInput) throws {
-  }
-
 }

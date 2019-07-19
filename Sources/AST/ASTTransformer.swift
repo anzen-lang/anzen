@@ -44,8 +44,4 @@ public protocol ASTTransformer {
   func transform(_ node: Literal<Double>) throws -> Node
   func transform(_ node: Literal<String>) throws -> Node
 
-  // MARK: Input errors
-
-  func transform(_ node: UnparsableInput) throws -> Node
-
 }
