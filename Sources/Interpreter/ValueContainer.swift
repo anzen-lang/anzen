@@ -1,6 +1,17 @@
 import AnzenIR
 
 /// A container for a value at runtime.
+///
+/// A value container is a wrapper around a value that abstracts over the operation thereupon.
+/// Those describe how to copy and deallocate the wrapped value.
+///
+/// - Note:
+///   This design is heavily inspired by Swift's existential containers (see "Understanding Swift
+///   Performance", WWDC 2016, Session 416).
+///
+/// - Todo:
+///   In the future, value containers should also contain a virtual method table (a.k.a. a witness
+///   table in Swift) to support dynamic dispatch on polymorphic references.
 class ValueContainer: CustomStringConvertible {
 
   /// The type of the value.

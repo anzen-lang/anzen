@@ -3,32 +3,36 @@ import SystemKit
 import Utils
 
 /// An interpreter for AIR code.
-///
-/// - Note: This interpreter operates under the assumption that the AIR units it is given are
-///   correct with respect to type checking and borrow checking, and will unrecoverably fail if
-///   that's not the case.
 public class Interpreter {
+
+  /// The standard output of the interpreter.
+  public var stdout: TextOutputStream
+
+  /// The standard error of the interpreter.
+  public var stderr: TextOutputStream
+
+  /// The instruction pointer.
+  private var instructionPointer: InstructionPointer?
+
+  /// The stack frames.
+  private var frames: Stack<Frame> = []
 
   public init(stdout: TextOutputStream = System.out, stderr: TextOutputStream = System.err) {
     self.stdout = stdout
     self.stderr = stderr
   }
 
-  /// The standard output of the interpreter.
-  public var stdout: TextOutputStream
-  /// The standard error of the interpreter.
-  public var stderr: TextOutputStream
-
-  /// The program cursor.
-  private var cursor: Cursor?
-  /// The stack frames.
-  private var frames: Stack<Frame> = []
-
+  /// Invokes the main function of an AIR unit.
+  ///
+  /// - Note:
+  ///   The interpreter operates under the assumption that the AIR unit it is given is well-formed,
+  ///   and will unrecoverably fail otherwise. Other runtime errors (e.g. memory errors) trigger
+  ///   exceptions that can be caught to produce nicer error reports.
   public func invoke(function: AIRFunction) throws {
-    cursor = Cursor(atEntryOf: function)
+    instructionPointer = InstructionPointer(atEntryOf: function)
     frames.push(Frame())
 
-    while let instruction = cursor?.next() {
+    while let instruction = instructionPointer?.next() {
       switch instruction {
       case let inst as AllocInst        : try execute(inst)
       case let inst as MakeRefInst      : try execute(inst)
@@ -151,7 +155,7 @@ public class Interpreter {
     }
 
     // Prepare the next stack frame. Notice the offset, so as to reserve %0 for `self`.
-    var nextFrame = Frame(returnCursor: cursor, returnID: inst.id)
+    var nextFrame = Frame(returnInstructionPointer: instructionPointer, returnID: inst.id)
     for (i, argument) in arguments.enumerated() {
       switch argument {
       case let cst as AIRConstant:
@@ -175,7 +179,7 @@ public class Interpreter {
     frames.push(nextFrame)
 
     // Jump into the function.
-    cursor = Cursor(atEntryOf: function)
+    instructionPointer = InstructionPointer(atEntryOf: function)
   }
 
   private func execute(_ inst: PartialApplyInst) throws {
@@ -199,7 +203,7 @@ public class Interpreter {
     }
 
     // Pop the current frame.
-    cursor = frames.top!.returnCursor
+    instructionPointer = frames.top!.returnInstructionPointer
     frames.pop()
   }
 
@@ -208,13 +212,15 @@ public class Interpreter {
     guard let condition = (container as? PrimitiveValue)?.value as? Bool
       else { throw RuntimeError("'\(container)' is not a boolean value") }
 
-    cursor = condition
-      ? Cursor(in: cursor!.function, atBeginningOf: branch.thenLabel)
-      : Cursor(in: cursor!.function, atBeginningOf: branch.elseLabel)
+    instructionPointer = condition
+      ? InstructionPointer(in: instructionPointer!.function, atBeginningOf: branch.thenLabel)
+      : InstructionPointer(in: instructionPointer!.function, atBeginningOf: branch.elseLabel)
   }
 
   private func execute(_ jump: JumpInst) throws {
-    cursor = Cursor(in: cursor!.function, atBeginningOf: jump.label)
+    instructionPointer = InstructionPointer(
+      in: instructionPointer!.function,
+      atBeginningOf: jump.label)
   }
 
   private func valueContainer(of airValue: AIRValue) throws -> ValueContainer {

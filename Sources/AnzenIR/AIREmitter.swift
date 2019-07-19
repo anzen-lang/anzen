@@ -139,30 +139,6 @@ class AIREmitter: ASTVisitor {
     stack.push(unsafeCast)
   }
 
-  /// Emit the method type corresponding to a select expression.
-  ///
-  /// Non-static methods actually have types of the form `(_: Self) -> MethodType` in Anzen. Hence,
-  /// They should be uncurried in AIR to accept `self` as their first parameter.
-  private func getAIRMethod(select: SelectExpr) throws -> AIRFunction {
-    // Emit the type of the uncurried method.
-    let calleeAIRType = typeEmitter.emitType(of: select.ownee.type!) as! AIRFunctionType
-    let methodAIRType = typeEmitter.emitType(
-      from: [typeEmitter.emitType(of: select.owner!.type!)] + calleeAIRType.domain,
-      to: calleeAIRType.codomain)
-
-    // Compute the specialized type of the Anzen method (i.e. the curried version of the method's
-    // type) to feed the name mangler and register the implementation request.
-    let methodAZNType = builder.context.getFunctionType(
-      from: [Parameter(label: nil, type: select.owner!.type!)],
-      to: select.ownee.type!)
-
-    let name = mangle(symbol: select.ownee.symbol!, withType: methodAZNType)
-    let decl = builder.context.declarations[select.ownee.symbol!]
-    requestedImpl.append((decl as! FunDecl, methodAZNType))
-
-    return builder.unit.getFunction(name: name, type: methodAIRType)
-  }
-
   func visit(_ node: CallExpr) throws {
     var callee: AIRValue?
     var arguments: [AIRValue] = []
@@ -295,6 +271,30 @@ class AIREmitter: ASTVisitor {
 
   func visit(_ node: Literal<String>) {
     stack.push(AIRConstant(value: node.value))
+  }
+
+  /// Emit the method type corresponding to a select expression.
+  ///
+  /// Non-static methods actually have types of the form `(_: Self) -> MethodType` in Anzen. Hence,
+  /// They should be uncurried in AIR to accept `self` as their first parameter.
+  private func getAIRMethod(select: SelectExpr) throws -> AIRFunction {
+    // Emit the type of the uncurried method.
+    let calleeAIRType = typeEmitter.emitType(of: select.ownee.type!) as! AIRFunctionType
+    let methodAIRType = typeEmitter.emitType(
+      from: [typeEmitter.emitType(of: select.owner!.type!)] + calleeAIRType.domain,
+      to: calleeAIRType.codomain)
+
+    // Compute the specialized type of the Anzen method (i.e. the curried version of the method's
+    // type) to feed the name mangler and register the implementation request.
+    let methodAZNType = builder.context.getFunctionType(
+      from: [Parameter(label: nil, type: select.owner!.type!)],
+      to: select.ownee.type!)
+
+    let name = mangle(symbol: select.ownee.symbol!, withType: methodAZNType)
+    let decl = builder.context.declarations[select.ownee.symbol!]
+    requestedImpl.append((decl as! FunDecl, methodAZNType))
+
+    return builder.unit.getFunction(name: name, type: methodAIRType)
   }
 
 }
