@@ -96,6 +96,10 @@ extension Parser {
     var errors: [ParseError] = []
 
     switch token.kind {
+    case .nullref:
+      consume()
+      expression = NullRef(module: module, range: token.range)
+
     case .integer:
       consume()
       expression = Literal(value: Int(token.value!)!, module: module, range: token.range)
