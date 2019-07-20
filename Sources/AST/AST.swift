@@ -530,6 +530,15 @@ public class Expr: Node {
 
 }
 
+/// A null reference.
+public final class NullRef: Expr {
+
+  public init(module: ModuleDecl, range: SourceRange) {
+    super.init(module: module, range: range)
+  }
+
+}
+
 /// A condition expression.
 public final class IfExpr: Expr {
 

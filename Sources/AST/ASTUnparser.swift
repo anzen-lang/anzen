@@ -236,6 +236,10 @@ public final class ASTUnparser: ASTVisitor {
     stack.push(repr)
   }
 
+  public func visit(_ node: NullRef) throws {
+    stack.push("nullref".styled("magenta"))
+  }
+
   public func visit(_ node: IfExpr) throws {
     var repr = StyledString("{if:magenta}").description
     try visit(node.condition)

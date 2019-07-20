@@ -190,6 +190,9 @@ public extension ASTVisitor {
 
   // MARK: Expressions
 
+  func visit(_ node: NullRef) throws {
+  }
+
   func visit(_ node: IfExpr) throws {
     try traverse(node)
   }

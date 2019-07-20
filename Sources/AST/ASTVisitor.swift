@@ -27,6 +27,7 @@ public protocol ASTVisitor {
 
   // MARK: Expressions
 
+  func visit(_ node: NullRef)         throws
   func visit(_ node: IfExpr)          throws
   func visit(_ node: LambdaExpr)      throws
   func visit(_ node: CastExpr)        throws

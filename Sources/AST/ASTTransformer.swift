@@ -27,6 +27,7 @@ public protocol ASTTransformer {
 
   // MARK: Expressions
 
+  func transform(_ node: NullRef)         throws -> Node
   func transform(_ node: IfExpr)          throws -> Node
   func transform(_ node: LambdaExpr)      throws -> Node
   func transform(_ node: CastExpr)        throws -> Node

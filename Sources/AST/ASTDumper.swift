@@ -294,6 +294,10 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: NullRef) {
+    self <<< indent <<< "(nullref)"
+  }
+
   public func visit(_ node: IfExpr) throws {
     self <<< indent <<< "(if"
     self <<< " type='" <<< node.type <<< "'"

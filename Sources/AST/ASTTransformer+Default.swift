@@ -195,6 +195,10 @@ public extension ASTTransformer {
 
   // MARK: Expressions
 
+  func transform(_ node: NullRef) throws -> Node {
+    return node
+  }
+
   func transform(_ node: IfExpr) throws -> Node {
     return try defaultTransform(node)
   }
