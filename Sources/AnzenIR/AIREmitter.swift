@@ -229,16 +229,18 @@ class AIREmitter: ASTVisitor {
     // constructor (an `undefined symbol` error would have raised during semantic analysis).
     guard let aznTy = (node.type as? FunctionType)
       else { fatalError() }
-
     let airTy = typeEmitter.emitType(of: aznTy)
+
+    let decl = builder.context.declarations[node.symbol!] as! FunDecl
+    requestedImpl.append((decl, aznTy))
+
+    let functionName = decl.getAIRName(specializedWithType: aznTy)
     if let env = thinkFunctionEnvironment[node.symbol!] {
       // If the identifier refers to the name of a thick function, we've to create a closure. As
       // thick functions aren't hoisted, we can assume to environment to have already been set.
       let additional = env.keys.map { typeEmitter.emitType(of: $0.type!) }
       let fnTy = typeEmitter.emitType(from: additional + airTy.domain, to: airTy.codomain)
-      let fn = builder.unit.getFunction(
-        name: mangle(symbol: node.symbol!, withType: aznTy),
-        type: fnTy)
+      let fn = builder.unit.getFunction(name: functionName, type: fnTy)
       let val = builder.buildPartialApply(
         function: fn,
         arguments: Array(env.values),
@@ -247,14 +249,9 @@ class AIREmitter: ASTVisitor {
     } else {
       // If the identifier refers to the name of a thin function, then we just need to use the
       // corresponding AIR function value.
-      let fn = builder.unit.getFunction(
-        name: mangle(symbol: node.symbol!, withType: aznTy),
-        type: airTy)
+      let fn = builder.unit.getFunction(name: functionName, type: airTy)
       stack.push(fn)
     }
-
-    let decl = builder.context.declarations[node.symbol!]
-    requestedImpl.append((decl as! FunDecl, aznTy))
   }
 
   func visit(_ node: Literal<Bool>) {
@@ -290,11 +287,11 @@ class AIREmitter: ASTVisitor {
       from: [Parameter(label: nil, type: select.owner!.type!)],
       to: select.ownee.type!)
 
-    let name = mangle(symbol: select.ownee.symbol!, withType: methodAZNType)
-    let decl = builder.context.declarations[select.ownee.symbol!]
-    requestedImpl.append((decl as! FunDecl, methodAZNType))
+    let decl = builder.context.declarations[select.ownee.symbol!] as! FunDecl
+    requestedImpl.append((decl, methodAZNType))
 
-    return builder.unit.getFunction(name: name, type: methodAIRType)
+    let functionName = decl.getAIRName(specializedWithType: methodAZNType)
+    return builder.unit.getFunction(name: functionName, type: methodAIRType)
   }
 
 }

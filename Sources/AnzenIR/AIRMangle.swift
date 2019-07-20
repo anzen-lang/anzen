@@ -62,3 +62,16 @@ extension Scope {
   }
 
 }
+
+extension FunDecl {
+
+  func getAIRName(specializedWithType type: TypeBase) -> String {
+    if let directive = directives.first(where: { $0.name == "air_name" }) {
+      assert(directive.arguments.count == 1, "'air_name' directive expects 1 argument")
+      return directive.arguments[0]
+    } else {
+      return mangle(symbol: symbol!, withType: type)
+    }
+  }
+
+}
