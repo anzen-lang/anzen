@@ -199,6 +199,7 @@ extension Lexer: IteratorProtocol, Sequence {
       case "else"     : kind = .else
       case "switch"   : kind = .switch
       case "when"     : kind = .when
+      case "nullref"  : kind = .nullref
       default         : kind = .identifier; value = chars
       }
 

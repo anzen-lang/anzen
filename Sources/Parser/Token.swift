@@ -84,6 +84,7 @@ public enum TokenKind: String {
   case `else`
   case `switch`
   case `when`
+  case `nullref`
 
   // MARK: Annotations
 
