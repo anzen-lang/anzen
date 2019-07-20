@@ -149,7 +149,7 @@ public class Interpreter {
     let arguments = calleeContainer.closure + inst.arguments
 
     // Handle built-in funtions.
-    if function.name.starts(with: "__builtin") {
+    if function.name.starts(with: "__") {
       frames.top![inst.id] = try applyBuiltin(name: function.name, arguments: arguments)
       return
     }
@@ -259,17 +259,17 @@ public class Interpreter {
     var result: [String: BuiltinFunction] = [:]
 
     // Reference identity checks.
-    result["__builtin_===_Flhsarhsa2b"] = { (arguments: [ValueContainer?]) in
+    result["__peq"] = { (arguments: [ValueContainer?]) in
       let res = PrimitiveValue(arguments[0] === arguments[1])
       return Reference(to: ValuePointer(to: res), type: res.type)
     }
-    result["__builtin_!==_Flhsarhsa2b"] = { (arguments: [ValueContainer?]) in
+    result["__pne"] = { (arguments: [ValueContainer?]) in
       let res = PrimitiveValue(arguments[0] !== arguments[1])
       return Reference(to: ValuePointer(to: res), type: res.type)
     }
 
     // print
-    result["__builtin_print_F_a2n"] = { (arguments: [ValueContainer?]) in
+    result["__print"] = { (arguments: [ValueContainer?]) in
       if let container = arguments[0] {
         self.stdout.write("\(container)\n")
       } else {
@@ -279,36 +279,28 @@ public class Interpreter {
     }
 
     // Int
-    result["__builtinIntblock_+_F_i2F_i2i"] = {
-      primitiveBinaryFunction($0, with: (+) as (Int, Int) -> Int)
-    }
-    result["__builtinIntblock_-_F_i2F_i2i"] = {
-      primitiveBinaryFunction($0, with: (-) as (Int, Int) -> Int)
-    }
-    result["__builtinIntblock_*_F_i2F_i2i"] = {
-      primitiveBinaryFunction($0, with: (*) as (Int, Int) -> Int)
-    }
-    result["__builtinIntblock_/_F_i2F_i2i"] = {
-      primitiveBinaryFunction($0, with: (/) as (Int, Int) -> Int)
-    }
-    result["__builtinIntblock_<_F_i2F_i2b"] = {
-      primitiveBinaryFunction($0, with: (<) as (Int, Int) -> Bool)
-    }
-    result["__builtinIntblock_<=_F_i2F_i2b"] = {
-      primitiveBinaryFunction($0, with: (<=) as (Int, Int) -> Bool)
-    }
-    result["__builtinIntblock_==_F_i2F_i2b"] = {
-      primitiveBinaryFunction($0, with: (==) as (Int, Int) -> Bool)
-    }
-    result["__builtinIntblock_!=_F_i2F_i2b"] = {
-      primitiveBinaryFunction($0, with: (!=) as (Int, Int) -> Bool)
-    }
-    result["__builtinIntblock_>=_F_i2F_i2b"] = {
-      primitiveBinaryFunction($0, with: (>=) as (Int, Int) -> Bool)
-    }
-    result["__builtinIntblock_>_F_i2F_i2b"] = {
-      primitiveBinaryFunction($0, with: (>) as (Int, Int) -> Bool)
-    }
+    result["__iadd"] = { primitiveBinaryFunction($0, with: (+)  as (Int, Int) -> Int) }
+    result["__isub"] = { primitiveBinaryFunction($0, with: (-)  as (Int, Int) -> Int) }
+    result["__imul"] = { primitiveBinaryFunction($0, with: (*)  as (Int, Int) -> Int) }
+    result["__idiv"] = { primitiveBinaryFunction($0, with: (/)  as (Int, Int) -> Int) }
+    result["__ilt"]  = { primitiveBinaryFunction($0, with: (<)  as (Int, Int) -> Bool) }
+    result["__ile"]  = { primitiveBinaryFunction($0, with: (<=) as (Int, Int) -> Bool) }
+    result["__ieq"]  = { primitiveBinaryFunction($0, with: (==) as (Int, Int) -> Bool) }
+    result["__ine"]  = { primitiveBinaryFunction($0, with: (!=) as (Int, Int) -> Bool) }
+    result["__ige"]  = { primitiveBinaryFunction($0, with: (>=) as (Int, Int) -> Bool) }
+    result["__igt"]  = { primitiveBinaryFunction($0, with: (>)  as (Int, Int) -> Bool) }
+
+    // Float
+    result["__fadd"] = { primitiveBinaryFunction($0, with: (+)  as (Double, Double) -> Double) }
+    result["__fsub"] = { primitiveBinaryFunction($0, with: (-)  as (Double, Double) -> Double) }
+    result["__fmul"] = { primitiveBinaryFunction($0, with: (*)  as (Double, Double) -> Double) }
+    result["__fdiv"] = { primitiveBinaryFunction($0, with: (/)  as (Double, Double) -> Double) }
+    result["__flt"]  = { primitiveBinaryFunction($0, with: (<)  as (Double, Double) -> Bool) }
+    result["__fle"]  = { primitiveBinaryFunction($0, with: (<=) as (Double, Double) -> Bool) }
+    result["__feq"]  = { primitiveBinaryFunction($0, with: (==) as (Double, Double) -> Bool) }
+    result["__fne"]  = { primitiveBinaryFunction($0, with: (!=) as (Double, Double) -> Bool) }
+    result["__fge"]  = { primitiveBinaryFunction($0, with: (>=) as (Double, Double) -> Bool) }
+    result["__fgt"]  = { primitiveBinaryFunction($0, with: (>)  as (Double, Double) -> Bool) }
 
     return result
   }()
