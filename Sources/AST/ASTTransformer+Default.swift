@@ -18,6 +18,7 @@ public extension ASTTransformer {
     case let n as WhileLoop:       return try transform(n)
     case let n as BindingStmt:     return try transform(n)
     case let n as ReturnStmt:      return try transform(n)
+    case let n as NullRef:         return try transform(n)
     case let n as IfExpr:          return try transform(n)
     case let n as LambdaExpr:      return try transform(n)
     case let n as CastExpr:        return try transform(n)

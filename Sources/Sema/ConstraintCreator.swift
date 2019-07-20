@@ -221,6 +221,10 @@ public final class ConstraintCreator: ASTVisitor {
     context.add(constraint: .disjunction(choices, at: location))
   }
 
+  public func visit(_ node: NullRef) throws {
+    node.type = AnythingType.get
+  }
+
   public func visit(_ node: Literal<Bool>) throws {
     node.type = context.builtinTypes["Bool"]
     assert(node.type != nil)

@@ -175,9 +175,9 @@ public struct ConstraintSolver {
           return .success
         }
 
-        // If only `T` is unknown, trying to unify it with `U` might be too broad. Instead, we
-        // should compute the "join" of both types. We do that by creating a dusjunction that either
-        // unifies `T` with `U`, or postpones the conformance constraint until we can infer `T`.
+        // If only `T` is unknown, trying to unify it with `U` might be too broad. Instead, we have
+        // to compute the "join" of both types. We create a disjunction that either unifies `T`
+        // with `U`, or postpones the conformance constraint until we can infer `T`.
         let choices: [Constraint] = [
           .equality(t: a, u: b, at: constraint.location),
           constraint,

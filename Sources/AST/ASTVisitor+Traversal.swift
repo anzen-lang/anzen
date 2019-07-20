@@ -18,6 +18,7 @@ public extension ASTVisitor {
     case let n as WhileLoop:       try visit(n)
     case let n as BindingStmt:     try visit(n)
     case let n as ReturnStmt:      try visit(n)
+    case let n as NullRef:         try visit(n)
     case let n as IfExpr:          try visit(n)
     case let n as LambdaExpr:      try visit(n)
     case let n as CastExpr:        try visit(n)
