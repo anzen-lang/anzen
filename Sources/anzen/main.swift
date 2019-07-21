@@ -85,4 +85,8 @@ guard let mainFn = mainUnit.functions["main"]
   else { crash("no main function") }
 
 let interpreter = Interpreter()
-try interpreter.invoke(function: mainFn)
+do {
+  try interpreter.invoke(function: mainFn)
+} catch {
+  logger.error(error)
+}

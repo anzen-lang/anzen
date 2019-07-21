@@ -1,6 +1,7 @@
 import AnzenLib
 import AST
 import Dispatch
+import Interpreter
 import Parser
 import Sema
 import SystemKit
@@ -25,6 +26,8 @@ public struct ConsoleLogger: Logger {
     switch err {
     case let parseError as ParseError:
       log(describe(parseError))
+    case let runtimeError as RuntimeError:
+      log(describe(runtimeError))
     default:
       log("error:".styled("bold,red") + " \(err)\n")
     }
@@ -36,7 +39,7 @@ public struct ConsoleLogger: Logger {
       $0.relative(to: .workingDirectory).pathname
     } ?? "<unknown>"
 
-    let heading = "\(filename)::\(range.start.line)::\(range.start.column): ".styled("bold") +
+    let heading = "\(filename)::\(range.start.line):\(range.start.column): ".styled("bold") +
                   "error: ".styled("bold,red") +
                   "\(err.cause)\n"
 
@@ -49,7 +52,7 @@ public struct ConsoleLogger: Logger {
       $0.relative(to: .workingDirectory).pathname
     } ?? "<unknown>"
 
-    var heading = "\(filename)::\(range.start.line)::\(range.start.column): ".styled("bold") +
+    var heading = "\(filename)::\(range.start.line):\(range.start.column): ".styled("bold") +
                   "error:".styled("bold,red")
 
     switch err.cause {
@@ -65,6 +68,23 @@ public struct ConsoleLogger: Logger {
   /// Logs the given type solver error.
   public func describe(_ err: SolverFailure) -> String {
     return "error: ".styled("bold,red") + "type error\n"
+  }
+
+  public func describe(_ err: RuntimeError) -> String {
+    if let range = err.range {
+      let filename = ((range.start.source as? TextFile)?.path).map {
+        $0.relative(to: .workingDirectory).pathname
+      } ?? "<unknown>"
+
+      return "\(filename)::\(range.start.line):\(range.start.column): ".styled("bold") +
+        "error: ".styled("bold,red") +
+        "\(err.message)\n" +
+        describe(range)
+    } else {
+      return "<unknown>::".styled("bold") +
+        "error: ".styled("bold,red") +
+        "\(err.message)"
+    }
   }
 
   public func describe(_ range: SourceRange) -> String {
