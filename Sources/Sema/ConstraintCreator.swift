@@ -124,7 +124,7 @@ public final class ConstraintCreator: ASTVisitor {
     // Pointer identity operators are not implemented by a special built-in function rather than by
     // methods of the left operand. They do not fix any constraint on the left and right operand,
     // as any pair of references can be checked for identity.
-    if node.op == .peq || node.op == .pne {
+    if node.op == .refeq || node.op == .refne {
       let bool = context.builtinTypes["Bool"]!
       let anything = AnythingType.get
       node.type = bool
