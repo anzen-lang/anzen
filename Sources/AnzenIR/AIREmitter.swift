@@ -108,6 +108,10 @@ class AIREmitter: ASTVisitor {
     builder.buildJump(label: currentFn.blocks.values.last!.label)
   }
 
+  func visit(_ node: NullRef) {
+    stack.push(AIRNull(type: typeEmitter.emitType(of: node.type!)))
+  }
+
   func visit(_ node: IfExpr) throws {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }

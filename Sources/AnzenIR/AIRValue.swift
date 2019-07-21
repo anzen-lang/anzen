@@ -1,4 +1,4 @@
-/// The protocol for AIR values.
+/// An AIR value.
 ///
 /// This protocol represents any value a program may compute and use as compound of other values.
 /// Very intuitively, a literal is an AIR value, but so is `alloc` (i.e. the instruction that
@@ -12,7 +12,7 @@ public protocol AIRValue {
 
 }
 
-/// The protocol for AIR registers.
+/// An AIR register.
 ///
 /// An AIR register is an AIR value that can be represented as a register.
 public protocol AIRRegister: AIRValue {
@@ -22,7 +22,7 @@ public protocol AIRRegister: AIRValue {
 
 }
 
-/// This represents a constant in AIR.
+/// An AIR constant.
 public struct AIRConstant: AIRValue {
 
   internal init(value: Bool) {
@@ -52,6 +52,21 @@ public struct AIRConstant: AIRValue {
     return value is String
       ? "\"\(value)\""
       : "\(value)"
+  }
+
+}
+
+/// An AIR null value.
+public struct AIRNull: AIRValue {
+
+  internal init(type: AIRType) {
+    self.type = type
+  }
+
+  public let type: AIRType
+
+  public var valueDescription: String {
+    return "null"
   }
 
 }
