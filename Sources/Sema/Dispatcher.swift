@@ -174,7 +174,7 @@ public final class Dispatcher: ASTTransformer {
 
     if node.type is FunctionType {
 
-      // Note: there are various situations to consider if the identifier has a function type.
+      // There are various situations to consider if the identifier has a function type.
       // * The identifier might refer to a functional property, in which case the only solution
       //   is to dispatch to that property's symbol.
       // * The identifier might refer to a function constructor, in which case we may dispatch to

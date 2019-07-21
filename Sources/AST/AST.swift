@@ -136,10 +136,11 @@ public class NamedDecl: Node {
 
 /// A property declaration.
 ///
-/// - Note: The term "property" can refer to variables, when declared within a function, or type
-///   members, when declared within a type declaration (e.g. a structure). Unlike variables, type
-///   members must be declared with either a type annotation or an initial binding value, so their
-///   type can be inferred unambiguously.
+/// - Note:
+///   The term "property" can refer to variables, when declared within a function, or type members,
+///   when declared within a type declaration (e.g. a structure). Unlike variables, type members
+///   must be declared with either a type annotation or an initial binding value, so their type can
+///   be inferred unambiguously.
 public final class PropDecl: NamedDecl {
 
   public init(
@@ -352,8 +353,9 @@ public final class QualTypeSign: Node {
 
   /// The semantic type definition of the signature.
   ///
-  /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a semantic
-  ///   type signature (i.e. an instance of `FunSign` or `StructSign`).
+  /// - Note:
+  ///   This must be either a type identifier (i.e. an instance of `Ident`), or a semantic type
+  ///   signature (i.e. an instance of `FunSign` or `StructSign`).
   public var signature: Node?
 
 }
@@ -405,7 +407,8 @@ public final class FunSign: TypeSign {
 
   /// The codomain of the signature.
   ///
-  /// - Note: Unlike the signature of function declarations, function type signatures can't feature
+  /// - Note:
+  ///   Unlike the signature of function declarations, function type signatures can't feature
   ///   expressions on their codomain, but only type defintiions. Hence this property should be
   ///   either a type identifier (i.e. an instance of `Ident`), or a semantic type signature (i.e.
   ///   an instance of `FunSign` or `StructSign`).
@@ -427,8 +430,9 @@ public final class ParamSign: TypeSign {
 
   /// The type annotation of the property.
   ///
-  /// - Note: This must be either a type identifier (i.e. an instance of `Ident`), or a type
-  ///   signature (i.e. an instance of `QualTypeSign`, `TypeSign`).
+  /// - Note:
+  ///   This must be either a type identifier (i.e. an instance of `Ident`), or a type signature
+  ///   (i.e. an instance of `QualTypeSign`, `TypeSign`).
   public var typeAnnotation: Node
 
 }
@@ -478,7 +482,8 @@ public final class WhileLoop: Node {
 
 /// A binding statement.
 ///
-/// - Note: Binding statements are also sometimes referred to as assignments.
+/// - Note:
+///   Binding statements are also sometimes referred to as assignments.
 public final class BindingStmt: Node {
 
   public init(
