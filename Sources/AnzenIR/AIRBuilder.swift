@@ -15,14 +15,16 @@ public class AIRBuilder {
   public var currentBlock: InstructionBlock?
 
   /// Creates a new reference in the current instruction block.
-  public func buildMakeRef(type: AIRType, id: Int? = nil) -> MakeRefInst {
-    let inst = MakeRefInst(type: type, id: id ?? currentBlock!.nextRegisterID())
+  public func buildMakeRef(type: AIRType, withID id: Int? = nil) -> MakeRefInst {
+    let registerID = id ?? currentBlock!.nextRegisterID()
+    let inst = MakeRefInst(type: type, id: registerID)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
-  public func buildAlloc(type: AIRType, id: Int? = nil) -> AllocInst {
-    let inst = AllocInst(type: type, id: id ?? currentBlock!.nextRegisterID())
+  public func buildAlloc(type: AIRType, withID id: Int? = nil) -> AllocInst {
+    let registerID = id ?? currentBlock!.nextRegisterID()
+    let inst = AllocInst(type: type, id: registerID)
     currentBlock!.instructions.append(inst)
     return inst
   }
@@ -30,12 +32,11 @@ public class AIRBuilder {
   public func buildUnsafeCast(
     source: AIRValue,
     as castType: AIRType,
-    id: Int? = nil) -> UnsafeCastInst
+    at range: SourceRange?,
+    withID id: Int? = nil) -> UnsafeCastInst
   {
-    let inst = UnsafeCastInst(
-      operand: source,
-      type: castType,
-      id: id ?? currentBlock!.nextRegisterID())
+    let registerID = id ?? currentBlock!.nextRegisterID()
+    let inst = UnsafeCastInst(operand: source, type: castType, id: registerID, range: range)
     currentBlock!.instructions.append(inst)
     return inst
   }
@@ -44,13 +45,11 @@ public class AIRBuilder {
     from source: AIRValue,
     index: Int,
     type: AIRType,
-    id: Int? = nil) -> ExtractInst
+    at range: SourceRange?,
+    withID id: Int? = nil) -> ExtractInst
   {
-    let inst = ExtractInst(
-      source: source,
-      index: index,
-      type: type,
-      id: id ?? currentBlock!.nextRegisterID())
+    let registerID = id ?? currentBlock!.nextRegisterID()
+    let inst = ExtractInst(source: source, index: index, type: type, id: registerID, range: range)
     currentBlock!.instructions.append(inst)
     return inst
   }
@@ -59,13 +58,16 @@ public class AIRBuilder {
     callee: AIRValue,
     arguments: [AIRValue],
     type: AIRType,
-    id: Int? = nil) -> ApplyInst
+    at range: SourceRange?,
+    withID id: Int? = nil) -> ApplyInst
   {
+    let registerID = id ?? currentBlock!.nextRegisterID()
     let inst = ApplyInst(
       callee: callee,
       arguments: arguments,
       type: type,
-      id: id ?? currentBlock!.nextRegisterID())
+      id: registerID,
+      range: range)
     currentBlock!.instructions.append(inst)
     return inst
   }
@@ -74,13 +76,16 @@ public class AIRBuilder {
     function: AIRFunction,
     arguments: [AIRValue],
     type: AIRType,
-    id: Int? = nil) -> PartialApplyInst
+    at range: SourceRange?,
+    withID id: Int? = nil) -> PartialApplyInst
   {
+    let registerID = id ?? currentBlock!.nextRegisterID()
     let inst = PartialApplyInst(
       function: function,
       arguments: arguments,
       type: type,
-      id: id ?? currentBlock!.nextRegisterID())
+      id: registerID,
+      range: range)
     currentBlock!.instructions.append(inst)
     return inst
   }
@@ -93,22 +98,28 @@ public class AIRBuilder {
   }
 
   @discardableResult
-  public func buildCopy(source: AIRValue, target: AIRRegister) -> CopyInst {
-    let inst = CopyInst(source: source, target: target)
+  public func buildCopy(source: AIRValue, target: AIRRegister, at range: SourceRange?)
+    -> CopyInst
+  {
+    let inst = CopyInst(source: source, target: target, range: range)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
   @discardableResult
-  public func buildMove(source: AIRValue, target: AIRRegister) -> MoveInst {
-    let inst = MoveInst(source: source, target: target)
+  public func buildMove(source: AIRValue, target: AIRRegister, at range: SourceRange?)
+    -> MoveInst
+  {
+    let inst = MoveInst(source: source, target: target, range: range)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
   @discardableResult
-  public func buildBind(source: AIRValue, target: AIRRegister) -> BindInst {
-    let inst = BindInst(source: source, target: target)
+  public func buildBind(source: AIRValue, target: AIRRegister, at range: SourceRange?)
+    -> BindInst
+  {
+    let inst = BindInst(source: source, target: target, range: range)
     currentBlock!.instructions.append(inst)
     return inst
   }
@@ -117,24 +128,29 @@ public class AIRBuilder {
   public func build(
     assignment: BindingOperator,
     source: AIRValue,
-    target: AIRRegister) -> AIRInstruction
+    target: AIRRegister,
+    at range: SourceRange?) -> AIRInstruction
   {
     switch assignment {
-    case .copy: return buildCopy(source: source, target: target)
-    case .move: return buildMove(source: source, target: target)
-    case .ref : return buildBind(source: source, target: target)
+    case .copy: return buildCopy(source: source, target: target, at: range)
+    case .move: return buildMove(source: source, target: target, at: range)
+    case .ref : return buildBind(source: source, target: target, at: range)
     }
   }
 
   @discardableResult
-  public func buildDrop(value: MakeRefInst) -> DropInst {
-    let inst = DropInst(value: value)
+  public func buildDrop(value: MakeRefInst, at range: SourceRange?) -> DropInst {
+    let inst = DropInst(value: value, range: range)
     currentBlock!.instructions.append(inst)
     return inst
   }
 
   @discardableResult
-  public func buildBranch(condition: AIRValue, thenLabel: String, elseLabel: String) -> BranchInst {
+  public func buildBranch(
+    condition: AIRValue,
+    thenLabel: String,
+    elseLabel: String) -> BranchInst
+  {
     let inst = BranchInst(condition: condition, thenLabel: thenLabel, elseLabel: elseLabel)
     currentBlock!.instructions.append(inst)
     return inst

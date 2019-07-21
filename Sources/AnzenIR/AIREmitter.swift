@@ -39,7 +39,7 @@ class AIREmitter: ASTVisitor {
 
     if let (op, value) = node.initialBinding {
       try visit(value)
-      builder.build(assignment: op, source: stack.pop()!, target: ref)
+      builder.build(assignment: op, source: stack.pop()!, target: ref, at: node.range)
     }
   }
 
@@ -93,7 +93,7 @@ class AIREmitter: ASTVisitor {
     let lvalue = stack.pop() as! AIRRegister
     try visit(node.rvalue)
     let rvalue = stack.pop()!
-    builder.build(assignment: node.op, source: rvalue, target: lvalue)
+    builder.build(assignment: node.op, source: rvalue, target: lvalue, at: node.range)
   }
 
   func visit(_ node: ReturnStmt) throws {
@@ -102,7 +102,7 @@ class AIREmitter: ASTVisitor {
 
     if let (op, value) = node.binding {
       try visit(value)
-      builder.build(assignment: op, source: stack.pop()!, target: returnRegister!)
+      builder.build(assignment: op, source: stack.pop()!, target: returnRegister!, at: node.range)
     }
 
     builder.buildJump(label: currentFn.blocks.values.last!.label)
@@ -139,7 +139,7 @@ class AIREmitter: ASTVisitor {
   func visit(_ node: CastExpr) throws {
     try visit(node.operand)
     let castTy = typeEmitter.emitType(of: node.type!)
-    let unsafeCast = builder.buildUnsafeCast(source: stack.pop()!, as: castTy)
+    let unsafeCast = builder.buildUnsafeCast(source: stack.pop()!, as: castTy, at: node.range)
     stack.push(unsafeCast)
   }
 
@@ -164,7 +164,7 @@ class AIREmitter: ASTVisitor {
         } else {
           // Create the parameter aliasing assignment for `self`.
           let self_ = builder.buildMakeRef(type: typeEmitter.emitType(of: select.owner!.type!))
-          builder.buildBind(source: argument, target: self_)
+          builder.buildBind(source: argument, target: self_, at: node.range)
           arguments.append(self_)
         }
       }
@@ -173,21 +173,26 @@ class AIREmitter: ASTVisitor {
     if callee == nil {
       let calleeRegister = builder.buildMakeRef(type: typeEmitter.emitType(of: node.callee.type!))
       try visit(node.callee)
-      builder.buildBind(source: stack.pop()!, target: calleeRegister)
+      builder.buildBind(source: stack.pop()!, target: calleeRegister, at: node.range)
       callee = calleeRegister
     }
 
     try arguments.append(contentsOf: node.arguments.map { (callArgument) -> MakeRefInst in
       let argument = builder.buildMakeRef(type: typeEmitter.emitType(of: callArgument.type!))
       try visit(callArgument.value)
-      builder.build(assignment: callArgument.bindingOp, source: stack.pop()!, target: argument)
+      builder.build(
+        assignment:
+        callArgument.bindingOp,
+        source: stack.pop()!,
+        target: argument,
+        at: callArgument.range)
       return argument
     })
 
     let apply = builder.buildApply(
       callee: callee!,
       arguments: arguments,
-      type: typeEmitter.emitType(of: node.type!))
+      type: typeEmitter.emitType(of: node.type!), at: node.range)
     stack.push(apply)
   }
 
@@ -202,7 +207,8 @@ class AIREmitter: ASTVisitor {
       let partialApplication = builder.buildPartialApply(
         function: airMethod,
         arguments: [stack.pop()!],
-        type: typeEmitter.emitType(of: node.type!))
+        type: typeEmitter.emitType(of: node.type!),
+        at: node.range)
       stack.push(partialApplication)
       return
     }
@@ -218,7 +224,8 @@ class AIREmitter: ASTVisitor {
     let extract = builder.buildExtract(
       from: stack.pop()!,
       index: index,
-      type: typeEmitter.emitType(of: node.type!))
+      type: typeEmitter.emitType(of: node.type!),
+      at: node.range)
     stack.push(extract)
   }
 
@@ -248,7 +255,8 @@ class AIREmitter: ASTVisitor {
       let val = builder.buildPartialApply(
         function: fn,
         arguments: Array(env.values),
-        type: fnTy)
+        type: fnTy,
+        at: node.range)
       stack.push(val)
     } else {
       // If the identifier refers to the name of a thin function, then we just need to use the

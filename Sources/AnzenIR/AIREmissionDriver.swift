@@ -61,9 +61,7 @@ public class AIREmissionDriver {
 
     // Retrieve the function object.
     let function = builder.unit.getFunction(name: name, type: fnType)
-
     assert(function.blocks.isEmpty)
-
     builder.currentBlock = function.appendBlock(label: "entry")
 
     // Create the function's locals.
@@ -73,7 +71,7 @@ public class AIREmissionDriver {
     if declaration.kind != .regular {
       let selfSymbol = declaration.innerScope!.symbols["self"]![0]
       locals[selfSymbol] = declaration.kind == .constructor
-        ? builder.buildAlloc(type: fnType.codomain, id: 0)
+        ? builder.buildAlloc(type: fnType.codomain, withID: 0)
         : AIRParameter(type: fnType.domain[0], id: builder.currentBlock!.nextRegisterID())
     }
 
@@ -98,7 +96,7 @@ public class AIREmissionDriver {
       let selfSymbol = declaration.innerScope!.symbols["self"]![0]
       returnRegister = locals[selfSymbol] as? AIRRegister
     } else if type.codomain != NothingType.get {
-      returnRegister = builder.buildMakeRef(type: fnType.codomain, id: 0)
+      returnRegister = builder.buildMakeRef(type: fnType.codomain, withID: 0)
     } else {
       returnRegister = nil
     }

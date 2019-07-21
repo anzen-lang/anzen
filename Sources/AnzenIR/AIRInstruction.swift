@@ -1,3 +1,4 @@
+import AST
 import Utils
 
 public protocol AIRInstruction {
@@ -10,17 +11,17 @@ public protocol AIRInstruction {
 /// This represents a sequence of instructions.
 public class InstructionBlock: Sequence {
 
-  public init(label: String, function: AIRFunction) {
-    self.label = label
-    self.function = function
-  }
-
   /// The label of the block.
   public let label: String
   /// The function in which the block's defined.
   public unowned var function: AIRFunction
   /// The instructions of the block.
   public var instructions: [AIRInstruction] = []
+
+  public init(label: String, function: AIRFunction) {
+    self.label = label
+    self.function = function
+  }
 
   public func nextRegisterID() -> Int {
     return function.nextRegisterID()
@@ -39,7 +40,9 @@ public class InstructionBlock: Sequence {
 /// This represents the allocation of an object.
 public struct AllocInst: AIRInstruction, AIRRegister {
 
+  /// The type of the allocated object.
   public let type: AIRType
+  /// The ID of the register.
   public let id: Int
 
   public var valueDescription: String {
@@ -55,7 +58,9 @@ public struct AllocInst: AIRInstruction, AIRRegister {
 /// This represents the allocation of a reference (i.e. a pointer), which is provided unintialized.
 public struct MakeRefInst: AIRInstruction, AIRRegister {
 
+  /// The type of the allocated reference.
   public let type: AIRType
+  /// The ID of the register.
   public let id: Int
 
   public var valueDescription: String {
@@ -75,8 +80,10 @@ public struct UnsafeCastInst: AIRInstruction, AIRRegister {
   public let operand: AIRValue
   /// The type to which the operand shall be casted.
   public let type: AIRType
-
+  /// Thie ID of the register.
   public let id: Int
+  /// The range in the Anzen source corresponding to this instruction.
+  public let range: SourceRange?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -94,13 +101,16 @@ public struct UnsafeCastInst: AIRInstruction, AIRRegister {
 ///   (i.e. it doesn't handle computed properties).
 public struct ExtractInst: AIRInstruction, AIRRegister {
 
-  /// The composite type from which the extraction is performed.
+  /// The instance from which the extraction is performed.
   public let source: AIRValue
   /// The index of the reference to extract.
   public let index: Int
-
+  /// The type of the extracted member.
   public let type: AIRType
+  /// Thie ID of the register.
   public let id: Int
+  /// The range in the Anzen source corresponding to this instruction.
+  public let range: SourceRange?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -115,17 +125,30 @@ public struct ExtractInst: AIRInstruction, AIRRegister {
 /// This represents the application of a function.
 public struct ApplyInst: AIRInstruction, AIRRegister {
 
-  internal init(callee: AIRValue, arguments: [AIRValue], type: AIRType, id: Int) {
+  /// The callee being applied.
+  public let callee: AIRValue
+  /// The arguments to which the callee is applied.
+  public let arguments: [AIRValue]
+  /// The type of the application's result.
+  public let type: AIRType
+  /// Thie ID of the register.
+  public let id: Int
+  /// The range in the Anzen source corresponding to this instruction.
+  public let range: SourceRange?
+
+  internal init(
+    callee: AIRValue,
+    arguments: [AIRValue],
+    type: AIRType,
+    id: Int,
+    range: SourceRange?)
+  {
     self.callee = callee
     self.arguments = arguments
     self.type = type
     self.id = id
+    self.range = range
   }
-
-  public let callee: AIRValue
-  public let arguments: [AIRValue]
-  public let type: AIRType
-  public let id: Int
 
   public var valueDescription: String {
     return "%\(id)"
@@ -147,10 +170,16 @@ public struct ApplyInst: AIRInstruction, AIRRegister {
 /// followed by those that are provided additionally.
 public struct PartialApplyInst: AIRInstruction, AIRRegister {
 
+  /// The function being partially applied.
   public let function: AIRFunction
+  /// The arguments to which the function is partially applied.
   public let arguments: [AIRValue]
+  /// The type of the partial application's result.
   public let type: AIRType
+  /// Thie ID of the register.
   public let id: Int
+  /// The range in the Anzen source corresponding to this instruction.
+  public let range: SourceRange?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -168,6 +197,7 @@ public struct PartialApplyInst: AIRInstruction, AIRRegister {
 /// This represents a function return.
 public struct ReturnInst: AIRInstruction {
 
+  /// The return value.
   public let value: AIRValue?
 
   public var instDescription: String {
@@ -183,8 +213,12 @@ public struct ReturnInst: AIRInstruction {
 /// This represents a copy assignment.
 public struct CopyInst: AIRInstruction {
 
+  /// The assignmnent's right operand.
   public let source: AIRValue
+  /// The assignmnent's left operand.
   public let target: AIRRegister
+  /// The range in the Anzen source corresponding to this instruction.
+  public let range: SourceRange?
 
   public var instDescription: String {
     return "copy \(source.valueDescription), \(target.valueDescription)"
@@ -195,8 +229,12 @@ public struct CopyInst: AIRInstruction {
 /// This represents a move assignment.
 public struct MoveInst: AIRInstruction {
 
+  /// The assignmnent's right operand.
   public let source: AIRValue
+  /// The assignmnent's left operand.
   public let target: AIRRegister
+  /// The range in the Anzen source corresponding to this instruction.
+  public let range: SourceRange?
 
   public var instDescription: String {
     return "move \(source.valueDescription), \(target.valueDescription)"
@@ -207,8 +245,12 @@ public struct MoveInst: AIRInstruction {
 /// This represents a borrow assignment.
 public struct BindInst: AIRInstruction {
 
+  /// The assignmnent's right operand.
   public let source: AIRValue
+  /// The assignmnent's left operand.
   public let target: AIRRegister
+  /// The range in the Anzen source corresponding to this instruction.
+  public let range: SourceRange?
 
   public var instDescription: String {
     return "bind \(source.valueDescription), \(target.valueDescription)"
@@ -219,7 +261,10 @@ public struct BindInst: AIRInstruction {
 /// This represents a drop instruction.
 public struct DropInst: AIRInstruction {
 
+  /// The value being dropped.
   public let value: MakeRefInst
+  /// The range in the Anzen source corresponding to this instruction.
+  public let range: SourceRange?
 
   public var instDescription: String {
     return "drop \(value.valueDescription)"
@@ -230,8 +275,11 @@ public struct DropInst: AIRInstruction {
 /// This represents a conditional jump instruction.
 public struct BranchInst: AIRInstruction {
 
+  /// The conditional expression's condition.
   public let condition: AIRValue
+  /// The label to which jump if the condition holds.
   public let thenLabel: String
+  /// The label to which jump if the condition doesn't hold.
   public let elseLabel: String
 
   public var instDescription: String {
@@ -243,6 +291,7 @@ public struct BranchInst: AIRInstruction {
 /// This represents an unconditional jump instruction.
 public struct JumpInst: AIRInstruction {
 
+  /// The label to which jump.
   public let label: String
 
   public var instDescription: String {
