@@ -32,10 +32,6 @@ class Reference: CustomStringConvertible {
     self.state = state
   }
 
-//  convenience init(to pointer: ValuePointer, type: AIRType) {
-//    self.init(to: pointer, type: type, state: .unique)
-//  }
-
   convenience init(type: AIRType) {
     self.init(to: nil, type: type, state: .uninitialized)
   }
@@ -57,6 +53,7 @@ class StaticReference: Reference {
 
   override var state: ReferenceState {
     get { return .shared(count: Int.max) }
+    // swiftlint:disable:next unused_setter_value
     set { }
   }
 
