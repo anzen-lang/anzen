@@ -1,6 +1,6 @@
 import AnzenIR
 
-/// Represents a reference to a value container.
+/// A reference to a value container.
 ///
 /// At runtime, all AIR registers are bound to references, which are pointers to value containers.
 /// In C's parlance, a reference is a pointer to a pointer to some value. This additional level of
@@ -23,9 +23,21 @@ class Reference: CustomStringConvertible {
   ///   value's type. It is however guaranteed to be a supertype thereof.
   let type: AIRType
 
-  init(to pointer: ValuePointer? = nil, type: AIRType) {
+  /// This reference's typestate capability.
+  var state: ReferenceState
+
+  init(to pointer: ValuePointer?, type: AIRType, state: ReferenceState) {
     self.pointer = pointer
     self.type = type
+    self.state = state
+  }
+
+//  convenience init(to pointer: ValuePointer, type: AIRType) {
+//    self.init(to: pointer, type: type, state: .unique)
+//  }
+
+  convenience init(type: AIRType) {
+    self.init(to: nil, type: type, state: .uninitialized)
   }
 
   var description: String {
@@ -37,5 +49,21 @@ class Reference: CustomStringConvertible {
       return "null"
     }
   }
+
+}
+
+/// The owning reference for all static objects.
+class StaticReference: Reference {
+
+  override var state: ReferenceState {
+    get { return .shared(count: Int.max) }
+    set { }
+  }
+
+  private init() {
+    super.init(to: nil, type: .anything, state: .shared(count: Int.max))
+  }
+
+  public static let get = StaticReference()
 
 }
