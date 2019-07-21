@@ -69,7 +69,8 @@ public class Interpreter {
 
   private func execute(_ inst: ExtractInst) throws {
     // Dereference the struct instance.
-    let container = try valueContainer(of: inst.source)
+    guard let container = try valueContainer(of: inst.source)
+      else { throw RuntimeError("access to uninitialized memory") }
     guard let instance = container as? StructInstance
       else { throw RuntimeError("'\(container)' is not a struct instance") }
 
@@ -83,12 +84,13 @@ public class Interpreter {
     guard let targetReference = frames.top![inst.target.id]
       else { throw RuntimeError("invalid or uninitialized register '\(inst.target.id)'") }
 
-    let sourceContainer = try valueContainer(of: inst.source).copy()
+    guard let sourceContainer = try valueContainer(of: inst.source)
+      else { throw RuntimeError("access to uninitialized memory") }
 
     if let valuePointer = targetReference.pointer {
-      valuePointer.pointee = sourceContainer
+      valuePointer.pointee = sourceContainer.copy()
     } else {
-      targetReference.pointer = ValuePointer(to: sourceContainer)
+      targetReference.pointer = ValuePointer(to: sourceContainer.copy())
     }
   }
 
@@ -96,7 +98,8 @@ public class Interpreter {
     guard let targetReference = frames.top![inst.target.id]
       else { throw RuntimeError("invalid or uninitialized register '\(inst.target.id)'") }
 
-    let sourceContainer = try valueContainer(of: inst.source)
+    guard let sourceContainer = try valueContainer(of: inst.source)
+      else { throw RuntimeError("access to uninitialized memory") }
 
     if let valuePointer = targetReference.pointer {
       valuePointer.pointee = sourceContainer
@@ -114,6 +117,8 @@ public class Interpreter {
       targetReference.pointer = ValuePointer(to: FunctionValue(function: fun))
     case let reg as AIRRegister:
       targetReference.pointer = frames.top![reg.id]?.pointer
+    case is AIRNull:
+      targetReference.pointer = nil
     default:
       throw RuntimeError("invalid r-value for bind '\(inst.source)'")
     }
@@ -131,7 +136,9 @@ public class Interpreter {
       valuePointer = sourceReference.pointer!
 
     default:
-      valuePointer = ValuePointer(to: try valueContainer(of: inst.operand))
+      guard let container = try valueContainer(of: inst.operand)
+        else { throw RuntimeError("access to uninitialized memory") }
+      valuePointer = ValuePointer(to: container)
     }
 
     // NOTE: Just as C++'s reinterpret_cast, unsafe_cast should actually be a noop. We may however
@@ -141,7 +148,8 @@ public class Interpreter {
 
   private func execute(_ inst: ApplyInst) throws {
     // Retrieve the function to be called, and all its arguments.
-    let container = try valueContainer(of: inst.callee)
+    guard let container = try valueContainer(of: inst.callee)
+      else { throw RuntimeError("access to uninitialized memory") }
     guard let calleeContainer = container as? FunctionValue
       else { throw RuntimeError("'\(container)' is not a function") }
 
@@ -196,8 +204,10 @@ public class Interpreter {
     // Assign the return value (if any) onto the return register.
     if let returnValue = inst.value {
       if frames.count > 1 {
+        guard let container = try valueContainer(of: returnValue)
+          else { throw RuntimeError("access to uninitialized memory") }
         frames[frames.count - 2][frames.top!.returnID!] = Reference(
-          to: ValuePointer(to: try valueContainer(of: returnValue)),
+          to: ValuePointer(to: container),
           type: returnValue.type)
       }
     }
@@ -208,7 +218,8 @@ public class Interpreter {
   }
 
   private func execute(_ branch: BranchInst) throws {
-    let container = try valueContainer(of: branch.condition)
+    guard let container = try valueContainer(of: branch.condition)
+      else { throw RuntimeError("access to uninitialized memory") }
     guard let condition = (container as? PrimitiveValue)?.value as? Bool
       else { throw RuntimeError("'\(container)' is not a boolean value") }
 
@@ -223,7 +234,7 @@ public class Interpreter {
       atBeginningOf: jump.label)
   }
 
-  private func valueContainer(of airValue: AIRValue) throws -> ValueContainer {
+  private func valueContainer(of airValue: AIRValue) throws -> ValueContainer? {
     switch airValue {
     case let cst as AIRConstant:
       return PrimitiveValue(cst.value as! PrimitiveType)
@@ -234,9 +245,7 @@ public class Interpreter {
     case let reg as AIRRegister:
       guard let reference = frames.top![reg.id]
         else { throw RuntimeError("invalid or uninitialized register '\(reg.id)'") }
-      guard let valuePointer = reference.pointer
-        else { throw RuntimeError("access to uninitialized memory") }
-      return valuePointer.pointee
+      return reference.pointer?.pointee
 
     default:
       unreachable()

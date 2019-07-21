@@ -1,0 +1,7 @@
+let x: Int
+print(x === nullref)
+print(x !== nullref)
+
+x <- 42
+print(x === nullref)
+print(x !== nullref)
