@@ -42,7 +42,7 @@ public class AIRBuilder {
   }
 
   public func buildExtract(
-    from source: AIRValue,
+    from source: AIRRegister,
     index: Int,
     type: AIRType,
     at range: SourceRange?,
@@ -50,6 +50,30 @@ public class AIRBuilder {
   {
     let registerID = id ?? currentBlock!.nextRegisterID()
     let inst = ExtractInst(source: source, index: index, type: type, id: registerID, range: range)
+    currentBlock!.instructions.append(inst)
+    return inst
+  }
+
+  public func buildRefEq(
+    lhs: AIRValue,
+    rhs: AIRValue,
+    at range: SourceRange?,
+    withID id: Int? = nil) -> RefEqInst
+  {
+    let registerID = id ?? currentBlock!.nextRegisterID()
+    let inst = RefEqInst(lhs: lhs, rhs: rhs, id: registerID, range: range)
+    currentBlock!.instructions.append(inst)
+    return inst
+  }
+
+  public func buildRefNe(
+    lhs: AIRValue,
+    rhs: AIRValue,
+    at range: SourceRange?,
+    withID id: Int? = nil) -> RefNeInst
+  {
+    let registerID = id ?? currentBlock!.nextRegisterID()
+    let inst = RefNeInst(lhs: lhs, rhs: rhs, id: registerID, range: range)
     currentBlock!.instructions.append(inst)
     return inst
   }

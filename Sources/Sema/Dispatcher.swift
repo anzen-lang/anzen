@@ -66,26 +66,17 @@ public final class Dispatcher: ASTTransformer {
     let lhs = try transform(node.left) as! Expr
     let rhs = try transform(node.right) as! Expr
 
-    if (node.op == .peq) || (node.op == .pne) {
-      // Transform pointer identity checks into a function application of the form `op(lhs, rhs)`.
-      let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
-      opIdent.scope = context.builtinModule.innerScope
-      opIdent.symbol = context.builtinModule.functionDeclarations[opIdent.name]?.symbol
-      opIdent.type = opIdent.symbol?.type
+    // Optimization opportunity:
+    // Rather than transforming all overloadable operators into function calls, we could keep
+    // built-in operators as binary expressions and emit decicated AIR instructions, just like it's
+    // done for reference identity checks.
 
-      let leftArg = CallArg(bindingOp: .ref, value: lhs, module: node.module, range: lhs.range)
-      leftArg.type = lhs.type
-      let rightArg = CallArg(bindingOp: .ref, value: rhs, module: node.module, range: rhs.range)
-      rightArg.type = rhs.type
-
-      let call = CallExpr(
-        callee: opIdent,
-        arguments: [leftArg, rightArg],
-        module: node.module,
-        range: node.range)
-      call.type = node.type
-
-      return call
+    if (node.op == .refeq) || (node.op == .refne) {
+      // As reference identity operators cannot be overloaded, there is no need to look for the
+      // symbol to which the operator corresponds.
+      node.left = lhs
+      node.right = rhs
+      return node
     } else {
       // Transform the binary expression into a function application of the form `lhs.op(rhs)`.
       let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)

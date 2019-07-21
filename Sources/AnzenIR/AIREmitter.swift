@@ -52,13 +52,11 @@ class AIREmitter: ASTVisitor {
         "constructor and methods shall not have closures")
 
       // Implementation note:
-      //
       // Higher-order functions are defunctionalized, and represented as partial applications to
       // deal with captured references. Therefore the declaration's environment has to be saved
       // so that the captured references can be injected into the partial application later on.
-      //
-      // Notice that for now all captures are assumed by alias. Other strategies will require
-      // assigment instructions to be emitted here.
+      // Notice that for all captures are assumed by alias. Other strategies could be considered,
+      // and would require assigment instructions to be emitted here.
 
       let env = Dictionary(uniqueKeysWithValues: node.captures.map {($0, locals[$0]!) })
       thinkFunctionEnvironment[node.symbol!] = env
@@ -143,6 +141,23 @@ class AIREmitter: ASTVisitor {
     stack.push(unsafeCast)
   }
 
+  func visit(_ node: BinExpr) throws {
+    try visit(node.right)
+    try visit(node.left)
+
+    let register: AIRValue
+    switch node.op {
+    case .refeq:
+      register = builder.buildRefEq(lhs: stack.pop()!, rhs: stack.pop()!, at: node.range)
+    case .refne:
+      register = builder.buildRefNe(lhs: stack.pop()!, rhs: stack.pop()!, at: node.range)
+    default:
+      fatalError("unexpected binary operator '\(node.op): \(node.type!)'")
+    }
+
+    stack.push(register)
+  }
+
   func visit(_ node: CallExpr) throws {
     var callee: AIRValue?
     var arguments: [AIRValue] = []
@@ -222,7 +237,7 @@ class AIREmitter: ASTVisitor {
     guard let index = airTy.members.firstIndex(where: { $0.key == node.ownee.name })
       else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
     let extract = builder.buildExtract(
-      from: stack.pop()!,
+      from: stack.pop() as! AIRRegister,
       index: index,
       type: typeEmitter.emitType(of: node.type!),
       at: node.range)
