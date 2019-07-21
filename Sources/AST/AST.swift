@@ -43,14 +43,24 @@ public final class ModuleDecl: Node, ScopeDelimiter {
     self.module = self
   }
 
-  /// List of the type declarations in the module.
-  public var typeDecls: [NominalTypeDecl] {
-    return statements.compactMap { $0 as? NominalTypeDecl }
+  /// All top-level type declarations in the module.
+  public var typeDeclarations: [String: NominalTypeDecl] {
+    return Dictionary(
+      uniqueKeysWithValues: statements.compactMap { (statement) -> (String, NominalTypeDecl)? in
+        guard let declaration = statement as? NominalTypeDecl
+          else { return nil }
+        return (declaration.name, declaration)
+      })
   }
 
-  /// List of the function declarations in the module.
-  public var funDecls: [FunDecl] {
-    return statements.compactMap { $0 as? FunDecl }
+  /// All top-level function declarations in the module.
+  public var functionDeclarations: [String: FunDecl] {
+    return Dictionary(
+      uniqueKeysWithValues: statements.compactMap { (statement) -> (String, FunDecl)? in
+        guard let declaration = statement as? FunDecl
+          else { return nil }
+        return (declaration.name, declaration)
+    })
   }
 
   /// Type, property and function declarations in the module.
@@ -174,6 +184,7 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
 
   public init(
     name: String,
+    directives: [Directive] = [],
     attributes: Set<MemberAttribute> = [],
     kind: FunctionKind = .regular,
     placeholders: [String] = [],
@@ -183,6 +194,7 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
     module: ModuleDecl,
     range: SourceRange)
   {
+    self.directives = directives
     self.attributes = attributes
     self.kind = kind
     self.placeholders = placeholders
@@ -192,6 +204,8 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
     super.init(name: name, module: module, range: range)
   }
 
+  /// The compiler directives associated with the function.
+  public var directives: [Directive]
   /// The member attributes of the function.
   public var attributes: Set<MemberAttribute>
   /// The kind of the function.
@@ -421,6 +435,26 @@ public final class ParamSign: TypeSign {
 
 // MARK: Statements
 
+/// A directive annotation.
+///
+/// A directive is an annotation that isn't related to the semantic of the code, but rather gives
+/// provides the compiler with additional metadata to be used during compilation. For instance, a
+/// directive can be specified on a function declaration to prevent name mangling.
+public class Directive: Node {
+
+  public init(name: String, arguments: [String], module: ModuleDecl, range: SourceRange) {
+    self.name = name
+    self.arguments = arguments
+    super.init(module: module, range: range)
+  }
+
+  /// The name of the directive.
+  public var name: String
+  /// The arguments of the directive.
+  public var arguments: [String]
+
+}
+
 /// A while-loop.
 public final class WhileLoop: Node {
 
@@ -493,6 +527,15 @@ public class Expr: Node {
 
   /// The type of the expression.
   public var type: TypeBase?
+
+}
+
+/// A null reference.
+public final class NullRef: Expr {
+
+  public init(module: ModuleDecl, range: SourceRange) {
+    super.init(module: module, range: range)
+  }
 
 }
 
@@ -786,16 +829,5 @@ public final class EnclosedExpr: Expr {
 
   /// The enclosed expression.
   public var expression: Node
-
-}
-
-/// An unparsable sequence of tokens in the source input.
-///
-/// The node is used by the parser to represent unparsable sequences of tokens.
-public final class UnparsableInput: Node {
-
-  public init(module: ModuleDecl, range: SourceRange) {
-    super.init(module: module, range: range)
-  }
 
 }

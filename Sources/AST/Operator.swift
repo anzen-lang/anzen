@@ -41,7 +41,7 @@ public enum InfixOperator: String, CustomStringConvertible {
   case eq   = "=="
   case ne   = "!="
   case peq  = "==="
-  case pne  = "!==="
+  case pne  = "!=="
   case `is`
 
   // MARK: Logical conjunction precedence

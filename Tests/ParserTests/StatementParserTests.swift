@@ -70,6 +70,7 @@ class StatementParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: FunDecl.self))
     if let declaration = pr.value as? FunDecl {
       assertThat(declaration.name, .equals("f"))
+      assertThat(declaration.directives, .isEmpty)
       assertThat(declaration.attributes, .isEmpty)
       assertThat(declaration.kind, .equals(.regular))
       assertThat(declaration.placeholders, .isEmpty)
@@ -99,6 +100,46 @@ class StatementParserTests: XCTestCase, ParserTestCase {
       assertThat(declaration.name, .equals("del"))
       assertThat(declaration.kind, .equals(.destructor))
     }
+
+    pr = parse("fun f() {}", with: Parser.parseStatement)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: FunDecl.self))
+    if let declaration = pr.value as? FunDecl {
+      assertThat(declaration.body, .isInstance(of: Block.self))
+    }
+
+    pr = parse("static mutating fun f()", with: Parser.parseStatement)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: FunDecl.self))
+    if let declaration = pr.value as? FunDecl {
+      assertThat(declaration.attributes, .equals([.mutating, .static]))
+    }
+
+    pr = parse("#inline #air_name(print) fun print()", with: Parser.parseStatement)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: FunDecl.self))
+    if let declaration = pr.value as? FunDecl {
+      assertThat(declaration.name, .equals("print"))
+      assertThat(declaration.directives, .count(2))
+      if declaration.directives.count > 1 {
+        assertThat(declaration.directives[0].name, .equals("inline"))
+        assertThat(declaration.directives[0].arguments, .isEmpty)
+
+        assertThat(declaration.directives[1].name, .equals("air_name"))
+        assertThat(declaration.directives[1].arguments, .count(1))
+        assertThat(declaration.directives[1].arguments[0], .equals("print"))
+      }
+    }
+
+    let source = "#inline #air_name(print) static mutating fun f ( )"
+      .split(separator: " ").joined(separator: "\n")
+    pr = parse(source, with: Parser.parseStatement)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: FunDecl.self))
+  }
+
+  func testParseFunctionParametersDeclaration() {
+    var pr: Parser.Result<Node?>
 
     pr = parse("fun f(a: Int, _ b: Int, c d: Int) {}", with: Parser.parseStatement)
     assertThat(pr.errors, .isEmpty)
@@ -130,6 +171,13 @@ class StatementParserTests: XCTestCase, ParserTestCase {
       }
     }
 
+    pr = parse("fun f() -> Int", with: Parser.parseStatement)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: FunDecl.self))
+    if let declaration = pr.value as? FunDecl {
+      assertThat(declaration.codomain, .isInstance(of: QualTypeSign.self))
+    }
+
     pr = parse("fun f<T>()", with: Parser.parseStatement)
     assertThat(pr.errors, .isEmpty)
     assertThat(pr.value, .isInstance(of: FunDecl.self))
@@ -138,28 +186,7 @@ class StatementParserTests: XCTestCase, ParserTestCase {
       assertThat(declaration.placeholders, .contains("T"))
     }
 
-    pr = parse("fun f() -> Int", with: Parser.parseStatement)
-    assertThat(pr.errors, .isEmpty)
-    assertThat(pr.value, .isInstance(of: FunDecl.self))
-    if let declaration = pr.value as? FunDecl {
-      assertThat(declaration.codomain, .isInstance(of: QualTypeSign.self))
-    }
-
-    pr = parse("fun f() {}", with: Parser.parseStatement)
-    assertThat(pr.errors, .isEmpty)
-    assertThat(pr.value, .isInstance(of: FunDecl.self))
-    if let declaration = pr.value as? FunDecl {
-      assertThat(declaration.body, .isInstance(of: Block.self))
-    }
-
-    pr = parse("static mutating fun f()", with: Parser.parseStatement)
-    assertThat(pr.errors, .isEmpty)
-    assertThat(pr.value, .isInstance(of: FunDecl.self))
-    if let declaration = pr.value as? FunDecl {
-      assertThat(declaration.attributes, .equals([.mutating, .static]))
-    }
-
-    let source = "static mutating fun f < T , > ( _ x : Int , ) -> Int { }"
+    let source = "fun f < T , > ( _ x : Int , ) -> Int { }"
       .split(separator: " ").joined(separator: "\n")
     pr = parse(source, with: Parser.parseStatement)
     assertThat(pr.errors, .isEmpty)

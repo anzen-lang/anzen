@@ -89,6 +89,11 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< " scope='" <<< node.scope <<< "'"
     self <<< " inner_scope='" <<< node.innerScope <<< "'"
     withIndentation {
+      if !node.directives.isEmpty {
+        self <<< "\n" <<< indent <<< "(directives\n"
+        withIndentation { try visit(node.directives) }
+        self <<< ")"
+      }
       if !node.placeholders.isEmpty {
         self <<< "\n" <<< indent <<< "(placeholders\n"
         withIndentation {
@@ -241,6 +246,15 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: Directive) throws {
+    self <<< indent <<< "(directive"
+    self <<< " '\(node.name)'"
+    if !node.arguments.isEmpty {
+      self <<< " " + node.arguments.joined(separator: " ")
+    }
+    self <<< ")"
+  }
+
   public func visit(_ node: WhileLoop) throws {
     self <<< indent <<< "(while"
     withIndentation {
@@ -277,6 +291,12 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
       }
       self <<< ")"
     }
+    self <<< ")"
+  }
+
+  public func visit(_ node: NullRef) {
+    self <<< indent <<< "(nullref"
+    self <<< " type='" <<< node.type <<< "'"
     self <<< ")"
   }
 
@@ -500,10 +520,6 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
         self <<< "\n"
       }
     }
-  }
-
-  public func visit(_ node: UnparsableInput) {
-    self <<< "(unparsable input)"
   }
 
   fileprivate func withIndentation(body: () throws -> Void) {

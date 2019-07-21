@@ -134,9 +134,9 @@ public final class ASTContext {
     guard let module = getModule(moduleID: .builtin)
       else { fatalError("unable to load built-in module") }
     return Dictionary(
-      uniqueKeysWithValues: module.typeDecls.map({
-        let meta = ($0.type as! Metatype)
-        return ($0.name, meta.type)
+      uniqueKeysWithValues: module.typeDeclarations.map({ (name, declaration) in
+        let metatype = declaration.type as! Metatype
+        return (name, metatype.type)
       }))
   }()
 

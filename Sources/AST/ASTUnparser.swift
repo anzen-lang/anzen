@@ -59,6 +59,14 @@ public final class ASTUnparser: ASTVisitor {
 
   public func visit(_ node: FunDecl) throws {
     var repr = ""
+    if !node.directives.isEmpty {
+      let directives = try node.directives.map { (directive) -> String in
+        try visit(directive)
+        return stack.pop()!
+      }
+      repr += "\(str(items: directives, separator: " "))"
+      repr += "\n"
+    }
     if !node.attributes.isEmpty {
       repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
       repr += " "
@@ -193,6 +201,15 @@ public final class ASTUnparser: ASTVisitor {
 //    try visit(node.typeAnnotation)
 //  }
 
+  public func visit(_ node: Directive) throws {
+    var repr = "#".styled("magenta") + node.name.styled("magenta")
+    if !node.arguments.isEmpty {
+      repr += "(\(str(items: node.arguments)))"
+    }
+
+    stack.push(repr)
+  }
+
   public func visit(_ node: WhileLoop) throws {
     var repr = StyledString("{while:magenta}").description
     try visit(node.condition)
@@ -217,6 +234,10 @@ public final class ASTUnparser: ASTVisitor {
       repr += " \(op) \(stack.pop()!)"
     }
     stack.push(repr)
+  }
+
+  public func visit(_ node: NullRef) throws {
+    stack.push("nullref".styled("magenta"))
   }
 
   public func visit(_ node: IfExpr) throws {
@@ -380,10 +401,6 @@ public final class ASTUnparser: ASTVisitor {
 
   public func visit(_ node: Literal<String>) {
     stack.push("\"\(node.value)\"".styled("green"))
-  }
-
-  public func visit(_ node: UnparsableInput) {
-    stack.push("<unparsable input>")
   }
 
   private func comment(_ text: String) -> String {

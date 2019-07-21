@@ -14,9 +14,11 @@ public extension ASTVisitor {
     case let n as TypeIdent:       try visit(n)
     case let n as FunSign:         try visit(n)
     case let n as ParamSign:       try visit(n)
+    case let n as Directive:       try visit(n)
     case let n as WhileLoop:       try visit(n)
     case let n as BindingStmt:     try visit(n)
     case let n as ReturnStmt:      try visit(n)
+    case let n as NullRef:         try visit(n)
     case let n as IfExpr:          try visit(n)
     case let n as LambdaExpr:      try visit(n)
     case let n as CastExpr:        try visit(n)
@@ -156,6 +158,9 @@ public extension ASTVisitor {
 
   // MARK: Statements
 
+  func visit(_ node: Directive) throws {
+  }
+
   func visit(_ node: WhileLoop) throws {
     try traverse(node)
   }
@@ -185,6 +190,9 @@ public extension ASTVisitor {
   }
 
   // MARK: Expressions
+
+  func visit(_ node: NullRef) throws {
+  }
 
   func visit(_ node: IfExpr) throws {
     try traverse(node)
@@ -315,11 +323,6 @@ public extension ASTVisitor {
   }
 
   func visit(_ node: Literal<String>) throws {
-  }
-
-  // MARK: Input errors
-
-  func visit(_ node: UnparsableInput) throws {
   }
 
 }

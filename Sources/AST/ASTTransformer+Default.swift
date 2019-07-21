@@ -14,9 +14,11 @@ public extension ASTTransformer {
     case let n as TypeIdent:       return try transform(n)
     case let n as FunSign:         return try transform(n)
     case let n as ParamSign:       return try transform(n)
+    case let n as Directive:       return try transform(n)
     case let n as WhileLoop:       return try transform(n)
     case let n as BindingStmt:     return try transform(n)
     case let n as ReturnStmt:      return try transform(n)
+    case let n as NullRef:         return try transform(n)
     case let n as IfExpr:          return try transform(n)
     case let n as LambdaExpr:      return try transform(n)
     case let n as CastExpr:        return try transform(n)
@@ -34,7 +36,6 @@ public extension ASTTransformer {
     case let n as Literal<Int>:    return try transform(n)
     case let n as Literal<Double>: return try transform(n)
     case let n as Literal<String>: return try transform(n)
-    case let n as UnparsableInput: return try transform(n)
     default:
       fatalError("unexpected node during generic transform")
     }
@@ -78,6 +79,7 @@ public extension ASTTransformer {
   }
 
   func defaultTransform(_ node: FunDecl) throws -> FunDecl {
+    node.directives = try node.directives.map(transform) as! [Directive]
     node.parameters = try node.parameters.map(transform) as! [ParamDecl]
     node.codomain = try node.codomain.map(transform)
     node.body = try node.body.map { try transform($0) as! Block }
@@ -156,6 +158,10 @@ public extension ASTTransformer {
 
   // MARK: Statements
 
+  func transform(_ node: Directive) throws -> Node {
+    return node
+  }
+
   func transform(_ node: WhileLoop) throws -> Node {
     return try defaultTransform(node)
   }
@@ -189,6 +195,10 @@ public extension ASTTransformer {
   }
 
   // MARK: Expressions
+
+  func transform(_ node: NullRef) throws -> Node {
+    return node
+  }
 
   func transform(_ node: IfExpr) throws -> Node {
     return try defaultTransform(node)
@@ -333,12 +343,6 @@ public extension ASTTransformer {
   }
 
   func transform(_ node: Literal<String>) throws -> Node {
-    return node
-  }
-
-  // MARK: Input errors
-
-  func transform(_ node: UnparsableInput) throws -> Node {
     return node
   }
 

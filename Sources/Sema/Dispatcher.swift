@@ -66,25 +66,47 @@ public final class Dispatcher: ASTTransformer {
     let lhs = try transform(node.left) as! Expr
     let rhs = try transform(node.right) as! Expr
 
-    // Transform the binary expression into a function application of the form `lhs.op(rhs)`.
-    let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
-    opIdent.scope = (lhs.type as! NominalType).memberScope
-    opIdent.type = reify(type: node.operatorType)
+    if (node.op == .peq) || (node.op == .pne) {
+      // Transform pointer identity checks into a function application of the form `op(lhs, rhs)`.
+      let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
+      opIdent.scope = context.builtinModule.innerScope
+      opIdent.symbol = context.builtinModule.functionDeclarations[opIdent.name]?.symbol
+      opIdent.type = opIdent.symbol?.type
 
-    let callee = SelectExpr(
-      owner: lhs,
-      ownee: try transform(opIdent) as! Ident,
-      module: node.module,
-      range: node.range)
-    callee.type = opIdent.type
+      let leftArg = CallArg(bindingOp: .ref, value: lhs, module: node.module, range: lhs.range)
+      leftArg.type = lhs.type
+      let rightArg = CallArg(bindingOp: .ref, value: rhs, module: node.module, range: rhs.range)
+      rightArg.type = rhs.type
 
-    let arg = CallArg(value: rhs, module: node.module, range: node.range)
-    arg.type = rhs.type
+      let call = CallExpr(
+        callee: opIdent,
+        arguments: [leftArg, rightArg],
+        module: node.module,
+        range: node.range)
+      call.type = node.type
 
-    let call = CallExpr(callee: callee, arguments: [arg], module: node.module, range: node.range)
-    call.type = node.type
+      return call
+    } else {
+      // Transform the binary expression into a function application of the form `lhs.op(rhs)`.
+      let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
+      opIdent.scope = (lhs.type as! NominalType).memberScope
+      opIdent.type = reify(type: node.operatorType)
 
-    return call
+      let callee = SelectExpr(
+        owner: lhs,
+        ownee: try transform(opIdent) as! Ident,
+        module: node.module,
+        range: node.range)
+      callee.type = opIdent.type
+
+      let arg = CallArg(value: rhs, module: node.module, range: node.range)
+      arg.type = rhs.type
+
+      let call = CallExpr(callee: callee, arguments: [arg], module: node.module, range: node.range)
+      call.type = node.type
+
+      return call
+    }
   }
 
   public func transform(_ node: UnExpr) throws -> Node {

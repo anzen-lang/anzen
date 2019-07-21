@@ -199,6 +199,7 @@ extension Lexer: IteratorProtocol, Sequence {
       case "else"     : kind = .else
       case "switch"   : kind = .switch
       case "when"     : kind = .when
+      case "nullref"  : kind = .nullref
       default         : kind = .identifier; value = chars
       }
 
@@ -235,13 +236,6 @@ extension Lexer: IteratorProtocol, Sequence {
       skip()
       let value = String(take(while: isAlnumOrUnderscore))
       return Token(kind: .qualifier, value: value, range: range(from: startLocation))
-    }
-
-    // Check for directives.
-    if c == "#" {
-      skip()
-      let value = String(take(while: { $0 != "\n" }))
-      return Token(kind: .directive, value: value, range: range(from: startLocation))
     }
 
     // Check for operators.
@@ -297,6 +291,7 @@ extension Lexer: IteratorProtocol, Sequence {
       case ":": kind = .colon
       case "!": kind = .exclamationMark
       case "?": kind = .questionMark
+      case "#": kind = .hashMark
       case "(": kind = .leftParen
       case ")": kind = .rightParen
       case "{": kind = .leftBrace
@@ -345,4 +340,4 @@ private func isAlnumOrUnderscore(_ char: UnicodeScalar) -> Bool {
 }
 
 /// Set of operator symbols.
-private let operatorChars = Set<UnicodeScalar>(".,:!?(){}[]<>-*/%+-=&".unicodeScalars)
+private let operatorChars = Set<UnicodeScalar>(".,:!?#(){}[]<>-*/%+-=&".unicodeScalars)

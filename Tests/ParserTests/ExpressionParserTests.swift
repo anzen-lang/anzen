@@ -5,6 +5,14 @@ import AST
 
 class ExpressionParserTests: XCTestCase, ParserTestCase {
 
+  func testParseNullRef() {
+    var pr: Parser.Result<Expr?>
+
+    pr = parse("nullref", with: Parser.parseExpression)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: NullRef.self))
+  }
+
   func testParseIntegerLiteral() {
     var pr: Parser.Result<Expr?>
 

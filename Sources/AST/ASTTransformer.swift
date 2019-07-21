@@ -20,12 +20,14 @@ public protocol ASTTransformer {
 
   // MARK: Statements
 
+  func transform(_ node: Directive)       throws -> Node
   func transform(_ node: WhileLoop)       throws -> Node
   func transform(_ node: BindingStmt)     throws -> Node
   func transform(_ node: ReturnStmt)      throws -> Node
 
   // MARK: Expressions
 
+  func transform(_ node: NullRef)         throws -> Node
   func transform(_ node: IfExpr)          throws -> Node
   func transform(_ node: LambdaExpr)      throws -> Node
   func transform(_ node: CastExpr)        throws -> Node
@@ -43,9 +45,5 @@ public protocol ASTTransformer {
   func transform(_ node: Literal<Int>)    throws -> Node
   func transform(_ node: Literal<Double>) throws -> Node
   func transform(_ node: Literal<String>) throws -> Node
-
-  // MARK: Input errors
-
-  func transform(_ node: UnparsableInput) throws -> Node
 
 }

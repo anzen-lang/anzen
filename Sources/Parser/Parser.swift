@@ -128,6 +128,11 @@ public class Parser {
     return ParseError(syntaxError, range: range ?? peek().range)
   }
 
+  /// Tiny helper to build unexpected construction errors.
+  func unexpectedConstruction(expected: String? = nil, got node: Node) -> ParseError {
+    return ParseError(.unexpectedConstruction(expected: expected, got: node), range: node.range)
+  }
+
   /// Tiny helper to build unexpected token errors.
   func unexpectedToken(expected: String? = nil, got token: Token? = nil) -> ParseError {
     let t = token ?? peek()

@@ -1,3 +1,4 @@
+/// A runtime error.
 public struct RuntimeError: Error {
 
   public init(_ message: String) {

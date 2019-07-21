@@ -146,10 +146,10 @@ public class AIREmissionDriver {
 
   private func emitImplementationRequests(builder: AIRBuilder) {
     while let (decl, type) = requestedImpl.popLast() {
-      let mangledName = mangle(symbol: decl.symbol!, withType: type)
-      guard !processedImpl.contains(mangledName)
+      let functionName = decl.getAIRName(specializedWithType: type)
+      guard !processedImpl.contains(functionName)
         else { continue }
-      processedImpl.insert(mangledName)
+      processedImpl.insert(functionName)
 
       guard let functionBody = decl.body
         else { continue }
@@ -162,7 +162,7 @@ public class AIREmissionDriver {
 
       let prologue = emitFunctionPrologue(
         builder: builder,
-        name: mangledName,
+        name: functionName,
         declaration: decl,
         type: type,
         typeEmitter: typeEmitter)

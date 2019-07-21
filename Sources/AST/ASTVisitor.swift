@@ -20,12 +20,14 @@ public protocol ASTVisitor {
 
   // MARK: Statements
 
+  func visit(_ node: Directive)       throws
   func visit(_ node: WhileLoop)       throws
   func visit(_ node: BindingStmt)     throws
   func visit(_ node: ReturnStmt)      throws
 
   // MARK: Expressions
 
+  func visit(_ node: NullRef)         throws
   func visit(_ node: IfExpr)          throws
   func visit(_ node: LambdaExpr)      throws
   func visit(_ node: CastExpr)        throws
@@ -43,9 +45,5 @@ public protocol ASTVisitor {
   func visit(_ node: Literal<Int>)    throws
   func visit(_ node: Literal<Double>) throws
   func visit(_ node: Literal<String>) throws
-
-  // MARK: Input errors
-
-  func visit(_ node: UnparsableInput) throws
 
 }

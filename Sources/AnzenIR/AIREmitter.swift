@@ -108,6 +108,10 @@ class AIREmitter: ASTVisitor {
     builder.buildJump(label: currentFn.blocks.values.last!.label)
   }
 
+  func visit(_ node: NullRef) {
+    stack.push(AIRNull(type: typeEmitter.emitType(of: node.type!)))
+  }
+
   func visit(_ node: IfExpr) throws {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }
@@ -140,26 +144,51 @@ class AIREmitter: ASTVisitor {
   }
 
   func visit(_ node: CallExpr) throws {
-    let callee = builder.buildMakeRef(type: typeEmitter.emitType(of: node.callee.type!))
-    try visit(node.callee)
-    builder.buildBind(source: stack.pop()!, target: callee)
+    var callee: AIRValue?
+    var arguments: [AIRValue] = []
 
-    let argrefs = try node.arguments.map { (argument) -> MakeRefInst in
-      let argref = builder.buildMakeRef(type: typeEmitter.emitType(of: argument.type!))
-      try visit(argument.value)
-      builder.build(assignment: argument.bindingOp, source: stack.pop()!, target: argref)
-      return argref
+    if let select = node.callee as? SelectExpr {
+      let symbol = select.ownee.symbol!
+      if symbol.isMethod && !symbol.isStatic {
+        // If the expression is a call to a non-static method, then the latter has to be uncurried
+        // and supplied with a reference to the select's owner as its first argument.
+        callee = try getAIRMethod(select: select)
+
+        // Emit the `self` argument.
+        try visit(select.owner!)
+        let argument = stack.pop()!
+        if argument is AIRConstant {
+          // If `self` is an AIR constant (e.g. a literal number), we supply it directly to the
+          // argument list rather creating a parameter assignment.
+          arguments.append(argument)
+        } else {
+          // Create the parameter aliasing assignment for `self`.
+          let self_ = builder.buildMakeRef(type: typeEmitter.emitType(of: select.owner!.type!))
+          builder.buildBind(source: argument, target: self_)
+          arguments.append(self_)
+        }
+      }
     }
 
+    if callee == nil {
+      let calleeRegister = builder.buildMakeRef(type: typeEmitter.emitType(of: node.callee.type!))
+      try visit(node.callee)
+      builder.buildBind(source: stack.pop()!, target: calleeRegister)
+      callee = calleeRegister
+    }
+
+    try arguments.append(contentsOf: node.arguments.map { (callArgument) -> MakeRefInst in
+      let argument = builder.buildMakeRef(type: typeEmitter.emitType(of: callArgument.type!))
+      try visit(callArgument.value)
+      builder.build(assignment: callArgument.bindingOp, source: stack.pop()!, target: argument)
+      return argument
+    })
+
     let apply = builder.buildApply(
-      callee: callee,
-      arguments: argrefs,
+      callee: callee!,
+      arguments: arguments,
       type: typeEmitter.emitType(of: node.type!))
     stack.push(apply)
-
-    // TODO: There's probably a way to optimize calls to built-in functions, so that we don't
-    // need to create partial applications for built-in operators. A promising lead would be to
-    // check if the callee's a select whose owner has a built-in type.
   }
 
   func visit(_ node: SelectExpr) throws {
@@ -169,29 +198,12 @@ class AIREmitter: ASTVisitor {
 
     // FIXME: What about static methods?
     if node.ownee.symbol!.isMethod {
-      // Methods have types of the form `(_: Self) -> FnTy`, so they must be loaded as a partial
-      // application of an uncurried function, taking `self` as its first parameter.
-      let anzenType = builder.context.getFunctionType(
-        from: [Parameter(label: nil, type: node.owner!.type!)],
-        to: node.ownee.type!)
-
-      let fnTy = typeEmitter.emitType(of: node.ownee.type!) as! AIRFunctionType
-      let uncurriedTy = typeEmitter.emitType(
-        from: [typeEmitter.emitType(of: owner.type!)] + fnTy.domain,
-        to: fnTy.codomain)
-
-      // Create the partial application of the uncurried function.
-      let uncurried = builder.unit.getFunction(
-        name: mangle(symbol: node.ownee.symbol!, withType: anzenType),
-        type: uncurriedTy)
-      let partial = builder.buildPartialApply(
-        function: uncurried,
+      let airMethod = try getAIRMethod(select: node)
+      let partialApplication = builder.buildPartialApply(
+        function: airMethod,
         arguments: [stack.pop()!],
         type: typeEmitter.emitType(of: node.type!))
-      stack.push(partial)
-
-      let decl = builder.context.declarations[node.ownee.symbol!]
-      requestedImpl.append((decl as! FunDecl, anzenType))
+      stack.push(partialApplication)
       return
     }
 
@@ -221,16 +233,18 @@ class AIREmitter: ASTVisitor {
     // constructor (an `undefined symbol` error would have raised during semantic analysis).
     guard let aznTy = (node.type as? FunctionType)
       else { fatalError() }
-
     let airTy = typeEmitter.emitType(of: aznTy)
+
+    let decl = builder.context.declarations[node.symbol!] as! FunDecl
+    requestedImpl.append((decl, aznTy))
+
+    let functionName = decl.getAIRName(specializedWithType: aznTy)
     if let env = thinkFunctionEnvironment[node.symbol!] {
       // If the identifier refers to the name of a thick function, we've to create a closure. As
       // thick functions aren't hoisted, we can assume to environment to have already been set.
       let additional = env.keys.map { typeEmitter.emitType(of: $0.type!) }
       let fnTy = typeEmitter.emitType(from: additional + airTy.domain, to: airTy.codomain)
-      let fn = builder.unit.getFunction(
-        name: mangle(symbol: node.symbol!, withType: aznTy),
-        type: fnTy)
+      let fn = builder.unit.getFunction(name: functionName, type: fnTy)
       let val = builder.buildPartialApply(
         function: fn,
         arguments: Array(env.values),
@@ -239,14 +253,9 @@ class AIREmitter: ASTVisitor {
     } else {
       // If the identifier refers to the name of a thin function, then we just need to use the
       // corresponding AIR function value.
-      let fn = builder.unit.getFunction(
-        name: mangle(symbol: node.symbol!, withType: aznTy),
-        type: airTy)
+      let fn = builder.unit.getFunction(name: functionName, type: airTy)
       stack.push(fn)
     }
-
-    let decl = builder.context.declarations[node.symbol!]
-    requestedImpl.append((decl as! FunDecl, aznTy))
   }
 
   func visit(_ node: Literal<Bool>) {
@@ -263,6 +272,30 @@ class AIREmitter: ASTVisitor {
 
   func visit(_ node: Literal<String>) {
     stack.push(AIRConstant(value: node.value))
+  }
+
+  /// Emit the method type corresponding to a select expression.
+  ///
+  /// Non-static methods actually have types of the form `(_: Self) -> MethodType` in Anzen. Hence,
+  /// They should be uncurried in AIR to accept `self` as their first parameter.
+  private func getAIRMethod(select: SelectExpr) throws -> AIRFunction {
+    // Emit the type of the uncurried method.
+    let calleeAIRType = typeEmitter.emitType(of: select.ownee.type!) as! AIRFunctionType
+    let methodAIRType = typeEmitter.emitType(
+      from: [typeEmitter.emitType(of: select.owner!.type!)] + calleeAIRType.domain,
+      to: calleeAIRType.codomain)
+
+    // Compute the specialized type of the Anzen method (i.e. the curried version of the method's
+    // type) to feed the name mangler and register the implementation request.
+    let methodAZNType = builder.context.getFunctionType(
+      from: [Parameter(label: nil, type: select.owner!.type!)],
+      to: select.ownee.type!)
+
+    let decl = builder.context.declarations[select.ownee.symbol!] as! FunDecl
+    requestedImpl.append((decl, methodAZNType))
+
+    let functionName = decl.getAIRName(specializedWithType: methodAZNType)
+    return builder.unit.getFunction(name: functionName, type: methodAIRType)
   }
 
 }
