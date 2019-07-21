@@ -11,8 +11,15 @@
           (identifier '===' type='(lhs: Anything, rhs: Anything) -> Bool' scope='__builtin'))
         (arguments
           (call_arg '_' type='Int'
-            (binding_operator :=)
+            (binding_operator &-)
             (identifier 'x' type='Int' scope='inference.nullref_001'))
           (call_arg '_' type='Anything'
-            (binding_operator :=)
-            (nullref type='Anything')))))))
+            (binding_operator &-)
+            (nullref type='Anything'))))))
+  (call type='Nothing'
+    (callee
+      (identifier 'print' type='(_: Anything) -> Nothing' scope='__builtin'))
+    (arguments
+      (call_arg '_' type='Bool'
+        (binding_operator :=)
+        (identifier 'y' type='Bool' scope='inference.nullref_001')))))

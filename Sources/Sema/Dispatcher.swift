@@ -66,16 +66,16 @@ public final class Dispatcher: ASTTransformer {
     let lhs = try transform(node.left) as! Expr
     let rhs = try transform(node.right) as! Expr
 
-    if (node.op == .peq) || (node.op == .peq) {
+    if (node.op == .peq) || (node.op == .pne) {
       // Transform pointer identity checks into a function application of the form `op(lhs, rhs)`.
       let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
       opIdent.scope = context.builtinModule.innerScope
       opIdent.symbol = context.builtinModule.functionDeclarations[opIdent.name]?.symbol
       opIdent.type = opIdent.symbol?.type
 
-      let leftArg = CallArg(value: lhs, module: node.module, range: lhs.range)
+      let leftArg = CallArg(bindingOp: .ref, value: lhs, module: node.module, range: lhs.range)
       leftArg.type = lhs.type
-      let rightArg = CallArg(value: rhs, module: node.module, range: rhs.range)
+      let rightArg = CallArg(bindingOp: .ref, value: rhs, module: node.module, range: rhs.range)
       rightArg.type = rhs.type
 
       let call = CallExpr(
