@@ -6,16 +6,12 @@
   (prop_decl 'y' type='Bool' symbol='y' scope='inference.nullref_001'
     (initial_binding
       (binding_operator <-)
-      (call type='Bool'
-        (callee
-          (identifier '===' type='(lhs: Anything, rhs: Anything) -> Bool' scope='__builtin'))
-        (arguments
-          (call_arg '_' type='Int'
-            (binding_operator &-)
-            (identifier 'x' type='Int' scope='inference.nullref_001'))
-          (call_arg '_' type='Anything'
-            (binding_operator &-)
-            (nullref type='Anything'))))))
+      (bin_expr type='Bool'
+        (left
+          (identifier 'x' type='Int' scope='inference.nullref_001'))
+        (infix_operator ===)
+        (right
+          (nullref type='Anything')))))
   (call type='Nothing'
     (callee
       (identifier 'print' type='(_: Anything) -> Nothing' scope='__builtin'))
