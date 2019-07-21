@@ -8,7 +8,7 @@ enum ReferenceState {
   case shared(count: Int)
 
   /// The capability for borrowed references.
-  case borrowed(owner: Reference)
+  case borrowed(owner: Reference?)
 
   /// The capability for uninitialized references.
   case uninitialized

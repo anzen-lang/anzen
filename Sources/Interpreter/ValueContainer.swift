@@ -68,7 +68,7 @@ extension String: PrimitiveType {
 }
 
 /// A primitive value.
-class PrimitiveValue: ValueContainer {
+final class PrimitiveValue: ValueContainer {
 
   let value: PrimitiveType
 
@@ -84,7 +84,7 @@ class PrimitiveValue: ValueContainer {
 }
 
 /// A struct instance.
-class StructInstance: ValueContainer {
+final class StructInstance: ValueContainer {
 
   /// The struct's members.
   let payload: [Reference]
@@ -105,7 +105,7 @@ class StructInstance: ValueContainer {
 }
 
 /// Represents a function.
-class FunctionValue: ValueContainer {
+final class FunctionValue: ValueContainer {
 
   /// The underlying (thin) function.
   let function: AIRFunction

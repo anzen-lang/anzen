@@ -3,7 +3,7 @@ import SystemKit
 import Utils
 
 /// An interpreter for AIR code.
-public class Interpreter {
+public final class Interpreter {
 
   /// The standard output of the interpreter.
   public var stdout: TextOutputStream
@@ -185,9 +185,9 @@ public class Interpreter {
     target.pointer = source.pointer
 
     // Return the uniqueness fragment to its owner, if any.
-    if case .borrowed(let owner) = target.state {
-      guard case .shared(let count) = owner.state else { unreachable() }
-      owner.state = count > 1
+    if case .borrowed(let owner) = target.state, owner != nil {
+      guard case .shared(let count) = owner!.state else { unreachable() }
+      owner!.state = count > 1
         ? .shared(count: count - 1)
         : .unique
     }
@@ -204,14 +204,14 @@ public class Interpreter {
       source.state = .shared(count: count + 1)
       target.state = .borrowed(owner: source)
 
-    case .borrowed(let owner):
+    case .borrowed(let owner) where owner != nil:
       // The source is borrowed, so we borrow from its owner.
-      guard case .shared(let count) = owner.state else { unreachable() }
-      owner.state = .shared(count: count + 1)
+      guard case .shared(let count) = owner!.state else { unreachable() }
+      owner!.state = .shared(count: count + 1)
       target.state = .borrowed(owner: owner)
 
     default:
-      unreachable()
+      break
     }
   }
 
@@ -284,7 +284,7 @@ public class Interpreter {
         nextFrame[i + 1] = Reference(
           to: ValuePointer(to: value),
           type: argument.type,
-          state: .borrowed(owner: StaticReference.get))
+          state: .borrowed(owner: nil))
 
       case let reg as AIRRegister:
         // Take the reference, as is.

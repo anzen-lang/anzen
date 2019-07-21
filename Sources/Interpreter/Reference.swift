@@ -9,7 +9,7 @@ import AnzenIR
 ///
 /// Note that reference identity is actually computed on the referred value containers, as those
 /// actually represent the values being manipulated.
-class Reference: CustomStringConvertible {
+final class Reference: CustomStringConvertible {
 
   /// The value pointer to which this reference refers.
   ///
@@ -45,22 +45,5 @@ class Reference: CustomStringConvertible {
       return "null"
     }
   }
-
-}
-
-/// The owning reference for all static objects.
-class StaticReference: Reference {
-
-  override var state: ReferenceState {
-    get { return .shared(count: Int.max) }
-    // swiftlint:disable:next unused_setter_value
-    set { }
-  }
-
-  private init() {
-    super.init(to: nil, type: .anything, state: .shared(count: Int.max))
-  }
-
-  public static let get = StaticReference()
 
 }
