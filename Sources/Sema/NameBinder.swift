@@ -3,16 +3,12 @@ import Utils
 
 public final class NameBinder: ASTVisitor {
 
-  public init(context: ASTContext) {
-    self.context = context
-  }
-
   /// The AST context.
   public let context: ASTContext
   /// A stack of scope, used to bind symbols to their respective scope, lexically.
   private var scopes: Stack<Scope> = []
 
-  /// Keeps track of what identifier is being declared while visiting its declaration.
+  /// A mapping keeping track of what identifier is being declared while visiting its declaration.
   ///
   /// This mapping keeps track of the identifier being declared while visiting its declaration,
   /// which is necessary to properly map the scopes of declaration expressions that refer to the
@@ -22,6 +18,10 @@ public final class NameBinder: ASTVisitor {
   ///     fun f() { let x = x }
   ///
   private var underDeclaration: [Scope: String] = [:]
+
+  public init(context: ASTContext) {
+    self.context = context
+  }
 
   public func visit(_ node: ModuleDecl) throws {
     // Note that user modules implicitly import Anzen's core modules so that symbols from those can

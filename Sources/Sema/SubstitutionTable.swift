@@ -2,21 +2,18 @@ import AST
 
 private final class MappingRef {
 
+  var value: [TypeVariable: TypeBase]
+
   init(_ value: [TypeVariable: TypeBase] = [:]) {
     self.value = value
   }
-
-  var value: [TypeVariable: TypeBase]
 
 }
 
 public struct SubstitutionTable {
 
-  public init(_ mappings: [TypeVariable: TypeBase] = [:]) {
-    self.mappingsRef = MappingRef(mappings)
-  }
-
   private var mappingsRef: MappingRef
+
   private var mappings: [TypeVariable: TypeBase] {
     get { return mappingsRef.value }
     set {
@@ -26,6 +23,10 @@ public struct SubstitutionTable {
       }
       mappingsRef.value = newValue
     }
+  }
+
+  public init(_ mappings: [TypeVariable: TypeBase] = [:]) {
+    self.mappingsRef = MappingRef(mappings)
   }
 
   public func substitution(for type: TypeBase) -> TypeBase {

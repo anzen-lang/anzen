@@ -3,12 +3,12 @@ import Utils
 
 public final class ConstraintCreator: ASTVisitor {
 
+  /// The AST context.
+  public let context: ASTContext
+
   public init(context: ASTContext) {
     self.context = context
   }
-
-  /// The AST context.
-  public let context: ASTContext
 
   public func visit(_ node: PropDecl) throws {
     var propType: TypeBase?

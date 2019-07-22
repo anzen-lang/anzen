@@ -1,7 +1,7 @@
 import AST
 import Utils
 
-/// Visitor that annotates expressions with their reified type (as inferred by the type solver),
+/// A visitor that annotates expressions with their reified type (as inferred by the type solver),
 /// and associates identifiers with their corresponding symbol.
 ///
 /// The main purpose of this pass is to resolve identifiers' symbols, so as to know which variable,
@@ -13,6 +13,13 @@ import Utils
 /// signature are found identical.
 public final class Dispatcher: ASTTransformer {
 
+  /// The AST context.
+  public let context: ASTContext
+  /// The substitution map obtained after inference.
+  public let solution: SubstitutionTable
+  /// The nominal types already reified.
+  private var visited: [NominalType] = []
+
   public init(context: ASTContext) {
     self.context = context
     self.solution = [:]
@@ -22,13 +29,6 @@ public final class Dispatcher: ASTTransformer {
     self.context = context
     self.solution = solution
   }
-
-  /// The AST context.
-  public let context: ASTContext
-  /// The substitution map obtained after inference.
-  public let solution: SubstitutionTable
-  /// The nominal types already reified.
-  private var visited: [NominalType] = []
 
   public func transform(_ node: ModuleDecl) throws -> Node {
     visitScopeDelimiter(node)

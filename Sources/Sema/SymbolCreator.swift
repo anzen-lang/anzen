@@ -11,21 +11,20 @@ import Utils
 /// This pass must be ran before name binding can take place.
 public final class SymbolCreator: ASTVisitor {
 
-  public init(context: ASTContext) {
-    self.context = context
-  }
-
   /// The AST context.
   public let context: ASTContext
   /// A stack of scopes used to determine in which one a new symbol should be created.
   private var scopes: Stack<Scope> = []
   /// A stack of generic placeholders declarations nested inside generic types should inherit.
   private var placeholders: Stack<[PlaceholderType]> = []
-
   /// The error symbol.
   private var errorSymbol: Symbol?
   /// Whether or not the built-in module is being visited.
   private var isVisitingBuiltin: Bool = false
+
+  public init(context: ASTContext) {
+    self.context = context
+  }
 
   public func visit(_ node: ModuleDecl) throws {
     // Create a new scope for the module.
@@ -66,7 +65,10 @@ public final class SymbolCreator: ASTVisitor {
 
     // Create a new symbol for the property, and visit the node's declaration.
     let scope = scopes.top!
-    node.symbol = scope.create(name: node.name, type: TypeVariable())
+    let attributes = node.attributes.contains(.reassignable)
+      ? SymbolAttributes.reassignable
+      : SymbolAttributes.none
+    node.symbol = scope.create(name: node.name, type: TypeVariable(), attributes: attributes)
     try traverse(node)
 
     // Register the property's declaration.
@@ -127,7 +129,7 @@ public final class SymbolCreator: ASTVisitor {
           to: selfTy,
           placeholders: functionPlaceholders)
         node.symbol = scope.create(
-          name: node.name, type: ctorTy, isOverloadable: true, isMethod: true, isStatic: true)
+          name: node.name, type: ctorTy, attributes: [.overloadable, .static, .method])
 
       case .method:
         // Method types actually look like `(_: Self) -> (A -> B)`, where `(A -> B)` is the type
@@ -137,7 +139,7 @@ public final class SymbolCreator: ASTVisitor {
           to: context.getFunctionType(from: parameters, to: TypeVariable()),
           placeholders: functionPlaceholders)
         node.symbol = scope.create(
-          name: node.name, type: methTy, isOverloadable: true, isMethod: true)
+          name: node.name, type: methTy, attributes: [.overloadable, .method])
 
       case .destructor:
         // Destructor types actually look like `(_: Self) -> (() -> Nothing)`.
@@ -146,7 +148,7 @@ public final class SymbolCreator: ASTVisitor {
           from: [Parameter(type: selfTy)],
           to: context.getFunctionType(from: [], to: NothingType.get))
         node.symbol = scope.create(
-          name: node.name, type: dtorTy, isMethod: true)
+          name: node.name, type: dtorTy, attributes: .method)
 
       default:
         break
@@ -157,7 +159,7 @@ public final class SymbolCreator: ASTVisitor {
         from: parameters,
         to: TypeVariable(),
         placeholders: functionPlaceholders)
-      node.symbol = scope.create(name: node.name, type: fnTy, isOverloadable: true)
+      node.symbol = scope.create(name: node.name, type: fnTy, attributes: .overloadable)
     }
 
     // Visit the function's body.
@@ -271,7 +273,7 @@ public final class SymbolCreator: ASTVisitor {
     let symbols = scope!.symbols[node.name]
     if node is FunDecl {
       guard symbols?.all(satisfy: { $0.isOverloadable }) ?? true else {
-        context.add(error: SAError.invalidRedeclaration(name: node.name), on: node)
+        context.add(error: SAError.illegalRedeclaration(name: node.name), on: node)
         return false
       }
     } else {

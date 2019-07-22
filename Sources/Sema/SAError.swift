@@ -5,8 +5,12 @@ public enum SAError: Error, CustomStringConvertible {
 
   /// Occurs when a property or type is declared twice in the same scope.
   case duplicateDeclaration(name: String)
+  /// Occurs when a non-reassignable reference is reassigned.
+  case illegalReassignment(name: String)
   /// Occurs when a symbol is improperly redeclared (e.g. a function overloading a property).
-  case invalidRedeclaration(name: String)
+  case illegalRedeclaration(name: String)
+  /// Occurs when an invalid l-value appears as the left operand of an assignment.
+  case invalidLValue
   /// Occurs when an non-type identifier is used as a type annotation.
   case invalidTypeIdentifier(name: String)
   /// Occurs when a non-generic type is being explicitly specialized.
@@ -22,8 +26,12 @@ public enum SAError: Error, CustomStringConvertible {
     switch self {
     case .duplicateDeclaration(let name):
       return "duplicate declaration '\(name)'"
-    case .invalidRedeclaration(let name):
-      return "invalid redeclaration '\(name)'"
+    case .illegalReassignment(let name):
+      return "illegal reassignment of non-reassignable l-value '\(name)'"
+    case .illegalRedeclaration(let name):
+      return "illegal redeclaration of '\(name)'"
+    case .invalidLValue:
+      return "invalid l-value"
     case .invalidTypeIdentifier(let name):
       return "invalid type identifier '\(name)'"
     case .nonGenericType(let type):
