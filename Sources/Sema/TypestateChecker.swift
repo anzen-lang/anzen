@@ -20,9 +20,22 @@ public final class TypestateChecker: ASTVisitor {
   }
 
   public func visit(_ node: FunDecl) throws {
-    if node.kind != .regular {
+    if node.kind != .regular && !node.attributes.contains(.static) {
       let selfSymbol = node.innerScope!.symbols["self"]![0]
       variables[selfSymbol] = .assigned
+
+      let nominalType = selfSymbol.type as! NominalType
+      if node.kind == .constructor {
+        // In a constructor, all members should be initially reassignable.
+        for symbol in nominalType.members {
+          variables[symbol] = .unassigned
+        }
+      } else {
+        // In a method or destructor, all members are considered assigned.
+        for symbol in nominalType.members {
+          variables[symbol] = .assigned
+        }
+      }
     }
 
     try traverse(node)
@@ -49,15 +62,27 @@ public final class TypestateChecker: ASTVisitor {
       variables[symbol] = .assigned
 
     case let select as SelectExpr:
-      // If the left operand is a select expression, then we just have to check that it refers to
-      // a reassignable property, since definite assignment guarantees that it must have already
-      // been assigned in the instance's constructor.
+      // If the left operand is a select expression, there are situations to consider. If the owner
+      // is `self`, which presupposes that we're visiting the body of a member function. In this
+      // case we have to check the member's state, as the assignment might correspond to its first
+      // assignment in the type constructor. If the owner is any other expression, then we can just
+      // check whether the ownee refers to a reassignable property, because definite assignment
+      // analysis will have guaranteed that it has been assigned in the instance's constructor.
       let symbol = select.ownee.symbol!
+      if (select.owner as? Ident)?.name == "self" {
+        assert(variables[symbol] != nil)
 
-      if case .ref = node.op {
-        // FIXME: This approach prevents fields from being assigned by alias in constructors.
-        if !symbol.isReassignable {
-          context.add(error: SAError.illegalReassignment(name: select.ownee.name), on: node)
+        if case .ref = node.op {
+          if (variables[symbol] == .assigned) && !symbol.isReassignable {
+            context.add(error: SAError.illegalReassignment(name: symbol.name), on: node)
+          }
+        }
+        variables[symbol] = .assigned
+      } else {
+        if case .ref = node.op {
+          if !symbol.isReassignable {
+            context.add(error: SAError.illegalReassignment(name: select.ownee.name), on: node)
+          }
         }
       }
 
