@@ -13,8 +13,8 @@ public protocol RuntimeError: Error {
 /// A memory error.
 public struct MemoryError: RuntimeError {
 
-  public let message: String
-  public let range: SourceRange?
+  public var message: String
+  public var range: SourceRange?
 
   init(_ message: String, at range: SourceRange? = nil) {
     self.message = message

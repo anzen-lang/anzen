@@ -61,6 +61,9 @@ public class AIREmissionDriver {
 
     // Retrieve the function object.
     let function = builder.unit.getFunction(name: name, type: fnType)
+    function.debugInfo = declaration.debugInfo
+    function.debugInfo![.anzenType] = type
+
     assert(function.blocks.isEmpty)
     builder.currentBlock = function.appendBlock(label: "entry")
 
@@ -70,15 +73,25 @@ public class AIREmissionDriver {
     // Handle self for constructors, desctructors and methods.
     if declaration.kind != .regular {
       let selfSymbol = declaration.innerScope!.symbols["self"]![0]
+      let debugInfo: DebugInfo = [
+        .range: declaration.range,
+        .anzenType: selfSymbol.type!,
+        .name: "self"]
+
       locals[selfSymbol] = declaration.kind == .constructor
-        ? builder.buildAlloc(type: fnType.codomain, withID: 0)
-        : AIRParameter(type: fnType.domain[0], id: builder.currentBlock!.nextRegisterID())
+        ? builder.buildAlloc(type: fnType.codomain, withID: 0, debugInfo: debugInfo)
+        : AIRParameter(
+          type: fnType.domain[0],
+          id: builder.currentBlock!.nextRegisterID(),
+          debugInfo: debugInfo)
     }
 
     // Create the function parameters captured by closure.
     for sym in declaration.captures {
       let paramref = AIRParameter(
-        type: typeEmitter.emitType(of: sym.type!), id: builder.currentBlock!.nextRegisterID())
+        type: typeEmitter.emitType(of: sym.type!),
+        id: builder.currentBlock!.nextRegisterID(),
+        debugInfo: [.anzenType: sym.type!, .name: sym.name])
       locals[sym] = paramref
     }
 
@@ -86,7 +99,8 @@ public class AIREmissionDriver {
     for (paramDecl, paramSign) in zip(declaration.parameters, type.domain) {
       let paramref = AIRParameter(
         type: typeEmitter.emitType(of: paramSign.type),
-        id: builder.currentBlock!.nextRegisterID())
+        id: builder.currentBlock!.nextRegisterID(),
+        debugInfo: paramDecl.debugInfo)
       locals[paramDecl.symbol!] = paramref
     }
 

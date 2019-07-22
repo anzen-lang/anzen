@@ -9,6 +9,8 @@ public protocol AIRValue {
   var type: AIRType { get }
   /// The text description of the value.
   var valueDescription: String { get }
+  /// The debug information associated with this value.
+  var debugInfo: DebugInfo? { get }
 
 }
 
@@ -22,36 +24,64 @@ public protocol AIRRegister: AIRValue {
 
 }
 
-/// An AIR constant.
+/// An AIR constant value.
 public struct AIRConstant: AIRValue {
 
-  internal init(value: Bool) {
-    self.value = value
-    self.type = AIRBuiltinType.bool
+  /// The value of an AIR constant.
+  public enum Value: CustomStringConvertible {
+
+    case bool(Bool)
+    case integer(Int)
+    case float(Double)
+    case string(String)
+
+    public var description: String {
+      switch self {
+      case .bool(let value):
+        return "\(value)"
+      case .integer(let value):
+        return "\(value)"
+      case .float(let value):
+        return "\(value)"
+      case .string(let value):
+        return "\"\(value)\""
+      }
+    }
+
   }
 
-  internal init(value: Int) {
-    self.value = value
-    self.type = AIRBuiltinType.int
-  }
+  /// The constant's value.
+  public let value: Value
 
-  internal init(value: Double) {
-    self.value = value
-    self.type = AIRBuiltinType.float
-  }
-
-  internal init(value: String) {
-    self.value = value
-    self.type = AIRBuiltinType.string
-  }
-
-  public let value: Any
   public let type: AIRType
+  public let debugInfo: DebugInfo?
+
+  internal init(value: Bool, debugInfo: DebugInfo?) {
+    self.value = .bool(value)
+    self.type = AIRBuiltinType.bool
+    self.debugInfo = debugInfo
+  }
+
+  internal init(value: Int, debugInfo: DebugInfo?) {
+    self.value = .integer(value)
+    self.type = AIRBuiltinType.int
+    self.debugInfo = debugInfo
+  }
+
+  internal init(value: Double, debugInfo: DebugInfo?) {
+    self.value = .float(value)
+    self.type = AIRBuiltinType.float
+    self.debugInfo = debugInfo
+  }
+
+  internal init(value: String, debugInfo: DebugInfo?) {
+    self.value = .string(value)
+    self.type = AIRBuiltinType.string
+    self.debugInfo = debugInfo
+  }
 
   public var valueDescription: String {
-    return value is String
-      ? "\"\(value)\""
-      : "\(value)"
+    return "\(value)"
   }
 
 }
@@ -59,11 +89,13 @@ public struct AIRConstant: AIRValue {
 /// An AIR null value.
 public struct AIRNull: AIRValue {
 
-  internal init(type: AIRType) {
-    self.type = type
-  }
-
   public let type: AIRType
+  public let debugInfo: DebugInfo?
+
+  internal init(type: AIRType, debugInfo: DebugInfo?) {
+    self.type = type
+    self.debugInfo = debugInfo
+  }
 
   public var valueDescription: String {
     return "null"

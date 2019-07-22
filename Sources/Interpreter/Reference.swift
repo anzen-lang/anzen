@@ -1,4 +1,5 @@
 import AnzenIR
+import AST
 import Utils
 
 /// A reference to a value container.
@@ -53,6 +54,20 @@ final class Reference: CustomStringConvertible {
       }
     } else {
       return "null"
+    }
+  }
+
+  // MARK: Capabilities helpers
+
+  func assertReadable(debugInfo: DebugInfo?) throws {
+    let range = debugInfo?[.range] as? SourceRange
+    switch state {
+    case .uninitialized:
+      throw MemoryError("illegal access to uninitialized reference", at: range)
+    case .moved:
+      throw MemoryError("illegal access to moved reference", at: range)
+    default:
+      break
     }
   }
 

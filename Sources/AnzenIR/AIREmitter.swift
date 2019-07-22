@@ -34,12 +34,21 @@ class AIREmitter: ASTVisitor {
   }
 
   func visit(_ node: PropDecl) throws {
-    let ref = builder.buildMakeRef(type: typeEmitter.emitType(of: node.type!))
-    locals[node.symbol!] = ref
+    let reference = builder.buildMakeRef(
+      type: typeEmitter.emitType(of: node.type!),
+      debugInfo: node.debugInfo)
+    locals[node.symbol!] = reference
 
     if let (op, value) = node.initialBinding {
+      // Emit AIR for the initial value.
       try visit(value)
-      builder.build(assignment: op, source: stack.pop()!, target: ref, at: node.range)
+
+      // Emit AIR for the initial binding.
+      builder.build(
+        assignment: op,
+        source: stack.pop()!,
+        target: reference,
+        debugInfo: node.debugInfo)
     }
   }
 
@@ -74,11 +83,13 @@ class AIREmitter: ASTVisitor {
     let cont = currentFn.insertBlock(after: test, label: "cont")
     let post = currentFn.insertBlock(after: cont, label: "post")
 
+    // Emit AIR for the loop's prologue.
     builder.buildJump(label: test.label)
     builder.currentBlock = test
     try visit(node.condition)
     builder.buildBranch(condition: stack.pop()!, thenLabel: cont.label, elseLabel: post.label)
 
+    // Emit AIR for the loop's body.
     builder.currentBlock = cont
     try visit(node.body)
     builder.buildJump(label: test.label)
@@ -87,11 +98,18 @@ class AIREmitter: ASTVisitor {
   }
 
   func visit(_ node: BindingStmt) throws {
+    // Emit AIR for the operator's operands.
     try visit(node.lvalue)
     let lvalue = stack.pop() as! AIRRegister
     try visit(node.rvalue)
     let rvalue = stack.pop()!
-    builder.build(assignment: node.op, source: rvalue, target: lvalue, at: node.range)
+
+    // Emit AIR for the assignment.
+    builder.build(
+      assignment: node.op,
+      source: rvalue,
+      target: lvalue,
+      debugInfo: node.debugInfo)
   }
 
   func visit(_ node: ReturnStmt) throws {
@@ -100,14 +118,20 @@ class AIREmitter: ASTVisitor {
 
     if let (op, value) = node.binding {
       try visit(value)
-      builder.build(assignment: op, source: stack.pop()!, target: returnRegister!, at: node.range)
+      builder.build(
+        assignment: op,
+        source: stack.pop()!,
+        target: returnRegister!,
+        debugInfo: node.debugInfo)
     }
 
     builder.buildJump(label: currentFn.blocks.values.last!.label)
   }
 
   func visit(_ node: NullRef) {
-    stack.push(AIRNull(type: typeEmitter.emitType(of: node.type!)))
+    stack.push(AIRNull(
+      type: typeEmitter.emitType(of: node.type!),
+      debugInfo: node.debugInfo))
   }
 
   func visit(_ node: IfExpr) throws {
@@ -115,17 +139,20 @@ class AIREmitter: ASTVisitor {
       else { fatalError("not in a function") }
 
     let then = currentFn.insertBlock(after: builder.currentBlock!, label: "then")
-    let els_ = currentFn.insertBlock(after: then, label: "else")
-    let post = currentFn.insertBlock(after: els_, label: "post")
+    let else_ = currentFn.insertBlock(after: then, label: "else")
+    let post = currentFn.insertBlock(after: else_, label: "post")
 
+    // Emit AIR for the conditional's prologue.
     try visit(node.condition)
-    builder.buildBranch(condition: stack.pop()!, thenLabel: then.label, elseLabel: els_.label)
+    builder.buildBranch(condition: stack.pop()!, thenLabel: then.label, elseLabel: else_.label)
 
+    // Emit AIR for the then block.
     builder.currentBlock = then
     try visit(node.thenBlock)
     builder.buildJump(label: post.label)
 
-    builder.currentBlock = els_
+    // Emit AIR for the else block.
+    builder.currentBlock = else_
     if let elseBlock = node.elseBlock {
       try visit(elseBlock)
     }
@@ -137,7 +164,10 @@ class AIREmitter: ASTVisitor {
   func visit(_ node: CastExpr) throws {
     try visit(node.operand)
     let castTy = typeEmitter.emitType(of: node.type!)
-    let unsafeCast = builder.buildUnsafeCast(source: stack.pop()!, as: castTy, at: node.range)
+    let unsafeCast = builder.buildUnsafeCast(
+      source: stack.pop()!,
+      as: castTy,
+      debugInfo: node.debugInfo)
     stack.push(unsafeCast)
   }
 
@@ -145,12 +175,13 @@ class AIREmitter: ASTVisitor {
     try visit(node.right)
     try visit(node.left)
 
+    let debugInfo: DebugInfo = node.debugInfo
     let register: AIRValue
     switch node.op {
     case .refeq:
-      register = builder.buildRefEq(lhs: stack.pop()!, rhs: stack.pop()!, at: node.range)
+      register = builder.buildRefEq(lhs: stack.pop()!, rhs: stack.pop()!, debugInfo: debugInfo)
     case .refne:
-      register = builder.buildRefNe(lhs: stack.pop()!, rhs: stack.pop()!, at: node.range)
+      register = builder.buildRefNe(lhs: stack.pop()!, rhs: stack.pop()!, debugInfo: debugInfo)
     default:
       fatalError("unexpected binary operator '\(node.op): \(node.type!)'")
     }
@@ -161,6 +192,8 @@ class AIREmitter: ASTVisitor {
   func visit(_ node: CallExpr) throws {
     var callee: AIRValue?
     var arguments: [AIRValue] = []
+
+    // Emit AIR for the callee.
 
     if let select = node.callee as? SelectExpr {
       let symbol = select.ownee.symbol!
@@ -178,36 +211,51 @@ class AIREmitter: ASTVisitor {
           arguments.append(argument)
         } else {
           // Create the parameter aliasing assignment for `self`.
-          let self_ = builder.buildMakeRef(type: typeEmitter.emitType(of: select.owner!.type!))
-          builder.buildBind(source: argument, target: self_, at: node.range)
+          let self_ = builder.buildMakeRef(
+            type: typeEmitter.emitType(of: select.owner!.type!),
+            debugInfo: select.owner?.debugInfo)
+          builder.buildBind(source: argument, target: self_, debugInfo: node.debugInfo)
           arguments.append(self_)
         }
       }
     }
 
+    // Optimization opportunity:
+    // If the callee is an identifier referring to an first-order function name, we could avoid the
+    // aliasing assignment and refer to the function directly.
+
     if callee == nil {
       let calleeRegister = builder.buildMakeRef(type: typeEmitter.emitType(of: node.callee.type!))
       try visit(node.callee)
-      builder.buildBind(source: stack.pop()!, target: calleeRegister, at: node.range)
+      builder.buildBind(source: stack.pop()!, target: calleeRegister)
       callee = calleeRegister
     }
 
+    // Emit AIR for the arguments.
     try arguments.append(contentsOf: node.arguments.map { (callArgument) -> MakeRefInst in
-      let argument = builder.buildMakeRef(type: typeEmitter.emitType(of: callArgument.type!))
+      // Emit AIR for the argument's reference.
+      let argument = builder.buildMakeRef(
+        type: typeEmitter.emitType(of: callArgument.type!),
+        debugInfo: callArgument.debugInfo)
+
+      // Emit AIR for the argument's value.
       try visit(callArgument.value)
       builder.build(
         assignment:
         callArgument.bindingOp,
         source: stack.pop()!,
         target: argument,
-        at: callArgument.range)
+        debugInfo: callArgument.debugInfo)
+
       return argument
     })
 
+    // Emit AIR for the callee's application.
     let apply = builder.buildApply(
       callee: callee!,
       arguments: arguments,
-      type: typeEmitter.emitType(of: node.type!), at: node.range)
+      type: typeEmitter.emitType(of: node.type!),
+      debugInfo: node.debugInfo)
     stack.push(apply)
   }
 
@@ -223,7 +271,7 @@ class AIREmitter: ASTVisitor {
         function: airMethod,
         arguments: [stack.pop()!],
         type: typeEmitter.emitType(of: node.type!),
-        at: node.range)
+        debugInfo: node.debugInfo)
       stack.push(partialApplication)
       return
     }
@@ -236,11 +284,12 @@ class AIREmitter: ASTVisitor {
       else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
     guard let index = airTy.members.firstIndex(where: { $0.key == node.ownee.name })
       else { fatalError("\(node.ownee.name) is not a stored property of \(owner.type!)") }
+
     let extract = builder.buildExtract(
       from: stack.pop() as! AIRRegister,
       index: index,
       type: typeEmitter.emitType(of: node.type!),
-      at: node.range)
+      debugInfo: node.debugInfo)
     stack.push(extract)
   }
 
@@ -271,7 +320,7 @@ class AIREmitter: ASTVisitor {
         function: fn,
         arguments: Array(env.values),
         type: fnTy,
-        at: node.range)
+        debugInfo: node.debugInfo)
       stack.push(val)
     } else {
       // If the identifier refers to the name of a thin function, then we just need to use the
@@ -282,19 +331,19 @@ class AIREmitter: ASTVisitor {
   }
 
   func visit(_ node: Literal<Bool>) {
-    stack.push(AIRConstant(value: node.value))
+    stack.push(AIRConstant(value: node.value, debugInfo: node.debugInfo))
   }
 
   func visit(_ node: Literal<Int>) {
-    stack.push(AIRConstant(value: node.value))
+    stack.push(AIRConstant(value: node.value, debugInfo: node.debugInfo))
   }
 
   func visit(_ node: Literal<Double>) {
-    stack.push(AIRConstant(value: node.value))
+    stack.push(AIRConstant(value: node.value, debugInfo: node.debugInfo))
   }
 
   func visit(_ node: Literal<String>) {
-    stack.push(AIRConstant(value: node.value))
+    stack.push(AIRConstant(value: node.value, debugInfo: node.debugInfo))
   }
 
   /// Emit the method type corresponding to a select expression.

@@ -83,7 +83,7 @@ public struct ConsoleLogger: Logger {
     } else {
       return "<unknown>::".styled("bold") +
         "error: ".styled("bold,red") +
-        "\(err.message)"
+        "\(err.message)\n"
     }
   }
 
@@ -96,12 +96,12 @@ public struct ConsoleLogger: Logger {
     let snippet = lines.last! + "\n"
     let leading = String(repeating: " ", count: range.start.column - 1)
 
-    var cursor = "^"
+    var cursor = ""
     if (range.start.line == range.end.line) && (range.end.column - range.start.column > 1) {
-      let length = range.end.column - range.start.column - 1
+      let length = range.end.column - range.start.column
       cursor += String(repeating: "~", count: length) + "\n"
     } else {
-      cursor += "\n"
+      cursor += "^\n"
     }
 
     return snippet + leading + cursor.styled("red")

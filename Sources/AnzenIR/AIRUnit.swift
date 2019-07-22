@@ -16,7 +16,9 @@ public class AIRUnit: CustomStringConvertible {
   // MARK: Functions
 
   /// Create or get the existing function with the given name and type.
-  public func getFunction(name: String, type: AIRFunctionType) -> AIRFunction {
+  public func getFunction(name: String, type: AIRFunctionType)
+    -> AIRFunction
+  {
     if let fn = functions[name] {
       assert(fn.type == type, "AIR function conflicts with previous declaration")
       return fn

@@ -1,4 +1,5 @@
 import AnzenIR
+import AST
 import SystemKit
 import Utils
 
@@ -86,19 +87,11 @@ public final class Interpreter {
 
   private func execute(_ inst: ExtractInst) throws {
     // Dereference the struct instance.
-    guard let reference = locals[inst.source.id]
+    guard let source = locals[inst.source.id]
       else { fatalError("invalid or uninitialized register '\(inst.source.id)'") }
+    try source.assertReadable(debugInfo: inst.debugInfo)
 
-    switch reference.state {
-    case .uninitialized:
-      throw MemoryError("illegal access to uninitialized reference", at: inst.range)
-    case .moved:
-      throw MemoryError("illegal access to moved reference", at: inst.range)
-    default:
-      break
-    }
-
-    guard let instance = reference.pointer?.pointee as? StructInstance
+    guard let instance = source.pointer?.pointee as? StructInstance
       else { fatalError("register '\(inst.source.id)' does not stores a struct instance") }
 
     // Dereference the struct's member.
@@ -111,14 +104,7 @@ public final class Interpreter {
   private func execute(_ inst: CopyInst) throws {
     // Dereference the source and make sure it is initialized.
     let source = dereference(value: inst.source)
-    switch source.state {
-    case .uninitialized:
-      throw MemoryError("illegal access to uninitialized reference", at: inst.range)
-    case .moved:
-      throw MemoryError("illegal access to moved reference", at: inst.range)
-    default:
-      break
-    }
+    try source.assertReadable(debugInfo: inst.debugInfo?[.rhs] as? DebugInfo ?? inst.debugInfo)
 
     // Dereference the target.
     let target = dereference(register: inst.target)
@@ -135,14 +121,13 @@ public final class Interpreter {
   private func execute(_ inst: MoveInst) throws {
     // Dereference the source and make sure it is unique.
     let source = dereference(value: inst.source)
+    try source.assertReadable(debugInfo: inst.debugInfo?[.rhs] as? DebugInfo ?? inst.debugInfo)
+
     switch source.state {
     case .shared, .borrowed:
-      throw MemoryError("cannot move non-unique reference", at: inst.range)
-    case .uninitialized:
-      throw MemoryError("illegal access to uninitialized reference", at: inst.range)
-    case .moved:
-      throw MemoryError("illegal access to moved reference", at: inst.range)
-    case .unique:
+      let range = inst.debugInfo?[.range] as? SourceRange
+      throw MemoryError("cannot move non-unique reference", at: range)
+    default:
       break
     }
 
@@ -161,24 +146,23 @@ public final class Interpreter {
 
   private func execute(_ inst: BindInst) throws {
     // Make sure the source is not a constant.
-    guard !(inst.source is AIRConstant)
-      else { throw MemoryError("cannot form an alias on a constant", at: inst.range) }
+    guard !(inst.source is AIRConstant) else {
+      let info = inst.source.debugInfo?[.rhs] as? DebugInfo ?? inst.debugInfo
+      let range = info?[.range] as? SourceRange
+      throw MemoryError("cannot form an alias on a constant", at: range)
+    }
 
     // Dereference the source and make sure it is initialized.
     let source = dereference(value: inst.source)
-    switch source.state {
-    case .uninitialized:
-      throw MemoryError("illegal access to uninitialized reference", at: inst.range)
-    case .moved:
-      throw MemoryError("illegal access to moved reference", at: inst.range)
-    default:
-      break
-    }
+    try source.assertReadable(debugInfo: inst.debugInfo?[.rhs] as? DebugInfo ?? inst.debugInfo)
 
     // Dereference the target and make sure it is not shared.
     let target = dereference(register: inst.target)
+
     if case .shared = target.state {
-      throw MemoryError("cannot reassign a shared reference", at: inst.range)
+      let info = inst.source.debugInfo?[.lhs] as? DebugInfo ?? inst.debugInfo
+      let range = info?[.range] as? SourceRange
+      throw MemoryError("cannot reassign a shared reference", at: range)
     }
 
     // Form the alias.
@@ -199,14 +183,8 @@ public final class Interpreter {
   private func execute(_ inst: UnsafeCastInst) throws {
     // Dereference the operand and make sure it is initialized.
     let operand = dereference(value: inst.operand)
-    switch operand.state {
-    case .uninitialized:
-      throw MemoryError("illegal access to uninitialized reference", at: inst.range)
-    case .moved:
-      throw MemoryError("illegal access to moved reference", at: inst.range)
-    default:
-      break
-    }
+    try operand.assertReadable(
+      debugInfo: inst.debugInfo?[.operand] as? DebugInfo ?? inst.debugInfo)
 
     // Optimization opportunity:
     // Just as C++'s reinterpret_cast, unsafe_cast should actually be a noop. We may however
@@ -227,14 +205,7 @@ public final class Interpreter {
   private func execute(_ inst: ApplyInst) throws {
     // Dereference the callee and make sure it is initialized.
     let callee = dereference(value: inst.callee)
-    switch callee.state {
-    case .uninitialized:
-      throw MemoryError("illegal access to uninitialized reference", at: inst.range)
-    case .moved:
-      throw MemoryError("illegal access to moved reference", at: inst.range)
-    default:
-      break
-    }
+    try callee.assertReadable(debugInfo: inst.debugInfo?[.callee] as? DebugInfo ?? inst.debugInfo)
 
     guard let container = callee.pointer?.pointee as? FunctionValue
       else { fatalError("'\(callee)' is not a function") }
@@ -258,7 +229,7 @@ public final class Interpreter {
       switch argument {
       case let constant as AIRConstant:
         // Create a new unique reference.
-        let value = PrimitiveValue(constant.value as! PrimitiveType)
+        let value = PrimitiveValue(constant)
         nextFrame[i + container.closure.count + 1] = Reference(
           to: ValuePointer(to: value),
           type: argument.type,
@@ -292,13 +263,14 @@ public final class Interpreter {
     for argument in inst.arguments {
       // Dereference the source and make sure it is initialized.
       let source = dereference(value: argument)
-      switch source.state {
-      case .uninitialized:
-        throw MemoryError("illegal access to uninitialized reference", at: inst.range)
-      case .moved:
-        throw MemoryError("illegal access to moved reference", at: inst.range)
-      default:
-        break
+      do {
+        try source.assertReadable(debugInfo: inst.debugInfo)
+      } catch var error as MemoryError {
+        if let name = argument.debugInfo?[.name] {
+          // Improve the error message.
+          error.message = "cannot capture '\(name)': \(error.message)"
+        }
+        throw error
       }
 
       // Form the capture.
@@ -357,7 +329,7 @@ public final class Interpreter {
       return dereference(register: register)
 
     case let constant as AIRConstant:
-      let container = PrimitiveValue(constant.value as! PrimitiveType)
+      let container = PrimitiveValue(constant)
       return Reference(to: ValuePointer(to: container), type: container.type, state: .unique)
 
     case let function as AIRFunction:
@@ -378,7 +350,7 @@ public final class Interpreter {
     return reference
   }
 
-  // MARK: Capabilities update helper
+  // MARK: Capabilities helpers
 
   private func updateBorrowCapabilities(source: Reference, target: Reference) {
     switch source.state {

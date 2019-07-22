@@ -77,6 +77,19 @@ final class PrimitiveValue: ValueContainer {
     super.init(type: value.airType)
   }
 
+  convenience init(_ constant: AIRConstant) {
+    switch constant.value {
+    case .bool(let value):
+      self.init(value)
+    case .integer(let value):
+      self.init(value)
+    case .float(let value):
+      self.init(value)
+    case .string(let value):
+      self.init(value)
+    }
+  }
+
   override var description: String {
     return "\(value)"
   }

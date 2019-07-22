@@ -4,13 +4,12 @@ import Utils
 /// This represents an AIR function.
 public class AIRFunction: AIRValue {
 
-  internal init(name: String, type: AIRFunctionType) {
-    self.name = name
-    self.type = type
-  }
-
+  /// The type of the funciton.
   public let type: AIRType
+  /// The (mangled) name of the function.
   public let name: String
+  /// The debug information associated with this function.
+  public var debugInfo: DebugInfo?
 
   /// The instruction blocks of the function.
   public private(set) var blocks: OrderedMap<String, InstructionBlock> = [:]
@@ -18,6 +17,12 @@ public class AIRFunction: AIRValue {
   private var labelOccurences: [String: Int] = [:]
   /// The ID of the next unnamed virtual register.
   private var _nextRegisterID = 1
+
+  internal init(name: String, type: AIRFunctionType, debugInfo: DebugInfo? = nil) {
+    self.name = name
+    self.type = type
+    self.debugInfo = debugInfo
+  }
 
   @discardableResult
   public func appendBlock(label: String) -> InstructionBlock {
@@ -79,6 +84,7 @@ public struct AIRParameter: AIRRegister {
 
   public let type: AIRType
   public let id: Int
+  public let debugInfo: DebugInfo?
 
   public var valueDescription: String {
     return "%\(id)"

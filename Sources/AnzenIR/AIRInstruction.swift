@@ -45,6 +45,8 @@ public struct AllocInst: AIRInstruction, AIRRegister {
   public let type: AIRType
   /// The ID of the register.
   public let id: Int
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -63,6 +65,8 @@ public struct MakeRefInst: AIRInstruction, AIRRegister {
   public let type: AIRType
   /// The ID of the register.
   public let id: Int
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -83,8 +87,8 @@ public struct UnsafeCastInst: AIRInstruction, AIRRegister {
   public let type: AIRType
   /// Thie ID of the register.
   public let id: Int
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -111,8 +115,8 @@ public struct ExtractInst: AIRInstruction, AIRRegister {
   public let type: AIRType
   /// Thie ID of the register.
   public let id: Int
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -131,12 +135,12 @@ public struct RefEqInst: AIRInstruction, AIRRegister {
   public let lhs: AIRValue
   /// The right operand.
   public let rhs: AIRValue
-  /// Thie ID of the register.
-  public let id: Int
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
   /// The type of the instruction's result.
   public let type: AIRType = .bool
+  /// Thie ID of the register.
+  public let id: Int
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -155,12 +159,12 @@ public struct RefNeInst: AIRInstruction, AIRRegister {
   public let lhs: AIRValue
   /// The right operand.
   public let rhs: AIRValue
-  /// Thie ID of the register.
-  public let id: Int
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
   /// The type of the instruction's result.
   public let type: AIRType = .bool
+  /// Thie ID of the register.
+  public let id: Int
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -183,21 +187,21 @@ public struct ApplyInst: AIRInstruction, AIRRegister {
   public let type: AIRType
   /// Thie ID of the register.
   public let id: Int
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   internal init(
     callee: AIRValue,
     arguments: [AIRValue],
     type: AIRType,
     id: Int,
-    range: SourceRange?)
+    debugInfo: DebugInfo?)
   {
     self.callee = callee
     self.arguments = arguments
     self.type = type
     self.id = id
-    self.range = range
+    self.debugInfo = debugInfo
   }
 
   public var valueDescription: String {
@@ -228,8 +232,8 @@ public struct PartialApplyInst: AIRInstruction, AIRRegister {
   public let type: AIRType
   /// Thie ID of the register.
   public let id: Int
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var valueDescription: String {
     return "%\(id)"
@@ -267,8 +271,8 @@ public struct CopyInst: AIRInstruction {
   public let source: AIRValue
   /// The assignmnent's left operand.
   public let target: AIRRegister
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var instDescription: String {
     return "copy \(source.valueDescription), \(target.valueDescription)"
@@ -283,8 +287,8 @@ public struct MoveInst: AIRInstruction {
   public let source: AIRValue
   /// The assignmnent's left operand.
   public let target: AIRRegister
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var instDescription: String {
     return "move \(source.valueDescription), \(target.valueDescription)"
@@ -299,8 +303,8 @@ public struct BindInst: AIRInstruction {
   public let source: AIRValue
   /// The assignmnent's left operand.
   public let target: AIRRegister
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var instDescription: String {
     return "bind \(source.valueDescription), \(target.valueDescription)"
@@ -313,8 +317,8 @@ public struct DropInst: AIRInstruction {
 
   /// The value being dropped.
   public let value: MakeRefInst
-  /// The range in the Anzen source corresponding to this instruction.
-  public let range: SourceRange?
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var instDescription: String {
     return "drop \(value.valueDescription)"
@@ -331,6 +335,8 @@ public struct BranchInst: AIRInstruction {
   public let thenLabel: String
   /// The label to which jump if the condition doesn't hold.
   public let elseLabel: String
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var instDescription: String {
     return "branch \(condition.valueDescription), \(thenLabel), \(elseLabel)"
@@ -343,6 +349,8 @@ public struct JumpInst: AIRInstruction {
 
   /// The label to which jump.
   public let label: String
+  /// The debug information associated with this instruction.
+  public let debugInfo: DebugInfo?
 
   public var instDescription: String {
     return "jump \(label)"
