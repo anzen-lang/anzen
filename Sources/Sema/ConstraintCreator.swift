@@ -51,7 +51,7 @@ public final class ConstraintCreator: ASTVisitor {
     }
 
     // Rember that methods have a type `(Self) -> (A -> B)`...
-    let fnCo = node.kind == .method
+    let fnCo = (node.kind == .method) || (node.kind == .destructor)
       ? (fnType.codomain as! FunctionType).codomain
       : fnType.codomain
     context.add(constraint: .equality(t: fnCo, u: codomain, at: .location(node, .codomain)))
