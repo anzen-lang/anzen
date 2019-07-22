@@ -1,4 +1,5 @@
 import AnzenIR
+import Utils
 
 /// A reference to a value container.
 ///
@@ -34,6 +35,15 @@ final class Reference: CustomStringConvertible {
 
   convenience init(type: AIRType) {
     self.init(to: nil, type: type, state: .uninitialized)
+  }
+
+  deinit {
+    if case .borrowed(let owner) = state, owner != nil {
+      guard case .shared(let count) = owner!.state else { unreachable() }
+      owner!.state = count > 1
+        ? .shared(count: count - 1)
+        : .unique
+    }
   }
 
   var description: String {

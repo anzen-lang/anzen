@@ -111,9 +111,9 @@ final class FunctionValue: ValueContainer {
   let function: AIRFunction
 
   /// The arguments captured by the closure.
-  let closure: [AIRValue]
+  let closure: [Reference]
 
-  init(function: AIRFunction, closure: [AIRValue] = [], type: AIRFunctionType? = nil) {
+  init(function: AIRFunction, closure: [Reference] = [], type: AIRFunctionType? = nil) {
     self.function = function
     self.closure = closure
     super.init(type: type ?? function.type)

@@ -193,26 +193,7 @@ public final class Interpreter {
     }
 
     // Update the source and target references' capabilities.
-    switch source.state {
-    case .unique:
-      // The source is unique, so we borrow directly from it.
-      source.state = .shared(count: 1)
-      target.state = .borrowed(owner: source)
-
-    case .shared(let count):
-      // The source is owner and already shared, so we borrow directly from it.
-      source.state = .shared(count: count + 1)
-      target.state = .borrowed(owner: source)
-
-    case .borrowed(let owner) where owner != nil:
-      // The source is borrowed, so we borrow from its owner.
-      guard case .shared(let count) = owner!.state else { unreachable() }
-      owner!.state = .shared(count: count + 1)
-      target.state = .borrowed(owner: owner)
-
-    default:
-      break
-    }
+    updateBorrowCapabilities(source: source, target: target)
   }
 
   private func execute(_ inst: UnsafeCastInst) throws {
@@ -258,22 +239,27 @@ public final class Interpreter {
     guard let container = callee.pointer?.pointee as? FunctionValue
       else { fatalError("'\(callee)' is not a function") }
     let function = container.function
-    let arguments = container.closure + inst.arguments
 
     // Handle built-in funtions.
     if function.name.starts(with: "__") {
-      locals[inst.id] = try applyBuiltin(name: function.name, arguments: arguments)
+      locals[inst.id] = try applyBuiltin(name: function.name, arguments: inst.arguments)
       return
     }
 
-    // Prepare the next stack frame. Notice the offset, so as to reserve %0 for `self`.
+    // Prepare the next stack frame.
+    // Notice that all arguments are stored with an offset, so as to reserve %0.
     var nextFrame = Frame(returnInstructionPointer: instructionPointer, returnID: inst.id)
-    for (i, argument) in arguments.enumerated() {
+
+    for (i, reference) in container.closure.enumerated() {
+      nextFrame[i + 1] = reference
+    }
+
+    for (i, argument) in inst.arguments.enumerated() {
       switch argument {
       case let constant as AIRConstant:
         // Create a new unique reference.
         let value = PrimitiveValue(constant.value as! PrimitiveType)
-        nextFrame[i + 1] = Reference(
+        nextFrame[i + container.closure.count + 1] = Reference(
           to: ValuePointer(to: value),
           type: argument.type,
           state: .unique)
@@ -281,14 +267,14 @@ public final class Interpreter {
       case let function as AIRFunction:
         // Create a new borrowed reference.
         let value = FunctionValue(function: function)
-        nextFrame[i + 1] = Reference(
+        nextFrame[i + container.closure.count + 1] = Reference(
           to: ValuePointer(to: value),
           type: argument.type,
           state: .borrowed(owner: nil))
 
       case let reg as AIRRegister:
         // Take the reference, as is.
-        nextFrame[i + 1] = locals[reg.id]
+        nextFrame[i + container.closure.count + 1] = locals[reg.id]
 
       default:
         unreachable()
@@ -301,7 +287,30 @@ public final class Interpreter {
   }
 
   private func execute(_ inst: PartialApplyInst) throws {
-    let value = FunctionValue(function: inst.function, closure: inst.arguments)
+    // Create the function's closure.
+    var closure: [Reference] = []
+    for argument in inst.arguments {
+      // Dereference the source and make sure it is initialized.
+      let source = dereference(value: argument)
+      switch source.state {
+      case .uninitialized:
+        throw MemoryError("illegal access to uninitialized reference", at: inst.range)
+      case .moved:
+        throw MemoryError("illegal access to moved reference", at: inst.range)
+      default:
+        break
+      }
+
+      // Form the capture.
+      let capturedReference = Reference(
+        to: source.pointer,
+        type: argument.type,
+        state: .uninitialized)
+      updateBorrowCapabilities(source: source, target: capturedReference)
+      closure.append(capturedReference)
+    }
+
+    let value = FunctionValue(function: inst.function, closure: closure)
     locals[inst.id] = Reference(to: ValuePointer(to: value), type: inst.type, state: .unique)
   }
 
@@ -367,6 +376,31 @@ public final class Interpreter {
     guard let reference = locals[airRegister.id]
       else { fatalError("invalid or uninitialized register '\(airRegister.id)'") }
     return reference
+  }
+
+  // MARK: Capabilities update helper
+
+  private func updateBorrowCapabilities(source: Reference, target: Reference) {
+    switch source.state {
+    case .unique:
+      // The source is unique, so we borrow directly from it.
+      source.state = .shared(count: 1)
+      target.state = .borrowed(owner: source)
+
+    case .shared(let count):
+      // The source is owner and already shared, so we borrow directly from it.
+      source.state = .shared(count: count + 1)
+      target.state = .borrowed(owner: source)
+
+    case .borrowed(let owner) where owner != nil:
+      // The source is borrowed, so we borrow from its owner.
+      guard case .shared(let count) = owner!.state else { unreachable() }
+      owner!.state = .shared(count: count + 1)
+      target.state = .borrowed(owner: owner)
+
+    default:
+      break
+    }
   }
 
   // MARK: Built-in functions
