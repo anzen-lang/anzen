@@ -25,10 +25,10 @@ final class Reference: CustomStringConvertible {
   ///   value's type. It is however guaranteed to be a supertype thereof.
   let type: AIRType
 
-  /// This reference's typestate capability.
-  var state: ReferenceState
+  /// This reference's memory state.
+  var state: MemoryState
 
-  init(to pointer: ValuePointer?, type: AIRType, state: ReferenceState) {
+  init(to pointer: ValuePointer?, type: AIRType, state: MemoryState) {
     self.pointer = pointer
     self.type = type
     self.state = state

@@ -1,19 +1,19 @@
-/// A reference's state.
-enum ReferenceState {
+/// A reference's memory state.
+enum MemoryState {
 
-  /// The capability for references to unaliased objects.
+  /// The state for references to unaliased objects.
   case unique
 
-  /// The capability for owning references to aliased objects.
+  /// The state for owning references to aliased objects.
   case shared(count: Int)
 
-  /// The capability for borrowed references.
+  /// The state for borrowed references.
   case borrowed(owner: Reference?)
 
-  /// The capability for uninitialized references.
+  /// The state for uninitialized references.
   case uninitialized
 
-  /// The capability for moved references.
+  /// The state for moved references.
   case moved
 
 }
