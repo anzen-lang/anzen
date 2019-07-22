@@ -24,15 +24,21 @@ public final class TypestateChecker: ASTVisitor {
       let selfSymbol = node.innerScope!.symbols["self"]![0]
       variables[selfSymbol] = .assigned
 
-      let nominalType = selfSymbol.type as! NominalType
+      var members: [Symbol] = []
+      if let type = selfSymbol.type as? NominalType {
+        members = type.members
+      } else if let type = (selfSymbol.type as? BoundGenericType)?.unboundType as? NominalType {
+        members = type.members
+      }
+
       if node.kind == .constructor {
         // In a constructor, all members should be initially reassignable.
-        for symbol in nominalType.members {
+        for symbol in members {
           variables[symbol] = .unassigned
         }
       } else {
         // In a method or destructor, all members are considered assigned.
-        for symbol in nominalType.members {
+        for symbol in members {
           variables[symbol] = .assigned
         }
       }
