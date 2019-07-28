@@ -68,13 +68,26 @@ extension String: PrimitiveType {
 }
 
 /// A primitive value.
-class PrimitiveValue: ValueContainer {
+final class PrimitiveValue: ValueContainer {
 
   let value: PrimitiveType
 
   init(_ value: PrimitiveType) {
     self.value = value
     super.init(type: value.airType)
+  }
+
+  convenience init(_ constant: AIRConstant) {
+    switch constant.value {
+    case .bool(let value):
+      self.init(value)
+    case .integer(let value):
+      self.init(value)
+    case .float(let value):
+      self.init(value)
+    case .string(let value):
+      self.init(value)
+    }
   }
 
   override var description: String {
@@ -84,7 +97,7 @@ class PrimitiveValue: ValueContainer {
 }
 
 /// A struct instance.
-class StructInstance: ValueContainer {
+final class StructInstance: ValueContainer {
 
   /// The struct's members.
   let payload: [Reference]
@@ -105,15 +118,15 @@ class StructInstance: ValueContainer {
 }
 
 /// Represents a function.
-class FunctionValue: ValueContainer {
+final class FunctionValue: ValueContainer {
 
   /// The underlying (thin) function.
   let function: AIRFunction
 
   /// The arguments captured by the closure.
-  let closure: [AIRValue]
+  let closure: [Reference]
 
-  init(function: AIRFunction, closure: [AIRValue] = [], type: AIRFunctionType? = nil) {
+  init(function: AIRFunction, closure: [Reference] = [], type: AIRFunctionType? = nil) {
     self.function = function
     self.closure = closure
     super.init(type: type ?? function.type)

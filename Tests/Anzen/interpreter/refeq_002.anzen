@@ -1,0 +1,9 @@
+let x: Int
+let y: Int
+print(x === y)
+print(x !== y)
+
+x <- 42
+y <- 42
+print(x === y)
+print(x !== y)

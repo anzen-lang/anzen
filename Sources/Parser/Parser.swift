@@ -21,7 +21,8 @@ public class Parser {
 
   /// Initializes a parser with a token stream.
   ///
-  /// - Note: The token stream must have at least one token and ends with `.eof`.
+  /// - Note:
+  ///   The token stream must have at least one token and ends with `.eof`.
   public init<S>(_ tokens: S) where S: Sequence, S.Element == Token {
     let stream = Array(tokens)
     assert((stream.count > 0) && (stream.last!.kind == .eof), "invalid token stream")

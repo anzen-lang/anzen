@@ -36,20 +36,12 @@ public class Scope {
 
   /// Create a symbol in this scope.
   @discardableResult
-  public func create(
-    name: String,
-    type: TypeBase?,
-    isOverloadable: Bool = false,
-    isMethod: Bool = false,
-    isStatic: Bool = false) -> Symbol
-  {
+  public func create( name: String, type: TypeBase?, attributes: SymbolAttributes = []) -> Symbol {
     if symbols[name] == nil {
       symbols[name] = []
     }
     precondition(symbols[name]!.all(satisfy: { $0.isOverloadable }))
-    let symbol = Symbol(
-      name: name, scope: self, type: type,
-      isOverloadable: isOverloadable, isMethod: isMethod, isStatic: isStatic)
+    let symbol = Symbol(name: name, scope: self, type: type, attributes: attributes)
     symbols[name]!.append(symbol)
     return symbol
   }

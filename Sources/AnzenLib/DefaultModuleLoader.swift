@@ -140,6 +140,17 @@ public final class DefaultModuleLoader: ModuleLoader {
       logger?.debug(buffer.value)
     }
 
+    // ------------------ //
+    // Typestate Analysis //
+    // ------------------ //
+
+    let typestateChecker = TypestateChecker(context: context)
+    try! typestateChecker.visit(module)
+    guard context.errors.isEmpty else {
+      logger?.errors(context.errors.sorted(by: <))
+      return nil
+    }
+
     context.typeConstraints.removeAll()
     return module
   }

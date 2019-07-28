@@ -38,10 +38,10 @@ public enum InfixOperator: String, CustomStringConvertible {
 
   // MARK: Equivalence precedence
 
-  case eq   = "=="
-  case ne   = "!="
-  case peq  = "==="
-  case pne  = "!=="
+  case eq    = "=="
+  case ne    = "!="
+  case refeq = "==="
+  case refne = "!=="
   case `is`
 
   // MARK: Logical conjunction precedence
@@ -59,7 +59,7 @@ public enum InfixOperator: String, CustomStringConvertible {
       return 0
     case .and:
       return 1
-    case .eq, .ne, .peq, .pne, .is:
+    case .eq, .ne, .refeq, .refne, .is:
       return 2
     case .lt, .le, .ge, .gt:
       return 3

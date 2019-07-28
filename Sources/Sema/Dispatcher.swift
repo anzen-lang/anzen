@@ -1,7 +1,7 @@
 import AST
 import Utils
 
-/// Visitor that annotates expressions with their reified type (as inferred by the type solver),
+/// A visitor that annotates expressions with their reified type (as inferred by the type solver),
 /// and associates identifiers with their corresponding symbol.
 ///
 /// The main purpose of this pass is to resolve identifiers' symbols, so as to know which variable,
@@ -13,6 +13,13 @@ import Utils
 /// signature are found identical.
 public final class Dispatcher: ASTTransformer {
 
+  /// The AST context.
+  public let context: ASTContext
+  /// The substitution map obtained after inference.
+  public let solution: SubstitutionTable
+  /// The nominal types already reified.
+  private var visited: [NominalType] = []
+
   public init(context: ASTContext) {
     self.context = context
     self.solution = [:]
@@ -22,13 +29,6 @@ public final class Dispatcher: ASTTransformer {
     self.context = context
     self.solution = solution
   }
-
-  /// The AST context.
-  public let context: ASTContext
-  /// The substitution map obtained after inference.
-  public let solution: SubstitutionTable
-  /// The nominal types already reified.
-  private var visited: [NominalType] = []
 
   public func transform(_ node: ModuleDecl) throws -> Node {
     visitScopeDelimiter(node)
@@ -66,26 +66,17 @@ public final class Dispatcher: ASTTransformer {
     let lhs = try transform(node.left) as! Expr
     let rhs = try transform(node.right) as! Expr
 
-    if (node.op == .peq) || (node.op == .pne) {
-      // Transform pointer identity checks into a function application of the form `op(lhs, rhs)`.
-      let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
-      opIdent.scope = context.builtinModule.innerScope
-      opIdent.symbol = context.builtinModule.functionDeclarations[opIdent.name]?.symbol
-      opIdent.type = opIdent.symbol?.type
+    // Optimization opportunity:
+    // Rather than transforming all overloadable operators into function calls, we could keep
+    // built-in operators as binary expressions and emit decicated AIR instructions, just like it's
+    // done for reference identity checks.
 
-      let leftArg = CallArg(bindingOp: .ref, value: lhs, module: node.module, range: lhs.range)
-      leftArg.type = lhs.type
-      let rightArg = CallArg(bindingOp: .ref, value: rhs, module: node.module, range: rhs.range)
-      rightArg.type = rhs.type
-
-      let call = CallExpr(
-        callee: opIdent,
-        arguments: [leftArg, rightArg],
-        module: node.module,
-        range: node.range)
-      call.type = node.type
-
-      return call
+    if (node.op == .refeq) || (node.op == .refne) {
+      // As reference identity operators cannot be overloaded, there is no need to look for the
+      // symbol to which the operator corresponds.
+      node.left = lhs
+      node.right = rhs
+      return node
     } else {
       // Transform the binary expression into a function application of the form `lhs.op(rhs)`.
       let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
@@ -174,7 +165,7 @@ public final class Dispatcher: ASTTransformer {
 
     if node.type is FunctionType {
 
-      // Note: there are various situations to consider if the identifier has a function type.
+      // There are various situations to consider if the identifier has a function type.
       // * The identifier might refer to a functional property, in which case the only solution
       //   is to dispatch to that property's symbol.
       // * The identifier might refer to a function constructor, in which case we may dispatch to

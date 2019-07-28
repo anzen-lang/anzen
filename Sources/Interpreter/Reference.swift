@@ -1,6 +1,8 @@
 import AnzenIR
+import AST
+import Utils
 
-/// Represents a reference to a value container.
+/// A reference to a value container.
 ///
 /// At runtime, all AIR registers are bound to references, which are pointers to value containers.
 /// In C's parlance, a reference is a pointer to a pointer to some value. This additional level of
@@ -9,7 +11,7 @@ import AnzenIR
 ///
 /// Note that reference identity is actually computed on the referred value containers, as those
 /// actually represent the values being manipulated.
-class Reference: CustomStringConvertible {
+final class Reference: CustomStringConvertible {
 
   /// The value pointer to which this reference refers.
   ///
@@ -23,9 +25,26 @@ class Reference: CustomStringConvertible {
   ///   value's type. It is however guaranteed to be a supertype thereof.
   let type: AIRType
 
-  init(to pointer: ValuePointer? = nil, type: AIRType) {
+  /// This reference's memory state.
+  var state: MemoryState
+
+  init(to pointer: ValuePointer?, type: AIRType, state: MemoryState) {
     self.pointer = pointer
     self.type = type
+    self.state = state
+  }
+
+  convenience init(type: AIRType) {
+    self.init(to: nil, type: type, state: .uninitialized)
+  }
+
+  deinit {
+    if case .borrowed(let owner) = state, owner != nil {
+      guard case .shared(let count) = owner!.state else { unreachable() }
+      owner!.state = count > 1
+        ? .shared(count: count - 1)
+        : .unique
+    }
   }
 
   var description: String {
@@ -35,6 +54,20 @@ class Reference: CustomStringConvertible {
       }
     } else {
       return "null"
+    }
+  }
+
+  // MARK: Capabilities helpers
+
+  func assertReadable(debugInfo: DebugInfo?) throws {
+    let range = debugInfo?[.range] as? SourceRange
+    switch state {
+    case .uninitialized:
+      throw MemoryError("illegal access to uninitialized reference", at: range)
+    case .moved:
+      throw MemoryError("illegal access to moved reference", at: range)
+    default:
+      break
     }
   }
 

@@ -202,9 +202,11 @@ extension Parser {
       return Result(value: nil, errors: [unexpectedToken(expected: "expression")])
     }
 
-    // NOTE: Although it wouldn't make the grammar ambiguous otherwise, notice that we require
-    // trailers to start at the same line. The rationale is that it doing otherwise could easily
-    // make some portions of code *look* ambiguous.
+    // Implementation note:
+    // Although it wouldn't make the grammar ambiguous otherwise, notice that we require trailers
+    // to start at the same line. The rationale is that it doing otherwise could easily make some
+    // portions of code *look* ambiguous.
+
     trailer:while true {
       if consume(.leftParen) != nil {
         let argumentsParseResult = parseList(

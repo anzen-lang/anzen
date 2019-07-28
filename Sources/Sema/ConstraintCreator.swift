@@ -3,12 +3,12 @@ import Utils
 
 public final class ConstraintCreator: ASTVisitor {
 
+  /// The AST context.
+  public let context: ASTContext
+
   public init(context: ASTContext) {
     self.context = context
   }
-
-  /// The AST context.
-  public let context: ASTContext
 
   public func visit(_ node: PropDecl) throws {
     var propType: TypeBase?
@@ -51,7 +51,7 @@ public final class ConstraintCreator: ASTVisitor {
     }
 
     // Rember that methods have a type `(Self) -> (A -> B)`...
-    let fnCo = node.kind == .method
+    let fnCo = (node.kind == .method) || (node.kind == .destructor)
       ? (fnType.codomain as! FunctionType).codomain
       : fnType.codomain
     context.add(constraint: .equality(t: fnCo, u: codomain, at: .location(node, .codomain)))
@@ -124,7 +124,7 @@ public final class ConstraintCreator: ASTVisitor {
     // Pointer identity operators are not implemented by a special built-in function rather than by
     // methods of the left operand. They do not fix any constraint on the left and right operand,
     // as any pair of references can be checked for identity.
-    if node.op == .peq || node.op == .pne {
+    if node.op == .refeq || node.op == .refne {
       let bool = context.builtinTypes["Bool"]!
       let anything = AnythingType.get
       node.type = bool

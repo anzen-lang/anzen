@@ -246,8 +246,8 @@ extension Lexer: IteratorProtocol, Sequence {
         var kind: TokenKind?
 
         switch value {
-        case "===": kind = .peq
-        case "!==": kind = .pne
+        case "===": kind = .refeq
+        case "!==": kind = .refne
         case "...": kind = .ellipsis
         default  : break
         }

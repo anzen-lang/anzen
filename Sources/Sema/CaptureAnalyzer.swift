@@ -3,11 +3,10 @@ import Utils
 
 public final class CaptureAnalyzer: ASTVisitor {
 
-  public init() {
-  }
-
   /// The stack of functions, used to determine capture set.
   private var functions: Stack<FunDecl> = []
+
+  public init() {}
 
   public func visit(_ node: FunDecl) {
     functions.push(node)

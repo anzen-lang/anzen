@@ -6,13 +6,7 @@ let SOLVER_TIMEOUT: Stopwatch.TimeInterval? = nil
 
 public struct ConstraintSolver {
 
-  public init<S>(constraints: S, in context: ASTContext, assumptions: SubstitutionTable = [:])
-    where S: Sequence, S.Element == Constraint
-  {
-    self.context = context
-    self.constraints = constraints.sorted(by: <)
-    self.assumptions = assumptions
-  }
+  private typealias Success = SubstitutionTable
 
   /// The AST context.
   public let context: ASTContext
@@ -21,7 +15,13 @@ public struct ConstraintSolver {
   // The assumptions made so far on the free types of the AST.
   private var assumptions: SubstitutionTable
 
-  private typealias Success = SubstitutionTable
+  public init<S>(constraints: S, in context: ASTContext, assumptions: SubstitutionTable = [:])
+    where S: Sequence, S.Element == Constraint
+  {
+    self.context = context
+    self.constraints = constraints.sorted(by: <)
+    self.assumptions = assumptions
+  }
 
   /// Attempts to solve a set of typing constraints, returning either a solution or the constraints
   /// that couldn't be satisfied.
