@@ -6,7 +6,7 @@
 /// particular construction (e.g. a variable declaration), with each child representing a sub-
 /// construction (e.g. the name of the variable being declared). The term "abstract" denotes the
 /// fact that concrete syntactic details such as spaces and line returns are *abstracted* away.
-public class Node: Equatable {
+public class Node {
 
   fileprivate init(module: ModuleDecl?, range: SourceRange) {
     self.module = module
@@ -17,10 +17,6 @@ public class Node: Equatable {
   public weak var module: ModuleDecl!
   /// Stores the ranges in the source file of the concrete syntax this node represents.
   public var range: SourceRange
-
-  public static func == (lhs: Node, rhs: Node) -> Bool {
-    return lhs === rhs
-  }
 
 }
 

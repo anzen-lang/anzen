@@ -516,7 +516,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   public func visit(_ nodes: [Node]) throws {
     for node in nodes {
       try visit(node)
-      if node != nodes.last {
+      if node !== nodes.last {
         self <<< "\n"
       }
     }
