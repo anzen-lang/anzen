@@ -245,6 +245,72 @@ class StatementParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: StructDecl.self))
   }
 
+  func testParseUnionNestedMemberDeclaration() {
+    var pr: Parser.Result<UnionNestedMemberDecl?>
+
+    pr = parse("case struct Foo {}", with: Parser.parseUnionNestedMemberDecl)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: UnionNestedMemberDecl.self))
+    assertThat(pr.value?.nominalTypeDecl, .isInstance(of: StructDecl.self))
+
+    pr = parse("case union Foo {}", with: Parser.parseUnionNestedMemberDecl)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: UnionNestedMemberDecl.self))
+    assertThat(pr.value?.nominalTypeDecl, .isInstance(of: UnionDecl.self))
+  }
+
+  func testParseUnionDeclaration() {
+    var pr: Parser.Result<Node?>
+
+    pr = parse("union Foo {}", with: Parser.parseStatement)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: UnionDecl.self))
+    if let declaration = pr.value as? UnionDecl {
+      assertThat(declaration.name, .equals("Foo"))
+      assertThat(declaration.placeholders, .isEmpty)
+    }
+
+    pr = parse("union Foo<T> {}", with: Parser.parseStatement)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: UnionDecl.self))
+    if let declaration = pr.value as? UnionDecl {
+      assertThat(declaration.placeholders, .count(1))
+      assertThat(declaration.placeholders, .contains("T"))
+    }
+
+    pr = parse(
+      """
+      union Foo {
+        case struct Bar {}
+        fun f()
+      }
+      """,
+      with: Parser.parseStatement)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: UnionDecl.self))
+    if let declaration = pr.value as? UnionDecl {
+      assertThat(declaration.body.statements, .count(2))
+      if declaration.body.statements.count > 1 {
+        assertThat(declaration.body.statements[0], .isInstance(of: UnionNestedMemberDecl.self))
+        assertThat(declaration.body.statements[1], .isInstance(of: FunDecl.self))
+        if let method = declaration.body.statements[0] as? FunDecl {
+          assertThat(method.kind, .equals(.method))
+        }
+      }
+    }
+
+    let source =
+    """
+    union Foo {
+      case struct Bar {}
+      fun f()
+    }
+    """.split(separator: " ").joined(separator: "\n")
+    pr = parse(source, with: Parser.parseStatement)
+    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.value, .isInstance(of: UnionDecl.self))
+  }
+
   func testParseInterfaceDeclaration() {
     var pr: Parser.Result<Node?>
 
