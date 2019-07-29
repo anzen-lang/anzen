@@ -31,17 +31,17 @@ public final class Dispatcher: ASTTransformer {
   }
 
   public func transform(_ node: ModuleDecl) throws -> Node {
-    visitScopeDelimiter(node)
+    visitDeclarationContext(node)
     return try defaultTransform(node)
   }
 
   public func transform(_ node: Block) throws -> Node {
-    visitScopeDelimiter(node)
+    visitDeclarationContext(node)
     return try defaultTransform(node)
   }
 
   public func transform(_ node: FunDecl) throws -> Node {
-    visitScopeDelimiter(node)
+    visitDeclarationContext(node)
     return try defaultTransform(node)
   }
 
@@ -203,7 +203,7 @@ public final class Dispatcher: ASTTransformer {
     return node
   }
 
-  private func visitScopeDelimiter(_ node: ScopeDelimiter) {
+  private func visitDeclarationContext(_ node: DeclarationContext) {
     if let scope = node.innerScope {
       for symbol in scope.symbols.values.joined() {
         symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }

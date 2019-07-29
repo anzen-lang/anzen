@@ -143,6 +143,29 @@ public final class ASTUnparser: ASTVisitor {
     stack.push(repr)
   }
 
+  public func visit(_ node: UnionNestedMemberDecl) throws {
+    var repr = StyledString("{case:magenta}").description
+    try visit(node.nominalTypeDecl)
+    repr += " \(stack.pop()!)"
+    stack.push(repr)
+  }
+
+  public func visit(_ node: UnionDecl) throws {
+    var repr = StyledString("{union:magenta} {\(node.name):yellow}").description
+
+    if includeType {
+      repr += ":\(str(node.type))".styled("dimmed")
+    }
+
+    if !node.placeholders.isEmpty {
+      let placeholders = node.placeholders.map({ $0.styled("yellow") })
+      repr += "<\(str(items: placeholders))>"
+    }
+    try visit(node.body)
+    repr += " \(stack.pop()!)"
+    stack.push(repr)
+  }
+
 //  public func visit(_ node: InterfaceDecl) throws {
 //    write("interface ", styled: "magenta")
 //    write(node.name, styled: "yellow")

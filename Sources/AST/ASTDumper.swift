@@ -173,6 +173,41 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: UnionNestedMemberDecl) throws {
+    self <<< indent <<< "(union_nested_member_decl\n"
+    withIndentation {
+      try visit(node.nominalTypeDecl)
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: UnionDecl) throws {
+    self <<< indent <<< "(union_decl"
+    self <<< " '\(node.name)'"
+    self <<< " type='" <<< node.type <<< "'"
+    self <<< " symbol='" <<< node.symbol?.name <<< "'"
+    self <<< " scope='" <<< node.scope <<< "'"
+    self <<< " inner_scope='" <<< node.innerScope <<< "'"
+    withIndentation {
+      if !node.placeholders.isEmpty {
+        self <<< "\n" <<< indent <<< "(placeholders\n"
+        withIndentation {
+          for placeholder in node.placeholders {
+            self <<< indent <<< "(placeholder \(placeholder))"
+            if placeholder != node.placeholders.last {
+              self <<< "\n"
+            }
+          }
+        }
+        self <<< ")"
+      }
+      self <<< "\n" <<< indent <<< "(body\n"
+      withIndentation { try visit(node.body) }
+      self <<< ")"
+    }
+    self <<< ")"
+  }
+
   public func visit(_ node: InterfaceDecl) throws {
     self <<< indent <<< "(interface_decl"
     self <<< " '\(node.name)'"

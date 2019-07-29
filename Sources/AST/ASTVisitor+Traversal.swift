@@ -3,39 +3,41 @@ public extension ASTVisitor {
   // swiftlint:disable cyclomatic_complexity
   func visit(_ node: Node) throws {
     switch node {
-    case let n as ModuleDecl:      try visit(n)
-    case let n as Block:           try visit(n)
-    case let n as PropDecl:        try visit(n)
-    case let n as FunDecl:         try visit(n)
-    case let n as ParamDecl:       try visit(n)
-    case let n as StructDecl:      try visit(n)
-    case let n as InterfaceDecl:   try visit(n)
-    case let n as QualTypeSign:    try visit(n)
-    case let n as TypeIdent:       try visit(n)
-    case let n as FunSign:         try visit(n)
-    case let n as ParamSign:       try visit(n)
-    case let n as Directive:       try visit(n)
-    case let n as WhileLoop:       try visit(n)
-    case let n as BindingStmt:     try visit(n)
-    case let n as ReturnStmt:      try visit(n)
-    case let n as NullRef:         try visit(n)
-    case let n as IfExpr:          try visit(n)
-    case let n as LambdaExpr:      try visit(n)
-    case let n as CastExpr:        try visit(n)
-    case let n as BinExpr:         try visit(n)
-    case let n as UnExpr:          try visit(n)
-    case let n as CallExpr:        try visit(n)
-    case let n as CallArg:         try visit(n)
-    case let n as SubscriptExpr:   try visit(n)
-    case let n as SelectExpr:      try visit(n)
-    case let n as Ident:           try visit(n)
-    case let n as ArrayLiteral:    try visit(n)
-    case let n as SetLiteral:      try visit(n)
-    case let n as MapLiteral:      try visit(n)
-    case let n as Literal<Bool>:   try visit(n)
-    case let n as Literal<Int>:    try visit(n)
-    case let n as Literal<Double>: try visit(n)
-    case let n as Literal<String>: try visit(n)
+    case let n as ModuleDecl:             try visit(n)
+    case let n as Block:                  try visit(n)
+    case let n as PropDecl:               try visit(n)
+    case let n as FunDecl:                try visit(n)
+    case let n as ParamDecl:              try visit(n)
+    case let n as StructDecl:             try visit(n)
+    case let n as UnionNestedMemberDecl:  try visit(n)
+    case let n as UnionDecl:              try visit(n)
+    case let n as InterfaceDecl:          try visit(n)
+    case let n as QualTypeSign:           try visit(n)
+    case let n as TypeIdent:              try visit(n)
+    case let n as FunSign:                try visit(n)
+    case let n as ParamSign:              try visit(n)
+    case let n as Directive:              try visit(n)
+    case let n as WhileLoop:              try visit(n)
+    case let n as BindingStmt:            try visit(n)
+    case let n as ReturnStmt:             try visit(n)
+    case let n as NullRef:                try visit(n)
+    case let n as IfExpr:                 try visit(n)
+    case let n as LambdaExpr:             try visit(n)
+    case let n as CastExpr:               try visit(n)
+    case let n as BinExpr:                try visit(n)
+    case let n as UnExpr:                 try visit(n)
+    case let n as CallExpr:               try visit(n)
+    case let n as CallArg:                try visit(n)
+    case let n as SubscriptExpr:          try visit(n)
+    case let n as SelectExpr:             try visit(n)
+    case let n as Ident:                  try visit(n)
+    case let n as ArrayLiteral:           try visit(n)
+    case let n as SetLiteral:             try visit(n)
+    case let n as MapLiteral:             try visit(n)
+    case let n as Literal<Bool>:          try visit(n)
+    case let n as Literal<Int>:           try visit(n)
+    case let n as Literal<Double>:        try visit(n)
+    case let n as Literal<String>:        try visit(n)
     default:
       assertionFailure("unexpected node during generic visit")
     }
@@ -108,6 +110,22 @@ public extension ASTVisitor {
   }
 
   func traverse(_ node: StructDecl) throws {
+    try visit(node.body)
+  }
+
+  func visit(_ node: UnionNestedMemberDecl) throws {
+    try traverse(node)
+  }
+
+  func traverse(_ node: UnionNestedMemberDecl) throws {
+    try visit(node.nominalTypeDecl)
+  }
+
+  func visit(_ node: UnionDecl) throws {
+    try traverse(node)
+  }
+
+  func traverse(_ node: UnionDecl) throws {
     try visit(node.body)
   }
 

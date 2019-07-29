@@ -20,8 +20,11 @@ public class Node {
 
 }
 
-/// Protocol for nodes that delimit a scope.
-public protocol ScopeDelimiter {
+/// Protocol for nodes that specify a declaration context.
+///
+/// The declaration context of an entity (e.g. a property or a type) refers to the region (a.k.a.
+/// lexical scope) in which it has been declared.
+public protocol DeclarationContext {
 
   /// The scope delimited by the node.
   var innerScope: Scope? { get set }
@@ -31,7 +34,7 @@ public protocol ScopeDelimiter {
 /// An Anzen module.
 ///
 /// This node represents an Anzen module (a.k.a. unit of compilation).
-public final class ModuleDecl: Node, ScopeDelimiter {
+public final class ModuleDecl: Node, DeclarationContext {
 
   public init(statements: [Node], range: SourceRange) {
     self.statements = statements
@@ -61,7 +64,7 @@ public final class ModuleDecl: Node, ScopeDelimiter {
 
   /// Type, property and function declarations in the module.
   ///
-  /// - Warning: This property is initialized during semantic analysis.
+  /// - Note: This property is initialized during semantic analysis.
   public var declarations: [Symbol: NamedDecl] = [:]
 
   /// Stores the statements of the module.
@@ -76,7 +79,7 @@ public final class ModuleDecl: Node, ScopeDelimiter {
 /// A block of statements.
 ///
 /// This node represents a block of statements (e.g. a structure or function body).
-public final class Block: Node, ScopeDelimiter {
+public final class Block: Node, DeclarationContext {
 
   public init(statements: [Node], module: ModuleDecl, range: SourceRange) {
     self.statements = statements
@@ -177,7 +180,7 @@ public final class PropDecl: NamedDecl {
 /// The domain of the function comprises two parameters `x` and `y`, both of type `Int`. Note that
 /// the second parameter is associated with a label (named `by`). Both parameters are instances of
 /// `ParamDecl`. The codomain is a type identifier, that is an instance of `Ident`.
-public final class FunDecl: NamedDecl, ScopeDelimiter {
+public final class FunDecl: NamedDecl, DeclarationContext {
 
   public init(
     name: String,
@@ -215,7 +218,6 @@ public final class FunDecl: NamedDecl, ScopeDelimiter {
   public var codomain: Node?
   /// The body of the function.
   public var body: Block?
-
   /// The scope delimited by this function.
   public var innerScope: Scope?
   /// The capture list of the function.
@@ -250,7 +252,7 @@ public final class ParamDecl: NamedDecl {
 }
 
 /// Base class for node representing a nominal type declaration.
-public class NominalTypeDecl: NamedDecl, ScopeDelimiter {
+public class NominalTypeDecl: NamedDecl, DeclarationContext {
 
   fileprivate init(
     name: String,
@@ -273,6 +275,41 @@ public class NominalTypeDecl: NamedDecl, ScopeDelimiter {
 ///
 /// Structures represent aggregate of properties and methods.
 public final class StructDecl: NominalTypeDecl {
+
+  public init(
+    name: String,
+    placeholders: [String] = [],
+    body: Block,
+    module: ModuleDecl,
+    range: SourceRange)
+  {
+    self.placeholders = placeholders
+    super.init(name: name, body: body, module: module, range: range)
+  }
+
+  /// The generic placeholders of the type.
+  public var placeholders: [String]
+
+}
+
+/// A union nested member declaration.
+public final class UnionNestedMemberDecl: Node {
+
+  /// The member's type declaration.
+  public var nominalTypeDecl: NominalTypeDecl
+
+  public init(nominalTypeDecl: NominalTypeDecl, module: ModuleDecl, range: SourceRange) {
+    self.nominalTypeDecl = nominalTypeDecl
+    super.init(module: module, range: range)
+  }
+
+}
+
+/// A union declaration.
+///
+/// Union types (a.k.a. sum types) are types that can have several separate representations, in
+/// contrast to structures (a.k.a. product types) which represent aggregates of properties.
+public final class UnionDecl: NominalTypeDecl {
 
   public init(
     name: String,

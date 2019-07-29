@@ -3,39 +3,41 @@ public extension ASTTransformer {
   // swiftlint:disable cyclomatic_complexity
   func transform(_ node: Node) throws -> Node {
     switch node {
-    case let n as ModuleDecl:      return try transform(n)
-    case let n as Block:           return try transform(n)
-    case let n as PropDecl:        return try transform(n)
-    case let n as FunDecl:         return try transform(n)
-    case let n as ParamDecl:       return try transform(n)
-    case let n as StructDecl:      return try transform(n)
-    case let n as InterfaceDecl:   return try transform(n)
-    case let n as QualTypeSign:    return try transform(n)
-    case let n as TypeIdent:       return try transform(n)
-    case let n as FunSign:         return try transform(n)
-    case let n as ParamSign:       return try transform(n)
-    case let n as Directive:       return try transform(n)
-    case let n as WhileLoop:       return try transform(n)
-    case let n as BindingStmt:     return try transform(n)
-    case let n as ReturnStmt:      return try transform(n)
-    case let n as NullRef:         return try transform(n)
-    case let n as IfExpr:          return try transform(n)
-    case let n as LambdaExpr:      return try transform(n)
-    case let n as CastExpr:        return try transform(n)
-    case let n as BinExpr:         return try transform(n)
-    case let n as UnExpr:          return try transform(n)
-    case let n as CallExpr:        return try transform(n)
-    case let n as CallArg:         return try transform(n)
-    case let n as SubscriptExpr:   return try transform(n)
-    case let n as SelectExpr:      return try transform(n)
-    case let n as Ident:           return try transform(n)
-    case let n as ArrayLiteral:    return try transform(n)
-    case let n as SetLiteral:      return try transform(n)
-    case let n as MapLiteral:      return try transform(n)
-    case let n as Literal<Bool>:   return try transform(n)
-    case let n as Literal<Int>:    return try transform(n)
-    case let n as Literal<Double>: return try transform(n)
-    case let n as Literal<String>: return try transform(n)
+    case let n as ModuleDecl:             return try transform(n)
+    case let n as Block:                  return try transform(n)
+    case let n as PropDecl:               return try transform(n)
+    case let n as FunDecl:                return try transform(n)
+    case let n as ParamDecl:              return try transform(n)
+    case let n as StructDecl:             return try transform(n)
+    case let n as UnionNestedMemberDecl:  return try transform(n)
+    case let n as UnionDecl:              return try transform(n)
+    case let n as InterfaceDecl:          return try transform(n)
+    case let n as QualTypeSign:           return try transform(n)
+    case let n as TypeIdent:              return try transform(n)
+    case let n as FunSign:                return try transform(n)
+    case let n as ParamSign:              return try transform(n)
+    case let n as Directive:              return try transform(n)
+    case let n as WhileLoop:              return try transform(n)
+    case let n as BindingStmt:            return try transform(n)
+    case let n as ReturnStmt:             return try transform(n)
+    case let n as NullRef:                return try transform(n)
+    case let n as IfExpr:                 return try transform(n)
+    case let n as LambdaExpr:             return try transform(n)
+    case let n as CastExpr:               return try transform(n)
+    case let n as BinExpr:                return try transform(n)
+    case let n as UnExpr:                 return try transform(n)
+    case let n as CallExpr:               return try transform(n)
+    case let n as CallArg:                return try transform(n)
+    case let n as SubscriptExpr:          return try transform(n)
+    case let n as SelectExpr:             return try transform(n)
+    case let n as Ident:                  return try transform(n)
+    case let n as ArrayLiteral:           return try transform(n)
+    case let n as SetLiteral:             return try transform(n)
+    case let n as MapLiteral:             return try transform(n)
+    case let n as Literal<Bool>:          return try transform(n)
+    case let n as Literal<Int>:           return try transform(n)
+    case let n as Literal<Double>:        return try transform(n)
+    case let n as Literal<String>:        return try transform(n)
     default:
       fatalError("unexpected node during generic transform")
     }
@@ -101,6 +103,24 @@ public extension ASTTransformer {
   }
 
   func defaultTransform(_ node: StructDecl) throws -> StructDecl {
+    node.body = try transform(node.body) as! Block
+    return node
+  }
+
+  func transform(_ node: UnionNestedMemberDecl) throws -> Node {
+    return try defaultTransform(node)
+  }
+
+  func defaultTransform(_ node: UnionNestedMemberDecl) throws -> UnionNestedMemberDecl {
+    node.nominalTypeDecl = try transform(node.nominalTypeDecl) as! NominalTypeDecl
+    return node
+  }
+
+  func transform(_ node: UnionDecl) throws -> Node {
+    return try defaultTransform(node)
+  }
+
+  func defaultTransform(_ node: UnionDecl) throws -> UnionDecl {
     node.body = try transform(node.body) as! Block
     return node
   }
