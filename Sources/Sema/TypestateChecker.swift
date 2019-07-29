@@ -12,14 +12,14 @@ public final class TypestateChecker: ASTVisitor {
     self.context = context
   }
 
-  public func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) {
     variables[node.symbol!] = node.initialBinding != nil
       ? .assigned
       : .unassigned
-    try traverse(node)
+    traverse(node)
   }
 
-  public func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) {
     if node.kind != .regular && !node.attributes.contains(.static) {
       let selfSymbol = node.innerScope!.symbols["self"]![0]
       variables[selfSymbol] = .assigned
@@ -44,15 +44,15 @@ public final class TypestateChecker: ASTVisitor {
       }
     }
 
-    try traverse(node)
+    traverse(node)
   }
 
-  public func visit(_ node: ParamDecl) throws {
+  public func visit(_ node: ParamDecl) {
     variables[node.symbol!] = .assigned
-    try traverse(node)
+    traverse(node)
   }
 
-  public func visit(_ node: BindingStmt) throws {
+  public func visit(_ node: BindingStmt) {
     switch node.lvalue {
     case let identifier as Ident:
       // If the left operand is an identifier, is should either refer toa visible variable or
@@ -96,17 +96,17 @@ public final class TypestateChecker: ASTVisitor {
       context.add(error: SAError.invalidLValue, on: node)
     }
 
-    try traverse(node)
+    traverse(node)
   }
 
-  public func visit(_ node: IfExpr) throws {
+  public func visit(_ node: IfExpr) {
     if let elseBlock = node.elseBlock {
       // If there are two branches, the analysis' result from both path must be merged
       let before = variables
-      try visit(node.thenBlock)
+      visit(node.thenBlock)
       let afterThen = variables
       variables = before
-      try visit(elseBlock)
+      visit(elseBlock)
       let afterElse = variables
 
       var merged: [Symbol: AssignmentState] = [:]
@@ -116,7 +116,7 @@ public final class TypestateChecker: ASTVisitor {
       }
     }
 
-    try traverse(node)
+    traverse(node)
   }
 
 }

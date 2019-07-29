@@ -16,23 +16,23 @@ public final class ASTUnparser: ASTVisitor {
   private var stack: Stack<String> = []
   private var isVisitingCallee: Bool = false
 
-  public func visit(_ node: ModuleDecl) throws {
+  public func visit(_ node: ModuleDecl) {
     for statement in node.statements {
-      try visit(statement)
+      visit(statement)
       console.print(stack.pop()!)
     }
     assert(stack.isEmpty)
   }
 
-  public func visit(_ node: Block) throws {
-    let statements = try node.statements.map { (statement) -> String in
-      try visit(statement)
+  public func visit(_ node: Block) {
+    let statements = node.statements.map { (statement) -> String in
+      visit(statement)
       return indent(stack.pop()!)
     }
     stack.push("{\n\(str(items: statements, separator: "\n"))\n}")
   }
 
-  public func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) {
     var repr = ""
     if !node.attributes.isEmpty {
       repr += node.attributes.map({ $0.rawValue.styled("magenta") }).joined(separator: " ")
@@ -46,22 +46,22 @@ public final class ASTUnparser: ASTVisitor {
     }
 
     if let annotation = node.typeAnnotation {
-      try visit(annotation)
+      visit(annotation)
       repr += ": \(stack.pop()!)"
     }
     if let (op, value) = node.initialBinding {
-      try visit(value)
+      visit(value)
       repr += " \(op) \(stack.pop()!)"
     }
 
     stack.push(repr)
   }
 
-  public func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) {
     var repr = ""
     if !node.directives.isEmpty {
-      let directives = try node.directives.map { (directive) -> String in
-        try visit(directive)
+      let directives = node.directives.map { (directive) -> String in
+        visit(directive)
         return stack.pop()!
       }
       repr += "\(str(items: directives, separator: " "))"
@@ -86,26 +86,26 @@ public final class ASTUnparser: ASTVisitor {
       repr += "<\(str(items: placeholders))>"
     }
 
-    let parameters = try node.parameters.map { (parameter) -> String in
-      try visit(parameter)
+    let parameters = node.parameters.map { (parameter) -> String in
+      visit(parameter)
       return stack.pop()!
     }
     repr += "(\(str(items: parameters)))"
 
     if let codomain = node.codomain {
-      try visit(codomain)
+      visit(codomain)
       repr += " -> \(stack.pop()!)"
     }
 
     if let body = node.body {
-      try visit(body)
+      visit(body)
       repr += " \(stack.pop()!)"
     }
 
     stack.push(repr)
   }
 
-  public func visit(_ node: ParamDecl) throws {
+  public func visit(_ node: ParamDecl) {
     var repr = str(node.label)
     if node.label != node.name {
       repr += " \(node.name)"
@@ -116,18 +116,18 @@ public final class ASTUnparser: ASTVisitor {
     }
 
     if let annotation = node.typeAnnotation {
-      try visit(annotation)
+      visit(annotation)
       repr += ": \(stack.pop()!)"
     }
     if let value = node.defaultValue {
-      try visit(value)
+      visit(value)
       repr += " = \(stack.pop()!)"
     }
 
     stack.push(repr)
   }
 
-  public func visit(_ node: StructDecl) throws {
+  public func visit(_ node: StructDecl) {
     var repr = StyledString("{struct:magenta} {\(node.name):yellow}").description
 
     if includeType {
@@ -138,19 +138,19 @@ public final class ASTUnparser: ASTVisitor {
       let placeholders = node.placeholders.map({ $0.styled("yellow") })
       repr += "<\(str(items: placeholders))>"
     }
-    try visit(node.body)
+    visit(node.body)
     repr += " \(stack.pop()!)"
     stack.push(repr)
   }
 
-  public func visit(_ node: UnionNestedMemberDecl) throws {
+  public func visit(_ node: UnionNestedMemberDecl) {
     var repr = StyledString("{case:magenta}").description
-    try visit(node.nominalTypeDecl)
+    visit(node.nominalTypeDecl)
     repr += " \(stack.pop()!)"
     stack.push(repr)
   }
 
-  public func visit(_ node: UnionDecl) throws {
+  public func visit(_ node: UnionDecl) {
     var repr = StyledString("{union:magenta} {\(node.name):yellow}").description
 
     if includeType {
@@ -161,12 +161,12 @@ public final class ASTUnparser: ASTVisitor {
       let placeholders = node.placeholders.map({ $0.styled("yellow") })
       repr += "<\(str(items: placeholders))>"
     }
-    try visit(node.body)
+    visit(node.body)
     repr += " \(stack.pop()!)"
     stack.push(repr)
   }
 
-//  public func visit(_ node: InterfaceDecl) throws {
+//  public func visit(_ node: InterfaceDecl) {
 //    write("interface ", styled: "magenta")
 //    write(node.name, styled: "yellow")
 //
@@ -176,20 +176,20 @@ public final class ASTUnparser: ASTVisitor {
 //      write("<\(str(items: node.placeholders))>")
 //    }
 //    write(" ")
-//    try visit(node.body)
+//    visit(node.body)
 //  }
 //
-//  public func visit(_ node: QualSign) throws {
+//  public func visit(_ node: QualSign) {
 //    write(str(items: node.qualifiers, separator: " "))
 //    if let signature = node.signature {
 //      if !node.qualifiers.isEmpty {
 //        write(" ")
 //      }
-//      try visit(signature)
+//      visit(signature)
 //    }
 //  }
 
-  public func visit(_ node: TypeIdent) throws {
+  public func visit(_ node: TypeIdent) {
     var repr = node.name.styled("yellow")
     if includeType {
       repr += ":\(str(node.type))".styled("dimmed")
@@ -198,7 +198,7 @@ public final class ASTUnparser: ASTVisitor {
     if !node.specializations.isEmpty {
       var args: [String] = []
       for (key, value) in node.specializations {
-        try visit(value)
+        visit(value)
         args.append("\(key) = \(stack.pop()!)")
       }
       repr += "<\(str(items: args))>"
@@ -207,24 +207,24 @@ public final class ASTUnparser: ASTVisitor {
     stack.push(repr)
   }
 
-//  public func visit(_ node: FunSign) throws {
+//  public func visit(_ node: FunSign) {
 //    write("(")
 //    for parameter in node.parameters {
-//      try visit(parameter)
+//      visit(parameter)
 //      if parameter != node.parameters.last {
 //        write(", ")
 //      }
 //    }
 //    write(") -> ")
-//    try visit(node.codomain)
+//    visit(node.codomain)
 //  }
 //
-//  public func visit(_ node: ParamSign) throws {
+//  public func visit(_ node: ParamSign) {
 //    write(str(node.label) + " ")
-//    try visit(node.typeAnnotation)
+//    visit(node.typeAnnotation)
 //  }
 
-  public func visit(_ node: Directive) throws {
+  public func visit(_ node: Directive) {
     var repr = "#".styled("magenta") + node.name.styled("magenta")
     if !node.arguments.isEmpty {
       repr += "(\(str(items: node.arguments)))"
@@ -233,78 +233,78 @@ public final class ASTUnparser: ASTVisitor {
     stack.push(repr)
   }
 
-  public func visit(_ node: WhileLoop) throws {
+  public func visit(_ node: WhileLoop) {
     var repr = StyledString("{while:magenta}").description
-    try visit(node.condition)
+    visit(node.condition)
     repr += " \(stack.pop()!)"
 
-    try visit(node.body)
+    visit(node.body)
     repr += " \(stack.pop()!)"
 
     stack.push(repr)
   }
 
-  public func visit(_ node: BindingStmt) throws {
-    try visit(node.rvalue)
-    try visit(node.lvalue)
+  public func visit(_ node: BindingStmt) {
+    visit(node.rvalue)
+    visit(node.lvalue)
     stack.push("\(stack.pop()!) \(node.op) \(stack.pop()!)")
   }
 
-  public func visit(_ node: ReturnStmt) throws {
+  public func visit(_ node: ReturnStmt) {
     var repr = "return".styled("magenta")
     if let (op, value) = node.binding {
-      try visit(value)
+      visit(value)
       repr += " \(op) \(stack.pop()!)"
     }
     stack.push(repr)
   }
 
-  public func visit(_ node: NullRef) throws {
+  public func visit(_ node: NullRef) {
     stack.push("nullref".styled("magenta"))
   }
 
-  public func visit(_ node: IfExpr) throws {
+  public func visit(_ node: IfExpr) {
     var repr = StyledString("{if:magenta}").description
-    try visit(node.condition)
+    visit(node.condition)
     repr += " \(stack.pop()!)"
 
-    try visit(node.thenBlock)
+    visit(node.thenBlock)
     repr += " \(stack.pop()!)"
 
     if let elseBlock = node.elseBlock {
-      try visit(elseBlock)
+      visit(elseBlock)
       repr += " else \(stack.pop()!)"
     }
 
     stack.push(repr)
   }
 
-  public func visit(_ node: CastExpr) throws {
-    try visit(node.operand)
-    try visit(node.castType)
+  public func visit(_ node: CastExpr) {
+    visit(node.operand)
+    visit(node.castType)
     stack.push("\(stack.pop()!) as \(stack.pop()!)")
   }
 
-  public func visit(_ node: BinExpr) throws {
-    try visit(node.right)
-    try visit(node.left)
+  public func visit(_ node: BinExpr) {
+    visit(node.right)
+    visit(node.left)
     stack.push("\(stack.pop()!) \(node.op) \(stack.pop()!)")
   }
 
-//  public func visit(_ node: UnExpr) throws {
+//  public func visit(_ node: UnExpr) {
 //    write("\(node.op) ")
-//    try visit(node.operand)
+//    visit(node.operand)
 //  }
 
-  public func visit(_ node: CallExpr) throws {
+  public func visit(_ node: CallExpr) {
     let wasVisitinCallee = isVisitingCallee
     isVisitingCallee = true
-    try visit(node.callee)
+    visit(node.callee)
     var repr = stack.pop()!
     isVisitingCallee = wasVisitinCallee
 
-    let arguments = try node.arguments.map { (argument) -> String in
-      try visit(argument)
+    let arguments = node.arguments.map { (argument) -> String in
+      visit(argument)
       return stack.pop()!
     }
     repr += "(\(str(items: arguments)))"
@@ -312,18 +312,18 @@ public final class ASTUnparser: ASTVisitor {
     stack.push(repr)
   }
 
-  public func visit(_ node: CallArg) throws {
-    try visit(node.value)
+  public func visit(_ node: CallArg) {
+    visit(node.value)
     if let label = node.label {
       stack.push("\(label) \(node.bindingOp) \(stack.pop()!)")
     }
   }
 
-//  public func visit(_ node: SubscriptExpr) throws {
-//    try visit(node.callee)
+//  public func visit(_ node: SubscriptExpr) {
+//    visit(node.callee)
 //    write("[")
 //    for argument in node.arguments {
-//      try visit(argument)
+//      visit(argument)
 //      if argument != node.arguments.last {
 //        write(", ")
 //      }
@@ -331,10 +331,10 @@ public final class ASTUnparser: ASTVisitor {
 //    write("]")
 //  }
 //
-//  public func visit(_ node: LambdaExpr) throws {
+//  public func visit(_ node: LambdaExpr) {
 //    write("fun (")
 //    for parameter in node.parameters {
-//      try visit(parameter)
+//      visit(parameter)
 //      if parameter != node.parameters.last {
 //        write(", ")
 //      }
@@ -342,25 +342,25 @@ public final class ASTUnparser: ASTVisitor {
 //    write(")")
 //    if let codomain = node.codomain {
 //      write(" -> ")
-//      try visit(codomain)
+//      visit(codomain)
 //    }
 //    write(" ")
-//    try visit(node.body)
+//    visit(node.body)
 //  }
 
-  public func visit(_ node: SelectExpr) throws {
+  public func visit(_ node: SelectExpr) {
     var repr = "."
     if let owner = node.owner {
-      try visit(owner)
+      visit(owner)
       repr = stack.pop()! + repr
     }
-    try visit(node.ownee)
+    visit(node.ownee)
     repr += stack.pop()!
 
     stack.push(repr)
   }
 
-  public func visit(_ node: Ident) throws {
+  public func visit(_ node: Ident) {
     var repr = node.name
     if isVisitingCallee {
       repr = repr.styled("cyan")
@@ -373,7 +373,7 @@ public final class ASTUnparser: ASTVisitor {
     if !node.specializations.isEmpty {
       var args: [String] = []
       for (key, value) in node.specializations {
-        try visit(value)
+        visit(value)
         args.append("\(key) = \(stack.pop()!)")
       }
       repr += "<\(str(items: args))>"
@@ -382,29 +382,29 @@ public final class ASTUnparser: ASTVisitor {
     stack.push(repr)
   }
 
-//  public func visit(_ node: ArrayLiteral) throws {
+//  public func visit(_ node: ArrayLiteral) {
 //    write("[")
 //    for element in node.elements {
-//      try visit(element)
+//      visit(element)
 //      writeln(",")
 //    }
 //    write("]")
 //  }
 //
-//  public func visit(_ node: SetLiteral) throws {
+//  public func visit(_ node: SetLiteral) {
 //    write("{")
 //    for element in node.elements {
-//      try visit(element)
+//      visit(element)
 //      writeln(",")
 //    }
 //    write("}")
 //  }
 //
-//  public func visit(_ node: MapLiteral) throws {
+//  public func visit(_ node: MapLiteral) {
 //    write("{")
 //    for (key, value) in node.elements {
 //      write("\(key): ")
-//      try visit(value)
+//      visit(value)
 //      writeln(",")
 //    }
 //    write("}")

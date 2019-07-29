@@ -53,7 +53,7 @@ public final class DefaultModuleLoader: ModuleLoader {
 
     if config.showRawAST && (moduleID != .builtin) && (moduleID != .stdlib) {
       let buffer = StringBuffer()
-      try! ASTDumper(to: buffer).visit(module)
+      ASTDumper(to: buffer).visit(module)
       logger?.debug(buffer.value)
     }
 
@@ -67,7 +67,7 @@ public final class DefaultModuleLoader: ModuleLoader {
 
     // Symbol creation.
     let symbolCreator = SymbolCreator(context: context)
-    try! symbolCreator.visit(module)
+    symbolCreator.visit(module)
     guard context.errors.isEmpty else {
       logger?.errors(context.errors.sorted(by: <))
       return nil
@@ -75,7 +75,7 @@ public final class DefaultModuleLoader: ModuleLoader {
 
     // Name binding.
     let nameBinder = NameBinder(context: context)
-    try! nameBinder.visit(module)
+    nameBinder.visit(module)
     guard context.errors.isEmpty else {
       logger?.errors(context.errors.sorted(by: <))
       return nil
@@ -83,7 +83,7 @@ public final class DefaultModuleLoader: ModuleLoader {
 
     if config.showScopedAST && (moduleID != .builtin) && (moduleID != .stdlib) {
       let buffer = StringBuffer()
-      try! ASTDumper(to: buffer).visit(module)
+      ASTDumper(to: buffer).visit(module)
       logger?.debug(buffer.value)
     }
 
@@ -93,7 +93,7 @@ public final class DefaultModuleLoader: ModuleLoader {
 
     // Type constraints creation.
     let constraintCreator = ConstraintCreator(context: context)
-    try! constraintCreator.visit(module)
+    constraintCreator.visit(module)
     guard context.errors.isEmpty else {
       logger?.errors(context.errors.sorted(by: <))
       return nil
@@ -119,7 +119,7 @@ public final class DefaultModuleLoader: ModuleLoader {
     switch result {
     case .success(let solution):
       let dispatcher = Dispatcher(context: context, solution: solution)
-      module = try! dispatcher.transform(module) as! ModuleDecl
+      module = dispatcher.transform(module) as! ModuleDecl
       guard context.errors.isEmpty else {
         logger?.errors(context.errors.sorted(by: <))
         return nil
@@ -132,11 +132,11 @@ public final class DefaultModuleLoader: ModuleLoader {
 
     // Identify closure captures.
     let captureAnalyzer = CaptureAnalyzer()
-    try! captureAnalyzer.visit(module)
+    captureAnalyzer.visit(module)
 
     if config.showTypedAST && (moduleID != .builtin) && (moduleID != .stdlib) {
       let buffer = StringBuffer()
-      try! ASTDumper(to: buffer).visit(module)
+      ASTDumper(to: buffer).visit(module)
       logger?.debug(buffer.value)
     }
 
@@ -145,7 +145,7 @@ public final class DefaultModuleLoader: ModuleLoader {
     // ------------------ //
 
     let typestateChecker = TypestateChecker(context: context)
-    try! typestateChecker.visit(module)
+    typestateChecker.visit(module)
     guard context.errors.isEmpty else {
       logger?.errors(context.errors.sorted(by: <))
       return nil

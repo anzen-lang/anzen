@@ -23,7 +23,7 @@ public final class NameBinder: ASTVisitor {
     self.context = context
   }
 
-  public func visit(_ node: ModuleDecl) throws {
+  public func visit(_ node: ModuleDecl) {
     // Note that user modules implicitly import Anzen's core modules so that symbols from those can
     // be referred without prefixing. Hence, unless those modules are being visited, their scopes
     // are added to the scope stack so that name binding can succeed.
@@ -42,45 +42,45 @@ public final class NameBinder: ASTVisitor {
     }
 
     scopes.push(node.innerScope!)
-    try visit(node.statements)
+    visit(node.statements)
     scopes.pop()
   }
 
-  public func visit(_ node: Block) throws {
+  public func visit(_ node: Block) {
     scopes.push(node.innerScope!)
-    try visit(node.statements)
+    visit(node.statements)
     scopes.pop()
   }
 
-  public func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) {
     underDeclaration[node.scope!] = node.name
-    try traverse(node)
+    traverse(node)
     underDeclaration.removeValue(forKey: node.scope!)
   }
 
-  public func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) {
     scopes.push(node.innerScope!)
     for param in node.parameters {
       underDeclaration[param.scope!] = param.name
-      try visit(param)
+      visit(param)
     }
     underDeclaration.removeValue(forKey: node.innerScope!)
     if node.codomain != nil {
-      try visit(node.codomain!)
+      visit(node.codomain!)
     }
     if node.body != nil {
-      try visit(node.body!)
+      visit(node.body!)
     }
     scopes.pop()
   }
 
-  public func visit(_ node: StructDecl) throws {
+  public func visit(_ node: StructDecl) {
     scopes.push(node.innerScope!)
-    try visit(node.body)
+    visit(node.body)
     scopes.pop()
   }
 
-  public func visit(_ node: TypeIdent) throws {
+  public func visit(_ node: TypeIdent) {
     // Find the scope that defines the visited identifier.
     guard let scope = findScope(declaring: node.name) else {
       context.add(error: SAError.undefinedSymbol(name: node.name), on: node)
@@ -96,18 +96,18 @@ public final class NameBinder: ASTVisitor {
 
     // Visit the specializations.
     for specialization in node.specializations {
-      try visit(specialization.value)
+      visit(specialization.value)
     }
   }
 
-  public func visit(_ node: SelectExpr) throws {
+  public func visit(_ node: SelectExpr) {
     // Only visit the owner (if any), as the scope of the ownee has yet to be inferred.
     if let owner = node.owner {
-      try visit(owner)
+      visit(owner)
     }
   }
 
-  public func visit(_ node: Ident) throws {
+  public func visit(_ node: Ident) {
     // Find the scope that defines the visited identifier.
     guard let scope = findScope(declaring: node.name) else {
       context.add(error: SAError.undefinedSymbol(name: node.name), on: node)
@@ -117,7 +117,7 @@ public final class NameBinder: ASTVisitor {
 
     // Visit the specializations.
     for specialization in node.specializations {
-      try visit(specialization.value)
+      visit(specialization.value)
     }
   }
 

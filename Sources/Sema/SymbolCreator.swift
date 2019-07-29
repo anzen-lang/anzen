@@ -26,7 +26,7 @@ public final class SymbolCreator: ASTVisitor {
     self.context = context
   }
 
-  public func visit(_ node: ModuleDecl) throws {
+  public func visit(_ node: ModuleDecl) {
     // Create a new scope for the module.
     node.innerScope = Scope(name: node.id?.qualifiedName, module: node)
 
@@ -39,24 +39,24 @@ public final class SymbolCreator: ASTVisitor {
 
     // Visit the module's statements.
     scopes.push(node.innerScope!)
-    try visit(node.statements)
+    visit(node.statements)
     scopes.pop()
 
     // FIXME: Extensions that are visited before the type they extend should be revisited once
     // those symbols have been created.
   }
 
-  public func visit(_ node: Block) throws {
+  public func visit(_ node: Block) {
     // Create a new scope for the block.
     node.innerScope = Scope(name: "block", parent: scopes.top!)
 
     // Visit the block's statements.
     scopes.push(node.innerScope!)
-    try visit(node.statements)
+    visit(node.statements)
     scopes.pop()
   }
 
-  public func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) {
     // Make sure the property's name can be declared in the current scope.
     guard canBeDeclared(node: node) else {
       node.symbol = errorSymbol
@@ -69,13 +69,13 @@ public final class SymbolCreator: ASTVisitor {
       ? SymbolAttributes.reassignable
       : SymbolAttributes.none
     node.symbol = scope.create(name: node.name, type: TypeVariable(), attributes: attributes)
-    try traverse(node)
+    traverse(node)
 
     // Register the property's declaration.
     node.module.declarations[node.symbol!] = node
   }
 
-  public func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) {
     // Make sure the function's name can be declared in the current scope.
     guard canBeDeclared(node: node) else {
       node.symbol = errorSymbol
@@ -89,7 +89,7 @@ public final class SymbolCreator: ASTVisitor {
 
     // Visit the function's parameters.
     scopes.push(innerScope)
-    try visit(node.parameters)
+    visit(node.parameters)
 
     // Create the symbols for the function, its placeholders and its parameters.
     let parameters = node.parameters.map {
@@ -164,7 +164,7 @@ public final class SymbolCreator: ASTVisitor {
 
     // Visit the function's body.
     if let body = node.body {
-      try visit(body)
+      visit(body)
     }
     scopes.pop()
 
@@ -172,7 +172,7 @@ public final class SymbolCreator: ASTVisitor {
     node.module.declarations[node.symbol!] = node
   }
 
-  public func visit(_ node: ParamDecl) throws {
+  public func visit(_ node: ParamDecl) {
     // Make sure the parameter's name can be declared in the current scope.
     guard canBeDeclared(node: node) else {
       node.symbol = errorSymbol
@@ -182,10 +182,10 @@ public final class SymbolCreator: ASTVisitor {
     // Create a new symbol for the parameter, and visit the node's declaration.
     let scope = scopes.top!
     node.symbol = scope.create(name: node.name, type: TypeVariable())
-    try traverse(node)
+    traverse(node)
   }
 
-  public func visit(_ node: StructDecl) throws {
+  public func visit(_ node: StructDecl) {
     // Make sure the struct's name can be declared in the current scope.
     guard canBeDeclared(node: node) else {
       node.symbol = errorSymbol
@@ -251,7 +251,7 @@ public final class SymbolCreator: ASTVisitor {
     scopes.push(node.body.innerScope!)
 
     for statement in node.body.statements {
-      try visit(statement)
+      visit(statement)
     }
 
     scopes.pop()

@@ -144,7 +144,7 @@ public class AIREmissionDriver {
       locals: locals,
       returnRegister: returnRegister,
       typeEmitter: typeEmitter)
-    try! emitter.visit(body)
+    emitter.visit(body)
 
     // Make sure the last instruction is a jump to the exit block.
     if !(builder.currentBlock!.instructions.last is JumpInst) {

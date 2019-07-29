@@ -10,7 +10,7 @@ public final class CaptureAnalyzer: ASTVisitor {
 
   public func visit(_ node: FunDecl) {
     functions.push(node)
-    try! traverse(node)
+    traverse(node)
     functions.pop()
 
     assert(node.captures.duplicates(groupedBy: { $0.name }).isEmpty)
@@ -18,7 +18,7 @@ public final class CaptureAnalyzer: ASTVisitor {
 
   public func visit(_ node: SelectExpr) {
     if let owner = node.owner {
-      try! visit(owner)
+      visit(owner)
     }
     // Note that we don't visit ownees of select expressions. Although they are identifiers, they
     // can't actually be captured, as only their owner can.

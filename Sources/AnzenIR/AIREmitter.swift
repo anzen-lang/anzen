@@ -33,7 +33,7 @@ class AIREmitter: ASTVisitor {
     self.typeEmitter = typeEmitter
   }
 
-  func visit(_ node: PropDecl) throws {
+  func visit(_ node: PropDecl) {
     let reference = builder.buildMakeRef(
       type: typeEmitter.emitType(of: node.type!),
       debugInfo: node.debugInfo)
@@ -41,7 +41,7 @@ class AIREmitter: ASTVisitor {
 
     if let (op, value) = node.initialBinding {
       // Emit AIR for the initial value.
-      try visit(value)
+      visit(value)
 
       // Emit AIR for the initial binding.
       builder.build(
@@ -52,7 +52,7 @@ class AIREmitter: ASTVisitor {
     }
   }
 
-  func visit(_ node: FunDecl) throws {
+  func visit(_ node: FunDecl) {
     // Thick functions must have their environment stored at the time of their declaration.
     if !node.captures.isEmpty {
       // Constructors and methods shall not have closures.
@@ -72,10 +72,10 @@ class AIREmitter: ASTVisitor {
     }
   }
 
-  func visit(_ node: StructDecl) throws {
+  func visit(_ node: StructDecl) {
   }
 
-  func visit(_ node: WhileLoop) throws {
+  func visit(_ node: WhileLoop) {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }
 
@@ -86,22 +86,22 @@ class AIREmitter: ASTVisitor {
     // Emit AIR for the loop's prologue.
     builder.buildJump(label: test.label)
     builder.currentBlock = test
-    try visit(node.condition)
+    visit(node.condition)
     builder.buildBranch(condition: stack.pop()!, thenLabel: cont.label, elseLabel: post.label)
 
     // Emit AIR for the loop's body.
     builder.currentBlock = cont
-    try visit(node.body)
+    visit(node.body)
     builder.buildJump(label: test.label)
 
     builder.currentBlock = post
   }
 
-  func visit(_ node: BindingStmt) throws {
+  func visit(_ node: BindingStmt) {
     // Emit AIR for the operator's operands.
-    try visit(node.lvalue)
+    visit(node.lvalue)
     let lvalue = stack.pop() as! AIRRegister
-    try visit(node.rvalue)
+    visit(node.rvalue)
     let rvalue = stack.pop()!
 
     // Emit AIR for the assignment.
@@ -112,12 +112,12 @@ class AIREmitter: ASTVisitor {
       debugInfo: node.debugInfo)
   }
 
-  func visit(_ node: ReturnStmt) throws {
+  func visit(_ node: ReturnStmt) {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }
 
     if let (op, value) = node.binding {
-      try visit(value)
+      visit(value)
       builder.build(
         assignment: op,
         source: stack.pop()!,
@@ -134,7 +134,7 @@ class AIREmitter: ASTVisitor {
       debugInfo: node.debugInfo))
   }
 
-  func visit(_ node: IfExpr) throws {
+  func visit(_ node: IfExpr) {
     guard let currentFn = builder.currentBlock?.function
       else { fatalError("not in a function") }
 
@@ -143,26 +143,26 @@ class AIREmitter: ASTVisitor {
     let post = currentFn.insertBlock(after: else_, label: "post")
 
     // Emit AIR for the conditional's prologue.
-    try visit(node.condition)
+    visit(node.condition)
     builder.buildBranch(condition: stack.pop()!, thenLabel: then.label, elseLabel: else_.label)
 
     // Emit AIR for the then block.
     builder.currentBlock = then
-    try visit(node.thenBlock)
+    visit(node.thenBlock)
     builder.buildJump(label: post.label)
 
     // Emit AIR for the else block.
     builder.currentBlock = else_
     if let elseBlock = node.elseBlock {
-      try visit(elseBlock)
+      visit(elseBlock)
     }
     builder.buildJump(label: post.label)
 
     builder.currentBlock = post
   }
 
-  func visit(_ node: CastExpr) throws {
-    try visit(node.operand)
+  func visit(_ node: CastExpr) {
+    visit(node.operand)
     let castTy = typeEmitter.emitType(of: node.type!)
     let unsafeCast = builder.buildUnsafeCast(
       source: stack.pop()!,
@@ -171,9 +171,9 @@ class AIREmitter: ASTVisitor {
     stack.push(unsafeCast)
   }
 
-  func visit(_ node: BinExpr) throws {
-    try visit(node.right)
-    try visit(node.left)
+  func visit(_ node: BinExpr) {
+    visit(node.right)
+    visit(node.left)
 
     let debugInfo: DebugInfo = node.debugInfo
     let register: AIRValue
@@ -189,7 +189,7 @@ class AIREmitter: ASTVisitor {
     stack.push(register)
   }
 
-  func visit(_ node: CallExpr) throws {
+  func visit(_ node: CallExpr) {
     var callee: AIRValue?
     var arguments: [AIRValue] = []
 
@@ -200,10 +200,10 @@ class AIREmitter: ASTVisitor {
       if symbol.isMethod && !symbol.isStatic {
         // If the expression is a call to a non-static method, then the latter has to be uncurried
         // and supplied with a reference to the select's owner as its first argument.
-        callee = try getAIRMethod(select: select)
+        callee = getAIRMethod(select: select)
 
         // Emit the `self` argument.
-        try visit(select.owner!)
+        visit(select.owner!)
         let argument = stack.pop()!
         if argument is AIRConstant {
           // If `self` is an AIR constant (e.g. a literal number), we supply it directly to the
@@ -226,20 +226,20 @@ class AIREmitter: ASTVisitor {
 
     if callee == nil {
       let calleeRegister = builder.buildMakeRef(type: typeEmitter.emitType(of: node.callee.type!))
-      try visit(node.callee)
+      visit(node.callee)
       builder.buildBind(source: stack.pop()!, target: calleeRegister)
       callee = calleeRegister
     }
 
     // Emit AIR for the arguments.
-    try arguments.append(contentsOf: node.arguments.map { (callArgument) -> MakeRefInst in
+    arguments.append(contentsOf: node.arguments.map { (callArgument) -> MakeRefInst in
       // Emit AIR for the argument's reference.
       let argument = builder.buildMakeRef(
         type: typeEmitter.emitType(of: callArgument.type!),
         debugInfo: callArgument.debugInfo)
 
       // Emit AIR for the argument's value.
-      try visit(callArgument.value)
+      visit(callArgument.value)
       builder.build(
         assignment:
         callArgument.bindingOp,
@@ -259,14 +259,14 @@ class AIREmitter: ASTVisitor {
     stack.push(apply)
   }
 
-  func visit(_ node: SelectExpr) throws {
+  func visit(_ node: SelectExpr) {
     guard let owner = node.owner
       else { fatalError("Support for implicit not implemented") }
-    try visit(owner)
+    visit(owner)
 
     // FIXME: What about static methods?
     if node.ownee.symbol!.isMethod {
-      let airMethod = try getAIRMethod(select: node)
+      let airMethod = getAIRMethod(select: node)
       let partialApplication = builder.buildPartialApply(
         function: airMethod,
         arguments: [stack.pop()!],
@@ -293,7 +293,7 @@ class AIREmitter: ASTVisitor {
     stack.push(extract)
   }
 
-  func visit(_ node: Ident) throws {
+  func visit(_ node: Ident) {
     // Look for the node's symbol in the accessible scopes.
     if let value = locals[node.symbol!] {
       stack.push(value)
@@ -350,7 +350,7 @@ class AIREmitter: ASTVisitor {
   ///
   /// Non-static methods actually have types of the form `(_: Self) -> MethodType` in Anzen. Hence,
   /// They should be uncurried in AIR to accept `self` as their first parameter.
-  private func getAIRMethod(select: SelectExpr) throws -> AIRFunction {
+  private func getAIRMethod(select: SelectExpr) -> AIRFunction {
     // Emit the type of the uncurried method.
     let calleeAIRType = typeEmitter.emitType(of: select.ownee.type!) as! AIRFunctionType
     let methodAIRType = typeEmitter.emitType(

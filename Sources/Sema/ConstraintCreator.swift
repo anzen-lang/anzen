@@ -10,7 +10,7 @@ public final class ConstraintCreator: ASTVisitor {
     self.context = context
   }
 
-  public func visit(_ node: PropDecl) throws {
+  public func visit(_ node: PropDecl) {
     var propType: TypeBase?
     if let annotation = node.typeAnnotation {
       propType = signatureToType(signature: annotation)
@@ -19,13 +19,13 @@ public final class ConstraintCreator: ASTVisitor {
     }
 
     if let (_, value) = node.initialBinding {
-      try visit(value)
+      visit(value)
       context.add(constraint:
         .conformance(t: value.type!, u: node.type!, at: .location(node, .rvalue)))
     }
   }
 
-  public func visit(_ node: FunDecl) throws {
+  public func visit(_ node: FunDecl) {
     let fnType = node.type as! FunctionType
 
     // Determine the expected codomain of the function.
@@ -56,13 +56,13 @@ public final class ConstraintCreator: ASTVisitor {
       : fnType.codomain
     context.add(constraint: .equality(t: fnCo, u: codomain, at: .location(node, .codomain)))
 
-    try visit(node.parameters)
+    visit(node.parameters)
     if let body = node.body {
-      try visit(body)
+      visit(body)
     }
   }
 
-  public func visit(_ node: ParamDecl) throws {
+  public func visit(_ node: ParamDecl) {
     // Extract the type of the parameter from its annotation.
     var paramType: TypeBase?
     if let annotation = node.typeAnnotation {
@@ -72,44 +72,44 @@ public final class ConstraintCreator: ASTVisitor {
     }
 
     if let value = node.defaultValue {
-      try visit(value)
+      visit(value)
       context.add(constraint:
         .conformance(t: value.type!, u: node.type!, at: .location(node, .rvalue)))
     }
   }
 
-  public func visit(_ node: WhileLoop) throws {
-    try visit(node.condition)
+  public func visit(_ node: WhileLoop) {
+    visit(node.condition)
     let bool = context.builtinTypes["Bool"]!
     context.add(constraint:
       .equality(t: node.condition.type!, u: bool, at: .location(node, .condition)))
 
-    try visit(node.body)
+    visit(node.body)
   }
 
-  public func visit(_ node: BindingStmt) throws {
-    try visit(node.lvalue)
-    try visit(node.rvalue)
+  public func visit(_ node: BindingStmt) {
+    visit(node.lvalue)
+    visit(node.rvalue)
     context.add(constraint:
       .conformance(t: node.rvalue.type!, u: node.lvalue.type!, at: .location(node, .rvalue)))
   }
 
-  public func visit(_ node: IfExpr) throws {
-    try visit(node.condition)
+  public func visit(_ node: IfExpr) {
+    visit(node.condition)
     let bool = context.builtinTypes["Bool"]!
     context.add(constraint:
       .equality(t: node.condition.type!, u: bool, at: .location(node, .condition)))
 
-    try visit(node.thenBlock)
+    visit(node.thenBlock)
     if let elseBlock = node.elseBlock {
-      try visit(elseBlock)
+      visit(elseBlock)
     }
 
     // FIXME: Type if-expressions with either the type of their return statement or `Nothing`.
   }
 
-  public func visit(_ node: CastExpr) throws {
-    try visit(node.operand)
+  public func visit(_ node: CastExpr) {
+    visit(node.operand)
     let castTy = signatureToType(signature: node.castType)
 
     // Since it's a forced cast expression, there's no need to add any constraint between the
@@ -117,9 +117,9 @@ public final class ConstraintCreator: ASTVisitor {
     node.type = castTy
   }
 
-  public func visit(_ node: BinExpr) throws {
-    try visit(node.left)
-    try visit(node.right)
+  public func visit(_ node: BinExpr) {
+    visit(node.left)
+    visit(node.right)
 
     // Pointer identity operators are not implemented by a special built-in function rather than by
     // methods of the left operand. They do not fix any constraint on the left and right operand,
@@ -152,7 +152,7 @@ public final class ConstraintCreator: ASTVisitor {
       .member(t: node.left.type!, member: member, u: opTy, at: .location(node, .binaryOperator)))
   }
 
-  public func visit(_ node: CallExpr) throws {
+  public func visit(_ node: CallExpr) {
     // Build the supposed type of the callee. Note the use of fresh variables so as to loosen
     // the constraint on the arguments.
     let domain = node.arguments.map { Parameter(label: $0.label, type: TypeVariable()) }
@@ -162,22 +162,22 @@ public final class ConstraintCreator: ASTVisitor {
     // Create conformance constraints for the arguments.
     let loc: ConstraintLocation = .location(node, .call)
     for (i, (argument, parameter)) in zip(node.arguments, fnType.domain).enumerated() {
-      try visit(argument)
+      visit(argument)
       context.add(constraint:
         .conformance(t: argument.type!, u: parameter.type, at: loc + .parameter(i)))
     }
 
     // The callee may represent a function or a nominal type in case it is used as a constructor.
-    try visit(node.callee)
+    visit(node.callee)
     context.add(constraint: .equality(t: node.callee.type!, u: fnType, at: loc))
   }
 
-  public func visit(_ node: CallArg) throws {
-    try visit(node.value)
+  public func visit(_ node: CallArg) {
+    visit(node.value)
     node.type = node.value.type
   }
 
-  public func visit(_ node: SelectExpr) throws {
+  public func visit(_ node: SelectExpr) {
     // The ownee's typed with a fresh variable, which will also be part of a membership constraint
     // contraint with the owner's type.
     node.ownee.type = TypeVariable()
@@ -185,7 +185,7 @@ public final class ConstraintCreator: ASTVisitor {
 
     let ownerType: TypeBase
     if let owner = node.owner {
-      try visit(owner)
+      visit(owner)
       ownerType = owner.type!
     } else {
       // If the select doesn't have an explicit owner, then the type of the implicit one has to be
@@ -198,7 +198,7 @@ public final class ConstraintCreator: ASTVisitor {
       .member(t: ownerType, member: node.ownee.name, u: node.type!, at: .location(node, .select)))
   }
 
-  public func visit(_ node: Ident) throws {
+  public func visit(_ node: Ident) {
     // Retrieve the symbol(s) associated with the identifier. If there're more than one, create a
     // disjunction constraint to model the different choices.
     guard let symbols = node.scope?.symbols[node.name] else {
@@ -221,26 +221,26 @@ public final class ConstraintCreator: ASTVisitor {
     context.add(constraint: .disjunction(choices, at: location))
   }
 
-  public func visit(_ node: NullRef) throws {
+  public func visit(_ node: NullRef) {
     node.type = AnythingType.get
   }
 
-  public func visit(_ node: Literal<Bool>) throws {
+  public func visit(_ node: Literal<Bool>) {
     node.type = context.builtinTypes["Bool"]
     assert(node.type != nil)
   }
 
-  public func visit(_ node: Literal<Int>) throws {
+  public func visit(_ node: Literal<Int>) {
     node.type = context.builtinTypes["Int"]
     assert(node.type != nil)
   }
 
-  public func visit(_ node: Literal<Double>) throws {
+  public func visit(_ node: Literal<Double>) {
     node.type = context.builtinTypes["Float"]
     assert(node.type != nil)
   }
 
-  public func visit(_ node: Literal<String>) throws {
+  public func visit(_ node: Literal<String>) {
     node.type = context.builtinTypes["String"]
     assert(node.type != nil)
   }

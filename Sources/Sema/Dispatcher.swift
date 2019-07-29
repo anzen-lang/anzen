@@ -30,41 +30,41 @@ public final class Dispatcher: ASTTransformer {
     self.solution = solution
   }
 
-  public func transform(_ node: ModuleDecl) throws -> Node {
+  public func transform(_ node: ModuleDecl) -> Node {
     visitDeclarationContext(node)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: Block) throws -> Node {
+  public func transform(_ node: Block) -> Node {
     visitDeclarationContext(node)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: FunDecl) throws -> Node {
+  public func transform(_ node: FunDecl) -> Node {
     visitDeclarationContext(node)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: TypeIdent) throws -> Node {
+  public func transform(_ node: TypeIdent) -> Node {
     node.type = reify(type: node.type)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: IfExpr) throws -> Node {
+  public func transform(_ node: IfExpr) -> Node {
     node.type = reify(type: node.type)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: LambdaExpr) throws -> Node {
+  public func transform(_ node: LambdaExpr) -> Node {
     node.type = reify(type: node.type)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: BinExpr) throws -> Node {
+  public func transform(_ node: BinExpr) -> Node {
     node.type = reify(type: node.type)
 
-    let lhs = try transform(node.left) as! Expr
-    let rhs = try transform(node.right) as! Expr
+    let lhs = transform(node.left) as! Expr
+    let rhs = transform(node.right) as! Expr
 
     // Optimization opportunity:
     // Rather than transforming all overloadable operators into function calls, we could keep
@@ -85,7 +85,7 @@ public final class Dispatcher: ASTTransformer {
 
       let callee = SelectExpr(
         owner: lhs,
-        ownee: try transform(opIdent) as! Ident,
+        ownee: transform(opIdent) as! Ident,
         module: node.module,
         range: node.range)
       callee.type = opIdent.type
@@ -100,29 +100,29 @@ public final class Dispatcher: ASTTransformer {
     }
   }
 
-  public func transform(_ node: UnExpr) throws -> Node {
+  public func transform(_ node: UnExpr) -> Node {
     node.type = reify(type: node.type)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: CallExpr) throws -> Node {
+  public func transform(_ node: CallExpr) -> Node {
     node.type = reify(type: node.type)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: CallArg) throws -> Node {
+  public func transform(_ node: CallArg) -> Node {
     node.type = reify(type: node.type)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: SubscriptExpr) throws -> Node {
+  public func transform(_ node: SubscriptExpr) -> Node {
     node.type = reify(type: node.type)
-    return try defaultTransform(node)
+    return defaultTransform(node)
   }
 
-  public func transform(_ node: SelectExpr) throws -> Node {
+  public func transform(_ node: SelectExpr) -> Node {
     node.type = reify(type: node.type)
-    node.owner = try node.owner.map { try transform($0) as! Expr }
+    node.owner = node.owner.map { transform($0) as! Expr }
 
     let ownerTy = node.owner != nil
       ? node.owner!.type!
@@ -146,16 +146,16 @@ public final class Dispatcher: ASTTransformer {
     }
 
     // Dispatch the symbol of the ownee, now that its scope's been determined.
-    node.ownee = try transform(node.ownee) as! Ident
+    node.ownee = transform(node.ownee) as! Ident
 
     return node
   }
 
-  public func transform(_ node: Ident) throws -> Node {
+  public func transform(_ node: Ident) -> Node {
     node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
-    node.specializations = try Dictionary(
+    node.specializations = Dictionary(
       uniqueKeysWithValues: node.specializations.map({
-        try ($0, transform($1) as! QualTypeSign)
+        ($0, transform($1) as! QualTypeSign)
       }))
 
     assert(node.scope != nil)
