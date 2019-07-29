@@ -66,10 +66,9 @@ public enum TokenKind: String {
   case fun
   case mutating
   case `static`
-  case interface
   case `struct`
-  case `enum`
-  case `case`
+  case union
+  case interface
   case `extension`
   case new
   case del
@@ -83,7 +82,7 @@ public enum TokenKind: String {
   case `if`
   case `else`
   case `switch`
-  case `when`
+  case `case`
   case `nullref`
 
   // MARK: Annotations

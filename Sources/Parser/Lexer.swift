@@ -182,9 +182,9 @@ extension Lexer: IteratorProtocol, Sequence {
       case "fun"      : kind = .fun
       case "mutating" : kind = .mutating
       case "static"   : kind = .static
-      case "interface": kind = .interface
       case "struct"   : kind = .struct
-      case "enum"     : kind = .enum
+      case "union"    : kind = .union
+      case "interface": kind = .interface
       case "extension": kind = .extension
       case "new"      : kind = .new
       case "del"      : kind = .del
@@ -198,7 +198,7 @@ extension Lexer: IteratorProtocol, Sequence {
       case "if"       : kind = .if
       case "else"     : kind = .else
       case "switch"   : kind = .switch
-      case "when"     : kind = .when
+      case "case"     : kind = .case
       case "nullref"  : kind = .nullref
       default         : kind = .identifier; value = chars
       }

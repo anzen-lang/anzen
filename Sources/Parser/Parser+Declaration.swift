@@ -242,6 +242,71 @@ extension Parser {
       errors: nominalTypeParseResult.errors)
   }
 
+  /// Parses a union nested member declaration.
+  func parseUnionNestedMemberDecl() -> Result<UnionNestedMemberDecl?> {
+    // The first token should be `case`.
+    guard let startToken = consume(.case) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'case'")])
+    }
+
+    let nominalType: NominalTypeDecl
+    let errors: [ParseError]
+
+    consumeNewlines()
+    switch peek().kind {
+    case .struct:
+      let typeParseResult = parseStructDecl()
+      guard typeParseResult.value != nil else {
+        return Result(value: nil, errors: typeParseResult.errors)
+      }
+      nominalType = typeParseResult.value!
+      errors = typeParseResult.errors
+
+    case .union:
+      let typeParseResult = parseUnionDecl()
+      guard typeParseResult.value != nil else {
+        return Result(value: nil, errors: typeParseResult.errors)
+      }
+      nominalType = typeParseResult.value!
+      errors = typeParseResult.errors
+
+    default:
+      return Result(value: nil, errors: [unexpectedToken(expected: "struct or union declaration")])
+    }
+
+    return Result(
+      value: UnionNestedMemberDecl(
+        nominalTypeDecl: nominalType,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: nominalType.range.end)),
+      errors: errors)
+  }
+
+  /// Parses a union declaration.
+  func parseUnionDecl() -> Result<UnionDecl?> {
+    // The first token should be `union`.
+    guard let startToken = consume(.union) else {
+      defer { consume() }
+      return Result(value: nil, errors: [unexpectedToken(expected: "'union'")])
+    }
+
+    consumeNewlines()
+    let nominalTypeParseResult = parseNominalType()
+    guard let nominalType = nominalTypeParseResult.value else {
+      return Result(value: nil, errors: nominalTypeParseResult.errors)
+    }
+
+    return Result(
+      value: UnionDecl(
+        name: nominalType.name,
+        placeholders: nominalType.placeholders,
+        body: nominalType.body,
+        module: module,
+        range: SourceRange(from: startToken.range.start, to: nominalType.body.range.end)),
+      errors: nominalTypeParseResult.errors)
+  }
+
   /// Parses an interface declaration.
   func parseInterfaceDecl() -> Result<InterfaceDecl?> {
     // The first token should be `interface`.

@@ -96,6 +96,14 @@ extension Parser {
       let parseResult = parseStructDecl()
       return Result(value: parseResult.value, errors: parseResult.errors)
 
+    case .case:
+      let parseResult = parseUnionNestedMemberDecl()
+      return Result(value: parseResult.value, errors: parseResult.errors)
+
+    case .union:
+      let parseResult = parseUnionDecl()
+      return Result(value: parseResult.value, errors: parseResult.errors)
+
     case .interface:
       let parseResult = parseInterfaceDecl()
       return Result(value: parseResult.value, errors: parseResult.errors)
