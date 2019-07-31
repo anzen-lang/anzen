@@ -203,7 +203,7 @@ public final class Dispatcher: ASTTransformer {
     return node
   }
 
-  private func visitDeclarationContext(_ node: DeclarationContext) {
+  private func visitDeclarationContext(_ node: DeclContext) {
     if let scope = node.innerScope {
       for symbol in scope.symbols.values.joined() {
         symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }

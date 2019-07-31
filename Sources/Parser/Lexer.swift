@@ -249,7 +249,7 @@ extension Lexer: IteratorProtocol, Sequence {
         case "===": kind = .refeq
         case "!==": kind = .refne
         case "...": kind = .ellipsis
-        default  : break
+        default   : break
         }
 
         if kind != nil {
@@ -265,13 +265,14 @@ extension Lexer: IteratorProtocol, Sequence {
 
         switch value {
         case ":=": kind = .copy
-        case "&-": kind = .ref
+        case "&-": kind = .alias
         case "<-": kind = .move
         case "->": kind = .arrow
         case "<=": kind = .le
         case ">=": kind = .ge
         case "==": kind = .eq
         case "!=": kind = .ne
+        case "::": kind = .doubleColon
         default  : break
         }
 

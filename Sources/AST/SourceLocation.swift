@@ -1,23 +1,38 @@
 import Utils
 import SystemKit
 
-public struct SourceLocation {
+/// A pointer to an text input buffer.
+public class SourceRef {
 
-  public init(source: TextInputBuffer, line: Int = 1, column: Int = 1, offset: Int = 0) {
-    self.source = source
-    self.line = line
-    self.column = column
-    self.offset = offset
+  /// The name of the source.
+  public let name: String
+  /// The text input buffer.
+  public let buffer: TextInputBuffer
+
+  public init(name: String, buffer: TextInputBuffer) {
+    self.name = name
+    self.buffer = buffer
   }
 
+}
+
+public struct SourceLocation {
+
   /// The source in which the location refers to.
-  public let source: TextInputBuffer
+  public let sourceRef: SourceRef
   /// The 1-indexed line number in the source text of the location.
   public var line: Int
   /// The column number in the source text of the location.
   public var column: Int
   /// The character offset in the source text of the location.
   public var offset: Int
+
+  public init(sourceRef: SourceRef, line: Int = 1, column: Int = 1, offset: Int = 0) {
+    self.sourceRef = sourceRef
+    self.line = line
+    self.column = column
+    self.offset = offset
+  }
 
 }
 
@@ -43,7 +58,13 @@ extension SourceLocation: CustomStringConvertible {
 
 public struct SourceRange: RangeExpression {
 
+  /// The source in which the range refers to.
+  public var sourceRef: SourceRef {
+    return start.sourceRef
+  }
+
   public init(from start: SourceLocation, to end: SourceLocation) {
+    assert(start.sourceRef === end.sourceRef)
     self.start = start
     self.end = end
   }

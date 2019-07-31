@@ -14,10 +14,19 @@ public class Parser {
   /// The result of construction's parsing.
   public struct Result<T> {
 
+    /// The parsed entity.
     public let value: T
-    public let errors: [ParseError]
+    /// The issues related to the entity's parsing.
+    public let issues: [Issue]
 
   }
+
+  /// The stream of tokens.
+  var stream: [Token]
+  /// The current position in the token stream.
+  var streamPosition: Int = 0
+  /// The module being parser.
+  var module: ModuleDecl
 
   /// Initializes a parser with a token stream.
   ///
@@ -37,7 +46,7 @@ public class Parser {
 
   /// Parses the token stream into a module declaration.
   public func parse() -> Result<ModuleDecl> {
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     while true {
       // Skip statement delimiters.
@@ -48,7 +57,7 @@ public class Parser {
 
       // Parse a statement.
       let parseResult = parseStatement()
-      errors.append(contentsOf: parseResult.errors)
+      issues.append(contentsOf: parseResult.issues)
       if let statement = parseResult.value {
         module.statements.append(statement)
       }
@@ -60,7 +69,7 @@ public class Parser {
         from: module.statements.first!.range.start,
         to: module.statements.last!.range.end)
 
-    return Result(value: module, errors: errors)
+    return Result(value: module, issues: issues)
   }
 
   /// Attempts to run the given parsing function but backtracks if it failed.
@@ -82,7 +91,7 @@ public class Parser {
       rewind(to: backtrackingPosition)
       return nil
     }
-    return Result(value: node, errors: parseResult.errors)
+    return Result(value: node, issues: parseResult.issues)
   }
 
   /// Parses a list of elements, separated by a `,`.
@@ -99,14 +108,14 @@ public class Parser {
     consumeNewlines()
 
     var elements: [Element] = []
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Parse as many elements as possible.
     while peek().kind != delimiter {
       // Parse an element.
       let elementParseResult = try parse()
 
-      errors.append(contentsOf: elementParseResult.errors)
+      issues.append(contentsOf: elementParseResult.issues)
       if let element = elementParseResult.value {
         elements.append(element)
       }
@@ -121,31 +130,66 @@ public class Parser {
       consumeNewlines()
     }
 
-    return Result(value: elements, errors: errors)
+    return Result(value: elements, issues: issues)
   }
 
   /// Tiny helper to build parse errors.
-  func parseFailure(_ syntaxError: SyntaxError, range: SourceRange? = nil) -> ParseError {
-    return ParseError(syntaxError, range: range ?? peek().range)
+  func parseFailure(_ syntaxError: SyntaxError, range: SourceRange? = nil) -> Issue {
+    return Issue(severity: .error, message: syntaxError.description, range: SourceRange)
   }
 
   /// Tiny helper to build unexpected construction errors.
-  func unexpectedConstruction(expected: String? = nil, got node: Node) -> ParseError {
-    return ParseError(.unexpectedConstruction(expected: expected, got: node), range: node.range)
+  func unexpectedConstruction(expected: String? = nil, got node: Node) -> Issue {
+    return parseFailure(.unexpectedConstruction(expected: expected, got: node), range: node.range)
   }
 
   /// Tiny helper to build unexpected token errors.
-  func unexpectedToken(expected: String? = nil, got token: Token? = nil) -> ParseError {
+  func unexpectedToken(expected: String? = nil, got token: Token? = nil) -> Issue {
     let t = token ?? peek()
-    return ParseError(.unexpectedToken(expected: expected, got: t), range: t.range)
+    return parseFailure(.unexpectedToken(expected: expected, got: t), range: t.range)
   }
 
-  /// The stream of tokens.
-  var stream: [Token]
-  /// The current position in the token stream.
-  var streamPosition: Int = 0
-  /// The module being parser.
-  var module: ModuleDecl
+  /// The operator associativity table.
+  public static let associativityTable: [TokenKind: OperatorAssociativity] = [
+    .as   : .left,
+    .mul  : .left,
+    .div  : .left,
+    .mod  : .left,
+    .add  : .left,
+    .sub  : .left,
+    .lt   : .left,
+    .le   : .left,
+    .ge   : .left,
+    .gt   : .left,
+    .eq   : .left,
+    .ne   : .left,
+    .refeq: .left,
+    .refne: .left,
+    .is   : .left,
+    .and  : .left,
+    .or   : .left,
+  ]
+
+  /// The operator precedence table.
+  public static let precedenceTable: [TokenKind: Int] = [
+    .or   : 0,
+    .and  : 1,
+    .eq   : 2,
+    .ne   : 2,
+    .refeq: 2,
+    .refne: 2,
+    .is   : 2,
+    .lt   : 3,
+    .le   : 3,
+    .ge   : 3,
+    .gt   : 3,
+    .add  : 4,
+    .sub  : 4,
+    .mul  : 5,
+    .div  : 5,
+    .mod  : 5,
+    .as   : 6,
+  ]
 
 }
 

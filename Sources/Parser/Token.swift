@@ -37,13 +37,14 @@ public enum TokenKind: String {
   case refne            = "!=="
   case assign           = "="
   case copy             = ":="
-  case ref              = "&-"
+  case alias            = "&-"
   case move             = "<-"
   case arrow            = "->"
 
   case dot              = "."
   case comma            = ","
   case colon            = ":"
+  case doubleColon      = "::"
   case semicolon        = ";"
   case exclamationMark  = "!"
   case questionMark     = "?"
@@ -115,32 +116,33 @@ public struct Token {
 
   /// Whether or not the token is an prefix operator.
   public var isPrefixOperator: Bool {
-    return asPrefixOperator != nil
-  }
-
-  /// The token as a prefix operator.
-  public var asPrefixOperator: PrefixOperator? {
-    return PrefixOperator(rawValue: kind.rawValue)
+    switch kind {
+    case .not, .add, .sub:
+      return true
+    default:
+      return false
+    }
   }
 
   /// Whether or not the token is a binding operator.
   public var isBindingOperator: Bool {
-    return asBindingOperator != nil
-  }
-
-  /// The token as a binding operator.
-  public var asBindingOperator: BindingOperator? {
-    return BindingOperator(rawValue: kind.rawValue)
+    switch kind {
+    case .copy, .alias, .move:
+      return true
+    default:
+      return false
+    }
   }
 
   /// Whether or not the token is an infix operator.
   public var isInfixOperator: Bool {
-    return asInfixOperator != nil
-  }
-
-  /// The token as an infix operator.
-  public var asInfixOperator: InfixOperator? {
-    return InfixOperator(rawValue: kind.rawValue)
+    switch kind {
+    case .as, .mul, .div, .mod, .add, .sub, .lt, .le, .ge, .gt, .eq, .ne, .refeq, .refne, .is,
+         .and, .or:
+      return true
+    default:
+      return false
+    }
   }
 
   /// The kind of the token.
@@ -165,5 +167,12 @@ extension Token: CustomStringConvertible {
   public var description: String {
     return kind.rawValue
   }
+
+}
+
+public enum OperatorAssociativity {
+
+  case left
+  case right
 
 }

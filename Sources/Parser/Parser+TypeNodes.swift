@@ -23,16 +23,16 @@ extension Parser {
             defer { consumeUpToNextStatementDelimiter() }
             return Result(
               value: nil,
-              errors: enclosedParseResult.errors + [unexpectedToken(expected: "')'")])
+              issues: enclosedParseResult.issues + [unexpectedToken(expected: "')'")])
           }
 
           enclosed.range = SourceRange(from: start, to: delimiter.range.end)
-          return Result(value: enclosed, errors: enclosedParseResult.errors)
+          return Result(value: enclosed, issues: enclosedParseResult.issues)
         } else {
           // If we couldn't parse an enclosed signature, assume the error occured while parsing a
           // function signature.
           consumeUpToNextStatementDelimiter()
-          return Result(value: nil, errors: functionSignatureParseResult.errors)
+          return Result(value: nil, issues: functionSignatureParseResult.issues)
         }
       }
 
@@ -43,10 +43,10 @@ extension Parser {
         signature: signature,
         module: module,
         range: signature.range),
-      errors: functionSignatureParseResult.errors)
+      issues: functionSignatureParseResult.issues)
     }
 
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Parse the qualifiers (if any).
     var qualifiers: [(value: TypeQualifier, range: SourceRange)] = []
@@ -55,7 +55,7 @@ extension Parser {
       case "cst": qualifiers.append((.cst, qualifier.range))
       case "mut": qualifiers.append((.mut, qualifier.range))
       default:
-        errors.append(parseFailure(.invalidQualifier(value: qualifier.value!)))
+        issues.append(parseFailure(.invalidQualifier(value: qualifier.value!)))
       }
 
       // Skip trailing new lines.
@@ -69,7 +69,7 @@ extension Parser {
     guard let signature = signatureParseResult.value else {
       // If the signature could not be parsed, make sure at least one qualifier could.
       guard !qualifiers.isEmpty else {
-        return Result(value: nil, errors: errors + signatureParseResult.errors)
+        return Result(value: nil, issues: issues + signatureParseResult.issues)
       }
 
       // If there is at least one qualifier, we can ignore the signature's parsing failure, rewind
@@ -80,10 +80,10 @@ extension Parser {
           qualifiers: Set(qualifiers.map({ $0.value })),
           signature: nil, module: module,
           range: SourceRange(from: qualifiers.first!.range.start, to: qualifiers.last!.range.end)),
-        errors: errors)
+        issues: issues)
     }
 
-    errors.append(contentsOf: signatureParseResult.errors)
+    issues.append(contentsOf: signatureParseResult.issues)
 
     let range = qualifiers.isEmpty
       ? signature.range
@@ -95,7 +95,7 @@ extension Parser {
         signature: signature,
         module: module,
         range: range),
-      errors: errors)
+      issues: issues)
   }
 
   /// Parses an unqualified type signature.
@@ -103,7 +103,7 @@ extension Parser {
     switch peek().kind {
     case .identifier:
       let parseResult = parseTypeIdentifier()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .leftParen:
       // First, attempt to parse a function signature.
@@ -123,24 +123,24 @@ extension Parser {
             defer { consumeUpToNextStatementDelimiter() }
             return Result(
               value: nil,
-              errors: enclosedParseResult.errors + [unexpectedToken(expected: "')'")])
+              issues: enclosedParseResult.issues + [unexpectedToken(expected: "')'")])
           }
 
           enclosed.range = SourceRange(from: start, to: delimiter.range.end)
-          return Result(value: enclosed, errors: enclosedParseResult.errors)
+          return Result(value: enclosed, issues: enclosedParseResult.issues)
         } else {
           // If we couldn't parse an enclosed signature, assume the error occured while parsing a
           // function signature.
           consumeUpToNextStatementDelimiter()
-          return Result(value: nil, errors: functionSignatureParseResult.errors)
+          return Result(value: nil, issues: functionSignatureParseResult.issues)
         }
       }
 
-      return Result(value: signature, errors: functionSignatureParseResult.errors)
+      return Result(value: signature, issues: functionSignatureParseResult.issues)
 
     default:
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "type signature")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "type signature")])
     }
   }
 
@@ -149,21 +149,21 @@ extension Parser {
     // The first token should be an identifier.
     guard let token = consume(.identifier) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
     }
 
     let identifier = TypeIdent(name: token.value!, module: module, range: token.range)
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Attempt to parse a specialization list.
     let backtrackPosition = streamPosition
     consumeNewlines()
     if peek().kind == .lt, let specializationsParseResult = attempt(parseSpecializationList) {
-      errors.append(contentsOf: specializationsParseResult.errors)
+      issues.append(contentsOf: specializationsParseResult.issues)
       for (token, value) in specializationsParseResult.value {
         // Make sure there are no duplicate keys.
         guard identifier.specializations[token.value!] == nil else {
-          errors.append(ParseError(.duplicateKey(key: token.value!), range: token.range))
+          issues.append(parseFailure(.duplicateKey(key: token.value!), range: token.range))
           continue
         }
         identifier.specializations[token.value!] = value
@@ -172,7 +172,7 @@ extension Parser {
       rewind(to: backtrackPosition)
     }
 
-    return Result(value: identifier, errors: errors)
+    return Result(value: identifier, issues: issues)
   }
 
   /// Parses a specialization list.
@@ -180,21 +180,21 @@ extension Parser {
     // The first token should be a left angle bracket.
     guard consume(.lt) != nil else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "unary operator")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "unary operator")])
     }
 
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Parse the specialization arguments.
     let argumentsParseResult = parseList(delimitedBy: .gt, parsingElementWith: parseSpecArg)
-    errors.append(contentsOf: argumentsParseResult.errors)
+    issues.append(contentsOf: argumentsParseResult.issues)
 
     guard consume(.gt) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: errors + [unexpectedToken(expected: "'>'")])
+      return Result(value: nil, issues: issues + [unexpectedToken(expected: "'>'")])
     }
 
-    return Result(value: argumentsParseResult.value, errors: errors)
+    return Result(value: argumentsParseResult.value, issues: issues)
   }
 
   /// Parses a specialization argument.
@@ -202,25 +202,25 @@ extension Parser {
     // Parse the name of the placeholder.
     guard let name = consume(.identifier) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
     }
 
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Parse the signature to which it should map.
     guard consume(.assign, afterMany: .newline) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "'='")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "'='")])
     }
 
     consumeNewlines()
     let signatureParseResult = parseQualSign()
-    errors.append(contentsOf: signatureParseResult.errors)
+    issues.append(contentsOf: signatureParseResult.issues)
     guard let signature = signatureParseResult.value else {
-      return Result(value: nil, errors: errors)
+      return Result(value: nil, issues: issues)
     }
 
-    return Result(value: (name, signature), errors: errors)
+    return Result(value: (name, signature), issues: issues)
   }
 
   /// Parses a function type signature.
@@ -228,33 +228,33 @@ extension Parser {
     // The first token should be left parenthesis.
     guard let startToken = consume(.leftParen) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "'('")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "'('")])
     }
 
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Parse the parameter list.
     let parametersParseResult = parseList(
       delimitedBy: .rightParen,
       parsingElementWith: parseParamSign)
-    errors.append(contentsOf: parametersParseResult.errors)
+    issues.append(contentsOf: parametersParseResult.issues)
 
     guard consume(.rightParen) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: errors + [unexpectedToken(expected: "')'")])
+      return Result(value: nil, issues: issues + [unexpectedToken(expected: "')'")])
     }
 
     // Parse the codomain.
     guard consume(.arrow, afterMany: .newline) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: errors + [unexpectedToken(expected: "'->'")])
+      return Result(value: nil, issues: issues + [unexpectedToken(expected: "'->'")])
     }
 
     consumeNewlines()
     let codomainParseResult = parseQualSign()
-    errors.append(contentsOf: codomainParseResult.errors)
+    issues.append(contentsOf: codomainParseResult.issues)
     guard let codomain = codomainParseResult.value else {
-      return Result(value: nil, errors: errors)
+      return Result(value: nil, issues: issues)
     }
 
     return Result(
@@ -263,7 +263,7 @@ extension Parser {
         codomain: codomain,
         module: module,
         range: SourceRange(from: startToken.range.start, to: codomain.range.end)),
-      errors: errors)
+      issues: issues)
   }
 
   /// Parses a function parameter signature.
@@ -271,22 +271,22 @@ extension Parser {
     // Parse the label of the parameter.
     guard let label = consume([.identifier, .underscore]) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
     }
 
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Parse the qualified signature of the parameter.
     guard consume(.colon, afterMany: .newline) != nil else {
       defer { consumeUpToNextStatementDelimiter() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "':'")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "':'")])
     }
 
     consumeNewlines()
     let signatureParseResult = parseQualSign()
-    errors.append(contentsOf: signatureParseResult.errors)
+    issues.append(contentsOf: signatureParseResult.issues)
     guard let signature = signatureParseResult.value else {
-      return Result(value: nil, errors: errors)
+      return Result(value: nil, issues: issues)
     }
 
     return Result(
@@ -295,7 +295,7 @@ extension Parser {
         typeAnnotation: signature,
         module: module,
         range: SourceRange(from: label.range.start, to: signature.range.end)),
-      errors: errors)
+      issues: issues)
   }
 
 }

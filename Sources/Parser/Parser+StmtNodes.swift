@@ -13,32 +13,32 @@ extension Parser {
 
       // Parse a sequence of directives.
       var directives: [Directive] = []
-      var errors: [ParseError] = []
+      var issues: [Issue] = []
       repeat {
         consumeNewlines()
         guard let parseResult = attempt(parseDirective)
           else { break }
 
-        errors.append(contentsOf: parseResult.errors)
+        issues.append(contentsOf: parseResult.issues)
         directives.append(parseResult.value)
       } while true
 
       // Parse a function declaration.
       consumeNewlines()
       let parseResult = parseStatement()
-      errors.append(contentsOf: parseResult.errors)
+      issues.append(contentsOf: parseResult.issues)
 
       guard parseResult.value != nil else { return parseResult }
       guard let declaration = parseResult.value as? FunDecl else {
         return Result(
           value: parseResult.value,
-          errors: errors + [
+          issues: issues + [
             unexpectedConstruction(expected: "function declaration", got: parseResult.value!),
           ])
       }
 
       declaration.directives = directives
-      return Result(value: declaration, errors: errors)
+      return Result(value: declaration, issues: issues)
 
     case .static, .mutating:
       // If the statement starts with a member attribute, it can describe either a property or a
@@ -66,7 +66,7 @@ extension Parser {
           consumeMany(while: { !$0.isStatementDelimiter })
           return Result(
             value: nil,
-            errors: [unexpectedToken(expected: "property of function declaration")])
+            issues: [unexpectedToken(expected: "property of function declaration")])
         }
       }
 
@@ -82,48 +82,48 @@ extension Parser {
         methodDeclaration.attributes.formUnion(attributes)
       }
 
-      return Result(value: declaration, errors: parseResult.errors)
+      return Result(value: declaration, issues: parseResult.issues)
 
     case .let, .var:
       let parseResult = parsePropDecl()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .fun, .new, .del:
       let parseResult = parseFunDecl()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .struct:
       let parseResult = parseStructDecl()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .case:
       let parseResult = parseUnionNestedMemberDecl()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .union:
       let parseResult = parseUnionDecl()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .interface:
       let parseResult = parseInterfaceDecl()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .while:
       let parseResult = parseWhileLoop()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .return:
       let parseResult = parseReturnStmt()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
 
     default:
       // Attempt to parse a binding statement before falling back to an expression.
       if let parseResult = attempt(parseBindingStmt) {
-        return Result(value: parseResult.value, errors: parseResult.errors)
+        return Result(value: parseResult.value, issues: parseResult.issues)
       }
 
       let parseResult = parseExpression()
-      return Result(value: parseResult.value, errors: parseResult.errors)
+      return Result(value: parseResult.value, issues: parseResult.issues)
     }
   }
 
@@ -132,10 +132,10 @@ extension Parser {
     // The first token should be left brace.
     guard let startToken = consume(.leftBrace) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "'{'")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "'{'")])
     }
 
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Skip trailing new lines.
     consumeNewlines()
@@ -145,7 +145,7 @@ extension Parser {
     while peek().kind != .rightBrace {
       // Parse a statement.
       let statementParseResult = parseStatement()
-      errors.append(contentsOf: statementParseResult.errors)
+      issues.append(contentsOf: statementParseResult.issues)
       if let statement = statementParseResult.value {
         statements.append(statement)
       }
@@ -153,7 +153,7 @@ extension Parser {
       // If the next token isn't the block delimiter, we MUST parse a statement delimiter.
       if peek().kind != .rightBrace {
         guard peek().isStatementDelimiter else {
-          errors.append(parseFailure(.expectedStatementDelimiter))
+          issues.append(parseFailure(.expectedStatementDelimiter))
           consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .rightBrace) })
           continue
         }
@@ -163,7 +163,7 @@ extension Parser {
 
       // Make sure we didn't reach the end of the stream.
       guard peek().kind != .eof else {
-        errors.append(unexpectedToken(expected: "'}'"))
+        issues.append(unexpectedToken(expected: "'}'"))
         break
       }
     }
@@ -174,7 +174,7 @@ extension Parser {
         statements: statements,
         module: module,
         range: SourceRange(from: startToken.range.start, to: endToken.range.end)),
-      errors: errors)
+      issues: issues)
   }
 
   /// Parses a while-loop.
@@ -182,16 +182,16 @@ extension Parser {
     // The first token should be `return`.
     guard let startToken = consume(.while) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "'while'")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "'while'")])
     }
 
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Parse the condition.
     let backtrackPosition = streamPosition
     consumeNewlines()
     let conditionParseResult = parseExpression()
-    errors.append(contentsOf: conditionParseResult.errors)
+    issues.append(contentsOf: conditionParseResult.issues)
 
     var condition: Expr?
     if let expression = conditionParseResult.value {
@@ -206,14 +206,14 @@ extension Parser {
     // Parse the first block of statements (i.e. the "then" clause).
     consumeNewlines()
     let thenParseResult = parseStatementBlock()
-    errors.append(contentsOf: thenParseResult.errors)
+    issues.append(contentsOf: thenParseResult.issues)
 
     guard let body = thenParseResult.value else {
-      return Result(value: nil, errors: errors)
+      return Result(value: nil, issues: issues)
     }
 
     guard condition != nil else {
-      return Result(value: nil, errors: errors)
+      return Result(value: nil, issues: issues)
     }
 
     return Result(
@@ -222,7 +222,7 @@ extension Parser {
         body: body,
         module: module,
         range: SourceRange(from: startToken.range.start, to: body.range.end)),
-      errors: errors)
+      issues: issues)
   }
 
   /// Parses a return statement.
@@ -230,16 +230,16 @@ extension Parser {
     // The first token should be `return`.
     guard let startToken = consume(.return) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "'return'")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "'return'")])
     }
 
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Attempt to parse a return value.
     if let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) {
       consumeNewlines()
       let parseResult = parseExpression()
-      errors.append(contentsOf: parseResult.errors)
+      issues.append(contentsOf: parseResult.issues)
 
       if let expression = parseResult.value {
         let binding = (operatorToken.asBindingOperator!, expression)
@@ -248,49 +248,49 @@ extension Parser {
             binding: binding,
             module: module,
             range: SourceRange(from: startToken.range.start, to: expression.range.end)),
-          errors: errors)
+          issues: issues)
       }
     } else if let assignOperator = consume(.assign, afterMany: .newline) {
       // Catch invalid uses of the "assign" token in lieu of a binding operator.
-      errors.append(ParseError(
+      issues.append(parseFailure(
         .unexpectedToken(expected: "binding operator", got: assignOperator),
         range: assignOperator.range))
 
-      // Parse the expression in case it contains syntax errors as well.
+      // Parse the expression in case it contains syntax issues as well.
       let parseResult = parseExpression()
-      errors.append(contentsOf: parseResult.errors)
+      issues.append(contentsOf: parseResult.issues)
     }
 
-    return Result(value: ReturnStmt(module: module, range: startToken.range), errors: [])
+    return Result(value: ReturnStmt(module: module, range: startToken.range), issues: [])
   }
 
   /// Parses a binding statement.
   func parseBindingStmt() -> Result<BindingStmt?> {
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
 
     // Parse the left operand.
     let leftParseResult = parseExpression()
-    errors.append(contentsOf: leftParseResult.errors)
+    issues.append(contentsOf: leftParseResult.issues)
 
     guard let lvalue = leftParseResult.value else {
       consumeUpToNextStatementDelimiter()
-      return Result(value: nil, errors: errors)
+      return Result(value: nil, issues: issues)
     }
 
     // Parse the binding operator.
     guard let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) else {
       consumeUpToNextStatementDelimiter()
-      return Result(value: nil, errors: errors + [unexpectedToken(expected: "binding operator")])
+      return Result(value: nil, issues: issues + [unexpectedToken(expected: "binding operator")])
     }
 
     // Parse the right operand.
     consumeNewlines()
     let rightParseResult = parseExpression()
-    errors.append(contentsOf: leftParseResult.errors)
+    issues.append(contentsOf: leftParseResult.issues)
 
     guard let rvalue = rightParseResult.value else {
       consumeUpToNextStatementDelimiter()
-      return Result(value: nil, errors: errors)
+      return Result(value: nil, issues: issues)
     }
 
     return Result(
@@ -300,7 +300,7 @@ extension Parser {
         rvalue: rvalue,
         module: module,
         range: SourceRange(from: lvalue.range.start, to: rvalue.range.end)),
-      errors: errors)
+      issues: issues)
   }
 
   /// Parses a directive.
@@ -308,7 +308,7 @@ extension Parser {
     // The first token should be `#`.
     guard let startToken = consume(.hashMark) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "'#'")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "'#'")])
     }
 
     // Notice that we require the directive's name and arguments to start at the same line.
@@ -316,12 +316,12 @@ extension Parser {
     // Parse the name of the directive.
     guard let name = consume(.identifier) else {
       defer { consume() }
-      return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
+      return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
     }
 
     // Attempt to parse an argument list.
     var arguments: [String] = []
-    var errors: [ParseError] = []
+    var issues: [Issue] = []
     var end = name.range.end
 
     if consume(.leftParen) != nil {
@@ -330,18 +330,18 @@ extension Parser {
         () -> Result<String?> in
           guard let argument = consume(.identifier) else {
             defer { consume() }
-            return Result(value: nil, errors: [unexpectedToken(expected: "identifier")])
+            return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
           }
 
           end = argument.range.end
-          return Result(value: argument.value, errors: [])
+          return Result(value: argument.value, issues: [])
       }
 
       arguments = argumentsParseResult.value
       if let delimiter = consume(.rightParen) {
         end = delimiter.range.end
       } else {
-        errors.append(unexpectedToken(expected: "')'"))
+        issues.append(unexpectedToken(expected: "')'"))
       }
     }
 
@@ -351,7 +351,7 @@ extension Parser {
         arguments: arguments,
         module: module,
         range: SourceRange(from: name.range.start, to: end)),
-      errors: errors)
+      issues: issues)
   }
 
 }

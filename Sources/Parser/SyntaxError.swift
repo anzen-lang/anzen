@@ -2,8 +2,8 @@ import AST
 
 /// A syntax error.
 ///
-/// A syntax error is an error that occurs when trying to interpret syntactically invalid code.
-public enum SyntaxError: Error, CustomStringConvertible {
+/// A syntax error is an error that occurs when trying to parse syntactically invalid code.
+public enum SyntaxError {
 
   /// Occurs when parsing mapping literals or specialization lists with duplicate keys.
   case duplicateKey(key: String)
@@ -21,6 +21,10 @@ public enum SyntaxError: Error, CustomStringConvertible {
   case unexpectedConstruction(expected: String?, got: Node)
   /// Occurs when the parser encounters an unexpected token.
   case unexpectedToken(expected: String?, got: Token)
+
+}
+
+extension SyntaxError: CustomStringConvertible {
 
   public var description: String {
     switch self {
@@ -51,27 +55,6 @@ public enum SyntaxError: Error, CustomStringConvertible {
         return "unexpected token '\(found)'"
       }
     }
-  }
-
-}
-
-/// A parse error.
-///
-/// A parse error occurs when a parser encounters a syntactically invalid sequence of tokens. It
-/// describes of a syntax error (its cause) and the location where the latter occured.
-public struct ParseError: Error, CustomStringConvertible {
-
-  /// Creates a new parse error instance with the given cause and range.
-  public init(_ cause: SyntaxError, range: SourceRange) {
-    self.cause = cause
-    self.range = range
-  }
-
-  public let cause: SyntaxError
-  public let range: SourceRange
-
-  public var description: String {
-    return cause.description
   }
 
 }
