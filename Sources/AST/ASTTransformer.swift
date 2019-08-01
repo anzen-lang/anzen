@@ -5,8 +5,6 @@
 /// `traverse` methods.
 public protocol ASTTransformer {
 
-  func transform(_ node: Directive) -> ASTNode
-
   // MARK: - Declarations
 
   func transform(_ node: MainCodeDecl) -> ASTNode
@@ -22,11 +20,12 @@ public protocol ASTTransformer {
   // MARK: - Type signatures
 
   func transform(_ node: QualTypeSign) -> ASTNode
-  func transform(_ node: TypeIdent) -> ASTNode
-  func transform(_ node: NestedTypeIdent) -> ASTNode
-  func transform(_ node: ImplicitNestedTypeIdent) -> ASTNode
+  func transform(_ node: IdentSign) -> ASTNode
+  func transform(_ node: NestedIdentSign) -> ASTNode
+  func transform(_ node: ImplicitNestedIdentSign) -> ASTNode
   func transform(_ node: FunSign) -> ASTNode
   func transform(_ node: ParamSign) -> ASTNode
+  func transform(_ node: InvalidSign) -> ASTNode
 
   // MARK: - Statements
 
@@ -35,6 +34,7 @@ public protocol ASTTransformer {
   func transform(_ node: WhileStmt) -> ASTNode
   func transform(_ node: BindingStmt) -> ASTNode
   func transform(_ node: ReturnStmt) -> ASTNode
+  func transform(_ node: InvalidStmt) -> ASTNode
 
   // MARK: - Expressions
 
@@ -44,8 +44,8 @@ public protocol ASTTransformer {
   func transform(_ node: InfixExpr) -> ASTNode
   func transform(_ node: PrefixExpr) -> ASTNode
   func transform(_ node: CallExpr) -> ASTNode
-  func transform(_ node: CallArg) -> ASTNode
-  func transform(_ node: Ident) -> ASTNode
+  func transform(_ node: CallArgExpr) -> ASTNode
+  func transform(_ node: IdentExpr) -> ASTNode
   func transform(_ node: SelectExpr) -> ASTNode
   func transform(_ node: ImplicitSelectExpr) -> ASTNode
   func transform(_ node: ArrayLitExpr) -> ASTNode
@@ -54,7 +54,15 @@ public protocol ASTTransformer {
   func transform(_ node: BoolLitExpr) -> ASTNode
   func transform(_ node: IntLitExpr) -> ASTNode
   func transform(_ node: FloatLitExpr) -> ASTNode
-  func transform(_ node: StringLitExpr) -> ASTNode
-  func transform(_ node: EnclosedExpr) -> ASTNode
+  func transform(_ node: StrLitExpr) -> ASTNode
+  func transform(_ node: ParenExpr) -> ASTNode
+  func transform(_ node: InvalidExpr) -> ASTNode
+
+
+  // MARK: - Attributes, modifiers and directives
+
+  func transform(_ node: DeclAttr) -> ASTNode
+  func transform(_ node: DeclModifier) -> ASTNode
+  func transform(_ node: Directive) -> ASTNode
 
 }

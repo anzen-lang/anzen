@@ -21,66 +21,101 @@ public class Parser {
 
   }
 
-  /// The stream of tokens.
-  var stream: [Token]
-  /// The current position in the token stream.
-  var streamPosition: Int = 0
+  /// The token stream.
+  private var stream: [Token]
+  /// Whether the token stream corresponds to the main code declaration.
+  private var isMainCodeDecl: Bool
   /// The module being parser.
-  var module: ModuleDecl
+  internal var module: Module
+  /// The current position in the token stream.
+  internal var streamPosition: Int = 0
 
   /// Initializes a parser with a token stream.
   ///
+  /// - Parameters:
+  ///   - tokens: A token stream.
+  ///   - module: The module in which the source of the token stream is defined.
+  ///   - isMainCodeDecl: Whether the token stream corresponds to the main code declaration.
+  ///
+  /// - Note:
+  ///   The parser currently consume the entire token stream at once and stores its contents in an
+  ///   array, in order to simplify backtracking. This approach might not scale well with large
+  ///   inputs, and therefore future versions should implement a more elaborate buffering strategy.
+  ///
   /// - Note:
   ///   The token stream must have at least one token and ends with `.eof`.
-  public init<S>(_ tokens: S) where S: Sequence, S.Element == Token {
+  public init<S>(_ tokens: S, module: Module, isMainCodeDecl: Bool = false)
+    where S: Sequence, S.Element == Token
+  {
     let stream = Array(tokens)
     assert((stream.count > 0) && (stream.last!.kind == .eof), "invalid token stream")
     self.stream = stream
-    self.module = ModuleDecl(statements: [], range: self.stream.first!.range)
+    self.module = module
+    self.isMainCodeDecl = isMainCodeDecl
   }
 
   /// Initializes a parser from a text input.
-  public convenience init(source: TextInputBuffer) throws {
-    self.init(try Lexer(source: source))
+  public convenience init(source: SourceRef, module: Module, isMainCodeDecl: Bool = false) throws {
+    self.init(try Lexer(source: source), module: module, isMainCodeDecl: isMainCodeDecl)
   }
 
-  /// Parses the token stream into a module declaration.
-  public func parse() -> Result<ModuleDecl> {
+  /// Parses the token stream into a collection of top-level declarations.
+  public func parse() -> Result<[Decl]> {
+    var nodes: [ASTNode] = []
     var issues: [Issue] = []
 
-    while true {
-      // Skip statement delimiters.
-      consumeMany { $0.isStatementDelimiter }
+    // Parse as many nodes as possible.
+    while peek().kind != .eof {
+      // Skip leading new lines in front of the next element to avoid triggering an error if the
+      // end of the sequence has been reached.
+      consumeNewlines()
+      guard peek().kind != .eof
+        else { break }
 
-      // Check for end of file.
-      guard peek().kind != .eof else { break }
+      // Parse the next node.
+      let nodeParseResult = parseTopLevelNode()
+      issues.append(contentsOf: nodeParseResult.issues)
+      if let node = nodeParseResult.value {
+        nodes.append(node)
+      } else {
+        // If the next node couldn't be parsed, skip all input until the next statement delimiter.
+        consumeUpToNextStatementDelimiter()
+      }
 
-      // Parse a statement.
-      let parseResult = parseStatement()
-      issues.append(contentsOf: parseResult.issues)
-      if let statement = parseResult.value {
-        module.statements.append(statement)
+      if peek().kind != .eof {
+        // If the next token isn't the end of file, we **must** parse a statement delimiter.
+        // Otherwise, we assume one is missing and attempt to parse the next statement after
+        // raising an issue.
+        guard peek().isStatementDelimiter else {
+          issues.append(parseFailure(.expectedStatementDelimiter, range: peek().range))
+          continue
+        }
       }
     }
 
-    module.range = module.statements.isEmpty
-      ? self.stream.last!.range
-      : SourceRange(
-        from: module.statements.first!.range.start,
-        to: module.statements.last!.range.end)
+    assert(peek().kind == .eof)
 
-    return Result(value: module, issues: issues)
-  }
-
-  /// Attempts to run the given parsing function but backtracks if it failed.
-  @available(*, deprecated)
-  func attempt<R>(_ parse: () throws -> R) -> R? {
-    let backtrackingPosition = streamPosition
-    guard let result = try? parse() else {
-      rewind(to: backtrackingPosition)
-      return nil
+    if isMainCodeDecl {
+      // Place all nodes in a `MainCodeDecl` if the parsed stream represents the main unit.
+      let decl = MainCodeDecl(
+        stmts: nodes,
+        module: module,
+        range: nodes.isEmpty
+          ? peek().range
+          : (nodes.first!.range.lowerBound ..< nodes.last!.range.upperBound))
+      return Result(value: [decl], issues: issues)
     }
-    return result
+
+    // Check that all nodes are declarations, unless in main mode.
+    var decls: [Decl] = []
+    for node in nodes {
+      if let decl = node as? Decl {
+        decls.append(decl)
+      } else {
+        issues.append(parseFailure(.invalidTopLevelDeclaration(node: node), range: node.range))
+      }
+    }
+    return Result(value: decls, issues: issues)
   }
 
   /// Attempts to run the given parsing function but backtracks if it failed.
@@ -94,112 +129,72 @@ public class Parser {
     return Result(value: node, issues: parseResult.issues)
   }
 
-  /// Parses a list of elements, separated by a `,`.
+  /// Parses a comma-separated list of elements.
   ///
-  /// This helper will parse a list of elements, separated by a `,` and optionally ending with one,
-  /// until it finds `delimiter`. New lines before and after each element will be consumed, but the
-  /// delimiter won't.
-  func parseList<Element>(
+  /// This parser recognizes a comma-separated list of elements, optionally ending with a trailing
+  /// comma, until either `delimiter` or the end of file is reached. New lines before and after
+  /// each element are ignored. Parsing the list does not consume `delimiter`. In case of error
+  /// while parsing an element, the method tries recover at the next separator or `delimiter`.
+  ///
+  /// The next token after the method returns is either `delimiter`, the semi-colon, the end of
+  /// fileo r the head of an unexpected construct. It is never a new line.
+  func parseCommaSeparatedList<Element>(
     delimitedBy delimiter: TokenKind,
-    parsingElementWith parse: () throws -> Result<Element?>)
-    rethrows -> Result<[Element]>
+    parsingElementWith parse: () -> Result<Element?>) -> Result<[Element]>
   {
-    // Skip leading new lines.
-    consumeNewlines()
-
     var elements: [Element] = []
     var issues: [Issue] = []
 
     // Parse as many elements as possible.
     while peek().kind != delimiter {
-      // Parse an element.
-      let elementParseResult = try parse()
+      // Skip leading new lines in front of the next element to avoid triggering an error if the
+      // end of the sequence has been reached.
+      consumeNewlines()
+      guard (peek().kind != delimiter) && (peek().kind != .eof)
+        else { break }
 
+      // Parse the next element.
+      let elementParseResult = parse()
       issues.append(contentsOf: elementParseResult.issues)
       if let element = elementParseResult.value {
         elements.append(element)
+      } else {
+        // If the next element couldn't be parsed, skip all input until we find either a comma, the
+        // list delimiter or the end of file to recover.
+        consumeMany(while: { ($0.kind != .comma) && ($0.kind != delimiter) && ($0.kind != .eof) })
       }
 
-      // If the next consumable token isn't a separator, stop parsing here.
       consumeNewlines()
-      if consume(.comma) == nil {
-        break
+      if peek().kind != delimiter {
+        // If the next token isn't the list delimiter, we **must** parse a comma. Otherwise, we
+        // assume one is missing and attempt to parse the next element after raising an issue.
+        guard consume(.comma) != nil else {
+          issues.append(parseFailure(.expectedSeparator(separator: ","), range: peek().range))
+          continue
+        }
       }
-
-      // Skip trailing new lines after the separator.
-      consumeNewlines()
     }
 
+    assert(peek().kind != .newline)
     return Result(value: elements, issues: issues)
   }
 
-  /// Tiny helper to build parse errors.
-  func parseFailure(_ syntaxError: SyntaxError, range: SourceRange? = nil) -> Issue {
-    return Issue(severity: .error, message: syntaxError.description, range: SourceRange)
-  }
-
-  /// Tiny helper to build unexpected construction errors.
-  func unexpectedConstruction(expected: String? = nil, got node: Node) -> Issue {
-    return parseFailure(.unexpectedConstruction(expected: expected, got: node), range: node.range)
-  }
-
-  /// Tiny helper to build unexpected token errors.
-  func unexpectedToken(expected: String? = nil, got token: Token? = nil) -> Issue {
-    let t = token ?? peek()
-    return parseFailure(.unexpectedToken(expected: expected, got: t), range: t.range)
-  }
-
-  /// The operator associativity table.
-  public static let associativityTable: [TokenKind: OperatorAssociativity] = [
-    .as   : .left,
-    .mul  : .left,
-    .div  : .left,
-    .mod  : .left,
-    .add  : .left,
-    .sub  : .left,
-    .lt   : .left,
-    .le   : .left,
-    .ge   : .left,
-    .gt   : .left,
-    .eq   : .left,
-    .ne   : .left,
-    .refeq: .left,
-    .refne: .left,
-    .is   : .left,
-    .and  : .left,
-    .or   : .left,
-  ]
-
-  /// The operator precedence table.
-  public static let precedenceTable: [TokenKind: Int] = [
-    .or   : 0,
-    .and  : 1,
-    .eq   : 2,
-    .ne   : 2,
-    .refeq: 2,
-    .refne: 2,
-    .is   : 2,
-    .lt   : 3,
-    .le   : 3,
-    .ge   : 3,
-    .gt   : 3,
-    .add  : 4,
-    .sub  : 4,
-    .mul  : 5,
-    .div  : 5,
-    .mod  : 5,
-    .as   : 6,
-  ]
-
-}
-
-extension Parser {
-
-  /// Returns the token 1 position ahead, without consuming the stream.
+  /// Returns the token one position ahead, without consuming the stream.
   func peek() -> Token {
     guard streamPosition < stream.count
       else { return stream.last! }
     return stream[streamPosition]
+  }
+
+  /// Returns the token after a sequence of specific tokens, without consuming it.
+  func peek(afterMany skipKind: TokenKind) -> Token? {
+    var peekPosition = streamPosition
+    while peekPosition < stream.count {
+      guard stream[peekPosition].kind == skipKind
+        else { return stream[peekPosition] }
+      peekPosition += 1
+    }
+    return nil
   }
 
   /// Attempts to consume a single token.
@@ -253,7 +248,7 @@ extension Parser {
   /// Attemps to consume a single token, if it satisfies the given predicate, after a sequence of
   /// specific tokens.
   @discardableResult
-  func consume(afterMany skipKind: TokenKind, if predicate: (Token) throws -> Bool)
+  func consume(if predicate: (Token) throws -> Bool, afterMany skipKind: TokenKind, )
     rethrows -> Token?
   {
     let backtrackPosition = streamPosition
@@ -303,5 +298,63 @@ extension Parser {
   func rewind(to position: Int) {
     streamPosition = position
   }
+
+  /// Tiny helper to build parse errors.
+  func parseFailure(_ syntaxError: SyntaxError, range: SourceRange) -> Issue {
+    return Issue(severity: .error, message: syntaxError.description, range: range)
+  }
+
+  /// Tiny helper to build unexpected construction errors.
+  func unexpectedConstruction(expected: String? = nil, got node: ASTNode) -> Issue {
+    return parseFailure(.unexpectedConstruction(expected: expected, got: node), range: node.range)
+  }
+
+  /// Tiny helper to build unexpected token errors.
+  func unexpectedToken(expected: String? = nil, got token: Token? = nil) -> Issue {
+    let t = token ?? peek()
+    return parseFailure(.unexpectedToken(expected: expected, got: t), range: t.range)
+  }
+
+  /// The operator associativity table.
+  public static let associativityTable: [TokenKind: OperatorAssociativity] = [
+    .as   : .left,
+    .mul  : .left,
+    .div  : .left,
+    .mod  : .left,
+    .add  : .left,
+    .sub  : .left,
+    .lt   : .left,
+    .le   : .left,
+    .ge   : .left,
+    .gt   : .left,
+    .eq   : .left,
+    .ne   : .left,
+    .refeq: .left,
+    .refne: .left,
+    .is   : .left,
+    .and  : .left,
+    .or   : .left,
+  ]
+
+  /// The operator precedence table.
+  public static let precedenceTable: [TokenKind: Int] = [
+    .or   : 0,
+    .and  : 1,
+    .eq   : 2,
+    .ne   : 2,
+    .refeq: 2,
+    .refne: 2,
+    .is   : 2,
+    .lt   : 3,
+    .le   : 3,
+    .ge   : 3,
+    .gt   : 3,
+    .add  : 4,
+    .sub  : 4,
+    .mul  : 5,
+    .div  : 5,
+    .mod  : 5,
+    .as   : 6,
+  ]
 
 }

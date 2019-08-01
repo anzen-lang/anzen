@@ -68,14 +68,104 @@ public final class MainCodeDecl: Decl, DeclContext {
 }
 
 /// A declaration attribute.
-public enum DeclAttr {
+public final class DeclAttr: ASTNode, Hashable {
 
-  /// Denotes a mutating function.
-  case `mutating`
-  /// Denotes a reassignable property.
-  case reassignable
-  /// Denotes a static function or property.
-  case `static`
+  // ASTNode requirements
+
+  public unowned var module: Module
+  public var range: SourceRange
+
+  /// The attribute's name.
+  public var name: String
+  /// The attribute's arguments.
+  public var args: [String]
+
+  public init(name: String, args: [String] = [], module: Module, range: SourceRange) {
+    self.name = name
+    self.args = args
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V : ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V : ASTVisitor {
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T : ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T : ASTTransformer {
+    return self
+  }
+
+  /// Hashable requirements
+
+  public static func == (lhs: DeclAttr, rhs: DeclAttr) -> Bool {
+    return (lhs.name == rhs.name) && (lhs.args == rhs.args)
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
+    hasher.combine(args)
+  }
+
+}
+
+/// A declaration modifier.
+public final class DeclModifier: ASTNode, Hashable {
+
+  /// Enumeration of the declaration modifier kinds.
+  public enum Kind: String {
+
+    /// Denotes a static function or property.
+    case `static`
+    /// Denotes a mutating computed property.
+    case `mutating`
+
+  }
+
+  // ASTNode requirements
+
+  public unowned var module: Module
+  public var range: SourceRange
+
+  /// The modifier's kind.
+  public var kind: Kind
+
+  public init(kind: Kind, module: Module, range: SourceRange) {
+    self.kind = kind
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V : ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V : ASTVisitor {
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T : ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T : ASTTransformer {
+    return self
+  }
+
+  /// Hashable requirements
+
+  public static func == (lhs: DeclModifier, rhs: DeclModifier) -> Bool {
+    return lhs.kind == rhs.kind
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(kind.rawValue)
+  }
 
 }
 
@@ -90,29 +180,35 @@ public final class PropDecl: NamedDecl, Stmt {
   public unowned var module: Module
   public var range: SourceRange
 
-  /// The property's attributes.
+  /// Whether the property's reassignable.
+  public var isReassignable: Bool
+  /// The property's declaration attributes.
   public var attrs: Set<DeclAttr>
+  /// The property's declaration modifiers.
+  public var modifiers: Set<DeclModifier>
   /// The property's type signature.
   public var sign: QualTypeSign?
   /// The property's initial binding.
-  public var initializer: (op: Ident, value: Expr)?
+  public var initializer: (op: IdentExpr, value: Expr)?
 
   public init(
     name: String,
+    isReassignable: Bool = false,
     attrs: Set<DeclAttr> = [],
+    modifiers: Set<DeclModifier> = [],
     sign: QualTypeSign? = nil,
-    initializer: (op: Ident, value: Expr)? = nil,
-    declContext: DeclContext,
+    initializer: (op: IdentExpr, value: Expr)? = nil,
     module: Module,
     range: SourceRange)
   {
     self.name = name
+    self.isReassignable = isReassignable
     self.attrs = attrs
+    self.modifiers = modifiers
     self.sign = sign
     self.initializer = initializer
     self.module = module
     self.range = range
-    self.declContext = declContext
   }
 
   public func accept<V>(visitor: V) where V: ASTVisitor {
@@ -134,7 +230,7 @@ public final class PropDecl: NamedDecl, Stmt {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     sign = sign?.accept(transformer: transformer) as? QualTypeSign
     initializer = initializer.map { (op, value) in
-      (op.accept(transformer: transformer) as! Ident,
+      (op.accept(transformer: transformer) as! IdentExpr,
        value.accept(transformer: transformer) as! Expr)
     }
     return self
@@ -159,7 +255,7 @@ public final class PropDecl: NamedDecl, Stmt {
 /// `ParamDecl`. The codomain is a type identifier, that is an instance of `Ident`.
 public final class FunDecl: NamedDecl, Stmt, DeclContext {
 
-  /// A function kind.
+  /// Enumeration of the function kinds.
   public enum Kind {
 
     /// Denotes a regular function.
@@ -190,10 +286,10 @@ public final class FunDecl: NamedDecl, Stmt, DeclContext {
   public var parent: DeclContext? { return declContext }
   public var children: [DeclContext] = []
 
-  /// The compiler directives associated with the function.
-  public var directives: [Directive]
-  /// The function's attributes.
+  /// The function's declaration attributes.
   public var attrs: Set<DeclAttr>
+  /// The function's declaration modifiers.
+  public var modifiers: Set<DeclModifier>
   /// The function's kind.
   public var kind: Kind
   /// The function's generic parameters.
@@ -203,30 +299,28 @@ public final class FunDecl: NamedDecl, Stmt, DeclContext {
   /// The function's codomain (i.e. return type).
   public var codom: QualTypeSign?
   /// The function's body.
-  public var body: BraceStmt?
+  public var body: Stmt?
 
   public init(
     name: String,
-    directives: [Directive] = [],
     attrs: Set<DeclAttr> = [],
+    modifiers: Set<DeclModifier> = [],
     kind: Kind = .regular,
     genericParams: [GenericParamDecl] = [],
     params: [ParamDecl] = [],
     codom: QualTypeSign? = nil,
-    body: BraceStmt? = nil,
-    declContext: DeclContext,
+    body: Stmt? = nil,
     module: Module,
     range: SourceRange)
   {
     self.name = name
-    self.directives = directives
     self.attrs = attrs
+    self.modifiers = modifiers
     self.kind = kind
     self.genericParams = genericParams
     self.params = params
     self.codom = codom
     self.body = body
-    self.declContext = declContext
     self.module = module
     self.range = range
   }
@@ -236,7 +330,6 @@ public final class FunDecl: NamedDecl, Stmt, DeclContext {
   }
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
-    directives.forEach { $0.accept(visitor: visitor) }
     genericParams.forEach { $0.accept(visitor: visitor) }
     params.forEach { $0.accept(visitor: visitor) }
     codom?.accept(visitor: visitor)
@@ -248,12 +341,11 @@ public final class FunDecl: NamedDecl, Stmt, DeclContext {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    directives = directives.map { $0.accept(transformer: transformer) } as! [Directive]
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
     params = params.map { $0.accept(transformer: transformer) } as! [ParamDecl]
     codom = codom?.accept(transformer: transformer) as? QualTypeSign
-    body = body?.accept(transformer: transformer) as? BraceStmt
+    body = body?.accept(transformer: transformer) as? Stmt
     return self
   }
 
@@ -270,9 +362,8 @@ public final class GenericParamDecl: NamedDecl {
   public unowned var module: Module
   public var range: SourceRange
 
-  public init(name: String, declContext: DeclContext, module: Module, range: SourceRange) {
+  public init(name: String, module: Module, range: SourceRange) {
     self.name = name
-    self.declContext = declContext
     self.module = module
     self.range = range
   }
@@ -317,7 +408,6 @@ public final class ParamDecl: NamedDecl {
     name: String,
     sign: QualTypeSign? = nil,
     defaultValue: Expr? = nil,
-    declContext: DeclContext,
     module: Module,
     range: SourceRange)
   {
@@ -325,7 +415,6 @@ public final class ParamDecl: NamedDecl {
     self.name = name
     self.sign = sign
     self.defaultValue = defaultValue
-    self.declContext = declContext
     self.module = module
     self.range = range
   }
@@ -350,7 +439,24 @@ public final class ParamDecl: NamedDecl {
 
 }
 
-public class NominalTypeDecl: NamedDecl, DeclContext {
+public protocol NominalTypeDecl: NamedDecl, DeclContext {
+
+  /// The type's generic parameters.
+  var genericParams: [GenericParamDecl] { get }
+  /// The type declaration's body.
+  var body: Stmt? { get }
+
+}
+
+/// An interface declaration.
+///
+/// Interfaces are blueprint of requirements (properties and methods) for types to conform to.
+public final class InterfaceDecl: NominalTypeDecl {
+
+  // NominalTypeDecl requirements
+
+  public var genericParams: [GenericParamDecl]
+  public var body: Stmt?
 
   // NamedDecl requirements
 
@@ -365,33 +471,19 @@ public class NominalTypeDecl: NamedDecl, DeclContext {
   public var parent: DeclContext? { return declContext }
   public var children: [DeclContext] = []
 
-  /// The type's generic parameters.
-  public var genericParams: [GenericParamDecl]
-  /// The type declaration's body.
-  public var body: BraceStmt?
-
   public init(
     name: String,
     genericParams: [GenericParamDecl] = [],
-    body: BraceStmt? = nil,
-    declContext: DeclContext,
+    body: Stmt? = nil,
     module: Module,
     range: SourceRange)
   {
     self.name = name
     self.genericParams = genericParams
     self.body = body
-    self.declContext = declContext
     self.module = module
     self.range = range
   }
-
-}
-
-/// An interface declaration.
-///
-/// Interfaces are blueprint of requirements (properties and methods) for types to conform to.
-public final class InterfaceDecl: NominalTypeDecl {
 
   public func accept<V>(visitor: V) where V: ASTVisitor {
     visitor.visit(self)
@@ -409,7 +501,7 @@ public final class InterfaceDecl: NominalTypeDecl {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
-    body = body?.accept(transformer: transformer) as? BraceStmt
+    body = body?.accept(transformer: transformer) as? Stmt
     return self
   }
 
@@ -420,6 +512,38 @@ public final class InterfaceDecl: NominalTypeDecl {
 /// Structures represent aggregate of properties and methods.
 public final class StructDecl: NominalTypeDecl {
 
+  // NominalTypeDecl requirements
+
+  public var genericParams: [GenericParamDecl]
+  public var body: Stmt?
+
+  // NamedDecl requirements
+
+  public var name: String
+  public var type: TypeBase?
+  public weak var declContext: DeclContext?
+  public unowned var module: Module
+  public var range: SourceRange
+
+  // DeclContext requirements
+
+  public var parent: DeclContext? { return declContext }
+  public var children: [DeclContext] = []
+
+  public init(
+    name: String,
+    genericParams: [GenericParamDecl] = [],
+    body: Stmt? = nil,
+    module: Module,
+    range: SourceRange)
+  {
+    self.name = name
+    self.genericParams = genericParams
+    self.body = body
+    self.module = module
+    self.range = range
+  }
+
   public func accept<V>(visitor: V) where V: ASTVisitor {
     visitor.visit(self)
   }
@@ -436,7 +560,7 @@ public final class StructDecl: NominalTypeDecl {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
-    body = body?.accept(transformer: transformer) as? BraceStmt
+    body = body?.accept(transformer: transformer) as? Stmt
     return self
   }
 
@@ -448,6 +572,38 @@ public final class StructDecl: NominalTypeDecl {
 /// contrast to structures (a.k.a. product types) which represent aggregates of properties.
 public final class UnionDecl: NominalTypeDecl {
 
+  // NominalTypeDecl requirements
+
+  public var genericParams: [GenericParamDecl]
+  public var body: Stmt?
+
+  // NamedDecl requirements
+
+  public var name: String
+  public var type: TypeBase?
+  public weak var declContext: DeclContext?
+  public unowned var module: Module
+  public var range: SourceRange
+
+  // DeclContext requirements
+
+  public var parent: DeclContext? { return declContext }
+  public var children: [DeclContext] = []
+
+  public init(
+    name: String,
+    genericParams: [GenericParamDecl] = [],
+    body: Stmt? = nil,
+    module: Module,
+    range: SourceRange)
+  {
+    self.name = name
+    self.genericParams = genericParams
+    self.body = body
+    self.module = module
+    self.range = range
+  }
+
   public func accept<V>(visitor: V) where V: ASTVisitor {
     visitor.visit(self)
   }
@@ -464,7 +620,7 @@ public final class UnionDecl: NominalTypeDecl {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
-    body = body?.accept(transformer: transformer) as? BraceStmt
+    body = body?.accept(transformer: transformer) as? Stmt
     return self
   }
 

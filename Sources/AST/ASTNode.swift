@@ -1,4 +1,4 @@
-// MARK: Protocols
+import SystemKit
 
 /// An AST node.
 ///
@@ -15,12 +15,21 @@ public protocol ASTNode: AnyObject {
 
   /// Accepts an AST visitor.
   func accept<V>(visitor: V) where V: ASTVisitor
-  /// Forwards the visitor to this node's children.
+  /// Forwards the given visitor to this node's children.
   func traverse<V>(with visitor: V) where V: ASTVisitor
   /// Accepts an AST transformer.
   func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer
-  /// Forwards the visitor to this node's children.
+  /// Forwards the given transformer to this node's children.
   func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer
+
+}
+
+extension ASTNode {
+
+  func dump() {
+    let dumper = ASTDumper(to: System.err)
+    accept(visitor: dumper)
+  }
 
 }
 
@@ -38,11 +47,11 @@ public final class Directive: ASTNode {
   /// The name of the directive.
   public var name: String
   /// The arguments of the directive.
-  public var arguments: [String]
+  public var args: [String]
 
-  public init(name: String, arguments: [String], module: Module, range: SourceRange) {
+  public init(name: String, args: [String], module: Module, range: SourceRange) {
     self.name = name
-    self.arguments = arguments
+    self.args = args
     self.module = module
     self.range = range
   }

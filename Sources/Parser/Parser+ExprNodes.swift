@@ -10,7 +10,7 @@ extension Parser {
   /// Because this parser is implemented as a recursive descent parser, a particular attention must
   /// be made as to how expressions can be parsed witout triggering infinite recursions, due to the
   /// left-recursion of the related production rules.
-  func parseExpression() -> Result<Expr?> {
+  func parseExpr() -> Result<Expr?> {
     // Parse the left operand.
     let atomParseResult = parseAtom()
     var issues = atomParseResult.issues
@@ -180,7 +180,7 @@ extension Parser {
     case .leftParen:
       consume()
       consumeNewlines()
-      let enclosedParseResult = parseExpression()
+      let enclosedParseResult = parseExpr()
       issues.append(contentsOf: enclosedParseResult.issues)
       guard let enclosed = enclosedParseResult.value else {
         return Result(value: nil, issues: issues)
@@ -287,7 +287,7 @@ extension Parser {
     }
 
     // Parse the expression.
-    let operandParseResult = parseExpression()
+    let operandParseResult = parseExpr()
     guard let operand = operandParseResult.value else {
       return Result(value: nil, issues: operandParseResult.issues)
     }
@@ -334,73 +334,6 @@ extension Parser {
     }
 
     return Result(value: identifier, issues: issues)
-  }
-
-  /// Parses a conditional expression.
-  func parseIfExpr() -> Result<IfExpr?> {
-    // The first token should be `if`.
-    guard let startToken = consume(.if) else {
-      defer { consume() }
-      return Result(value: nil, issues: [unexpectedToken(expected: "'if'")])
-    }
-
-    var issues: [Issue] = []
-
-    // Parse the condition.
-    let backtrackPosition = streamPosition
-    consumeNewlines()
-    let conditionParseResult = parseExpression()
-    issues.append(contentsOf: conditionParseResult.issues)
-
-    var condition: Expr?
-    if let expression = conditionParseResult.value {
-      condition = expression
-    } else {
-      // Although we cannot create a conditional node without successfully parsing its condition,
-      // we'll attempt to parse the remainder of the expression anyway.
-      rewind(to: backtrackPosition)
-      consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .leftBrace) })
-    }
-
-    // Parse the first block of statements (i.e. the "then" clause).
-    consumeNewlines()
-    let thenParseResult = parseStatementBlock()
-    issues.append(contentsOf: thenParseResult.issues)
-
-    guard let thenBlock = thenParseResult.value else {
-      return Result(value: nil, issues: issues)
-    }
-
-    // Attempt to parse an optional else block.
-    var elseBlock: Node?
-    if consume(.else, afterMany: .newline) != nil {
-      // Commit to parse the else block.
-      consumeNewlines()
-
-      if peek().kind == .if {
-        let conditionalElseParseResult = parseIfExpr()
-        issues.append(contentsOf: conditionParseResult.issues)
-        elseBlock = conditionalElseParseResult.value
-      } else {
-        let elseParseResult = parseStatementBlock()
-        issues.append(contentsOf: conditionParseResult.issues)
-        elseBlock = elseParseResult.value
-      }
-    }
-
-    guard condition != nil else {
-      return Result(value: nil, issues: issues)
-    }
-
-    let end = elseBlock?.range.end ?? thenBlock.range.end
-    return Result(
-      value: IfExpr(
-        condition: condition!,
-        thenBlock: thenBlock,
-        elseBlock: elseBlock,
-        module: module,
-        range: SourceRange(from: startToken.range.start, to: end)),
-      issues: issues)
   }
 
   /// Parses a lambda expression.
@@ -485,7 +418,7 @@ extension Parser {
       if let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) {
         // Commit to parsing an explicit parameter assignment (i.e. `label operator expression`).
         consumeNewlines()
-        let parseResult = parseExpression()
+        let parseResult = parseExpr()
         issues.append(contentsOf: parseResult.issues)
 
         guard let expression = parseResult.value else {
@@ -508,7 +441,7 @@ extension Parser {
     }
 
     // Parse the argument's value.
-    let argumentParseResult = parseExpression()
+    let argumentParseResult = parseExpr()
     issues.append(contentsOf: argumentParseResult.issues)
 
     guard let value = argumentParseResult.value else {
@@ -682,7 +615,7 @@ extension Parser {
     }
 
     consumeNewlines()
-    let valueParseResult = parseExpression()
+    let valueParseResult = parseExpr()
     issues.append(contentsOf: valueParseResult.issues)
     guard let value = valueParseResult.value else {
       return Result(value: nil, issues: issues)

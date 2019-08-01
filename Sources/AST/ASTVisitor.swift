@@ -4,8 +4,6 @@
 /// visited node with a depth-first preorder strategy, by calling the `traverse` methods.
 public protocol ASTVisitor {
 
-  func visit(_ node: Directive)
-
   // MARK: - Declarations
 
   func visit(_ node: MainCodeDecl)
@@ -21,11 +19,12 @@ public protocol ASTVisitor {
   // MARK: - Type signatures
 
   func visit(_ node: QualTypeSign)
-  func visit(_ node: TypeIdent)
-  func visit(_ node: NestedTypeIdent)
-  func visit(_ node: ImplicitNestedTypeIdent)
+  func visit(_ node: IdentSign)
+  func visit(_ node: NestedIdentSign)
+  func visit(_ node: ImplicitNestedIdentSign)
   func visit(_ node: FunSign)
   func visit(_ node: ParamSign)
+  func visit(_ node: InvalidSign)
 
   // MARK: - Statements
 
@@ -34,6 +33,7 @@ public protocol ASTVisitor {
   func visit(_ node: WhileStmt)
   func visit(_ node: BindingStmt)
   func visit(_ node: ReturnStmt)
+  func visit(_ node: InvalidStmt)
 
   // MARK: - Expressions
 
@@ -43,8 +43,8 @@ public protocol ASTVisitor {
   func visit(_ node: InfixExpr)
   func visit(_ node: PrefixExpr)
   func visit(_ node: CallExpr)
-  func visit(_ node: CallArg)
-  func visit(_ node: Ident)
+  func visit(_ node: CallArgExpr)
+  func visit(_ node: IdentExpr)
   func visit(_ node: SelectExpr)
   func visit(_ node: ImplicitSelectExpr)
   func visit(_ node: ArrayLitExpr)
@@ -53,16 +53,19 @@ public protocol ASTVisitor {
   func visit(_ node: BoolLitExpr)
   func visit(_ node: IntLitExpr)
   func visit(_ node: FloatLitExpr)
-  func visit(_ node: StringLitExpr)
-  func visit(_ node: EnclosedExpr)
+  func visit(_ node: StrLitExpr)
+  func visit(_ node: ParenExpr)
+  func visit(_ node: InvalidExpr)
+
+  // MARK: - Attributes, modifiers and directives
+
+  func visit(_ node: DeclAttr)
+  func visit(_ node: DeclModifier)
+  func visit(_ node: Directive)
 
 }
 
 extension ASTVisitor {
-
-  public func visit(_ node: Directive) {
-    node.traverse(with: self)
-  }
 
   public func visit(_ node: MainCodeDecl) {
     node.traverse(with: self)
@@ -104,15 +107,15 @@ extension ASTVisitor {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: TypeIdent) {
+  public func visit(_ node: IdentSign) {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: NestedTypeIdent) {
+  public func visit(_ node: NestedIdentSign) {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: ImplicitNestedTypeIdent) {
+  public func visit(_ node: ImplicitNestedIdentSign) {
     node.traverse(with: self)
   }
 
@@ -121,6 +124,10 @@ extension ASTVisitor {
   }
 
   public func visit(_ node: ParamSign) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: InvalidSign) {
     node.traverse(with: self)
   }
 
@@ -141,6 +148,10 @@ extension ASTVisitor {
   }
 
   public func visit(_ node: ReturnStmt) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: InvalidStmt) {
     node.traverse(with: self)
   }
 
@@ -168,11 +179,11 @@ extension ASTVisitor {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: CallArg) {
+  public func visit(_ node: CallArgExpr) {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: Ident) {
+  public func visit(_ node: IdentExpr) {
     node.traverse(with: self)
   }
 
@@ -208,11 +219,27 @@ extension ASTVisitor {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: StringLitExpr) {
+  public func visit(_ node: StrLitExpr) {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: EnclosedExpr) {
+  public func visit(_ node: ParenExpr) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: InvalidExpr) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: Directive) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: DeclModifier) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: DeclAttr) {
     node.traverse(with: self)
   }
 

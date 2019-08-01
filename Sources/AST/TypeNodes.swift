@@ -1,5 +1,9 @@
 /// An AST node that represents an unqualified type signature.
 public protocol TypeSign: ASTNode {
+
+  /// The type realized from this signature.
+  var type: TypeBase? { get }
+
 }
 
 /// A qualified type signature.
@@ -17,6 +21,8 @@ public final class QualTypeSign: ASTNode {
   public var quals: TypeQualSet
   /// The semantic type definition of the signature.
   public var sign: TypeSign?
+  /// The type realized from this signature.
+  public var type: TypeBase?
 
   public init(quals: TypeQualSet, sign: TypeSign?, module: Module, range: SourceRange) {
     self.quals = quals
@@ -45,9 +51,13 @@ public final class QualTypeSign: ASTNode {
 }
 
 /// A type identifier.
-public final class TypeIdent: TypeSign {
+public final class IdentSign: TypeSign {
 
   /// TypeSign requirements
+
+  public var type: TypeBase?
+
+  /// ASTNode requirements
 
   public unowned let module: Module
   public var range: SourceRange
@@ -93,19 +103,23 @@ public final class TypeIdent: TypeSign {
 }
 
 /// A nested type identifier.
-public final class NestedTypeIdent: TypeSign {
+public final class NestedIdentSign: TypeSign {
 
   /// TypeSign requirements
+
+  public var type: TypeBase?
+
+  /// ASTNode requirements
 
   public unowned let module: Module
   public var range: SourceRange
 
   /// The identifier's owning type.
-  public var owner: TypeIdent
+  public var owner: TypeSign
   /// The nested identifier.
-  public var ownee: TypeIdent
+  public var ownee: IdentSign
 
-  public init(owner: TypeIdent, ownee: TypeIdent, module: Module, range: SourceRange) {
+  public init(owner: TypeSign, ownee: IdentSign, module: Module, range: SourceRange) {
     self.owner = owner
     self.ownee = ownee
     self.module = module
@@ -126,25 +140,29 @@ public final class NestedTypeIdent: TypeSign {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    owner = owner.accept(transformer: transformer) as! TypeIdent
-    ownee = ownee.accept(transformer: transformer) as! TypeIdent
+    owner = owner.accept(transformer: transformer) as! IdentSign
+    ownee = ownee.accept(transformer: transformer) as! IdentSign
     return self
   }
 
 }
 
 /// A nested type identifier with an implicit owning type.
-public final class ImplicitNestedTypeIdent: TypeSign {
+public final class ImplicitNestedIdentSign: TypeSign {
 
   /// TypeSign requirements
+
+  public var type: TypeBase?
+
+  /// ASTNode requirements
 
   public unowned let module: Module
   public var range: SourceRange
 
   /// The nested identifier.
-  public var ownee: TypeIdent
+  public var ownee: IdentSign
 
-  public init(ownee: TypeIdent, module: Module, range: SourceRange) {
+  public init(ownee: IdentSign, module: Module, range: SourceRange) {
     self.ownee = ownee
     self.module = module
     self.range = range
@@ -163,7 +181,7 @@ public final class ImplicitNestedTypeIdent: TypeSign {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    ownee = ownee.accept(transformer: transformer) as! TypeIdent
+    ownee = ownee.accept(transformer: transformer) as! IdentSign
     return self
   }
 
@@ -173,6 +191,10 @@ public final class ImplicitNestedTypeIdent: TypeSign {
 public final class FunSign: TypeSign {
 
   /// TypeSign requirements
+
+  public var type: TypeBase?
+
+  /// ASTNode requirements
 
   public unowned let module: Module
   public var range: SourceRange
@@ -215,6 +237,10 @@ public final class ParamSign: TypeSign {
 
   /// TypeSign requirements
 
+  public var type: TypeBase?
+
+  /// ASTNode requirements
+
   public unowned let module: Module
   public var range: SourceRange
 
@@ -244,6 +270,38 @@ public final class ParamSign: TypeSign {
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     sign = sign.accept(transformer: transformer) as! QualTypeSign
+    return self
+  }
+
+}
+
+/// An invalid type signature.
+///
+/// This type is for internal use only. It serves as a placeholder in other nodes for signatures
+/// that couldn't not be parsed.
+public final class InvalidSign: TypeSign {
+
+  public var type: TypeBase?
+  public unowned var module: Module
+  public var range: SourceRange
+
+  public init(module: Module, range: SourceRange) {
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V: ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V: ASTVisitor {
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     return self
   }
 

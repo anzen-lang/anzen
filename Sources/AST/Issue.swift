@@ -38,7 +38,7 @@ public struct Issue {
   public static func < (lhs: Issue, rhs: Issue) -> Bool {
     if lhs.severity == rhs.severity {
       if lhs.range!.sourceRef.name == rhs.range!.sourceRef.name {
-        return lhs.range!.start < rhs.range!.start
+        return lhs.range!.lowerBound < rhs.range!.lowerBound
       } else {
         return lhs.range!.sourceRef.name < rhs.range!.sourceRef.name
       }

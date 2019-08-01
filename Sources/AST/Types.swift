@@ -53,6 +53,11 @@ public class TypeBase: Hashable {
     hash(into: &hasher)
   }
 
+  /// Accepts a type transformer.
+  public func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    fatalError("call to abstract method 'accept(transformer:)'")
+  }
+
 }
 
 /// A kind.
@@ -69,9 +74,14 @@ public final class TypeKind: TypeBase {
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
-    guard let rhs = other as? TypeKind else { return false }
+    guard let rhs = other as? TypeKind
+      else { return false }
     return (self.quals == rhs.quals)
         && (self.type === rhs.type)
+  }
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
   }
 
 }
@@ -95,6 +105,10 @@ public final class TypePlaceholder: TypeBase {
     guard let rhs = other as? TypePlaceholder else { return false }
     return (self.quals == rhs.quals)
         && (self.decl === rhs.decl)
+  }
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
   }
 
 }
@@ -122,6 +136,10 @@ public final class BoundGenericType: TypeBase {
     return (self.quals == rhs.quals)
         && (self.type === rhs.type)
         && (self.bindings == rhs.bindings)
+  }
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
   }
 
 }
@@ -164,11 +182,16 @@ public final class FunType: TypeBase {
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
-    guard let rhs = other as? FunType else { return false }
+    guard let rhs = other as? FunType
+      else { return false }
     return (self.quals == rhs.quals)
         && (self.genericParams == rhs.genericParams)
         && (self.dom == rhs.dom)
         && (self.codom == rhs.codom)
+  }
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
   }
 
 }
@@ -188,9 +211,14 @@ public final class StructType: TypeBase {
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
-    guard let rhs = other as? StructType else { return false }
+    guard let rhs = other as? StructType
+      else { return false }
     return (self.quals == rhs.quals)
         && (self.decl === rhs.decl)
+  }
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
   }
 
 }
@@ -213,6 +241,10 @@ public final class UnionType: TypeBase {
     guard let rhs = other as? UnionType else { return false }
     return (self.quals == rhs.quals)
         && (self.decl === rhs.decl)
+  }
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
   }
 
 }

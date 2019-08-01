@@ -16,6 +16,7 @@ public class SourceRef {
 
 }
 
+/// A location in a text input buffer, given as two 1-based line and column indices.
 public struct SourceLocation {
 
   /// The source in which the location refers to.
@@ -56,55 +57,12 @@ extension SourceLocation: CustomStringConvertible {
 
 }
 
-public struct SourceRange: RangeExpression {
+public typealias SourceRange = Range<SourceLocation>
 
-  /// The source in which the range refers to.
-  public var sourceRef: SourceRef {
-    return start.sourceRef
-  }
+extension SourceRange {
 
-  public init(from start: SourceLocation, to end: SourceLocation) {
-    assert(start.sourceRef === end.sourceRef)
-    self.start = start
-    self.end = end
-  }
-
-  public init(at location: SourceLocation) {
-    self.start = location
-    self.end = location
-  }
-
-  public func relative<C>(to collection: C) -> Range<SourceLocation>
-    where C: Collection, C.Index == SourceLocation
-  {
-    return Range.init(uncheckedBounds: (lower: start, upper: end))
-  }
-
-  public func contains(_ element: SourceLocation) -> Bool {
-    return element >= start && element <= end
-  }
-
-  public var length: Int {
-    return end.offset - start.offset
-  }
-
-  public let start: SourceLocation
-  public let end: SourceLocation
-
-}
-
-extension SourceRange: Equatable {
-
-  public static func == (lhs: SourceRange, rhs: SourceRange) -> Bool {
-    return lhs.start == rhs.start && lhs.end == rhs.end
-  }
-
-}
-
-extension SourceRange: CustomStringConvertible {
-
-  public var description: String {
-    return "\(start) ... \(end)"
+  var sourceRef: SourceRef {
+    return lowerBound.sourceRef
   }
 
 }

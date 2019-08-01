@@ -9,14 +9,35 @@ import Utils
 /// intended for forward lexing only, and does not have any support for buffering and/or seeking.
 public struct Lexer {
 
+  /// The stream of characters.
+  fileprivate var characters: String.UnicodeScalarView
+  /// The current character index in the stream.
+  fileprivate var charIndex: String.UnicodeScalarView.Index
+  /// The current source location of the lexer.
+  fileprivate var currentLocation: SourceLocation
+  /// Whether or not the stream has been depleted.
+  fileprivate var depleted = false
+
+  /// The current character in the stream.
+  fileprivate var currentChar: UnicodeScalar? {
+    return charIndex < characters.endIndex
+      ? characters[charIndex]
+      : nil
+  }
+
   /// Creates a new lexer instance for the specified input buffer.
-  public init(source: TextInputBuffer) throws {
-    currentLocation = SourceLocation(source: source)
-    characters = try source.read().unicodeScalars
+  ///
+  /// - Note:
+  ///   The lexer currently consume the entire input stream at once and stores its contents in an
+  ///   array, in order to simplify forward lookup. This approach might not scale well with large
+  ///   inputs, and therefore future versions should implement a more elaborate buffering strategy.
+  public init(source: SourceRef) throws {
+    currentLocation = SourceLocation(sourceRef: source)
+    characters = try source.buffer.read().unicodeScalars
     charIndex = characters.startIndex
   }
 
-  /// Take the given number of characters from the stream, advancing the lexer.
+  /// Takes the given number of characters from the stream, advancing the lexer.
   mutating func take(_ n: Int = 1) -> String.UnicodeScalarView.SubSequence {
     let startIndex = charIndex
     for _ in 0 ..< n {
@@ -33,7 +54,7 @@ public struct Lexer {
     return characters[startIndex ..< charIndex]
   }
 
-  /// Take a characters from the stream as long as the predicate holds, advancing the lexer.
+  /// Takes a characters from the stream as long as the predicate holds, advancing the lexer.
   mutating func take(while predicate: (UnicodeScalar) -> Bool)
     -> String.UnicodeScalarView.SubSequence
   {
@@ -44,12 +65,12 @@ public struct Lexer {
     return characters[startIndex ..< charIndex]
   }
 
-  /// Skip the given number of characters in the stream.
+  /// Skips the given number of characters in the stream.
   mutating func skip(_ n: Int = 1) {
     _ = take(n)
   }
 
-  /// Skip the characters of the stream while the given predicate holds.
+  /// Skips the characters of the stream while the given predicate holds.
   mutating func skip(while predicate: (UnicodeScalar) -> Bool) {
     while let c = currentChar, predicate(c) {
       skip()
@@ -68,25 +89,6 @@ public struct Lexer {
   func range(from start: SourceLocation) -> SourceRange {
     return SourceRange(from: start, to: currentLocation)
   }
-
-  /// The current character in the stream.
-  var currentChar: UnicodeScalar? {
-    return charIndex < characters.endIndex
-      ? characters[charIndex]
-      : nil
-  }
-
-  /// The stream of characters.
-  var characters: String.UnicodeScalarView
-
-  /// The current character index in the stream.
-  var charIndex: String.UnicodeScalarView.Index
-
-  /// The current source location of the lexer.
-  var currentLocation: SourceLocation
-
-  /// Whether or not the stream has been depleted.
-  var depleted = false
 
 }
 
@@ -238,6 +240,13 @@ extension Lexer: IteratorProtocol, Sequence {
       return Token(kind: .qualifier, value: value, range: range(from: startLocation))
     }
 
+    // Check for directives.
+    if c == "#" {
+      skip()
+      let value = String(take(while: isAlnumOrUnderscore))
+      return Token(kind: .directive, value: value, range: range(from: startLocation))
+    }
+
     // Check for operators.
     if operatorChars.contains(c) {
       // Check for operators made of a 3 characters.
@@ -292,7 +301,6 @@ extension Lexer: IteratorProtocol, Sequence {
       case ":": kind = .colon
       case "!": kind = .exclamationMark
       case "?": kind = .questionMark
-      case "#": kind = .hashMark
       case "(": kind = .leftParen
       case ")": kind = .rightParen
       case "{": kind = .leftBrace
@@ -341,4 +349,4 @@ private func isAlnumOrUnderscore(_ char: UnicodeScalar) -> Bool {
 }
 
 /// Set of operator symbols.
-private let operatorChars = Set<UnicodeScalar>(".,:!?#(){}[]<>-*/%+-=&".unicodeScalars)
+private let operatorChars = Set<UnicodeScalar>(".,:!?(){}[]<>-*/%+-=&".unicodeScalars)

@@ -49,7 +49,6 @@ public enum TokenKind: String {
   case exclamationMark  = "!"
   case questionMark     = "?"
   case ellipsis         = "..."
-  case hashMark         = "#"
   case newline
   case eof
 
@@ -88,6 +87,7 @@ public enum TokenKind: String {
 
   // MARK: Annotations
 
+  case directive
   case qualifier
 
   // MARK: Error tokens

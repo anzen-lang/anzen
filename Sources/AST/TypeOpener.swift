@@ -1,6 +1,6 @@
 /// An Type transformer that "opens" generic types, effectively substituting occurrences of generic
 /// placeholders with fresh variables.
-public class TypeOpener: TypeWalker {
+public class TypeOpener: TypeTransformer {
 
   public typealias Result = TypeBase
 
@@ -13,25 +13,43 @@ public class TypeOpener: TypeWalker {
     self.context = context
   }
 
-  public func walk(_ ty: TypeKind) -> TypeBase {
-    return context.getTypeKind(of: walk(ty.type))
+  /// Opens a type kind.
+  ///
+  /// Opening a type kind consists in opening the type it constructs.
+  public func transform(_ ty: TypeKind) -> TypeBase {
+    return context.getTypeKind(of: ty.type.accept(transformer: self))
   }
 
-  public func walk(_ ty: TypeVar) -> TypeBase {
+  /// Opens a type variable.
+  ///
+  /// Opening a type variable corresponds to the identity.
+  public func transform(_ ty: TypeVar) -> TypeBase {
     return ty
   }
 
-  public func walk(_ ty: TypePlaceholder) -> TypeBase {
+  /// Opens a type placeholder.
+  ///
+  /// Opening a type placeholder either returns the type variable that's been chosen as a
+  /// substitution, or corresponds to the identity if such substitution hasn't been defined.
+  public func transform(_ ty: TypePlaceholder) -> TypeBase {
     return bindings[ty] ?? ty
   }
 
-  public func walk(_ ty: BoundGenericType) -> TypeBase {
+  /// Opens a bound generic type.
+  ///
+  /// Opening a bound generic type consists in merging the new substitutions.
+  public func transform(_ ty: BoundGenericType) -> TypeBase {
     let newBindings = ty.bindings.merging(bindings) { lhs, _ in lhs }
     return context.getBoundGenericType(type: ty, bindings: newBindings)
   }
 
-  public func walk(_ ty: FunType) -> TypeBase {
-    guard !ty.genericParams.isEmpty else { return ty }
+  /// Opens a function type.
+  ///
+  /// Opening a function type creates a substitution for each of its generic argument, so that the
+  /// type can be monomorphized.
+  public func transform(_ ty: FunType) -> TypeBase {
+    guard !ty.genericParams.isEmpty
+      else { return ty }
 
     var newBindings = bindings
     for param in ty.genericParams where bindings[param] == nil {
@@ -42,12 +60,19 @@ public class TypeOpener: TypeWalker {
     return context.getFunType(
       quals: ty.quals,
       genericParams: [],
-      dom: ty.dom.map({ FunType.Param(label: $0.label, type: newOpener.walk($0.type)) }),
-      codom: newOpener.walk(ty.codom))
+      dom: ty.dom.map({
+        FunType.Param(label: $0.label, type: $0.type.accept(transformer: newOpener))
+      }),
+      codom: ty.codom.accept(transformer: newOpener))
   }
 
-  public func walk(_ ty: StructType) -> TypeBase {
-    guard !ty.decl.genericParams.isEmpty else { return ty }
+  /// Opens a struct type.
+  ///
+  /// Opening a struct type creates a substitution for each of its generic argument, so that the
+  /// type can be monomorphized.
+  public func transform(_ ty: StructType) -> TypeBase {
+    guard !ty.decl.genericParams.isEmpty
+      else { return ty }
 
     var newBindings = bindings
     for param in ty.genericParams where bindings[param] == nil {
@@ -57,8 +82,13 @@ public class TypeOpener: TypeWalker {
     return context.getBoundGenericType(type: ty, bindings: newBindings)
   }
 
-  public func walk(_ ty: UnionType) -> TypeBase {
-    guard !ty.decl.genericParams.isEmpty else { return ty }
+  /// Opens a union type.
+  ///
+  /// Opening a union type creates a substitution for each of its generic argument, so that the
+  /// type can be monomorphized.
+  public func transform(_ ty: UnionType) -> TypeBase {
+    guard !ty.decl.genericParams.isEmpty
+      else { return ty }
 
     var newBindings = bindings
     for param in ty.genericParams where bindings[param] == nil {

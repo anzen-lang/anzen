@@ -83,7 +83,7 @@ public final class LambdaExpr: Expr {
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     params = params.map { $0.accept(transformer: transformer) } as! [ParamDecl]
-    codom = codom?.accept(transformer: transformer) as! QualTypeSign
+    codom = codom?.accept(transformer: transformer) as? QualTypeSign
     body = body.accept(transformer: transformer) as! BraceStmt
     return self
   }
@@ -115,7 +115,7 @@ public final class UnsafeCastExpr: Expr {
     visitor.visit(self)
   }
 
-  public func traverse<Visitor>(with visitor: V) where V: ASTVisitor {
+  public func traverse<V>(with visitor: V) where V: ASTVisitor {
     operand.accept(visitor: visitor)
     castSign.accept(visitor: visitor)
   }
@@ -126,7 +126,7 @@ public final class UnsafeCastExpr: Expr {
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     operand = operand.accept(transformer: transformer) as! Expr
-    castSign = castSign.accept(transformer: transformer) as! QualTypeSign
+    castSign = castSign.accept(transformer: transformer) as! TypeSign
     return self
   }
 
@@ -142,16 +142,16 @@ public final class InfixExpr: Expr {
   public var range: SourceRange
 
   /// The expression's operator.
-  public var op: Ident
+  public var op: IdentExpr
   /// The expression's left operand.
-  public var left: Expr
+  public var lhs: Expr
   /// The expression's right operand.
-  public var right: Expr
+  public var rhs: Expr
 
-  public init(op: Ident, left: Expr, right: Expr, module: Module, range: SourceRange) {
+  public init(op: IdentExpr, lhs: Expr, rhs: Expr, module: Module, range: SourceRange) {
     self.op = op
-    self.left = left
-    self.right = right
+    self.lhs = lhs
+    self.rhs = rhs
     self.module = module
     self.range = range
   }
@@ -162,8 +162,8 @@ public final class InfixExpr: Expr {
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
     op.accept(visitor: visitor)
-    left.accept(visitor: visitor)
-    right.accept(visitor: visitor)
+    lhs.accept(visitor: visitor)
+    rhs.accept(visitor: visitor)
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -171,9 +171,9 @@ public final class InfixExpr: Expr {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    op = op.accept(transformer: transformer) as! Ident
-    left = left.accept(transformer: transformer) as! Expr
-    right = right.accept(transformer: transformer) as! Expr
+    op = op.accept(transformer: transformer) as! IdentExpr
+    lhs = lhs.accept(transformer: transformer) as! Expr
+    rhs = rhs.accept(transformer: transformer) as! Expr
     return self
   }
 
@@ -189,11 +189,11 @@ public final class PrefixExpr: Expr {
   public var range: SourceRange
 
   /// The expression's operator.
-  public var op: Ident
+  public var op: IdentExpr
   /// The expression's operand.
   public var operand : Expr
 
-  public init(op: Ident, operand: Expr, right: Expr, module: Module, range: SourceRange) {
+  public init(op: IdentExpr, operand: Expr, right: Expr, module: Module, range: SourceRange) {
     self.op = op
     self.operand = operand
     self.module = module
@@ -214,7 +214,7 @@ public final class PrefixExpr: Expr {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    op = op.accept(transformer: transformer) as! Ident
+    op = op.accept(transformer: transformer) as! IdentExpr
     operand = operand.accept(transformer: transformer) as! Expr
     return self
   }
@@ -233,9 +233,9 @@ public final class CallExpr: Expr {
   /// The expression's callee.
   public var callee: Expr
   /// The arguments of the call.
-  public var args: [CallArg]
+  public var args: [CallArgExpr]
 
-  public init(callee: Expr, args: [CallArg], module: Module, range: SourceRange) {
+  public init(callee: Expr, args: [CallArgExpr], module: Module, range: SourceRange) {
     self.callee = callee
     self.args = args
     self.module = module
@@ -257,14 +257,14 @@ public final class CallExpr: Expr {
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     callee = callee.accept(transformer: transformer) as! Expr
-    args = args.map { $0.accept(transformer: transformer) } as! [CallArg]
+    args = args.map { $0.accept(transformer: transformer) } as! [CallArgExpr]
     return self
   }
 
 }
 
 /// A call argument.
-public final class CallArg: Expr {
+public final class CallArgExpr: Expr {
 
   // Expr requirements
 
@@ -275,11 +275,17 @@ public final class CallArg: Expr {
   /// The label of the argument.
   public var label: String?
   /// The binding operator of the argument.
-  public var op: Ident
+  public var op: IdentExpr
   /// The value of the argument.
   public var value: Expr
 
-  public init(label: String? = nil, op: Ident, value: Expr, module: Module, range: SourceRange) {
+  public init(
+    label: String? = nil,
+    op: IdentExpr,
+    value: Expr,
+    module: Module,
+    range: SourceRange)
+  {
     self.label = label
     self.op = op
     self.value = value
@@ -301,7 +307,7 @@ public final class CallArg: Expr {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    op = op.accept(transformer: transformer) as! Ident
+    op = op.accept(transformer: transformer) as! IdentExpr
     value = value.accept(transformer: transformer) as! Expr
     return self
   }
@@ -309,7 +315,7 @@ public final class CallArg: Expr {
 }
 
 /// An identifier.
-public final class Ident: Expr {
+public final class IdentExpr: Expr {
 
   // Expr requirements
 
@@ -371,9 +377,9 @@ public final class SelectExpr: Expr {
   /// The expression's owner.
   public var owner: Expr
   /// The expression's ownee.
-  public var ownee: Ident
+  public var ownee: IdentExpr
 
-  public init(owner: Expr, ownee: Ident, module: Module, range: SourceRange) {
+  public init(owner: Expr, ownee: IdentExpr, module: Module, range: SourceRange) {
     self.owner = owner
     self.ownee = ownee
     self.module = module
@@ -395,7 +401,7 @@ public final class SelectExpr: Expr {
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     owner = owner.accept(transformer: transformer) as! Expr
-    ownee = ownee.accept(transformer: transformer) as! Ident
+    ownee = ownee.accept(transformer: transformer) as! IdentExpr
     return self
   }
 
@@ -411,9 +417,9 @@ public final class ImplicitSelectExpr: Expr {
   public var range: SourceRange
 
   /// The expression's ownee.
-  public var ownee: Ident
+  public var ownee: IdentExpr
 
-  public init(ownee: Ident, module: Module, range: SourceRange) {
+  public init(ownee: IdentExpr, module: Module, range: SourceRange) {
     self.ownee = ownee
     self.module = module
     self.range = range
@@ -432,7 +438,7 @@ public final class ImplicitSelectExpr: Expr {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    ownee = ownee.accept(transformer: transformer) as! Ident
+    ownee = ownee.accept(transformer: transformer) as! IdentExpr
     return self
   }
 
@@ -448,10 +454,10 @@ public final class ArrayLitExpr: Expr {
   public var range: SourceRange
 
   /// The elements of the literal.
-  public var elements: [Expr]
+  public var elems: [Expr]
 
-  public init(elements: [Expr], module: Module, range: SourceRange) {
-    self.elements = elements
+  public init(elems: [Expr], module: Module, range: SourceRange) {
+    self.elems = elems
     self.module = module
     self.range = range
   }
@@ -461,7 +467,7 @@ public final class ArrayLitExpr: Expr {
   }
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
-    elements.forEach { $0.accept(visitor: visitor) }
+    elems.forEach { $0.accept(visitor: visitor) }
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -469,7 +475,7 @@ public final class ArrayLitExpr: Expr {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    elements = elements.map { $0.accept(transformer: transformer) } as! [Expr]
+    elems = elems.map { $0.accept(transformer: transformer) } as! [Expr]
     return self
   }
 
@@ -485,10 +491,10 @@ public final class SetLitExpr: Expr {
   public var range: SourceRange
 
   /// The elements of the literal.
-  public var elements: [Expr]
+  public var elems: [Expr]
 
-  public init(elements: [Expr], module: Module, range: SourceRange) {
-    self.elements = elements
+  public init(elems: [Expr], module: Module, range: SourceRange) {
+    self.elems = elems
     self.module = module
     self.range = range
   }
@@ -498,7 +504,7 @@ public final class SetLitExpr: Expr {
   }
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
-    elements.forEach { $0.accept(visitor: visitor) }
+    elems.forEach { $0.accept(visitor: visitor) }
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -506,7 +512,7 @@ public final class SetLitExpr: Expr {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    elements = elements.map { $0.accept(transformer: transformer) } as! [Expr]
+    elems = elems.map { $0.accept(transformer: transformer) } as! [Expr]
     return self
   }
 
@@ -522,10 +528,10 @@ public final class MapLitExpr: Expr {
   public var range: SourceRange
 
   /// The elements of the literal.
-  public var elements: [String: Expr]
+  public var elems: [String: Expr]
 
-  public init(elements: [String: Expr], module: Module, range: SourceRange) {
-    self.elements = elements
+  public init(elems: [String: Expr], module: Module, range: SourceRange) {
+    self.elems = elems
     self.module = module
     self.range = range
   }
@@ -535,7 +541,7 @@ public final class MapLitExpr: Expr {
   }
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
-    elements.values.forEach { $0.accept(visitor: visitor) }
+    elems.values.forEach { $0.accept(visitor: visitor) }
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -543,7 +549,7 @@ public final class MapLitExpr: Expr {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    elements = Dictionary(uniqueKeysWithValues: elements.map { (key, value) in
+    elems = Dictionary(uniqueKeysWithValues: elems.map { (key, value) in
       (key, value.accept(transformer: transformer) as! Expr)
     })
     return self
@@ -657,7 +663,7 @@ public final class FloatLitExpr: Expr {
 }
 
 /// A string literal expression.
-public final class StringLitExpr: Expr {
+public final class StrLitExpr: Expr {
 
   // Expr requirements
 
@@ -693,8 +699,8 @@ public final class StringLitExpr: Expr {
 
 /// An expression enclosed in parenthesis.
 ///
-/// This type is for internal use only, in order to parse operator precedence correctly.
-public final class EnclosedExpr: Expr {
+/// This type is for internal use only. It serves to parse operator precedence correctly.
+public final class ParenExpr: Expr {
 
   // Expr requirements
 
@@ -725,6 +731,38 @@ public final class EnclosedExpr: Expr {
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     expr = expr.accept(transformer: transformer) as! Expr
+    return self
+  }
+
+}
+
+/// An invalid expression.
+///
+/// This type is for internal use only. It serves as a placeholder in other nodes for expressions
+/// that couldn't not be parsed.
+public final class InvalidExpr: Expr {
+
+  public var type: TypeBase?
+  public unowned var module: Module
+  public var range: SourceRange
+
+  public init(module: Module, range: SourceRange) {
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V: ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V: ASTVisitor {
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     return self
   }
 

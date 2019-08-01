@@ -1,5 +1,7 @@
 import Utils
 
+// MARK: - Stream operator
+
 precedencegroup StreamPrecedence {
   associativity: left
   lowerThan: TernaryPrecedence
@@ -7,64 +9,62 @@ precedencegroup StreamPrecedence {
 
 infix operator <<<: StreamPrecedence
 
+// MARK: - AST Dumper
+
+/// Dumps an AST node as an S-expression into the given text output stream.
 public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextOutputStream {
+
+  /// The output stream.
+  public var outputStream: OutputStream
+  /// The current identation level.
+  private var level: Int = 0
+  /// A string of whitespaces corresponding to the current identation level.
+  private var indent: String {
+    return String(repeating: "  ", count: level)
+  }
 
   public init(to outputStream: OutputStream) {
     self.outputStream = outputStream
   }
 
-  public var outputStream: OutputStream
-
-  private var level: Int = 0
-  private var indent: String {
-    return String(repeating: "  ", count: level)
-  }
-
-  public func visit(_ node: ModuleDecl) {
-    self <<< indent <<< "(module_decl"
-    self <<< " id='" <<< node.id?.qualifiedName <<< "'"
-    self <<< " inner_scope='" <<< node.innerScope <<< "'"
-
-    if !node.statements.isEmpty {
+  public func visit(_ node: MainCodeDecl) {
+    self <<< indent <<< "(main_code_decl"
+    if !node.stmts.isEmpty {
       self <<< "\n"
-      withIndentation { visit(node.statements) }
-    }
-    self <<< ")\n"
-  }
-
-  public func visit(_ node: Block) {
-    self <<< indent <<< "(block"
-    self <<< " inner_scope='" <<< node.innerScope <<< "'"
-
-    if !node.statements.isEmpty {
-      withIndentation {
-        self <<< "\n"
-        withIndentation { visit(node.statements) }
-      }
+      withIndentation { self <<< node.stmts }
     }
     self <<< ")"
   }
 
   public func visit(_ node: PropDecl) {
     self <<< indent <<< "(prop_decl"
-    if !node.attributes.isEmpty {
-      self <<< " " + node.attributes.map({ $0.rawValue }).sorted().joined(separator: " ")
+    if node.isReassignable {
+      self <<< " reassignable"
     }
-    self <<< " '\(node.name)'"
+    self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
-    self <<< " symbol='" <<< node.symbol?.name <<< "'"
-    self <<< " scope='" <<< node.scope <<< "'"
     withIndentation {
-      if let typeAnnotation = node.typeAnnotation {
-        self <<< "\n" <<< indent <<< "(type_annotation\n"
-        withIndentation { visit(typeAnnotation) }
+      if !node.attrs.isEmpty {
+        self <<< "\n" + indent <<< "(attrs\n"
+        withIndentation { self <<< node.attrs.sorted() }
         self <<< ")"
       }
-      if let (op, value) = node.initialBinding {
-        self <<< "\n" <<< indent <<< "(initial_binding\n"
+      if !node.modifiers.isEmpty {
+        self <<< "\n" + indent <<< "(modifiers\n"
+        withIndentation { self <<< node.modifiers.sorted() }
+        self <<< ")"
+      }
+      if let sign = node.sign {
+        self <<< "\n" <<< indent <<< "(sign\n"
+        withIndentation { sign.accept(visitor: self) }
+        self <<< ")"
+      }
+      if let (op, value) = node.initializer {
+        self <<< "\n" <<< indent <<< "(initializer\n"
         withIndentation {
-          self <<< indent <<< "(binding_operator \(op))\n"
-          visit(value)
+          op.accept(visitor: self)
+          self <<< "\n"
+          value.accept(visitor: self)
         }
         self <<< ")"
       }
@@ -73,52 +73,38 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   public func visit(_ node: FunDecl) {
-    self <<< indent
-    switch node.kind {
-    case .regular    : self <<< "(function_decl"
-    case .method     : self <<< "(method_decl"
-    case .constructor: self <<< "(constructor_decl"
-    case .destructor : self <<< "(destructor_decl"
-    }
-    if !node.attributes.isEmpty {
-      self <<< " " + node.attributes.map({ $0.rawValue }).joined(separator: " ")
-    }
-    self <<< " '\(node.name)'"
+    self <<< indent <<< "(fun_decl \(node.kind)"
+    self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
-    self <<< " symbol='" <<< node.symbol?.name <<< "'"
-    self <<< " scope='" <<< node.scope <<< "'"
-    self <<< " inner_scope='" <<< node.innerScope <<< "'"
     withIndentation {
-      if !node.directives.isEmpty {
-        self <<< "\n" <<< indent <<< "(directives\n"
-        withIndentation { visit(node.directives) }
+      if !node.attrs.isEmpty {
+        self <<< "\n" + indent <<< "(attrs\n"
+        withIndentation { self <<< node.attrs.sorted() }
         self <<< ")"
       }
-      if !node.placeholders.isEmpty {
-        self <<< "\n" <<< indent <<< "(placeholders\n"
-        withIndentation {
-          for placeholder in node.placeholders {
-            self <<< indent <<< "(placeholder \(placeholder))"
-            if placeholder != node.placeholders.last {
-              self <<< "\n"
-            }
-          }
-        }
+      if !node.modifiers.isEmpty {
+        self <<< "\n" + indent <<< "(modifiers\n"
+        withIndentation { self <<< node.modifiers.sorted() }
         self <<< ")"
       }
-      if !node.parameters.isEmpty {
-        self <<< "\n" <<< indent <<< "(parameters\n"
-        withIndentation { visit(node.parameters) }
+      if !node.genericParams.isEmpty {
+        self <<< "\n" <<< indent <<< "(generic_params\n"
+        withIndentation { self <<< node.genericParams }
         self <<< ")"
       }
-      if let codomain = node.codomain {
-        self <<< "\n" <<< indent <<< "(codomain\n"
-        withIndentation { visit(codomain) }
+      if !node.params.isEmpty {
+        self <<< "\n" <<< indent <<< "(params\n"
+        withIndentation { self <<< node.params }
+        self <<< ")"
+      }
+      if let codom = node.codom {
+        self <<< "\n" <<< indent <<< "(codom\n"
+        withIndentation { self <<< codom }
         self <<< ")"
       }
       if let body = node.body {
         self <<< "\n" <<< indent <<< "(body\n"
-        withIndentation { visit(body) }
+        withIndentation { self <<< body }
         self <<< ")"
       }
     }
@@ -127,19 +113,43 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
 
   public func visit(_ node: ParamDecl) {
     self <<< indent <<< "(param_decl"
-    self <<< " '\(node.name)'"
+    self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
-    self <<< " symbol='" <<< node.symbol?.name <<< "'"
-    self <<< " scope='" <<< node.scope <<< "'"
     withIndentation {
-      if let typeAnnotation = node.typeAnnotation {
-        self <<< "\n" <<< indent <<< "(type_annotation\n"
-        withIndentation { visit(typeAnnotation) }
+      if let sign = node.sign {
+        self <<< "\n" <<< indent <<< "(sign\n"
+        withIndentation { sign.accept(visitor: self) }
         self <<< ")"
       }
       if let value = node.defaultValue {
         self <<< "\n" <<< indent <<< "(default_value\n"
-        withIndentation { visit(value) }
+        withIndentation { value.accept(visitor: self) }
+        self <<< ")"
+      }
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: GenericParamDecl) {
+    self <<< indent <<< "(generic_param_decl"
+    self <<< " name='\(node.name)'"
+    self <<< " type='" <<< node.type <<< "'"
+    self <<< ")"
+  }
+
+  public func visit(_ node: InterfaceDecl) {
+    self <<< indent <<< "(interface_decl"
+    self <<< " name='\(node.name)'"
+    self <<< " type='" <<< node.type <<< "'"
+    withIndentation {
+      if !node.genericParams.isEmpty {
+        self <<< "\n" <<< indent <<< "(generic_params\n"
+        withIndentation { self <<< node.genericParams }
+        self <<< ")"
+      }
+      if let body = node.body {
+        self <<< "\n" <<< indent <<< "(body\n"
+        withIndentation { body.accept(visitor: self) }
         self <<< ")"
       }
     }
@@ -147,209 +157,207 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   public func visit(_ node: StructDecl) {
-    self <<< indent <<< "(struct_decl"
-    self <<< " '\(node.name)'"
+    self <<< indent <<< "(interface_decl"
+    self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
-    self <<< " symbol='" <<< node.symbol?.name <<< "'"
-    self <<< " scope='" <<< node.scope <<< "'"
-    self <<< " inner_scope='" <<< node.innerScope <<< "'"
     withIndentation {
-      if !node.placeholders.isEmpty {
-        self <<< "\n" <<< indent <<< "(placeholders\n"
-        withIndentation {
-          for placeholder in node.placeholders {
-            self <<< indent <<< "(placeholder \(placeholder))"
-            if placeholder != node.placeholders.last {
-              self <<< "\n"
-            }
-          }
-        }
+      if !node.genericParams.isEmpty {
+        self <<< "\n" <<< indent <<< "(generic_params\n"
+        withIndentation { self <<< node.genericParams }
         self <<< ")"
       }
-      self <<< "\n" <<< indent <<< "(body\n"
-      withIndentation { visit(node.body) }
-      self <<< ")"
+      if let body = node.body {
+        self <<< "\n" <<< indent <<< "(body\n"
+        withIndentation { body.accept(visitor: self) }
+        self <<< ")"
+      }
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: UnionDecl) {
+    self <<< indent <<< "(interface_decl"
+    self <<< " name='\(node.name)'"
+    self <<< " type='" <<< node.type <<< "'"
+    withIndentation {
+      if !node.genericParams.isEmpty {
+        self <<< "\n" <<< indent <<< "(generic_params\n"
+        withIndentation { self <<< node.genericParams }
+        self <<< ")"
+      }
+      if let body = node.body {
+        self <<< "\n" <<< indent <<< "(body\n"
+        withIndentation { body.accept(visitor: self) }
+        self <<< ")"
+      }
     }
     self <<< ")"
   }
 
   public func visit(_ node: UnionNestedMemberDecl) {
     self <<< indent <<< "(union_nested_member_decl\n"
-    withIndentation {
-      visit(node.nominalTypeDecl)
-    }
-    self <<< ")"
-  }
-
-  public func visit(_ node: UnionDecl) {
-    self <<< indent <<< "(union_decl"
-    self <<< " '\(node.name)'"
-    self <<< " type='" <<< node.type <<< "'"
-    self <<< " symbol='" <<< node.symbol?.name <<< "'"
-    self <<< " scope='" <<< node.scope <<< "'"
-    self <<< " inner_scope='" <<< node.innerScope <<< "'"
-    withIndentation {
-      if !node.placeholders.isEmpty {
-        self <<< "\n" <<< indent <<< "(placeholders\n"
-        withIndentation {
-          for placeholder in node.placeholders {
-            self <<< indent <<< "(placeholder \(placeholder))"
-            if placeholder != node.placeholders.last {
-              self <<< "\n"
-            }
-          }
-        }
-        self <<< ")"
-      }
-      self <<< "\n" <<< indent <<< "(body\n"
-      withIndentation { visit(node.body) }
-      self <<< ")"
-    }
-    self <<< ")"
-  }
-
-  public func visit(_ node: InterfaceDecl) {
-    self <<< indent <<< "(interface_decl"
-    self <<< " '\(node.name)'"
-    self <<< " type='" <<< node.type <<< "'"
-    self <<< " symbol='" <<< node.symbol?.name <<< "'"
-    self <<< " scope='" <<< node.scope <<< "'"
-    self <<< " inner_scope='" <<< node.innerScope <<< "'"
-    withIndentation {
-      if !node.placeholders.isEmpty {
-        self <<< "\n" <<< indent <<< "(placeholders\n"
-        withIndentation {
-          for placeholder in node.placeholders {
-            self <<< indent <<< "(placeholder \(placeholder))"
-            if placeholder != node.placeholders.last {
-              self <<< "\n"
-            }
-          }
-        }
-        self <<< ")"
-      }
-      self <<< "\n" <<< indent <<< "(body\n"
-      withIndentation { visit(node.body) }
-      self <<< ")"
-    }
+    withIndentation { node.nominalTypeDecl.accept(visitor: self) }
     self <<< ")"
   }
 
   public func visit(_ node: QualTypeSign) {
     self <<< indent <<< "(qual_type_sign"
-    if !node.qualifiers.isEmpty {
-      self <<< " " + node.qualifiers.map({ $0.description }).sorted().joined(separator: " ")
+    if !node.quals.isEmpty {
+      self <<< " \(node.quals)"
     }
-    if let signature = node.signature {
+    self <<< " type='" <<< node.type <<< "'"
+    if let sign = node.sign {
       self <<< "\n"
-      withIndentation { visit(signature) }
+      withIndentation { sign.accept(visitor: self) }
     }
     self <<< ")"
   }
 
-  public func visit(_ node: TypeIdent) {
-    self <<< indent <<< "(type_identifier"
-    self <<< " '\(node.name)'"
+  public func visit(_ node: IdentSign) {
+    self <<< indent <<< "(type_ident"
+    self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
-    self <<< " scope='" <<< node.scope <<< "'"
+    withIndentation {
+      for (key, value) in node.specArgs {
+        self <<< "\n" <<< indent <<< "(spec_args key='\(key)'\n"
+        withIndentation { value.accept(visitor: self) }
+        self <<< ")"
+      }
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: NestedIdentSign) {
+    self <<< indent <<< "(nested_type_ident"
+    self <<< " type='" <<< node.type <<< "'"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(owner\n"
+      withIndentation { node.owner.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(ownee\n"
+      withIndentation { node.ownee.accept(visitor: self) }
+      self <<< ")"
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: ImplicitNestedIdentSign) {
+    self <<< indent <<< "(nested_type_ident"
+    self <<< " type='" <<< node.type <<< "'"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(ownee\n"
+      withIndentation { node.ownee.accept(visitor: self) }
+      self <<< ")"
+    }
     self <<< ")"
   }
 
   public func visit(_ node: FunSign) {
     self <<< indent <<< "(fun_sign"
+    self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      if !node.parameters.isEmpty {
-        self <<< "\n" <<< indent <<< "(parameters\n"
-        withIndentation { visit(node.parameters) }
+      if !node.dom.isEmpty {
+        self <<< "\n" <<< indent <<< "(dom\n"
+        withIndentation { self <<< node.dom }
         self <<< ")"
       }
-      self <<< "\n" <<< indent <<< "(codomain\n"
-      withIndentation { visit(node.codomain) }
-      self <<< ")"
+      if let codom = node.codom {
+        self <<< "\n" <<< indent <<< "(codom\n"
+        withIndentation { codom.accept(visitor: self) }
+        self <<< ")"
+      }
     }
     self <<< ")"
   }
 
   public func visit(_ node: ParamSign) {
     self <<< indent <<< "(param_sign"
-    self <<< " '" <<< node.label <<< "'"
+    self <<< " label='" <<< node.label <<< "'"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(type_annotation\n"
-      withIndentation { visit(node.typeAnnotation) }
+      self <<< "\n" <<< indent <<< "(sign\n"
+      withIndentation { node.sign.accept(visitor: self) }
       self <<< ")"
     }
     self <<< ")"
   }
 
-  public func visit(_ node: Directive) {
-    self <<< indent <<< "(directive"
-    self <<< " '\(node.name)'"
-    if !node.arguments.isEmpty {
-      self <<< " " + node.arguments.joined(separator: " ")
+  public func visit(_ node: InvalidSign) {
+    self <<< indent <<< "(invalid_sign "
+    self <<< " type='" <<< node.type <<< "'"
+    self <<< ")"
+  }
+
+  public func visit(_ node: BraceStmt) {
+    self <<< indent <<< "(brace_stmt"
+    if !node.stmts.isEmpty {
+      self <<< "\n"
+      withIndentation { self <<< node.stmts }
     }
     self <<< ")"
   }
 
-  public func visit(_ node: WhileLoop) {
-    self <<< indent <<< "(while"
+  public func visit(_ node: IfStmt) {
+    self <<< indent <<< "(if_stmt"
     withIndentation {
       self <<< "\n" <<< indent <<< "(condition\n"
-      withIndentation { visit(node.condition) }
-      self <<< ")\n" <<< indent <<< "(body\n"
-      withIndentation { visit(node.body) }
+      withIndentation { node.condition.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(then_stmt\n"
+      withIndentation { node.thenStmt.accept(visitor: self) }
       self <<< ")"
+      if let elseStmt = node.elseStmt {
+        self <<< "\n" <<< indent <<< "(else_stmt\n"
+        withIndentation { elseStmt.accept(visitor: self) }
+        self <<< ")"
+      }
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: WhileStmt) {
+    self <<< indent <<< "(while_stmt"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(condition\n"
+      withIndentation { node.condition.accept(visitor: self) }
+      self <<< ")\n"
+      node.body.accept(visitor: self)
     }
     self <<< ")"
   }
 
   public func visit(_ node: BindingStmt) {
-    self <<< indent <<< "(bind"
+    self <<< indent <<< "(bind_stmt"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(lvalue\n"
-      withIndentation { visit(node.lvalue) }
-      self <<< ")"
-      self <<< "\n" <<< indent <<< "(binding_operator \(node.op))\n"
-      self <<< "\n" <<< indent <<< "(rvalue\n"
-      withIndentation { visit(node.rvalue) }
+      self <<< "\n" <<< indent <<< "(op\n"
+      withIndentation { node.op.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(lvalue\n"
+      withIndentation { node.lvalue.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(rvalue\n"
+      withIndentation { node.rvalue.accept(visitor: self) }
       self <<< ")"
     }
     self <<< ")"
   }
 
   public func visit(_ node: ReturnStmt) {
-    self <<< indent <<< "(return"
+    self <<< indent <<< "(return_stmt"
     if let (op, value) = node.binding {
-      self <<< "\n" <<< indent <<< "(binding\n"
       withIndentation {
-        self <<< indent <<< "(binding_operator \(op))\n"
-        visit(value)
+        self <<< "\n" <<< indent <<< "(binding\n"
+        withIndentation { op.accept(visitor: self) }
+        self <<< "\n"
+        value.accept(visitor: self)
       }
       self <<< ")"
     }
     self <<< ")"
   }
 
-  public func visit(_ node: NullRef) {
-    self <<< indent <<< "(nullref"
-    self <<< " type='" <<< node.type <<< "'"
-    self <<< ")"
+  public func visit(_ node: InvalidStmt) {
+    self <<< indent <<< "(invalid_stmt)"
   }
 
-  public func visit(_ node: IfExpr) {
-    self <<< indent <<< "(if"
+  public func visit(_ node: NullExpr) {
+    self <<< indent <<< "(null_expr"
     self <<< " type='" <<< node.type <<< "'"
-    withIndentation {
-      self <<< "\n" <<< indent <<< "(condition\n"
-      withIndentation { visit(node.condition) }
-      self <<< ")\n" <<< indent <<< "(then\n"
-      withIndentation { visit(node.thenBlock) }
-      self <<< ")"
-      if let elseBlock = node.elseBlock {
-        self <<< "\n" <<< indent <<< "(else\n"
-        withIndentation { visit(elseBlock) }
-        self <<< ")"
-      }
-    }
     self <<< ")"
   }
 
@@ -357,101 +365,103 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(lambda_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      if !node.parameters.isEmpty {
-        self <<< "\n" <<< indent <<< "(parameters\n"
-        withIndentation { visit(node.parameters) }
+      if !node.params.isEmpty {
+        self <<< "\n" <<< indent <<< "(params\n"
+        withIndentation { self <<< node.params }
         self <<< ")"
       }
-      if let codomain = node.codomain {
-        self <<< "\n" <<< indent <<< "(codomain\n"
-        withIndentation { visit(codomain) }
+      if let codom = node.codom {
+        self <<< "\n" <<< indent <<< "(codom\n"
+        withIndentation { codom.accept(visitor: self) }
         self <<< ")"
       }
       self <<< "\n" <<< indent <<< "(body\n"
-      withIndentation { visit(node.body) }
+      withIndentation { node.body.accept(visitor: self) }
       self <<< ")"
     }
     self <<< ")"
   }
 
-  public func visit(_ node: CastExpr) {
-    self <<< indent <<< "(cast_expr"
+  public func visit(_ node: UnsafeCastExpr) {
+    self <<< indent <<< "(unsafe_cast_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
       self <<< "\n" <<< indent <<< "(operand\n"
-      withIndentation { visit(node.operand) }
+      withIndentation { node.operand.accept(visitor: self) }
       self <<< ")"
-      self <<< "\n" <<< indent <<< "(cast_type\n"
-      withIndentation { visit(node.castType) }
-      self <<< ")"
-    }
-    self <<< ")"
-  }
-
-  public func visit(_ node: BinExpr) {
-    self <<< indent <<< "(bin_expr"
-    self <<< " type='" <<< node.type <<< "'"
-    withIndentation {
-      self <<< "\n" <<< indent <<< "(left\n"
-      withIndentation { visit(node.left) }
-      self <<< ")"
-      self <<< "\n" <<< indent <<< "(infix_operator \(node.op))"
-      self <<< "\n" <<< indent <<< "(right\n"
-      withIndentation { visit(node.right) }
+      self <<< "\n" <<< indent <<< "(cast_sign\n"
+      withIndentation { node.castSign.accept(visitor: self) }
       self <<< ")"
     }
     self <<< ")"
   }
 
-  public func visit(_ node: UnExpr) {
-    self <<< indent <<< "(un_expr"
+  public func visit(_ node: InfixExpr) {
+    self <<< indent <<< "(infix_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(prefix_operator \(node.op))"
-      self <<< "\n" <<< indent <<< "(operand\n"
-      withIndentation { visit(node.operand) }
+      self <<< "\n" <<< indent <<< "(op\n"
+      withIndentation { node.op.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(lhs\n"
+      withIndentation { node.lhs.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(rhs\n"
+      withIndentation { node.rhs.accept(visitor: self) }
+      self <<< ")"
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: PrefixExpr) {
+    self <<< indent <<< "(prefix_expr"
+    self <<< " type='" <<< node.type <<< "'"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(op\n"
+      withIndentation { node.op.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(operand\n"
+      withIndentation { node.operand.accept(visitor: self) }
       self <<< ")"
     }
     self <<< ")"
   }
 
   public func visit(_ node: CallExpr) {
-    self <<< indent <<< "(call"
+    self <<< indent <<< "(call_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
       self <<< "\n" <<< indent <<< "(callee\n"
-      withIndentation { visit(node.callee) }
+      withIndentation { node.callee.accept(visitor: self) }
       self <<< ")"
-      if !node.arguments.isEmpty {
-        self <<< "\n" <<< indent <<< "(arguments\n"
-        withIndentation { visit(node.arguments) }
+      if !node.args.isEmpty {
+        self <<< "\n" <<< indent <<< "(args\n"
+        withIndentation { self <<< node.args }
         self <<< ")"
       }
     }
     self <<< ")"
   }
 
-  public func visit(_ node: CallArg) {
-    self <<< indent <<< "(call_arg"
+  public func visit(_ node: CallArgExpr) {
+    self <<< indent <<< "(call_arg_expr"
     self <<< " '" <<< node.label <<< "'"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(binding_operator \(node.bindingOp))\n"
-      visit(node.value)
+      self <<< "\n" <<< indent <<< "(op\n"
+      withIndentation { node.op.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(value\n"
+      withIndentation { node.value.accept(visitor: self) }
+      self <<< ")"
     }
     self <<< ")"
   }
 
-  public func visit(_ node: SubscriptExpr) {
-    self <<< indent <<< "(subscript"
+  public func visit(_ node: IdentExpr) {
+    self <<< indent <<< "(ident_expr"
+    self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(callee\n"
-      withIndentation { visit(node.callee) }
-      self <<< ")"
-      if !node.arguments.isEmpty {
-        self <<< "\n" <<< indent <<< "(arguments\n"
-        withIndentation { visit(node.arguments) }
+      for (key, value) in node.specArgs {
+        self <<< "\n" <<< indent <<< "(spec_args key='\(key)'\n"
+        withIndentation { value.accept(visitor: self) }
         self <<< ")"
       }
     }
@@ -459,108 +469,142 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   public func visit(_ node: SelectExpr) {
-    self <<< indent <<< "(select"
+    self <<< indent <<< "(select_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      if let owner = node.owner {
-        self <<< "\n" <<< indent <<< "(owner\n"
-        withIndentation { visit(owner) }
-        self <<< ")"
-      }
-      self <<< "\n" <<< indent <<< "(ownee\n"
-      withIndentation { visit(node.ownee) }
+      self <<< "\n" <<< indent <<< "(owner\n"
+      withIndentation { node.owner.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(ownee\n"
+      withIndentation { node.ownee.accept(visitor: self) }
       self <<< ")"
     }
     self <<< ")"
   }
 
-  public func visit(_ node: ArrayLiteral) {
-    self <<< indent <<< "(array_literal"
+  public func visit(_ node: ImplicitSelectExpr) {
+    self <<< indent <<< "(implicit_select_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      self <<< "\n"
-      withIndentation { visit(node.elements) }
+      self <<< "\n" <<< indent <<< "(ownee\n"
+      withIndentation { node.ownee.accept(visitor: self) }
+      self <<< ")"
     }
     self <<< ")"
   }
 
-  public func visit(_ node: SetLiteral) {
-    self <<< indent <<< "(set_literal"
+  public func visit(_ node: ArrayLitExpr) {
+    self <<< indent <<< "(array_lit_expr"
     self <<< " type='" <<< node.type <<< "'"
-    withIndentation {
+    if !node.elems.isEmpty {
       self <<< "\n"
-      withIndentation { visit(node.elements) }
+      withIndentation { self <<< node.elems }
     }
     self <<< ")"
   }
 
-  public func visit(_ node: MapLiteral) {
-    self <<< indent <<< "(map_literal"
+  public func visit(_ node: SetLitExpr) {
+    self <<< indent <<< "(set_lit_expr"
+    self <<< " type='" <<< node.type <<< "'"
+    if !node.elems.isEmpty {
+      self <<< "\n"
+      withIndentation { self <<< node.elems }
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: MapLitExpr) {
+    self <<< indent <<< "(map_lit_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      self <<< "\n"
-      for (i, element) in node.elements.enumerated() {
-        self <<< indent <<< "(map_literal_element\n"
-        withIndentation {
-          self <<< indent <<< "(key \(element.key))\n"
-          self <<< indent <<< "(value"
-          withIndentation { visit(element.value) }
-          self <<< ")"
-        }
+      for (key, value) in node.elems {
+        self <<< "\n" <<< indent <<< "(map_lit_elem key='\(key)'\n"
+        withIndentation { value.accept(visitor: self) }
         self <<< ")"
-        if i < (node.elements.count - 1) {
-          self <<< "\n"
-        }
       }
     }
     self <<< ")"
   }
 
-  public func visit(_ node: Ident) {
-    self <<< indent <<< "(identifier"
-    self <<< " '\(node.name)'"
-    self <<< " type='" <<< node.type <<< "'"
-    self <<< " scope='" <<< node.scope <<< "'"
-    self <<< ")"
-  }
-
-  public func visit(_ node: Literal<Bool>) {
-    self <<< indent <<< "(bool_literal \(node.value)"
+  public func visit(_ node: BoolLitExpr) {
+    self <<< indent <<< "(bool_lit_expr value='\(node.value)'"
     self <<< " type='" <<< node.type <<< "'"
     self <<< ")"
   }
 
-  public func visit(_ node: Literal<Int>) {
-    self <<< indent <<< "(int_literal \(node.value)"
+  public func visit(_ node: IntLitExpr) {
+    self <<< indent <<< "(int_lit_expr value='\(node.value)'"
     self <<< " type='" <<< node.type <<< "'"
     self <<< ")"
   }
 
-  public func visit(_ node: Literal<Double>) {
-    self <<< indent <<< "(float_literal \(node.value)"
+  public func visit(_ node: FloatLitExpr) {
+    self <<< indent <<< "(float_lit_expr value='\(node.value)'"
     self <<< " type='" <<< node.type <<< "'"
     self <<< ")"
   }
 
-  public func visit(_ node: Literal<String>) {
-    self <<< indent <<< "(string_literal \"\(node.value)\""
+  public func visit(_ node: StrLitExpr) {
+    self <<< indent <<< "(str_lit_expr value='\(node.value)'"
     self <<< " type='" <<< node.type <<< "'"
     self <<< ")"
   }
 
-  public func visit(_ nodes: [Node]) {
-    for node in nodes {
-      visit(node)
-      if node !== nodes.last {
-        self <<< "\n"
-      }
+  public func visit(_ node: ParenExpr) {
+    self <<< indent <<< "(paren_expr "
+    self <<< " type='" <<< node.type <<< "'"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(expr\n"
+      withIndentation { node.expr.accept(visitor: self) }
+      self <<< ")"
     }
+    self <<< ")"
   }
+
+  public func visit(_ node: InvalidExpr) {
+    self <<< indent <<< "(invalid_expr "
+    self <<< " type='" <<< node.type <<< "'"
+    self <<< ")"
+  }
+
+  public func visit(_ node: DeclAttr) {
+    self <<< indent <<< "(decl_attr"
+    self <<< " name='\(node.name)'"
+    if !node.args.isEmpty {
+      self <<< " " + node.args.joined(separator: " ")
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: DeclModifier) {
+    self <<< indent <<< "(decl_modifier \(node.kind.rawValue))"
+  }
+
+  public func visit(_ node: Directive) {
+    self <<< indent <<< "(directive"
+    self <<< " name='\(node.name)'"
+    if !node.args.isEmpty {
+      self <<< " " + node.args.joined(separator: " ")
+    }
+    self <<< ")"
+  }
+
+  // MARK: - Helpers
 
   fileprivate func withIndentation(body: () -> Void) {
     level += 1
     body()
     level -= 1
+  }
+
+  @discardableResult
+  fileprivate static func <<< (dumper: ASTDumper, nodes: [ASTNode]) -> ASTDumper {
+    for node in nodes {
+      node.accept(visitor: dumper)
+      if node !== nodes.last {
+        dumper <<< "\n"
+      }
+    }
+    return dumper
   }
 
   @discardableResult
@@ -573,6 +617,61 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   fileprivate static func <<< <T>(dumper: ASTDumper, item: T?) -> ASTDumper {
     dumper.outputStream.write(item.map({ String(describing: $0) }) ?? "_")
     return dumper
+  }
+
+}
+
+// MARK: - Helpers
+
+extension DeclAttr: Comparable {
+
+  public static func < (lhs: DeclAttr, rhs: DeclAttr) -> Bool {
+    if lhs.name == rhs.name {
+      return lhs.args.joined() < rhs.args.joined()
+    } else {
+      return lhs.name < rhs.name
+    }
+  }
+
+}
+
+extension DeclAttr: CustomStringConvertible {
+
+  public var description: String {
+    return ""
+  }
+
+}
+
+extension DeclModifier: Comparable {
+
+  public static func < (lhs: DeclModifier, rhs: DeclModifier) -> Bool {
+    return lhs.kind.rawValue < rhs.kind.rawValue
+  }
+
+}
+
+extension FunDecl.Kind: CustomStringConvertible {
+
+  public var description: String {
+    switch self {
+    case .constructor:
+      return "ctor"
+    case .destructor:
+      return "dtor"
+    case .method:
+      return "method"
+    case .regular:
+      return "regular"
+    }
+  }
+
+}
+
+extension TypeQualSet: CustomStringConvertible {
+
+  public var description: String {
+    return contains(.cst) ? "@cst" : "@mut"
   }
 
 }

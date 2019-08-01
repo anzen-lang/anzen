@@ -2,87 +2,57 @@ import AST
 
 extension Parser {
 
-  /// Parses a single statement.
-  func parseStatement() -> Result<Node?> {
+  /// Parses a single top-level expression, statement or declaration.
+  func parseTopLevelNode() -> Result<ASTNode?> {
     switch peek().kind {
-    case .hashMark:
-      // Currently, only function declarations can be annotated with compiler directives. Therefore
-      // we can simply parse a sequence of directives, followed by a function declaration, and add
-      // the directives to the latter. In the future, directives might be more difficult to handle
-      // as some may affect the parser's state (e.g. conditional compilation).
-
-      // Parse a sequence of directives.
-      var directives: [Directive] = []
-      var issues: [Issue] = []
-      repeat {
-        consumeNewlines()
-        guard let parseResult = attempt(parseDirective)
-          else { break }
-
-        issues.append(contentsOf: parseResult.issues)
-        directives.append(parseResult.value)
-      } while true
-
-      // Parse a function declaration.
-      consumeNewlines()
-      let parseResult = parseStatement()
-      issues.append(contentsOf: parseResult.issues)
-
-      guard parseResult.value != nil else { return parseResult }
-      guard let declaration = parseResult.value as? FunDecl else {
-        return Result(
-          value: parseResult.value,
-          issues: issues + [
-            unexpectedConstruction(expected: "function declaration", got: parseResult.value!),
-          ])
+    case .directive:
+      // Compiler directives are currently parsed, but not supported. In the future, these will be
+      // serve to control the parser's state, for instance to implement conditional compilation.
+      let parseResult = parseDirective()
+      if let directive = parseResult.value {
+        let issue = parseFailure(.invalidDirective(directive: directive), range: directive.range)
+        return Result(value: nil, issues: parseResult.issues + [issue])
+      } else {
+        return Result(value: nil, issues: parseResult.issues)
       }
-
-      declaration.directives = directives
-      return Result(value: declaration, issues: issues)
 
     case .static, .mutating:
-      // If the statement starts with a member attribute, it can describe either a property or a
-      // function declaration. Hence we need to parse all attributes before we can desambiguise.
-      let startToken = peek()
-      var attributes: Set<MemberAttribute> = []
+      // If the statement starts with a declaration modifier, it can describe either a property or
+      // a function declaration. Hence we need to parse all modifiers before we can desambiguise.
+      let head = peek()
+      var modifiers: [DeclModifier] = []
 
-      attrs:while true {
+      repeat {
+        let declKind: DeclModifier.Kind = consume()!.kind == .static
+          ? .static
+          : .mutating
+        modifiers.append(DeclModifier(kind: declKind, module: module, range: head.range))
         consumeNewlines()
-        switch peek().kind {
-        case .static:
-          consume()
-          attributes.insert(.static)
+      } while (peek().kind == .static) || (peek().kind == .mutating)
 
-        case .mutating:
-          consume()
-          attributes.insert(.mutating)
+      // The next construction has to be a property or a function declaration. Nonetheless, we will
+      // parse any statement or declaration anyway for the sake of error reporting.
+      let parseResult = parseTopLevelNode()
+      switch parseResult.value {
+      case nil:
+        return Result(value: nil, issues: parseResult.issues)
 
-        case .let, .var, .fun:
-          break attrs
+      case let decl as PropDecl:
+        decl.modifiers = Set(modifiers)
+        decl.range = modifiers.first!.range.lowerBound ..< decl.range.upperBound
+        return Result(value: decl, issues: parseResult.issues)
 
-        default:
-          // As the next token does not indicate a property or a method declaration, we should give
-          // up until the end of the line.
-          consumeMany(while: { !$0.isStatementDelimiter })
-          return Result(
-            value: nil,
-            issues: [unexpectedToken(expected: "property of function declaration")])
-        }
+      case let decl as FunDecl:
+        decl.modifiers = Set(modifiers)
+        decl.range = modifiers.first!.range.lowerBound ..< decl.range.upperBound
+        return Result(value: decl, issues: parseResult.issues)
+
+      case .some(let node):
+        let issue = parseFailure(
+          .unexpectedConstruction(expected: "property or function declaration", got: node),
+          range: node.range)
+        return Result(value: parseResult.value, issues: parseResult.issues + [issue])
       }
-
-      let parseResult = parseStatement()
-      guard let declaration = parseResult.value
-        else { return parseResult }
-      assert(declaration is PropDecl || declaration is FunDecl)
-
-      declaration.range = SourceRange(from: startToken.range.start, to: declaration.range.end)
-      if let propertyDeclaration = declaration as? PropDecl {
-        propertyDeclaration.attributes.formUnion(attributes)
-      } else if let methodDeclaration = declaration as? FunDecl {
-        methodDeclaration.attributes.formUnion(attributes)
-      }
-
-      return Result(value: declaration, issues: parseResult.issues)
 
     case .let, .var:
       let parseResult = parsePropDecl()
@@ -92,24 +62,28 @@ extension Parser {
       let parseResult = parseFunDecl()
       return Result(value: parseResult.value, issues: parseResult.issues)
 
-    case .struct:
-      let parseResult = parseStructDecl()
+    case .interface:
+      let parseResult = parseInterfaceDecl()
       return Result(value: parseResult.value, issues: parseResult.issues)
 
-    case .case:
-      let parseResult = parseUnionNestedMemberDecl()
+    case .struct:
+      let parseResult = parseStructDecl()
       return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .union:
       let parseResult = parseUnionDecl()
       return Result(value: parseResult.value, issues: parseResult.issues)
 
-    case .interface:
-      let parseResult = parseInterfaceDecl()
+    case .case:
+      let parseResult = parseUnionNestedMemberDecl()
+      return Result(value: parseResult.value, issues: parseResult.issues)
+
+    case .if:
+      let parseResult = parseIfStmt()
       return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .while:
-      let parseResult = parseWhileLoop()
+      let parseResult = parseWhileStmt()
       return Result(value: parseResult.value, issues: parseResult.issues)
 
     case .return:
@@ -117,241 +91,315 @@ extension Parser {
       return Result(value: parseResult.value, issues: parseResult.issues)
 
     default:
-      // Attempt to parse a binding statement before falling back to an expression.
-      if let parseResult = attempt(parseBindingStmt) {
-        return Result(value: parseResult.value, issues: parseResult.issues)
-      }
+      // Parse an expression.
+      let lhsParseResult = parseExpr()
+      let issues = lhsParseResult.issues
 
-      let parseResult = parseExpression()
-      return Result(value: parseResult.value, issues: parseResult.issues)
+      if let lhs = lhsParseResult.value {
+        // Attempt to parse a return binding.
+        let opToken = peek(afterMany: .newline)
+        if (opToken!.isBindingOperator || opToken!.kind == .assign) {
+          consumeNewlines()
+          let bindingParseResult = parseBinding()
+          if let binding = bindingParseResult.value {
+            let stmt = BindingStmt(
+              op: binding.op,
+              lvalue: lhs,
+              rvalue: binding.value,
+              module: module,
+              range: lhs.range.lowerBound ..< binding.value.range.upperBound)
+            return Result(value: stmt, issues: issues + bindingParseResult.issues)
+          } else {
+            return Result(value: lhs, issues: issues + bindingParseResult.issues)
+          }
+        }
+      }
+      return Result(value: lhsParseResult.value, issues: issues)
     }
   }
 
-  /// Parses a block of statements, delimited by braces.
-  func parseStatementBlock() -> Result<Block?> {
-    // The first token should be left brace.
-    guard let startToken = consume(.leftBrace) else {
-      defer { consume() }
-      return Result(value: nil, issues: [unexpectedToken(expected: "'{'")])
-    }
+  /// Parses a brace statement.
+  ///
+  /// This parser recognizes a sequence of statements (in the broad sense), separated by statement
+  /// delimiters (i.e. a newline or `;`) and enclosed in braces. In case of failure to parse a
+  /// particular statement, the method tries to recover at the next delimiter.
+  ///
+  /// - SeeAlso: `parseCommaSeparatedList(delimitedBy:parsingElementWith:)`
+  func parseBraceStmt() -> Result<BraceStmt?> {
+    // The first token should be a left brace.
+    guard let head = consume(.leftBrace)
+      else { return Result(value: nil, issues: [unexpectedToken(expected: "'{'")]) }
 
+    var nodes: [ASTNode] = []
     var issues: [Issue] = []
 
-    // Skip trailing new lines.
-    consumeNewlines()
-
-    // Parse as many statements as possible
-    var statements: [Node] = []
+    // Parse as many nodes as possible.
     while peek().kind != .rightBrace {
-      // Parse a statement.
-      let statementParseResult = parseStatement()
-      issues.append(contentsOf: statementParseResult.issues)
-      if let statement = statementParseResult.value {
-        statements.append(statement)
+      // Skip leading new lines in front of the next statement to avoid triggering an error if the
+      // end of the sequence has been reached.
+      consumeNewlines()
+      guard (peek().kind != .rightBrace) && (peek().kind != .eof)
+        else { break }
+
+      // Parse the next node.
+      let nodeParseResult = parseTopLevelNode()
+      issues.append(contentsOf: nodeParseResult.issues)
+      if let node = nodeParseResult.value {
+        nodes.append(node)
+      } else {
+        // If the next node couldn't be parsed, skip all input until the next statement delimiter.
+        consumeUpToNextStatementDelimiter()
       }
 
-      // If the next token isn't the block delimiter, we MUST parse a statement delimiter.
       if peek().kind != .rightBrace {
-        guard peek().isStatementDelimiter else {
-          issues.append(parseFailure(.expectedStatementDelimiter))
-          consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .rightBrace) })
+        // If the next token isn't a closing brace nor the end of file, we **must** parse a
+        // statement delimiter. Otherwise, we assume one is missing and attempt to parse the next
+        // statement after raising an issue.
+        guard peek().isStatementDelimiter || (peek().kind == .eof) else {
+          issues.append(parseFailure(.expectedStatementDelimiter, range: peek().range))
           continue
         }
-
-        consumeNewlines()
-      }
-
-      // Make sure we didn't reach the end of the stream.
-      guard peek().kind != .eof else {
-        issues.append(unexpectedToken(expected: "'}'"))
-        break
       }
     }
 
-    let endToken = consume()!
-    return Result(
-      value: Block(
-        statements: statements,
-        module: module,
-        range: SourceRange(from: startToken.range.start, to: endToken.range.end)),
-      issues: issues)
+    let tail = consume(.leftBrace) ?? peek()
+    assert(tail.kind == .leftBrace || tail.kind == .eof)
+    if tail.kind == .eof {
+      issues.append(unexpectedToken(expected: "'}'"))
+    }
+
+    let stmt = BraceStmt(
+      stmts: nodes,
+      module: module,
+      range: head.range.lowerBound ..< tail.range.upperBound)
+    return Result(value: stmt, issues: issues)
+  }
+
+  /// Parses a conditional expression.
+  func parseIfStmt() -> Result<IfStmt?> {
+    // The first token should be `if`.
+    guard let head = consume(.if)
+      else { return Result(value: nil, issues: [unexpectedToken(expected: "'if'")]) }
+
+    // Parse the statement's condition.
+    consumeNewlines()
+    let conditionParseResult = parseExpr()
+    var issues = conditionParseResult.issues
+
+    let condition: Expr
+    if let expr = conditionParseResult.value {
+      condition = expr
+    } else {
+      // Although we couldn't parse the statement's condition, we should attempt to parse its body
+      // anyway, and so we need to skip the tokens inbetween. Failure to produce any expression
+      // likely indicates that the parser encountered an unexpected token, so we'll skip all input
+      // until we find an opening brace, an explicit statement delimiter or the end of file.
+      let savePoint = streamPosition
+      consumeMany(while: {
+        ($0.kind != .leftBrace) && ($0.kind != .semicolon) && ($0.kind != .eof)
+      })
+
+      guard peek().kind == .leftBrace else {
+        // Give up on the current statement if we couldn't find opening braces.
+        rewind(to: savePoint)
+        return Result(value: nil, issues: issues)
+      }
+
+      // Create an invalid expression placeholder for the condition.
+      condition = InvalidExpr(module: module, range: head.range)
+    }
+
+    // Parse the statement's "then" body.
+    consumeNewlines()
+    let thenStmtParseResult = parseBraceStmt()
+    issues.append(contentsOf: thenStmtParseResult.issues)
+
+    var elseStmt: Stmt?
+    if consume(.else, afterMany: .newline) != nil {
+      // Commit to parse the statement's "else" node. This should be either an `if` statement, or
+      // a brace statement.
+      consumeNewlines()
+      switch peek().kind {
+      case .if:
+        let elseStmtParseResult = parseIfStmt()
+        issues.append(contentsOf: elseStmtParseResult.issues)
+        elseStmt = elseStmtParseResult.value
+
+      case .leftBrace:
+        let elseStmtParseResult = parseBraceStmt()
+        issues.append(contentsOf: elseStmtParseResult.issues)
+        elseStmt = elseStmtParseResult.value
+
+      default:
+        issues.append(unexpectedToken(expected: "'{'"))
+      }
+    }
+
+    // We can't produce a valid statement if either its condition or body couldn't be parsed
+    // successfully. Nonetheless we'll produce a "fake" one so that semantic analysis can run on
+    // whathever we were able to parse.
+    let thenStmt: Stmt = thenStmtParseResult.value
+      ?? InvalidStmt(module: module, range: head.range)
+    let stmt = IfStmt(
+      condition: condition,
+      thenStmt: thenStmt,
+      elseStmt: elseStmt,
+      module: module,
+      range: head.range.lowerBound ..< (elseStmt ?? thenStmt).range.upperBound)
+    return Result(value: stmt, issues: issues)
   }
 
   /// Parses a while-loop.
-  func parseWhileLoop() -> Result<WhileLoop?> {
-    // The first token should be `return`.
-    guard let startToken = consume(.while) else {
-      defer { consume() }
-      return Result(value: nil, issues: [unexpectedToken(expected: "'while'")])
-    }
+  func parseWhileStmt() -> Result<WhileStmt?> {
+    // The first token should be `while`.
+    guard let head = consume(.while)
+      else { return Result(value: nil, issues: [unexpectedToken(expected: "'while'")]) }
 
-    var issues: [Issue] = []
-
-    // Parse the condition.
-    let backtrackPosition = streamPosition
+    // Parse the loop's condition.
     consumeNewlines()
-    let conditionParseResult = parseExpression()
-    issues.append(contentsOf: conditionParseResult.issues)
+    let conditionParseResult = parseExpr()
+    var issues = conditionParseResult.issues
 
-    var condition: Expr?
-    if let expression = conditionParseResult.value {
-      condition = expression
+    let condition: Expr
+    if let expr = conditionParseResult.value {
+      condition = expr
     } else {
-      // Although we cannot create a conditional node without successfully parsing its condition,
-      // we'll attempt to parse the remainder of the expression anyway.
-      rewind(to: backtrackPosition)
-      consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .leftBrace) })
+      // Although we couldn't parse the loop's condition, we should attempt to parse its body
+      // anyway, and so we need to skip the tokens inbetween. Failure to produce any expression
+      // likely indicates that the parser encountered an unexpected token, so we'll skip all input
+      // until we find an opening brace, an explicit statement delimiter or the end of file.
+      let savePoint = streamPosition
+      consumeMany(while: {
+        ($0.kind != .leftBrace) && ($0.kind != .semicolon) && ($0.kind != .eof)
+      })
+
+      guard peek().kind == .leftBrace else {
+        // Give up on the current statement if we couldn't find opening braces.
+        rewind(to: savePoint)
+        return Result(value: nil, issues: issues)
+      }
+
+      // Create an invalid expression placeholder for the condition.
+      condition = InvalidExpr(module: module, range: head.range)
     }
 
-    // Parse the first block of statements (i.e. the "then" clause).
+    // Parse the loop's body.
     consumeNewlines()
-    let thenParseResult = parseStatementBlock()
-    issues.append(contentsOf: thenParseResult.issues)
+    let bodyParseResult = parseBraceStmt()
+    issues.append(contentsOf: bodyParseResult.issues)
 
-    guard let body = thenParseResult.value else {
-      return Result(value: nil, issues: issues)
-    }
-
-    guard condition != nil else {
-      return Result(value: nil, issues: issues)
-    }
-
-    return Result(
-      value: WhileLoop(
-        condition: condition!,
-        body: body,
-        module: module,
-        range: SourceRange(from: startToken.range.start, to: body.range.end)),
-      issues: issues)
+    // We can't produce a valid statement if either its condition or body couldn't be parsed
+    // successfully. Nonetheless we'll produce a "fake" one so that semantic analysis can run on
+    // whathever we were able to parse.
+    let body: Stmt = bodyParseResult.value
+      ?? InvalidStmt(module: module, range: head.range)
+    let stmt = WhileStmt(
+      condition: condition,
+      body: body,
+      module: module,
+      range: head.range.lowerBound ..< body.range.upperBound)
+    return Result(value: stmt, issues: issues)
   }
 
   /// Parses a return statement.
   func parseReturnStmt() -> Result<ReturnStmt?> {
     // The first token should be `return`.
-    guard let startToken = consume(.return) else {
-      defer { consume() }
-      return Result(value: nil, issues: [unexpectedToken(expected: "'return'")])
-    }
+    guard let head = consume(.return)
+      else { return Result(value: nil, issues: [unexpectedToken(expected: "'return'")]) }
 
+    // Attempt to parse a return binding.
+    var binding: (IdentExpr, Expr)?
     var issues: [Issue] = []
+    var rangeUpperBound = head.range.upperBound
 
-    // Attempt to parse a return value.
-    if let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) {
+    let opToken = peek(afterMany: .newline)
+    if (opToken!.isBindingOperator || opToken!.kind == .assign) {
       consumeNewlines()
-      let parseResult = parseExpression()
+      let parseResult = parseBinding()
       issues.append(contentsOf: parseResult.issues)
-
-      if let expression = parseResult.value {
-        let binding = (operatorToken.asBindingOperator!, expression)
-        return Result(
-          value: ReturnStmt(
-            binding: binding,
-            module: module,
-            range: SourceRange(from: startToken.range.start, to: expression.range.end)),
-          issues: issues)
+      if let parsedBinding = parseResult.value {
+        binding = parsedBinding
+        rangeUpperBound = parsedBinding.value.range.upperBound
       }
-    } else if let assignOperator = consume(.assign, afterMany: .newline) {
-      // Catch invalid uses of the "assign" token in lieu of a binding operator.
-      issues.append(parseFailure(
-        .unexpectedToken(expected: "binding operator", got: assignOperator),
-        range: assignOperator.range))
-
-      // Parse the expression in case it contains syntax issues as well.
-      let parseResult = parseExpression()
-      issues.append(contentsOf: parseResult.issues)
     }
 
-    return Result(value: ReturnStmt(module: module, range: startToken.range), issues: [])
+    let stmt = ReturnStmt(
+      binding: binding,
+      module: module,
+      range: head.range.lowerBound ..< rangeUpperBound)
+    return Result(value: stmt, issues: issues)
   }
 
-  /// Parses a binding statement.
-  func parseBindingStmt() -> Result<BindingStmt?> {
-    var issues: [Issue] = []
-
-    // Parse the left operand.
-    let leftParseResult = parseExpression()
-    issues.append(contentsOf: leftParseResult.issues)
-
-    guard let lvalue = leftParseResult.value else {
-      consumeUpToNextStatementDelimiter()
-      return Result(value: nil, issues: issues)
-    }
-
+  /// Parses the right side of a binding (i.e. a binding operator with an r-value).
+  func parseBinding() -> Result<(op: IdentExpr, value: Expr)?> {
     // Parse the binding operator.
-    guard let operatorToken = consume(afterMany: .newline, if: { $0.isBindingOperator }) else {
-      consumeUpToNextStatementDelimiter()
-      return Result(value: nil, issues: issues + [unexpectedToken(expected: "binding operator")])
+    guard let opToken = consume(if: { $0.isBindingOperator }) else {
+      if let opToken = consume(.assign) {
+        // Catch invalid uses of the "assign" token in lieu of a binding operator.
+        let issue = parseFailure(
+          .unexpectedToken(expected: "binding operator", got: opToken),
+          range: opToken.range)
+
+        // Parse the expression in case it contains syntax issues as well.
+        consumeNewlines()
+        let parseResult = parseExpr()
+        return Result(value: nil, issues: parseResult.issues + [issue])
+      } else {
+        return Result(value: nil, issues: [unexpectedToken(expected: "binding operator")])
+      }
     }
 
     // Parse the right operand.
     consumeNewlines()
-    let rightParseResult = parseExpression()
-    issues.append(contentsOf: leftParseResult.issues)
-
-    guard let rvalue = rightParseResult.value else {
-      consumeUpToNextStatementDelimiter()
-      return Result(value: nil, issues: issues)
+    let parseResult = parseExpr()
+    if let rhs = parseResult.value {
+      let opIdent = IdentExpr(name: opToken.value!, module: module, range: opToken.range)
+      return Result(value: (opIdent, rhs), issues: parseResult.issues)
+    } else {
+      return Result(value: nil, issues: parseResult.issues)
     }
-
-    return Result(
-      value: BindingStmt(
-        lvalue: lvalue,
-        op: operatorToken.asBindingOperator!,
-        rvalue: rvalue,
-        module: module,
-        range: SourceRange(from: lvalue.range.start, to: rvalue.range.end)),
-      issues: issues)
   }
 
-  /// Parses a directive.
+  /// Parses a compiler directive.
   func parseDirective() -> Result<Directive?> {
-    // The first token should be `#`.
-    guard let startToken = consume(.hashMark) else {
-      defer { consume() }
-      return Result(value: nil, issues: [unexpectedToken(expected: "'#'")])
-    }
+    // The first token should be a directive (i.e. `'#' <ident>`).
+    guard let head = consume(.directive)
+      else { return Result(value: nil, issues: [unexpectedToken(expected: "directive")]) }
 
-    // Notice that we require the directive's name and arguments to start at the same line.
-
-    // Parse the name of the directive.
-    guard let name = consume(.identifier) else {
-      defer { consume() }
-      return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
-    }
-
-    // Attempt to parse an argument list.
-    var arguments: [String] = []
+    // Attempt to parse an argument list on the same line.
+    var args: [Token] = []
     var issues: [Issue] = []
-    var end = name.range.end
+    var rangeUpperBound = head.range.upperBound
 
     if consume(.leftParen) != nil {
       // Commit to parse an argument list.
-      let argumentsParseResult = parseList(delimitedBy: TokenKind.rightParen) {
-        () -> Result<String?> in
-          guard let argument = consume(.identifier) else {
-            defer { consume() }
-            return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
-          }
+      let argsParseResult = parseCommaSeparatedList(
+        delimitedBy: .rightParen,
+        parsingElementWith: parseDirectiveArg)
 
-          end = argument.range.end
-          return Result(value: argument.value, issues: [])
-      }
-
-      arguments = argumentsParseResult.value
+      args = argsParseResult.value
       if let delimiter = consume(.rightParen) {
-        end = delimiter.range.end
+        rangeUpperBound = delimiter.range.upperBound
       } else {
+        rangeUpperBound = args.last?.range.upperBound ?? rangeUpperBound
         issues.append(unexpectedToken(expected: "')'"))
       }
     }
 
-    return Result(
-      value: Directive(
-        name: name.value!,
-        arguments: arguments,
-        module: module,
-        range: SourceRange(from: name.range.start, to: end)),
-      issues: issues)
+    let directive = Directive(
+      name: head.value!,
+      args: args.map { $0.value! },
+      module: module,
+      range: head.range.lowerBound ..< rangeUpperBound)
+    return Result(value: directive, issues: issues)
+  }
+
+  func parseDirectiveArg() -> Result<Token?> {
+    if let arg = consume(.identifier) {
+      return Result(value: arg, issues: [])
+    } else {
+      return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
+    }
   }
 
 }
