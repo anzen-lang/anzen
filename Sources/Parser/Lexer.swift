@@ -87,7 +87,7 @@ public struct Lexer {
 
   /// Returns a source range from the given location to the lexer's current location.
   func range(from start: SourceLocation) -> SourceRange {
-    return SourceRange(from: start, to: currentLocation)
+    return start ..< currentLocation
   }
 
 }
@@ -104,17 +104,21 @@ extension Lexer: IteratorProtocol, Sequence {
     // Check for the end of file.
     guard let c = currentChar else {
       defer { depleted = true }
-      return Token(kind: .eof, range: SourceRange(at: currentLocation))
+      return Token(kind: .eof, range: currentLocation ..< currentLocation.advancedBy(columns: 1))
     }
 
     // Check for statement delimiters.
     if c == "\n" {
       defer { skip(while: { isWhitespace($0) || isStatementDelimiter($0) }) }
-      return Token(kind: .newline, range: SourceRange(at: currentLocation))
+      let start = currentLocation
+      skip()
+      return Token(kind: .newline, range: start ..< currentLocation)
     }
     if c == ";" {
       defer { skip(while: { isWhitespace($0) || isStatementDelimiter($0) }) }
-      return Token(kind: .semicolon, range: SourceRange(at: currentLocation))
+      let start = currentLocation
+      skip()
+      return Token(kind: .semicolon, range: start ..< currentLocation)
     }
 
     let startLocation = currentLocation
@@ -237,7 +241,7 @@ extension Lexer: IteratorProtocol, Sequence {
     if c == "@" {
       skip()
       let value = String(take(while: isAlnumOrUnderscore))
-      return Token(kind: .qualifier, value: value, range: range(from: startLocation))
+      return Token(kind: .attribute, value: value, range: range(from: startLocation))
     }
 
     // Check for directives.
@@ -248,7 +252,7 @@ extension Lexer: IteratorProtocol, Sequence {
     }
 
     // Check for operators.
-    if operatorChars.contains(c) {
+    if OPERATOR_CHARS.contains(c) {
       // Check for operators made of a 3 characters.
       if let c1 = char(at: 1), let c2 = char(at: 2) {
         let value = String(c) + String(c1) + String(c2)
@@ -349,4 +353,4 @@ private func isAlnumOrUnderscore(_ char: UnicodeScalar) -> Bool {
 }
 
 /// Set of operator symbols.
-private let operatorChars = Set<UnicodeScalar>(".,:!?(){}[]<>-*/%+-=&".unicodeScalars)
+private let OPERATOR_CHARS = Set<UnicodeScalar>(".,:!?(){}[]<>-*/%+-=&".unicodeScalars)

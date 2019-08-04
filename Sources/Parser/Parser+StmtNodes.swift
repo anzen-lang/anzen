@@ -2,82 +2,9 @@ import AST
 
 extension Parser {
 
-  /// Parses a single top-level expression, statement or declaration.
-  func parseTopLevelNode() -> Result<ASTNode?> {
+  /// Parses a top-level statement.
+  func parseStmt() -> Result<ASTNode?> {
     switch peek().kind {
-    case .directive:
-      // Compiler directives are currently parsed, but not supported. In the future, these will be
-      // serve to control the parser's state, for instance to implement conditional compilation.
-      let parseResult = parseDirective()
-      if let directive = parseResult.value {
-        let issue = parseFailure(.invalidDirective(directive: directive), range: directive.range)
-        return Result(value: nil, issues: parseResult.issues + [issue])
-      } else {
-        return Result(value: nil, issues: parseResult.issues)
-      }
-
-    case .static, .mutating:
-      // If the statement starts with a declaration modifier, it can describe either a property or
-      // a function declaration. Hence we need to parse all modifiers before we can desambiguise.
-      let head = peek()
-      var modifiers: [DeclModifier] = []
-
-      repeat {
-        let declKind: DeclModifier.Kind = consume()!.kind == .static
-          ? .static
-          : .mutating
-        modifiers.append(DeclModifier(kind: declKind, module: module, range: head.range))
-        consumeNewlines()
-      } while (peek().kind == .static) || (peek().kind == .mutating)
-
-      // The next construction has to be a property or a function declaration. Nonetheless, we will
-      // parse any statement or declaration anyway for the sake of error reporting.
-      let parseResult = parseTopLevelNode()
-      switch parseResult.value {
-      case nil:
-        return Result(value: nil, issues: parseResult.issues)
-
-      case let decl as PropDecl:
-        decl.modifiers = Set(modifiers)
-        decl.range = modifiers.first!.range.lowerBound ..< decl.range.upperBound
-        return Result(value: decl, issues: parseResult.issues)
-
-      case let decl as FunDecl:
-        decl.modifiers = Set(modifiers)
-        decl.range = modifiers.first!.range.lowerBound ..< decl.range.upperBound
-        return Result(value: decl, issues: parseResult.issues)
-
-      case .some(let node):
-        let issue = parseFailure(
-          .unexpectedConstruction(expected: "property or function declaration", got: node),
-          range: node.range)
-        return Result(value: parseResult.value, issues: parseResult.issues + [issue])
-      }
-
-    case .let, .var:
-      let parseResult = parsePropDecl()
-      return Result(value: parseResult.value, issues: parseResult.issues)
-
-    case .fun, .new, .del:
-      let parseResult = parseFunDecl()
-      return Result(value: parseResult.value, issues: parseResult.issues)
-
-    case .interface:
-      let parseResult = parseInterfaceDecl()
-      return Result(value: parseResult.value, issues: parseResult.issues)
-
-    case .struct:
-      let parseResult = parseStructDecl()
-      return Result(value: parseResult.value, issues: parseResult.issues)
-
-    case .union:
-      let parseResult = parseUnionDecl()
-      return Result(value: parseResult.value, issues: parseResult.issues)
-
-    case .case:
-      let parseResult = parseUnionNestedMemberDecl()
-      return Result(value: parseResult.value, issues: parseResult.issues)
-
     case .if:
       let parseResult = parseIfStmt()
       return Result(value: parseResult.value, issues: parseResult.issues)
@@ -162,8 +89,8 @@ extension Parser {
       }
     }
 
-    let tail = consume(.leftBrace) ?? peek()
-    assert(tail.kind == .leftBrace || tail.kind == .eof)
+    let tail = consume(.rightBrace) ?? peek()
+    assert(tail.kind == .rightBrace || tail.kind == .eof)
     if tail.kind == .eof {
       issues.append(unexpectedToken(expected: "'}'"))
     }
@@ -353,18 +280,18 @@ extension Parser {
     consumeNewlines()
     let parseResult = parseExpr()
     if let rhs = parseResult.value {
-      let opIdent = IdentExpr(name: opToken.value!, module: module, range: opToken.range)
+      let opIdent = IdentExpr(name: opToken.kind.description, module: module, range: opToken.range)
       return Result(value: (opIdent, rhs), issues: parseResult.issues)
     } else {
       return Result(value: nil, issues: parseResult.issues)
     }
   }
 
-  /// Parses a compiler directive.
-  func parseDirective() -> Result<Directive?> {
-    // The first token should be a directive (i.e. `'#' <ident>`).
-    guard let head = consume(.directive)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "directive")]) }
+  /// Parses a declaration attribute.
+  func parseDeclAttr() -> Result<DeclAttr?> {
+    // The first token should be an attribute name (i.e. `'@' <name>`).
+    guard let head = consume(.attribute)
+      else { return Result(value: nil, issues: [unexpectedToken(expected: "attribute")]) }
 
     // Attempt to parse an argument list on the same line.
     var args: [Token] = []
@@ -373,11 +300,9 @@ extension Parser {
 
     if consume(.leftParen) != nil {
       // Commit to parse an argument list.
-      let argsParseResult = parseCommaSeparatedList(
-        delimitedBy: .rightParen,
-        parsingElementWith: parseDirectiveArg)
+      let parseResult = parseCommaSeparatedList(delimitedBy: .rightParen, with: parseDeclAttrArg)
 
-      args = argsParseResult.value
+      args = parseResult.value
       if let delimiter = consume(.rightParen) {
         rangeUpperBound = delimiter.range.upperBound
       } else {
@@ -386,15 +311,16 @@ extension Parser {
       }
     }
 
-    let directive = Directive(
+    let attr = DeclAttr(
       name: head.value!,
       args: args.map { $0.value! },
       module: module,
       range: head.range.lowerBound ..< rangeUpperBound)
-    return Result(value: directive, issues: issues)
+    return Result(value: attr, issues: issues)
   }
 
-  func parseDirectiveArg() -> Result<Token?> {
+  /// Parses a declaration attribute's argument.
+  func parseDeclAttrArg() -> Result<Token?> {
     if let arg = consume(.identifier) {
       return Result(value: arg, issues: [])
     } else {

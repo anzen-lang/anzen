@@ -3,6 +3,121 @@ import Utils
 
 extension Parser {
 
+  /// Parses a top-level declaration.
+  func parseDecl() -> Result<ASTNode?> {
+    switch peek().kind {
+    case .attribute:
+      // Qualifiers prefixing a declarations denote attributes.
+      var attrs: [DeclAttr] = []
+      var issues: [Issue] = []
+      while peek().kind == .attribute {
+        let parseResult = parseDeclAttr()
+        issues.append(contentsOf: parseResult.issues)
+        if let attr = parseResult.value {
+          attrs.append(attr)
+          consumeNewlines()
+        } else {
+          consume()
+        }
+      }
+
+      // The next construction has to be a property or a function declaration. Nonetheless, we will
+      // parse any statement or declaration anyway for the sake of error reporting.
+      let parseResult = parseDecl()
+      issues.append(contentsOf: parseResult.issues)
+
+      switch parseResult.value {
+      case nil:
+        return Result(value: nil, issues: issues)
+
+      case let decl as PropDecl:
+        decl.attrs = Set(attrs)
+        if !attrs.isEmpty {
+          decl.range = attrs.first!.range.lowerBound ..< decl.range.upperBound
+        }
+        return Result(value: decl, issues: issues)
+
+      case let decl as FunDecl:
+        decl.attrs = Set(attrs)
+        if !attrs.isEmpty {
+          decl.range = attrs.first!.range.lowerBound ..< decl.range.upperBound
+        }
+        return Result(value: decl, issues: issues)
+
+      case .some(let node):
+        let issue = parseFailure(
+          .unexpectedConstruction(expected: "property or function declaration", got: node),
+          range: node.range)
+        return Result(value: parseResult.value, issues: issues + [issue])
+      }
+
+    case .static, .mutating:
+      // If the statement starts with a declaration modifier, it can describe either a property or
+      // a function declaration. Hence we need to parse all modifiers before we can desambiguise.
+      let head = peek()
+      var modifiers: [DeclModifier] = []
+
+      repeat {
+        let declKind: DeclModifier.Kind = consume()!.kind == .static
+          ? .static
+          : .mutating
+        modifiers.append(DeclModifier(kind: declKind, module: module, range: head.range))
+        consumeNewlines()
+      } while (peek().kind == .static) || (peek().kind == .mutating)
+
+      // The next construction has to be a property or a function declaration. Nonetheless, we will
+      // parse any statement or declaration anyway for the sake of error reporting.
+      let parseResult = parseDecl()
+      switch parseResult.value {
+      case nil:
+        return Result(value: nil, issues: parseResult.issues)
+
+      case let decl as PropDecl:
+        decl.modifiers = Set(modifiers)
+        decl.range = modifiers.first!.range.lowerBound ..< decl.range.upperBound
+        return Result(value: decl, issues: parseResult.issues)
+
+      case let decl as FunDecl:
+        decl.modifiers = Set(modifiers)
+        decl.range = modifiers.first!.range.lowerBound ..< decl.range.upperBound
+        return Result(value: decl, issues: parseResult.issues)
+
+      case .some(let node):
+        let issue = parseFailure(
+          .unexpectedConstruction(expected: "property or function declaration", got: node),
+          range: node.range)
+        return Result(value: parseResult.value, issues: parseResult.issues + [issue])
+      }
+
+    case .let, .var:
+      let parseResult = parsePropDecl()
+      return Result(value: parseResult.value, issues: parseResult.issues)
+
+    case .fun, .new, .del:
+      let parseResult = parseFunDecl()
+      return Result(value: parseResult.value, issues: parseResult.issues)
+
+    case .interface:
+      let parseResult = parseInterfaceDecl()
+      return Result(value: parseResult.value, issues: parseResult.issues)
+
+    case .struct:
+      let parseResult = parseStructDecl()
+      return Result(value: parseResult.value, issues: parseResult.issues)
+
+    case .union:
+      let parseResult = parseUnionDecl()
+      return Result(value: parseResult.value, issues: parseResult.issues)
+
+    case .case:
+      let parseResult = parseUnionNestedMemberDecl()
+      return Result(value: parseResult.value, issues: parseResult.issues)
+
+    default:
+      return Result(value: nil, issues: [unexpectedToken(expected: "declaration")])
+    }
+  }
+
   /// Parses a property declaration.
   func parsePropDecl() -> Result<PropDecl?> {
     // The first token must be `let` or `var`.
@@ -62,7 +177,7 @@ extension Parser {
       if let id = consume(.identifier) {
         name = id.value!
       } else if let op = consume(if: { $0.isPrefixOperator || $0.isInfixOperator }) {
-        name = op.kind.rawValue
+        name = op.kind.description
       } else {
         name = ""
         issues.append(unexpectedToken(expected: "identifier"))
@@ -93,7 +208,7 @@ extension Parser {
 
     let paramsParseResult = parseCommaSeparatedList(
       delimitedBy: .rightParen,
-      parsingElementWith: parseParamDecl)
+      with: parseParamDecl)
     funDecl.params = paramsParseResult.value
     issues.append(contentsOf: paramsParseResult.issues)
 
@@ -137,6 +252,8 @@ extension Parser {
         funDecl.range = head.range.lowerBound ..< body.range.upperBound
       }
     }
+
+    return Result(value: funDecl, issues: issues)
   }
 
   /// Parses a parameter declaration.
@@ -331,7 +448,7 @@ extension Parser {
       // Commit to parse a parameter list.
       let paramsParseResult = parseCommaSeparatedList(
         delimitedBy: .gt,
-        parsingElementWith: parseGenericParamDecl)
+        with: parseGenericParamDecl)
       issues.append(contentsOf: paramsParseResult.issues)
 
       params = paramsParseResult.value

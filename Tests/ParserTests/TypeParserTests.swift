@@ -9,138 +9,167 @@ class TypeParserTests: XCTestCase, ParserTestCase {
     var pr: Parser.Result<TypeSign?>
 
     pr = parse("Int", with: Parser.parseTypeSign)
-    assertThat(pr.errors, .isEmpty)
-    assertThat(pr.value, .isInstance(of: TypeIdent.self))
-    if let identifier = pr.value as? TypeIdent {
-      assertThat(identifier.name, .equals("Int"))
-      assertThat(identifier.specializations, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: IdentSign.self))
+    if let ident = pr.value as? IdentSign {
+      assertThat(ident.name, .equals("Int"))
+      assertThat(ident.specArgs, .isEmpty)
     }
 
     pr = parse("Map<Key=String, Value=Int>", with: Parser.parseTypeSign)
-    assertThat(pr.errors, .isEmpty)
-    assertThat(pr.value, .isInstance(of: TypeIdent.self))
-    if let identifier = pr.value as? TypeIdent {
-      assertThat(identifier.name, .equals("Map"))
-      assertThat(identifier.specializations, .count(2))
-      assertThat(identifier.specializations.keys, .contains("Key"))
-      assertThat(identifier.specializations.keys, .contains("Value"))
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: IdentSign.self))
+    if let ident = pr.value as? IdentSign {
+      assertThat(ident.name, .equals("Map"))
+      assertThat(ident.specArgs, .count(2))
+      assertThat(ident.specArgs.keys, .contains("Key"))
+      assertThat(ident.specArgs.keys, .contains("Value"))
     }
 
     let source = "Map < Key = String , Value = Int , >"
       .split(separator: " ").joined(separator: "\n")
     pr = parse(source, with: Parser.parseTypeSign)
-    assertThat(pr.errors, .isEmpty)
-    assertThat(pr.value, .isInstance(of: TypeIdent.self))
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: IdentSign.self))
   }
 
-  func testParseFunctionSignature() {
+  func testParseImplicitNestedIdentSign() {
+    var pr: Parser.Result<TypeSign?>
+
+    pr = parse("::Element", with: Parser.parseTypeSign)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: ImplicitNestedIdentSign.self))
+    if let select = pr.value as? ImplicitNestedIdentSign {
+      assertThat(select.ownee.name, .equals("Element"))
+    }
+  }
+
+  func testParseNestedIdentSign() {
+    var pr: Parser.Result<TypeSign?>
+
+    pr = parse("Array::Element", with: Parser.parseTypeSign)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: NestedIdentSign.self))
+    if let select = pr.value as? NestedIdentSign {
+      assertThat(select.owner, .isInstance(of: IdentSign.self))
+      assertThat(select.ownee.name, .equals("Element"))
+    }
+
+    let source = "Array < Element = String , > ::Element"
+      .split(separator: " ").joined(separator: "\n")
+    pr = parse(source, with: Parser.parseTypeSign)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: NestedIdentSign.self))
+  }
+
+  func testParseFunSign() {
     var pr: Parser.Result<TypeSign?>
 
     pr = parse("() -> Int", with: Parser.parseTypeSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: FunSign.self))
-    if let signature = pr.value as? FunSign {
-      assertThat(signature.parameters, .isEmpty)
-      assertThat(signature.codomain, .isInstance(of: QualTypeSign.self))
+    if let sign = pr.value as? FunSign {
+      assertThat(sign.dom, .isEmpty)
+      assertThat(sign.codom, .isInstance(of: QualTypeSign.self))
     }
 
     pr = parse("(a: Int, _: Int, c: Int) -> Int", with: Parser.parseTypeSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: FunSign.self))
-    if let signature = pr.value as? FunSign {
-      assertThat(signature.parameters, .count(3))
-      if signature.parameters.count > 2 {
-        assertThat(signature.parameters[0].label, .equals("a"))
-        assertThat(signature.parameters[0].typeAnnotation, .isInstance(of: QualTypeSign.self))
+    if let sign = pr.value as? FunSign {
+      assertThat(sign.dom, .count(3))
+      if sign.dom.count > 2 {
+        assertThat(sign.dom[0].label, .equals("a"))
+        assertThat(sign.dom[0].sign, .isInstance(of: QualTypeSign.self))
 
-        assertThat(signature.parameters[1].label, .isNil)
-        assertThat(signature.parameters[1].typeAnnotation, .isInstance(of: QualTypeSign.self))
+        assertThat(sign.dom[1].label, .isNil)
+        assertThat(sign.dom[1].sign, .isInstance(of: QualTypeSign.self))
 
-        assertThat(signature.parameters[2].label, .equals("c"))
-        assertThat(signature.parameters[2].typeAnnotation, .isInstance(of: QualTypeSign.self))
+        assertThat(sign.dom[2].label, .equals("c"))
+        assertThat(sign.dom[2].sign, .isInstance(of: QualTypeSign.self))
       }
     }
 
     let source = "( a : Int , _ : Int , c : Int , ) -> Int"
       .split(separator: " ").joined(separator: "\n")
     pr = parse(source, with: Parser.parseTypeSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: FunSign.self))
   }
 
-  func testParseEnclosedType() {
+  func testParseParenthesized() {
     var pr: Parser.Result<TypeSign?>
 
     pr = parse("(Int)", with: Parser.parseTypeSign)
-    assertThat(pr.errors, .isEmpty)
-    assertThat(pr.value, .isInstance(of: TypeIdent.self))
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: IdentSign.self))
 
     let source = "( Int )".split(separator: " ").joined(separator: "\n")
     pr = parse(source, with: Parser.parseTypeSign)
-    assertThat(pr.errors, .isEmpty)
-    assertThat(pr.value, .isInstance(of: TypeIdent.self))
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: IdentSign.self))
   }
 
-  func testParseQualifiedType() {
+  func testParseQualTypeSign() {
     var pr: Parser.Result<QualTypeSign?>
 
     pr = parse("@mut", with: Parser.parseQualSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.qualifiers ?? [], .contains(.mut))
-    assertThat(pr.value?.signature, .isNil)
+    assertThat(pr.value?.quals ?? []) { $0.contains(.mut) }
+    assertThat(pr.value?.sign, .isNil)
 
     pr = parse("@cst", with: Parser.parseQualSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.qualifiers ?? [], .contains(.cst))
-    assertThat(pr.value?.signature, .isNil)
+    assertThat(pr.value?.quals ?? []) { $0.contains(.cst) }
+    assertThat(pr.value?.sign, .isNil)
 
     pr = parse("Int", with: Parser.parseQualSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.qualifiers ?? [], .isEmpty)
-    assertThat(pr.value?.signature, .isInstance(of: TypeIdent.self))
+    assertThat(pr.value?.quals ?? []) { $0.isEmpty }
+    assertThat(pr.value?.sign, .isInstance(of: IdentSign.self))
 
     pr = parse("@mut Int", with: Parser.parseQualSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.qualifiers ?? [], .contains(.mut))
-    assertThat(pr.value?.signature, .isInstance(of: TypeIdent.self))
+    assertThat(pr.value?.quals ?? []) { $0.contains(.mut) }
+    assertThat(pr.value?.sign, .isInstance(of: IdentSign.self))
 
     let source = "@mut Int".split(separator: " ").joined(separator: "\n")
     pr = parse(source, with: Parser.parseQualSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
   }
 
-  func testParseQualifiedFunctionSignature() {
+  func testParseQualFunSign() {
     var pr: Parser.Result<QualTypeSign?>
 
     pr = parse("(a: Int, _: Int, c: Int) -> Int", with: Parser.parseQualSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.qualifiers ?? [], .isEmpty)
-    assertThat(pr.value?.signature, .isInstance(of: FunSign.self))
+    assertThat(pr.value?.quals ?? []) { $0.isEmpty }
+    assertThat(pr.value?.sign, .isInstance(of: FunSign.self))
   }
 
   func testParseEnclosedQualifiedType() {
     var pr: Parser.Result<QualTypeSign?>
 
     pr = parse("(@mut)", with: Parser.parseQualSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.qualifiers ?? [], .contains(.mut))
+    assertThat(pr.value?.quals ?? []) { $0.contains(.mut) }
 
     pr = parse("(@mut Int)", with: Parser.parseQualSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.qualifiers ?? [], .contains(.mut))
-    assertThat(pr.value?.signature, .isInstance(of: TypeIdent.self))
+    assertThat(pr.value?.quals ?? []) { $0.contains(.mut) }
+    assertThat(pr.value?.sign, .isInstance(of: IdentSign.self))
 
     let source = "( @mut Int )".split(separator: " ").joined(separator: "\n")
     pr = parse(source, with: Parser.parseQualSign)
-    assertThat(pr.errors, .isEmpty)
+    assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
   }
 

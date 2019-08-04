@@ -1,5 +1,6 @@
 import XCTest
 
+import AST
 @testable import Parser
 
 protocol ParserTestCase {
@@ -12,8 +13,9 @@ protocol ParserTestCase {
 
 extension ParserTestCase {
 
-  func getParser(for source: String) -> Parser {
-    let parser = try? Parser(source: source)
+  func getParser(for input: String) -> Parser {
+    let module = Module(id: "<test>")
+    let parser = try? Parser(source: SourceRef(name: "<test>", buffer: input), module: module)
     XCTAssertNotNil(parser)
     return parser!
   }

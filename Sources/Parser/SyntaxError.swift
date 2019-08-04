@@ -5,6 +5,8 @@ import AST
 /// A syntax error is an error that occurs when trying to parse syntactically invalid code.
 public enum SyntaxError {
 
+  /// Occurs when the operand of a cast operation is a non-parenthesized infix expression.
+  case ambiguousCastOperand
   /// Occurs when parsing mapping literals or specialization lists with duplicate keys.
   case duplicateKey(key: String)
   /// Occurs when parsing parameter lists with duplicate entries.
@@ -21,6 +23,8 @@ public enum SyntaxError {
   case invalidQualifier(value: String)
   /// Occurs when the parser encounters a non-declaration node at the top-level.
   case invalidTopLevelDeclaration(node: ASTNode)
+  /// Occurs when the parser encounters non-associative adjacent infix operators.
+  case nonAssociativeOperator(op: String)
   /// Occurs when the parser unexpectedly depletes the stream.
   case unexpectedEOF
   /// Occurs when the parser encounters an unexpected syntactic construction.
@@ -34,6 +38,9 @@ extension SyntaxError: CustomStringConvertible {
 
   public var description: String {
     switch self {
+    case .ambiguousCastOperand:
+      return "ambiguous cast expression, infix expressions should be parenthesized"
+
     case .duplicateKey(let key):
       return "duplicate key '\(key)'"
 
@@ -62,6 +69,9 @@ extension SyntaxError: CustomStringConvertible {
       default:
         return "invalid top-level node '\(node)'"
       }
+
+    case .nonAssociativeOperator(let op):
+      return "use of adjacent non-associative operators '\(op)'"
 
     case .unexpectedEOF:
       return "unexpected end of stream"

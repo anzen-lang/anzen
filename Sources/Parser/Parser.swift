@@ -118,15 +118,11 @@ public class Parser {
     return Result(value: decls, issues: issues)
   }
 
-  /// Attempts to run the given parsing function but backtracks if it failed.
-  func attempt<T>(_ parse: () -> Result<T?>) -> Result<T>? {
-    let backtrackingPosition = streamPosition
-    let parseResult = parse()
-    guard let node = parseResult.value else {
-      rewind(to: backtrackingPosition)
-      return nil
-    }
-    return Result(value: node, issues: parseResult.issues)
+  /// Parses a single top-level expression, statement or declaration.
+  func parseTopLevelNode() -> Result<ASTNode?> {
+    return DECL_KINDS.contains(peek().kind)
+      ? parseDecl()
+      : parseStmt()
   }
 
   /// Parses a comma-separated list of elements.
@@ -140,7 +136,7 @@ public class Parser {
   /// fileo r the head of an unexpected construct. It is never a new line.
   func parseCommaSeparatedList<Element>(
     delimitedBy delimiter: TokenKind,
-    parsingElementWith parse: () -> Result<Element?>) -> Result<[Element]>
+    with parse: () -> Result<Element?>) -> Result<[Element]>
   {
     var elements: [Element] = []
     var issues: [Issue] = []
@@ -248,7 +244,7 @@ public class Parser {
   /// Attemps to consume a single token, if it satisfies the given predicate, after a sequence of
   /// specific tokens.
   @discardableResult
-  func consume(if predicate: (Token) throws -> Bool, afterMany skipKind: TokenKind, )
+  func consume(if predicate: (Token) throws -> Bool, afterMany skipKind: TokenKind)
     rethrows -> Token?
   {
     let backtrackPosition = streamPosition
@@ -315,46 +311,30 @@ public class Parser {
     return parseFailure(.unexpectedToken(expected: expected, got: t), range: t.range)
   }
 
-  /// The operator associativity table.
-  public static let associativityTable: [TokenKind: OperatorAssociativity] = [
-    .as   : .left,
-    .mul  : .left,
-    .div  : .left,
-    .mod  : .left,
-    .add  : .left,
-    .sub  : .left,
-    .lt   : .left,
-    .le   : .left,
-    .ge   : .left,
-    .gt   : .left,
-    .eq   : .left,
-    .ne   : .left,
-    .refeq: .left,
-    .refne: .left,
-    .is   : .left,
-    .and  : .left,
-    .or   : .left,
-  ]
-
-  /// The operator precedence table.
-  public static let precedenceTable: [TokenKind: Int] = [
-    .or   : 0,
-    .and  : 1,
-    .eq   : 2,
-    .ne   : 2,
-    .refeq: 2,
-    .refne: 2,
-    .is   : 2,
-    .lt   : 3,
-    .le   : 3,
-    .ge   : 3,
-    .gt   : 3,
-    .add  : 4,
-    .sub  : 4,
-    .mul  : 5,
-    .div  : 5,
-    .mod  : 5,
-    .as   : 6,
+  /// The infix operators' precedence groups.
+  public static let precedenceGroups: [TokenKind: InfixExpr.PrecedenceGroup] = [
+    .or   : InfixExpr.PrecedenceGroup(associativity: .left, precedence: 0),
+    .and  : InfixExpr.PrecedenceGroup(associativity: .left, precedence: 1),
+    .eq   : InfixExpr.PrecedenceGroup(associativity: .none, precedence: 2),
+    .ne   : InfixExpr.PrecedenceGroup(associativity: .none, precedence: 2),
+    .refeq: InfixExpr.PrecedenceGroup(associativity: .none, precedence: 2),
+    .refne: InfixExpr.PrecedenceGroup(associativity: .none, precedence: 2),
+    .is   : InfixExpr.PrecedenceGroup(associativity: .none, precedence: 2),
+    .lt   : InfixExpr.PrecedenceGroup(associativity: .none, precedence: 3),
+    .le   : InfixExpr.PrecedenceGroup(associativity: .none, precedence: 3),
+    .ge   : InfixExpr.PrecedenceGroup(associativity: .none, precedence: 3),
+    .gt   : InfixExpr.PrecedenceGroup(associativity: .none, precedence: 3),
+    .add  : InfixExpr.PrecedenceGroup(associativity: .left, precedence: 4),
+    .sub  : InfixExpr.PrecedenceGroup(associativity: .left, precedence: 4),
+    .mul  : InfixExpr.PrecedenceGroup(associativity: .left, precedence: 5),
+    .div  : InfixExpr.PrecedenceGroup(associativity: .left, precedence: 5),
+    .mod  : InfixExpr.PrecedenceGroup(associativity: .left, precedence: 5),
   ]
 
 }
+
+/// The list of token kinds that denote a declaration's head.
+private let DECL_KINDS: Set<TokenKind> = [
+  .directive, .attribute, .static, .mutating, .let, .var, .fun, .new, .del,
+  .interface, .struct, .union, .case,
+]

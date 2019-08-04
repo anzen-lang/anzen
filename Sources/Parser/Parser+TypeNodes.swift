@@ -40,16 +40,16 @@ extension Parser {
     var range = peek().range
 
     // Parse the qualifiers (if any).
-    var qualSet: TypeQualSet
-    while let qualToken = consume(.qualifier) {
-      range = range.lowerBound ..< qualToken.range.upperBound
+    var qualSet: TypeQualSet = []
+    while let attrToken = consume(.attribute) {
+      range = range.lowerBound ..< attrToken.range.upperBound
 
-      switch qualToken.value! {
-      case "cst": qualSet = .cst
-      case "mut": qualSet = .mut
+      switch attrToken.value! {
+      case "cst": qualSet.insert(.cst)
+      case "mut": qualSet.insert(.mut)
       default:
         issues.append(
-          parseFailure(.invalidQualifier(value: qualToken.value!), range: qualToken.range))
+          parseFailure(.invalidQualifier(value: attrToken.value!), range: attrToken.range))
       }
 
       // Skip trailing new lines.
@@ -59,12 +59,11 @@ extension Parser {
     // Parse the unqualified type signature.
     let savePoint = streamPosition
     let signParseResult = parseTypeSign()
-    issues.append(contentsOf: signParseResult.issues)
 
     guard let sign = signParseResult.value else {
       // If the signature could not be parsed, make sure at least one qualifier could.
       guard !qualSet.isEmpty
-        else { return Result(value: nil, issues: issues) }
+        else { return Result(value: nil, issues: issues + signParseResult.issues) }
 
       // If there is at least one qualifier, we can ignore the signature's parsing failure, rewind
       // the token stream and return a signature without explicit unqualified signature.
@@ -73,6 +72,7 @@ extension Parser {
       return Result(value: qualSign, issues: issues)
     }
 
+    issues.append(contentsOf: signParseResult.issues)
     range = qualSet.isEmpty
       ? sign.range
       : range.lowerBound ..< sign.range.upperBound
@@ -103,8 +103,11 @@ extension Parser {
       let savePoint = streamPosition
       let funSignParseResult = parseFunSign()
 
-      // If we failed to parse a function signature, attempt to parse an enclosed signature.
-      guard let funSign = funSignParseResult.value else {
+      if let funSign = funSignParseResult.value {
+        // Parsing a function signature succeeded.
+        sign = funSign
+      } else {
+        // If we failed to parse a function signature, attempt to parse an enclosed signature.
         rewind(to: savePoint)
         consume(.leftParen)
 
@@ -124,8 +127,16 @@ extension Parser {
         }
       }
 
-      // Parsing a function signature succeeded.
-      sign = funSign
+    case .doubleColon:
+      let head = consume()!
+      let parseResult = parseIdentSign()
+      issues = parseResult.issues
+      guard let ident = parseResult.value
+        else { return Result(value: nil, issues: issues) }
+      sign = ImplicitNestedIdentSign(
+        ownee: ident,
+        module: module,
+        range: head.range.lowerBound ..< ident.range.upperBound)
 
     default:
       return Result(value: nil, issues: [unexpectedToken(expected: "type signature")])
@@ -175,15 +186,15 @@ extension Parser {
       // Commit to parse a specialization list.
       let specArgsParseResult = parseCommaSeparatedList(
         delimitedBy: .gt,
-        parsingElementWith: parseSpecArg)
+        with: parseSpecArg)
       issues.append(contentsOf: specArgsParseResult.issues)
       specArgs = specArgsParseResult.value
 
       let rangeUpperBound: SourceLocation
       if let tail = consume(.gt) {
-        issues.append(unexpectedToken(expected: "'>'"))
         rangeUpperBound = tail.range.upperBound
       } else {
+        issues.append(unexpectedToken(expected: "'>'"))
         rangeUpperBound = (specArgs.last?.0 ?? head).range.upperBound
       }
 
@@ -250,7 +261,7 @@ extension Parser {
     // Parse the domain.
     let domParseResult = parseCommaSeparatedList(
       delimitedBy: .rightParen,
-      parsingElementWith: parseParamSign)
+      with: parseParamSign)
     var issues = domParseResult.issues
 
     if consume(.rightParen, afterMany: .newline) == nil {

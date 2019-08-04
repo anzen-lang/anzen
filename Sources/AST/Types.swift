@@ -1,4 +1,4 @@
-/// A type qualifier.
+/// A type qualifier set.
 public struct TypeQualSet: OptionSet, Hashable {
 
   public let rawValue: Int

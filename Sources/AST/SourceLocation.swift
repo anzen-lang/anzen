@@ -35,6 +35,14 @@ public struct SourceLocation {
     self.offset = offset
   }
 
+  public func advancedBy(columns count: Int) -> SourceLocation {
+    return SourceLocation(
+      sourceRef: sourceRef,
+      line: line,
+      column: column + count,
+      offset: offset + count)
+  }
+
 }
 
 extension SourceLocation: Comparable {

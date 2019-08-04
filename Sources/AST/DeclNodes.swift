@@ -444,7 +444,7 @@ public protocol NominalTypeDecl: NamedDecl, DeclContext {
   /// The type's generic parameters.
   var genericParams: [GenericParamDecl] { get }
   /// The type declaration's body.
-  var body: Stmt? { get }
+  var body: Stmt { get }
 
 }
 
@@ -456,7 +456,7 @@ public final class InterfaceDecl: NominalTypeDecl {
   // NominalTypeDecl requirements
 
   public var genericParams: [GenericParamDecl]
-  public var body: Stmt?
+  public var body: Stmt
 
   // NamedDecl requirements
 
@@ -474,7 +474,7 @@ public final class InterfaceDecl: NominalTypeDecl {
   public init(
     name: String,
     genericParams: [GenericParamDecl] = [],
-    body: Stmt? = nil,
+    body: Stmt,
     module: Module,
     range: SourceRange)
   {
@@ -491,7 +491,7 @@ public final class InterfaceDecl: NominalTypeDecl {
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
     genericParams.forEach { $0.accept(visitor: visitor) }
-    body?.accept(visitor: visitor)
+    body.accept(visitor: visitor)
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -501,7 +501,7 @@ public final class InterfaceDecl: NominalTypeDecl {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
-    body = body?.accept(transformer: transformer) as? Stmt
+    body = body.accept(transformer: transformer) as! Stmt
     return self
   }
 
@@ -515,7 +515,7 @@ public final class StructDecl: NominalTypeDecl {
   // NominalTypeDecl requirements
 
   public var genericParams: [GenericParamDecl]
-  public var body: Stmt?
+  public var body: Stmt
 
   // NamedDecl requirements
 
@@ -533,7 +533,7 @@ public final class StructDecl: NominalTypeDecl {
   public init(
     name: String,
     genericParams: [GenericParamDecl] = [],
-    body: Stmt? = nil,
+    body: Stmt,
     module: Module,
     range: SourceRange)
   {
@@ -550,7 +550,7 @@ public final class StructDecl: NominalTypeDecl {
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
     genericParams.forEach { $0.accept(visitor: visitor) }
-    body?.accept(visitor: visitor)
+    body.accept(visitor: visitor)
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -560,7 +560,7 @@ public final class StructDecl: NominalTypeDecl {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
-    body = body?.accept(transformer: transformer) as? Stmt
+    body = body.accept(transformer: transformer) as! Stmt
     return self
   }
 
@@ -575,7 +575,7 @@ public final class UnionDecl: NominalTypeDecl {
   // NominalTypeDecl requirements
 
   public var genericParams: [GenericParamDecl]
-  public var body: Stmt?
+  public var body: Stmt
 
   // NamedDecl requirements
 
@@ -593,7 +593,7 @@ public final class UnionDecl: NominalTypeDecl {
   public init(
     name: String,
     genericParams: [GenericParamDecl] = [],
-    body: Stmt? = nil,
+    body: Stmt,
     module: Module,
     range: SourceRange)
   {
@@ -610,7 +610,7 @@ public final class UnionDecl: NominalTypeDecl {
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
     genericParams.forEach { $0.accept(visitor: visitor) }
-    body?.accept(visitor: visitor)
+    body.accept(visitor: visitor)
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -620,16 +620,20 @@ public final class UnionDecl: NominalTypeDecl {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
-    body = body?.accept(transformer: transformer) as? Stmt
+    body = body.accept(transformer: transformer) as! Stmt
     return self
   }
 
 }
 
 /// A union nested member declaration.
-public final class UnionNestedMemberDecl: ASTNode {
+public final class UnionNestedMemberDecl: Decl {
 
-  // Node requirements
+  /// Decl requirements
+
+  public var declContext: DeclContext?
+
+  // ASTNode requirements
 
   public unowned var module: Module
   public var range: SourceRange

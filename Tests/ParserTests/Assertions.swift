@@ -1,6 +1,23 @@
 import XCTest
 
-func assertThat<Subject>(
+/// Asserts that a statement is true.
+///
+/// This function is inspired by the assertion mechanism proposed in JUnit, which proposes to write
+/// assertions with the following syntax:
+///
+///     assertThat(subject, statement)
+///
+/// The advantage of this approach over the more classic `XCTAssert` family of functions is that
+/// using the above arguably yields more readable statements.
+///
+/// `subject` can be any Swift value, and `statement` any predicate on `subject`. For instance, the
+/// following assertion holds.
+///
+///     assertThat(3) { $0 > 1 }
+///
+/// For the sake of legibility, an overloaded version of `assertThat` accepts a special `Assertion`
+/// object in place of the predicate, which can act as a functor.
+public func assertThat<Subject>(
   file: StaticString = #file,
   line: UInt = #line,
   _ subject: Subject,
@@ -8,7 +25,8 @@ func assertThat<Subject>(
   XCTAssert(check(subject), file: file, line: line)
 }
 
-func assertThat<Subject>(
+/// Asserts that a statement is true, using an assertion functor.
+public func assertThat<Subject>(
   file: StaticString = #file,
   line: UInt = #line,
   _ subject: Subject,
@@ -16,29 +34,29 @@ func assertThat<Subject>(
   XCTAssert(assertion.check(for: subject), file: file, line: line)
 }
 
-struct Assertion<Subject> {
+public struct Assertion<Subject> {
 
   private let predicate: (Subject) -> Bool
 
-  init(_ predicate: @escaping (Subject) -> Bool) {
+  public init(_ predicate: @escaping (Subject) -> Bool) {
     self.predicate = predicate
   }
 
-  func check(for subject: Subject) -> Bool {
+  public func check(for subject: Subject) -> Bool {
     return predicate(subject)
   }
 
-  static func not(_ assertion: Assertion<Subject>) -> Assertion<Subject> {
+  public static func not(_ assertion: Assertion<Subject>) -> Assertion<Subject> {
     return Assertion { !assertion.check(for: $0) }
   }
 
-  static func isInstance<T>(of type: T.Type) -> Assertion<Subject> {
+  public static func isInstance<T>(of type: T.Type) -> Assertion<Subject> {
     return Assertion { $0 is T }
   }
 
 }
 
-protocol OptionalConvertible {
+public protocol OptionalConvertible {
 
   associatedtype Wrapped
 
@@ -48,13 +66,13 @@ protocol OptionalConvertible {
 
 extension Optional: OptionalConvertible {
 
-  var optional: Wrapped? { return self }
+  public var optional: Wrapped? { return self }
 
 }
 
 extension Assertion where Subject: OptionalConvertible {
 
-  static var isNil: Assertion<Subject> {
+  public static var isNil: Assertion<Subject> {
     return Assertion { $0.optional == nil }
   }
 
@@ -62,7 +80,7 @@ extension Assertion where Subject: OptionalConvertible {
 
 extension Assertion where Subject: Equatable {
 
-  static func equals(_ other: Subject) -> Assertion<Subject> {
+  public static func equals(_ other: Subject) -> Assertion<Subject> {
     return Assertion { $0 == other }
   }
 
@@ -70,19 +88,25 @@ extension Assertion where Subject: Equatable {
 
 extension Assertion where Subject: Collection {
 
-  static var isEmpty: Assertion<Subject> {
+  public static var isEmpty: Assertion<Subject> {
     return Assertion { $0.isEmpty }
   }
 
-  static func count(_ n: Int) -> Assertion<Subject> {
+  public static func count(_ n: Int) -> Assertion<Subject> {
     return Assertion { $0.count == n }
+  }
+
+  public static func contains(elementSuchThat predicate: @escaping (Subject.Element) -> Bool)
+    -> Assertion<Subject>
+  {
+    return Assertion { $0.contains(where: predicate) }
   }
 
 }
 
 extension Assertion where Subject: Collection, Subject.Element: Equatable {
 
-  static func contains(_ element: Subject.Element) -> Assertion<Subject> {
+  public static func contains(_ element: Subject.Element) -> Assertion<Subject> {
     return Assertion { $0.contains(element) }
   }
 

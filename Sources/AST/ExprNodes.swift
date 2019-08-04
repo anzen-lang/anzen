@@ -51,12 +51,12 @@ public final class LambdaExpr: Expr {
   /// The function's codomain (i.e. return type).
   public var codom: QualTypeSign?
   /// The function's body.
-  public var body: BraceStmt
+  public var body: Stmt
 
   public init(
     params: [ParamDecl],
     codom: QualTypeSign? = nil,
-    body: BraceStmt,
+    body: Stmt,
     module: Module,
     range: SourceRange)
   {
@@ -135,6 +135,28 @@ public final class UnsafeCastExpr: Expr {
 /// An infix expression.
 public final class InfixExpr: Expr {
 
+  /// A precedence group.
+  ///
+  /// A precedence group specifies the precedence and associativity of an infix operator, so as to
+  /// determine how adjacent infix expressions should be grouped in the absence of parentheses.
+  public struct PrecedenceGroup {
+
+    public enum Associativity {
+      case left
+      case right
+      case none
+    }
+
+    public let associativity: Associativity
+    public let precedence: Int
+
+    public init(associativity: Associativity = .left, precedence: Int) {
+      self.associativity = associativity
+      self.precedence = precedence
+    }
+
+  }
+
   // Expr requirements
 
   public var type: TypeBase?
@@ -143,13 +165,23 @@ public final class InfixExpr: Expr {
 
   /// The expression's operator.
   public var op: IdentExpr
+  /// The precedence of the expression's operator.
+  public var precedenceGroup: PrecedenceGroup
   /// The expression's left operand.
   public var lhs: Expr
   /// The expression's right operand.
   public var rhs: Expr
 
-  public init(op: IdentExpr, lhs: Expr, rhs: Expr, module: Module, range: SourceRange) {
+  public init(
+    op: IdentExpr,
+    precedenceGroup: PrecedenceGroup,
+    lhs: Expr,
+    rhs: Expr,
+    module: Module,
+    range: SourceRange)
+  {
     self.op = op
+    self.precedenceGroup = precedenceGroup
     self.lhs = lhs
     self.rhs = rhs
     self.module = module
@@ -193,7 +225,7 @@ public final class PrefixExpr: Expr {
   /// The expression's operand.
   public var operand : Expr
 
-  public init(op: IdentExpr, operand: Expr, right: Expr, module: Module, range: SourceRange) {
+  public init(op: IdentExpr, operand: Expr, module: Module, range: SourceRange) {
     self.op = op
     self.operand = operand
     self.module = module

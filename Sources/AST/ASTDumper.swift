@@ -147,11 +147,9 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
         withIndentation { self <<< node.genericParams }
         self <<< ")"
       }
-      if let body = node.body {
-        self <<< "\n" <<< indent <<< "(body\n"
-        withIndentation { body.accept(visitor: self) }
-        self <<< ")"
-      }
+      self <<< "\n" <<< indent <<< "(body\n"
+      withIndentation { node.body.accept(visitor: self) }
+      self <<< ")"
     }
     self <<< ")"
   }
@@ -166,11 +164,9 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
         withIndentation { self <<< node.genericParams }
         self <<< ")"
       }
-      if let body = node.body {
-        self <<< "\n" <<< indent <<< "(body\n"
-        withIndentation { body.accept(visitor: self) }
-        self <<< ")"
-      }
+      self <<< "\n" <<< indent <<< "(body\n"
+      withIndentation { node.body.accept(visitor: self) }
+      self <<< ")"
     }
     self <<< ")"
   }
@@ -185,11 +181,9 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
         withIndentation { self <<< node.genericParams }
         self <<< ")"
       }
-      if let body = node.body {
-        self <<< "\n" <<< indent <<< "(body\n"
-        withIndentation { body.accept(visitor: self) }
-        self <<< ")"
-      }
+      self <<< "\n" <<< indent <<< "(body\n"
+      withIndentation { node.body.accept(visitor: self) }
+      self <<< ")"
     }
     self <<< ")"
   }
@@ -386,12 +380,10 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(unsafe_cast_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(operand\n"
-      withIndentation { node.operand.accept(visitor: self) }
-      self <<< ")"
-      self <<< "\n" <<< indent <<< "(cast_sign\n"
-      withIndentation { node.castSign.accept(visitor: self) }
-      self <<< ")"
+      self <<< "\n"
+      node.operand.accept(visitor: self)
+      self <<< "\n"
+      node.castSign.accept(visitor: self)
     }
     self <<< ")"
   }
@@ -400,13 +392,12 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(infix_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(op\n"
-      withIndentation { node.op.accept(visitor: self) }
-      self <<< ")\n" <<< indent <<< "(lhs\n"
-      withIndentation { node.lhs.accept(visitor: self) }
-      self <<< ")\n" <<< indent <<< "(rhs\n"
-      withIndentation { node.rhs.accept(visitor: self) }
-      self <<< ")"
+      self <<< "\n"
+      node.op.accept(visitor: self)
+      self <<< "\n"
+      node.lhs.accept(visitor: self)
+      self <<< "\n"
+      node.rhs.accept(visitor: self)
     }
     self <<< ")"
   }
@@ -415,11 +406,10 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(prefix_expr"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(op\n"
-      withIndentation { node.op.accept(visitor: self) }
-      self <<< ")\n" <<< indent <<< "(operand\n"
-      withIndentation { node.operand.accept(visitor: self) }
-      self <<< ")"
+      self <<< "\n"
+      node.op.accept(visitor: self)
+      self <<< "\n"
+      node.operand.accept(visitor: self)
     }
     self <<< ")"
   }
