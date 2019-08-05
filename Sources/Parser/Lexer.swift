@@ -303,8 +303,8 @@ extension Lexer: IteratorProtocol, Sequence {
       case ".": kind = .dot
       case ",": kind = .comma
       case ":": kind = .colon
-      case "!": kind = .exclamationMark
-      case "?": kind = .questionMark
+      case "!": kind = .exclamation
+      case "?": kind = .question
       case "(": kind = .leftParen
       case ")": kind = .rightParen
       case "{": kind = .leftBrace
