@@ -599,10 +599,10 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   @discardableResult
-  fileprivate static func <<< (dumper: ASTDumper, nodes: [ASTNode]) -> ASTDumper {
-    for node in nodes {
-      node.accept(visitor: dumper)
-      if node !== nodes.last {
+  fileprivate static func <<< (dumper: ASTDumper, items: [Any]) -> ASTDumper {
+    for (i, item) in items.enumerated() {
+      dumper <<< item
+      if i != items.count - 1 {
         dumper <<< "\n"
       }
     }
@@ -610,32 +610,39 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   @discardableResult
-  fileprivate static func <<< (dumper: ASTDumper, text: String) -> ASTDumper {
-    dumper.outputStream.write(text)
+  fileprivate static func <<< (dumper: ASTDumper, item: Any) -> ASTDumper {
+    switch item {
+    case let string as String:
+      dumper.outputStream.write(string)
+    case let node as ASTNode:
+      node.accept(visitor: dumper)
+    case let optional as AnyOptional:
+      dumper.outputStream.write(optional.value.map({ String(describing: $0) }) ?? "_")
+    case let array as [Any]:
+      dumper <<< array
+    default:
+      dumper.outputStream.write(String(describing: item))
+    }
     return dumper
   }
 
   @discardableResult
-  fileprivate static func <<< (dumper: ASTDumper, node: ASTNode?) -> ASTDumper {
-    dumper.outputStream.write(node.map({ String(describing: $0) }) ?? "_")
-    return dumper
-  }
-
-  @discardableResult
-  fileprivate static func <<< (dumper: ASTDumper, type: TypeBase?) -> ASTDumper {
-    dumper.outputStream.write(type.map({ String(describing: $0) }) ?? "_")
-    return dumper
-  }
-
-  @discardableResult
-  fileprivate static func <<< (dumper: ASTDumper, text: String?) -> ASTDumper {
-    dumper.outputStream.write(text.map({ String(describing: $0) }) ?? "_")
+  fileprivate static func <<< <T>(dumper: ASTDumper, item: T?) -> ASTDumper {
+    dumper.outputStream.write(item.map({ String(describing: $0) }) ?? "_")
     return dumper
   }
 
 }
 
 // MARK: - Helpers
+
+private protocol AnyOptional {
+  var value: Any? { get }
+}
+
+extension Optional: AnyOptional {
+  var value: Any? { return self }
+}
 
 extension DeclAttr: Comparable {
 
