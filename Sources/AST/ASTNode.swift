@@ -26,9 +26,10 @@ public protocol ASTNode: AnyObject {
 
 extension ASTNode {
 
-  func dump() {
+  public func dump() {
     let dumper = ASTDumper(to: System.err)
     accept(visitor: dumper)
+    System.err.write("\n")
   }
 
 }
