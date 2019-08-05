@@ -1,14 +1,12 @@
 /// An AST node that represents the declaration (a.k.a. definition) of an entity.
 public protocol Decl: ASTNode {
-
-  /// This entity's declaration context.
-  var declContext: DeclContext? { get }
-
 }
 
 /// A node that represents a named declaration (a.k.a. definition).
 public protocol NamedDecl: Decl {
 
+  /// This entity's declaration context.
+  var declContext: DeclContext? { get set }
   /// The declared entity's name.
   var name: String { get }
   /// This declared entity's type.
@@ -29,21 +27,19 @@ public final class MainCodeDecl: Decl, DeclContext {
 
   // Decl requirements
 
-  public weak var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
 
   // DeclContext requirements
 
-  public var parent: DeclContext? { return declContext }
-  public var children: [DeclContext] = []
+  public var parent: DeclContext? { return module }
+  public var decls: [Decl] = []
 
   /// The translation unit's statements.
   public var stmts: [ASTNode]
 
   public init(stmts: [ASTNode] = [], module: Module, range: SourceRange) {
     self.stmts = stmts
-    self.declContext = module
     self.module = module
     self.range = range
   }
@@ -119,7 +115,7 @@ public final class DeclAttr: ASTNode, Hashable {
 public final class DeclModifier: ASTNode, Hashable {
 
   /// Enumeration of the declaration modifier kinds.
-  public enum Kind: String {
+  public enum Kind: Int {
 
     /// Denotes a static function or property.
     case `static`
@@ -284,7 +280,7 @@ public final class FunDecl: NamedDecl, Stmt, DeclContext {
   // DeclContext requirements
 
   public var parent: DeclContext? { return declContext }
-  public var children: [DeclContext] = []
+  public var decls: [Decl] = []
 
   /// The function's declaration attributes.
   public var attrs: Set<DeclAttr>
@@ -469,7 +465,7 @@ public final class InterfaceDecl: NominalTypeDecl {
   // DeclContext requirements
 
   public var parent: DeclContext? { return declContext }
-  public var children: [DeclContext] = []
+  public var decls: [Decl] = []
 
   public init(
     name: String,
@@ -528,7 +524,7 @@ public final class StructDecl: NominalTypeDecl {
   // DeclContext requirements
 
   public var parent: DeclContext? { return declContext }
-  public var children: [DeclContext] = []
+  public var decls: [Decl] = []
 
   public init(
     name: String,
@@ -588,7 +584,7 @@ public final class UnionDecl: NominalTypeDecl {
   // DeclContext requirements
 
   public var parent: DeclContext? { return declContext }
-  public var children: [DeclContext] = []
+  public var decls: [Decl] = []
 
   public init(
     name: String,
@@ -628,10 +624,6 @@ public final class UnionDecl: NominalTypeDecl {
 
 /// A union nested member declaration.
 public final class UnionNestedMemberDecl: Decl {
-
-  /// Decl requirements
-
-  public var declContext: DeclContext?
 
   // ASTNode requirements
 

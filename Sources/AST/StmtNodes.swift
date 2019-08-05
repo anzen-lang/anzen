@@ -13,7 +13,7 @@ public final class BraceStmt: Stmt, DeclContext {
   // DeclContext requirements
 
   public weak var parent: DeclContext?
-  public var children: [DeclContext] = []
+  public var decls: [Decl] = []
 
   /// The statements within this brace statement.
   public var stmts: [ASTNode]

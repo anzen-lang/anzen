@@ -26,6 +26,22 @@ public protocol ASTNode: AnyObject {
 
 extension ASTNode {
 
+  /// Registers an error on this node.
+  @discardableResult
+  public func registerError(message: String) -> Issue {
+    let newIssue = Issue(severity: .error, message: message, node: self)
+    let (_, issue) = module.issues.insert(newIssue)
+    return issue
+  }
+
+  /// Registers a warning on this node.
+  @discardableResult
+  public func registerWarning(message: String) -> Issue {
+    let newIssue = Issue(severity: .warning, message: message, node: self)
+    let (_, issue) = module.issues.insert(newIssue)
+    return issue
+  }
+
   public func dump() {
     let dumper = ASTDumper(to: System.err)
     accept(visitor: dumper)

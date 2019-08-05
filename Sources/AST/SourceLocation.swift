@@ -79,7 +79,7 @@ public typealias SourceRange = Range<SourceLocation>
 
 extension SourceRange {
 
-  var sourceRef: SourceRef {
+  public var sourceRef: SourceRef {
     return lowerBound.sourceRef
   }
 

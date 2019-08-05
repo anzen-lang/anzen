@@ -31,7 +31,7 @@ public final class Module: DeclContext {
   /// The module's compilation state.
   public var state: State
   /// The top-level declarations of the module.
-  public var topLevelDecls: [Decl] = []
+  public var decls: [Decl] = []
 
   public init(id: ID) {
     self.id = id

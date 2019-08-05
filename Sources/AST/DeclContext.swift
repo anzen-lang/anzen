@@ -6,8 +6,8 @@ public protocol DeclContext: AnyObject {
 
   /// The containing declaration context.
   var parent: DeclContext? { get }
-  /// The nested declaration contexts.
-  var children: [DeclContext] { get }
+  /// The declarations contained in this context.
+  var decls: [Decl] { get set }
 
   /// Returns whether this declaration context is enclosed if the given one.
   func isEnclosed(in other: DeclContext) -> Bool
