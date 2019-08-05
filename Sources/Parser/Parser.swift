@@ -60,7 +60,7 @@ public class Parser {
   }
 
   /// Parses the token stream into a collection of top-level declarations.
-  public func parse() -> Result<[Decl]> {
+  public func parse() -> [Decl] {
     var nodes: [ASTNode] = []
     var issues: [Issue] = []
 
@@ -79,7 +79,7 @@ public class Parser {
         nodes.append(node)
       } else {
         // If the next node couldn't be parsed, skip all input until the next statement delimiter.
-        consumeUpToNextStatementDelimiter()
+        recoverAtNextStatementDelimiter()
       }
 
       if peek().kind != .eof {
@@ -103,7 +103,9 @@ public class Parser {
         range: nodes.isEmpty
           ? peek().range
           : (nodes.first!.range.lowerBound ..< nodes.last!.range.upperBound))
-      return Result(value: [decl], issues: issues)
+
+      module.issues.append(contentsOf: issues)
+      return [decl]
     }
 
     // Check that all nodes are declarations, unless in main mode.
@@ -115,12 +117,14 @@ public class Parser {
         issues.append(parseFailure(.invalidTopLevelDeclaration(node: node), range: node.range))
       }
     }
-    return Result(value: decls, issues: issues)
+
+    module.issues.append(contentsOf: issues)
+    return decls
   }
 
   /// Parses a single top-level expression, statement or declaration.
   func parseTopLevelNode() -> Result<ASTNode?> {
-    return DECL_KINDS.contains(peek().kind)
+    return (peek().kind & TokenKind.Category.stmtStarter) > 0
       ? parseDecl()
       : parseStmt()
   }
@@ -146,7 +150,9 @@ public class Parser {
       // Skip leading new lines in front of the next element to avoid triggering an error if the
       // end of the sequence has been reached.
       consumeNewlines()
-      guard (peek().kind != delimiter) && (peek().kind != .eof)
+
+      // Stop parsing elements if we reach the list delimiter or an explicit statement delimiter.
+      guard (peek().kind != delimiter) && (peek().kind != .semicolon) && (peek().kind != .eof)
         else { break }
 
       // Parse the next element.
@@ -155,9 +161,8 @@ public class Parser {
       if let element = elementParseResult.value {
         elements.append(element)
       } else {
-        // If the next element couldn't be parsed, skip all input until we find either a comma, the
-        // list delimiter or the end of file to recover.
-        consumeMany(while: { ($0.kind != .comma) && ($0.kind != delimiter) && ($0.kind != .eof) })
+        // If the next element couldn't be parsed, recover at the next a comma or list delimiter.
+        recover(atNextKinds: [.comma, delimiter])
       }
 
       consumeNewlines()
@@ -280,9 +285,27 @@ public class Parser {
     }
   }
 
+  /// Skips all input until the following token kinds are found.
+  func recover(atNextKinds kinds: [TokenKind]) {
+    consumeMany {
+      !kinds.contains($0.kind)
+        && ($0.kind != .semicolon)
+        && ($0.kind != .eof)
+    }
+  }
+
+  /// Skips all input until a token of the given category is found.
+  func recover(atNextCategory category: UInt64) {
+    consumeMany {
+      ($0.kind.rawValue & category) > 0
+        && ($0.kind != .semicolon)
+        && ($0.kind != .eof)
+    }
+  }
+
   /// Consume all tokens until the next statement delimiter.
-  func consumeUpToNextStatementDelimiter() {
-    consumeMany(while: { !$0.isStatementDelimiter && ($0.kind != .eof) })
+  func recoverAtNextStatementDelimiter() {
+    consumeMany { !$0.isStatementDelimiter && ($0.kind != .eof) }
   }
 
   /// Rewinds the token stream by the given number of positions.

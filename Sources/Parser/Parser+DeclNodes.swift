@@ -120,19 +120,28 @@ extension Parser {
 
   /// Parses a property declaration.
   func parsePropDecl() -> Result<PropDecl?> {
+    var issues: [Issue] = []
+
     // The first token must be `let` or `var`.
     guard let head = consume([.let, .var])
       else { return Result(value: nil, issues: [unexpectedToken(expected: "'let'")]) }
-    // Parse the name of the property.
-    guard let name = consume(.identifier, afterMany: .newline)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "identifier")]) }
+    var tail = head
 
-    var issues: [Issue] = []
+    // Parse the name of the property.
+    let name: String
+    if let nameToken = consume(.identifier, afterMany: .newline) {
+      tail = nameToken
+      name = nameToken.value!
+    } else {
+      name = ""
+      issues.append(unexpectedToken(expected: "identifier"))
+    }
+
     let propDecl = PropDecl(
-      name: name.value!,
+      name: name,
       isReassignable: head.kind == .var,
       module: module,
-      range: head.range.lowerBound ..< name.range.upperBound)
+      range: head.range.lowerBound ..< tail.range.upperBound)
 
     // Attempt to parse a type annotation.
     if consume(.colon, afterMany: .newline) != nil {
@@ -405,13 +414,22 @@ extension Parser {
 
   /// Helper that factorizes nominal type parsing.
   func parseNominalType() -> Result<NominalType?> {
+    let head = peek()
+    var issues: [Issue] = []
+
     // Parse the name of the type.
-    guard let nameToken = consume(.identifier)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "identifier")]) }
+    let name: String
+    if let nameToken = consume(.identifier) {
+      name = nameToken.value!
+    } else {
+      name = ""
+      issues.append(unexpectedToken(expected: "identifier"))
+      recover(atNextKinds: [.leftBrace])
+    }
 
     // Attempt to parse a list of generic parameter declarations.
     let genericParamsParseResult = parseGenericParamDeclList()
-    var issues = genericParamsParseResult.issues
+    issues.append(contentsOf: genericParamsParseResult.issues)
 
     // Parse the body of the type.
     consumeNewlines()
@@ -419,7 +437,7 @@ extension Parser {
     issues.append(contentsOf: bodyParseResult.issues)
 
     let body = bodyParseResult.value
-      ?? BraceStmt(stmts: [], module: module, range: nameToken.range)
+      ?? BraceStmt(stmts: [], module: module, range: head.range)
 
     // Mark all regular functions as methods.
     for stmt in body.stmts {
@@ -429,7 +447,7 @@ extension Parser {
     }
 
     let tyDecl = NominalType(
-      name: nameToken.value!,
+      name: name,
       genericParams: genericParamsParseResult.value,
       body: body)
     return Result(value: tyDecl, issues: issues)

@@ -45,7 +45,7 @@ extension Parser {
         if rhsParseResult.value != nil {
           rhs = rhsParseResult.value!
         } else {
-          consumeUpToNextStatementDelimiter()
+          recoverAtNextStatementDelimiter()
           rhs = InvalidSign(module: module, range: infixToken.range)
         }
 
@@ -76,7 +76,7 @@ extension Parser {
         if rhsParseResult.value != nil {
           rhs = rhsParseResult.value!
         } else {
-          consumeUpToNextStatementDelimiter()
+          recoverAtNextStatementDelimiter()
           rhs = InvalidExpr(module: module, range: infixToken.range)
         }
 
@@ -493,7 +493,7 @@ extension Parser {
     let endToken = consume(.rightBracket)
     if endToken == nil {
       issues.append(unexpectedToken(expected: "']'"))
-      consumeUpToNextStatementDelimiter()
+      recoverAtNextStatementDelimiter()
     }
 
     let rangeUpperBound = (endToken?.range ?? elems.last?.range ?? head.range).upperBound
@@ -533,7 +533,7 @@ extension Parser {
       let endToken = consume(.rightBrace)
       if endToken == nil {
         issues.append(unexpectedToken(expected: "']'"))
-        consumeUpToNextStatementDelimiter()
+        recoverAtNextStatementDelimiter()
       }
 
       let rangeUpperBound = (endToken?.range ?? head.range).upperBound
@@ -561,7 +561,7 @@ extension Parser {
       if endToken == nil {
         rangeUpperBound = elems.values.map({ $0.range.upperBound }).max() ?? head.range.upperBound
         issues.append(unexpectedToken(expected: "']'"))
-        consumeUpToNextStatementDelimiter()
+        recoverAtNextStatementDelimiter()
       } else {
         rangeUpperBound = endToken!.range.upperBound
       }
@@ -582,7 +582,7 @@ extension Parser {
       if endToken == nil {
         rangeUpperBound = elems.last?.range.upperBound ?? head.range.upperBound
         issues.append(unexpectedToken(expected: "']'"))
-        consumeUpToNextStatementDelimiter()
+        recoverAtNextStatementDelimiter()
       } else {
         rangeUpperBound = endToken!.range.upperBound
       }
@@ -622,7 +622,7 @@ extension Parser {
 
     // Parse the value of the element.
     guard consume(.colon, afterMany: .newline) != nil else {
-      defer { consumeUpToNextStatementDelimiter() }
+      defer { recoverAtNextStatementDelimiter() }
       return Result(value: nil, issues: [unexpectedToken(expected: "':'")])
     }
 

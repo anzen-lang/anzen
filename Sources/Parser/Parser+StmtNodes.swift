@@ -75,7 +75,7 @@ extension Parser {
         nodes.append(node)
       } else {
         // If the next node couldn't be parsed, skip all input until the next statement delimiter.
-        consumeUpToNextStatementDelimiter()
+        recoverAtNextStatementDelimiter()
       }
 
       if peek().kind != .rightBrace {
