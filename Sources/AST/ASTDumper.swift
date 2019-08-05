@@ -566,7 +566,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   public func visit(_ node: DeclModifier) {
-    self <<< indent <<< "(decl_modifier \(node.kind.rawValue))"
+    self <<< indent <<< "(decl_modifier \(node.kind))"
   }
 
   public func visit(_ node: Directive) {
@@ -598,14 +598,26 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   @discardableResult
-  fileprivate static func <<< <T>(dumper: ASTDumper, item: T) -> ASTDumper {
-    dumper.outputStream.write(String(describing: item))
+  fileprivate static func <<< (dumper: ASTDumper, text: String) -> ASTDumper {
+    dumper.outputStream.write(text)
     return dumper
   }
 
   @discardableResult
-  fileprivate static func <<< <T>(dumper: ASTDumper, item: T?) -> ASTDumper {
-    dumper.outputStream.write(item.map({ String(describing: $0) }) ?? "_")
+  fileprivate static func <<< (dumper: ASTDumper, node: ASTNode?) -> ASTDumper {
+    dumper.outputStream.write(node.map({ String(describing: $0) }) ?? "_")
+    return dumper
+  }
+
+  @discardableResult
+  fileprivate static func <<< (dumper: ASTDumper, type: TypeBase?) -> ASTDumper {
+    dumper.outputStream.write(type.map({ String(describing: $0) }) ?? "_")
+    return dumper
+  }
+
+  @discardableResult
+  fileprivate static func <<< (dumper: ASTDumper, text: String?) -> ASTDumper {
+    dumper.outputStream.write(text.map({ String(describing: $0) }) ?? "_")
     return dumper
   }
 
@@ -637,6 +649,17 @@ extension DeclModifier: Comparable {
 
   public static func < (lhs: DeclModifier, rhs: DeclModifier) -> Bool {
     return lhs.kind.rawValue < rhs.kind.rawValue
+  }
+
+}
+
+extension DeclModifier.Kind: CustomStringConvertible {
+
+  public var description: String {
+    switch self {
+    case .mutating: return "mutating"
+    case .static:   return "static"
+    }
   }
 
 }
