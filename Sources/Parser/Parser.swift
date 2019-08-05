@@ -12,7 +12,7 @@ import Utils
 public class Parser {
 
   /// The result of construction's parsing.
-  public struct Result<T> {
+  struct Result<T> {
 
     /// The parsed entity.
     public let value: T
@@ -60,7 +60,7 @@ public class Parser {
   }
 
   /// Parses the token stream into a collection of top-level declarations.
-  public func parse() -> [Decl] {
+  public func parse() -> (decls: [Decl], issues: [Issue]) {
     var nodes: [ASTNode] = []
     var issues: [Issue] = []
 
@@ -104,8 +104,7 @@ public class Parser {
           ? peek().range
           : (nodes.first!.range.lowerBound ..< nodes.last!.range.upperBound))
 
-      module.issues.append(contentsOf: issues)
-      return [decl]
+      return ([decl], issues)
     }
 
     // Check that all nodes are declarations, unless in main mode.
@@ -118,8 +117,7 @@ public class Parser {
       }
     }
 
-    module.issues.append(contentsOf: issues)
-    return decls
+    return (decls, issues)
   }
 
   /// Parses a single top-level expression, statement or declaration.
@@ -207,7 +205,7 @@ public class Parser {
     return stream[streamPosition]
   }
 
-  /// Attempts to consume a single token of the given kind from the stream.
+  /// Attempts to consume a single token of the given kind.
   @discardableResult
   func consume(_ kind: TokenKind) -> Token? {
     guard (streamPosition < stream.count) && (stream[streamPosition].kind == kind)
@@ -216,7 +214,7 @@ public class Parser {
     return stream[streamPosition]
   }
 
-  /// Attempts to consume a single token of the given kinds from the stream.
+  /// Attempts to consume a single token of the given kinds.
   @discardableResult
   func consume(_ kinds: Set<TokenKind>) -> Token? {
     guard (streamPosition < stream.count) && (kinds.contains(stream[streamPosition].kind))
@@ -225,7 +223,8 @@ public class Parser {
     return stream[streamPosition]
   }
 
-  /// Attempts to consume a single token of the given kind, after a sequence of specific tokens.
+  /// Attempts to consume a single token of the kind `kind`, after any number of tokens of the kind
+  /// `skipKind`.
   @discardableResult
   func consume(_ kind: TokenKind, afterMany skipKind: TokenKind) -> Token? {
     let backtrackPosition = streamPosition
@@ -237,7 +236,20 @@ public class Parser {
     return nil
   }
 
-  /// Attemps to consume a single token, if it satisfies the given predicate.
+  /// Attempts to consume a single token of the category `category`, after any number of tokens of
+  /// the kind `skipKind`.
+  @discardableResult
+  func consume(_ category: TokenKind.Category, afterMany skipKind: TokenKind) -> Token? {
+    let backtrackPosition = streamPosition
+    consumeMany { $0.kind == skipKind }
+    if let result = consume(if: { ($0.kind | category) > 0 }) {
+      return result
+    }
+    rewind(to: backtrackPosition)
+    return nil
+  }
+
+  /// Attemps to consume a single token that satisfies the given predicate.
   @discardableResult
   func consume(if predicate: (Token) throws -> Bool) rethrows -> Token? {
     guard try (streamPosition < stream.count) && predicate(stream[streamPosition])
@@ -246,8 +258,8 @@ public class Parser {
     return stream[streamPosition]
   }
 
-  /// Attemps to consume a single token, if it satisfies the given predicate, after a sequence of
-  /// specific tokens.
+  /// Attemps to consume a single token that satisfies the given predicate, after any number of
+  /// tokens of the kind `skipKind`.
   @discardableResult
   func consume(if predicate: (Token) throws -> Bool, afterMany skipKind: TokenKind)
     rethrows -> Token?

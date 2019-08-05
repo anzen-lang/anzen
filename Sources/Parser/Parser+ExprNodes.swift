@@ -380,15 +380,6 @@ extension Parser {
       params = parseResult.value
       issues.append(contentsOf: parseResult.issues)
 
-      // Make sure there are no duplicate parameters.
-      var paramNames: Set<String> = []
-      for param in parseResult.value {
-        if paramNames.contains(param.name) {
-          issues.append(parseFailure(.duplicateParameter(name: param.name), range: param.range))
-        }
-        paramNames.insert(param.name)
-      }
-
       if consume(.rightParen, afterMany: .newline) == nil {
         issues.append(unexpectedToken(expected: "')'"))
       }
@@ -538,7 +529,7 @@ extension Parser {
 
       let rangeUpperBound = (endToken?.range ?? head.range).upperBound
       let expr = MapLitExpr(
-        elems: [:],
+        elems: [],
         module: module,
         range: head.range.lowerBound ..< rangeUpperBound)
       return Result(value: expr, issues: issues)
@@ -552,14 +543,14 @@ extension Parser {
 
     if firstMapElementParseResult.value != nil {
       // Commit to parsing a map literal.
-      let mapElemsParseResult = parseMapElems()
-      let elems = mapElemsParseResult.value
-      issues.append(contentsOf: mapElemsParseResult.issues)
+      let elemsParseResult = parseCommaSeparatedList(delimitedBy: .rightBrace, with: parseMapElem)
+      let elems = elemsParseResult.value
+      issues.append(contentsOf: elemsParseResult.issues)
 
       let endToken = consume(.rightBrace)
       let rangeUpperBound: SourceLocation
       if endToken == nil {
-        rangeUpperBound = elems.values.map({ $0.range.upperBound }).max() ?? head.range.upperBound
+        rangeUpperBound = elems.last?.range.upperBound ?? head.range.upperBound
         issues.append(unexpectedToken(expected: "']'"))
         recoverAtNextStatementDelimiter()
       } else {
@@ -573,9 +564,9 @@ extension Parser {
       return Result(value: expr, issues: issues)
     } else {
       // Commit to parsing a set literal.
-      let setElemsParseResult = parseCommaSeparatedList(delimitedBy: .rightBrace, with: parseExpr)
-      let elems = setElemsParseResult.value
-      issues.append(contentsOf: setElemsParseResult.issues)
+      let elemsParseResult = parseCommaSeparatedList(delimitedBy: .rightBrace, with: parseExpr)
+      let elems = elemsParseResult.value
+      issues.append(contentsOf: elemsParseResult.issues)
 
       let endToken = consume(.rightBrace)
       let rangeUpperBound: SourceLocation
@@ -595,30 +586,12 @@ extension Parser {
     }
   }
 
-  /// Parses a sequence of key/value pairs as the elements of a map literal.
-  func parseMapElems() -> Result<[String: Expr]> {
-    // Parse the map elements.
-    let parseResult = parseCommaSeparatedList(delimitedBy: .rightBrace, with: parseMapElem)
-    var issues = parseResult.issues
-
-    var elems: [String: Expr] = [:]
-    for (token, value) in parseResult.value {
-      // Make sure there are no duplicate keys.
-      guard elems[token.value!] == nil else {
-        issues.append(parseFailure(.duplicateKey(key: token.value!), range: token.range))
-        continue
-      }
-      elems[token.value!] = value
-    }
-
-    return Result(value: elems, issues: issues)
-  }
-
   /// Parses a map literal element.
-  func parseMapElem() -> Result<(Token, Expr)?> {
+  func parseMapElem() -> Result<MapLitElem?> {
     // Parse the key of the element.
-    guard let key = consume(.identifier)
+    guard let keyToken = consume(.identifier)
       else { return Result(value: nil, issues: [unexpectedToken(expected: "identifier")]) }
+    let key = IdentExpr(name: keyToken.value!, module: module, range: keyToken.range)
 
     // Parse the value of the element.
     guard consume(.colon, afterMany: .newline) != nil else {
@@ -631,7 +604,12 @@ extension Parser {
     guard let value = parseResult.value
       else { return Result(value: nil, issues: parseResult.issues) }
 
-    return Result(value: (key, value), issues: parseResult.issues)
+    let elem = MapLitElem(
+      key: key,
+      value: value,
+      module: module,
+      range: key.range.lowerBound ..< value.range.upperBound)
+    return Result(value: elem, issues: parseResult.issues)
   }
 
 }

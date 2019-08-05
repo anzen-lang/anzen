@@ -7,10 +7,8 @@ public enum SyntaxError {
 
   /// Occurs when the operand of a cast operation is a non-parenthesized infix expression.
   case ambiguousCastOperand
-  /// Occurs when parsing mapping literals or specialization lists with duplicate keys.
-  case duplicateKey(key: String)
-  /// Occurs when parsing parameter lists with duplicate entries.
-  case duplicateParameter(name: String)
+  /// Occurs when parsing specialization lists with duplicate generic parameter names.
+  case duplicateGenericParameter(key: String)
   /// Occurs when the parser fails to parse the member of a select expression.
   case expectedMember
   /// Occurs when the parser fails to parse a list separator.
@@ -19,7 +17,7 @@ public enum SyntaxError {
   case expectedStatementDelimiter
   /// Occurs when the parser encounters an invalid compiler directive.
   case invalidDirective(directive: Directive)
-  /// Occurs when the parses encounters an invalid qualifier.
+  /// Occurs when the parses encounters an invalid type qualifier.
   case invalidQualifier(value: String)
   /// Occurs when the parser encounters a non-declaration node at the top-level.
   case invalidTopLevelDeclaration(node: ASTNode)
@@ -41,11 +39,8 @@ extension SyntaxError: CustomStringConvertible {
     case .ambiguousCastOperand:
       return "ambiguous cast expression, infix expressions should be parenthesized"
 
-    case .duplicateKey(let key):
-      return "duplicate key '\(key)'"
-
-    case .duplicateParameter(let name):
-      return "duplicate parameter '\(name)'"
+    case .duplicateGenericParameter(let key):
+      return "duplicate generic parameter name '\(key)'"
 
     case .expectedMember:
       return "expected member name following '.'"
@@ -57,7 +52,7 @@ extension SyntaxError: CustomStringConvertible {
       return "consecutive statements should be separated by ';'"
 
     case .invalidDirective(let directive):
-      return "invalid directive '\(directive.name)'"
+      return "invalid compiler directive '\(directive.name)'"
 
     case .invalidQualifier(let value):
       return "invalid qualifier '\(value)'"

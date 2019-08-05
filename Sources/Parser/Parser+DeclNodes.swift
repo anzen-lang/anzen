@@ -214,29 +214,19 @@ extension Parser {
     issues.append(contentsOf: genericParamsParseResult.issues)
 
     // Parse a parameter list.
-    if consume(.leftParen, afterMany: .newline) == nil {
-      issues.append(unexpectedToken(expected: "'('"))
-    }
+    if consume(.leftParen, afterMany: .newline) != nil {
+      let parseResult = parseCommaSeparatedList(delimitedBy: .rightParen, with: parseParamDecl)
+      funDecl.params = parseResult.value
+      issues.append(contentsOf: parseResult.issues)
 
-    let paramsParseResult = parseCommaSeparatedList(
-      delimitedBy: .rightParen,
-      with: parseParamDecl)
-    funDecl.params = paramsParseResult.value
-    issues.append(contentsOf: paramsParseResult.issues)
-
-    // Make sure there are no duplicate parameters.
-    var paramNames: Set<String> = []
-    for param in paramsParseResult.value {
-      if paramNames.contains(param.name) {
-        issues.append(parseFailure(.duplicateParameter(name: param.name), range: param.range))
+      if let paren = consume(.rightParen, afterMany: .newline) {
+        funDecl.range = head.range.lowerBound ..< paren.range.upperBound
+      } else {
+        issues.append(unexpectedToken(expected: "')'"))
       }
-      paramNames.insert(param.name)
-    }
-
-    if let paren = consume(.rightParen, afterMany: .newline) {
-      funDecl.range = head.range.lowerBound ..< paren.range.upperBound
     } else {
-      issues.append(unexpectedToken(expected: "')'"))
+      issues.append(unexpectedToken(expected: "'('"))
+      recover(atNextKinds: [.arrow, .leftBrace])
     }
 
     // Attempt to parse a codomain.
@@ -249,7 +239,7 @@ extension Parser {
         funDecl.codom = sign
         funDecl.range = head.range.lowerBound ..< sign.range.upperBound
       } else {
-        consumeMany { !$0.isStatementDelimiter && ($0.kind != .leftBrace) && ($0.kind != .eof) }
+        recover(atNextKinds: [.leftBrace, .newline])
       }
     }
 
@@ -475,15 +465,6 @@ extension Parser {
       params = paramsParseResult.value
       if consume(.gt) == nil {
         issues.append(unexpectedToken(expected: "'>'"))
-      }
-
-      // Make sure there's no duplicate key.
-      var keys: Set<String> = []
-      for param in params {
-        if keys.contains(param.name) {
-          issues.append(parseFailure(.duplicateKey(key: param.name), range: param.range))
-        }
-        keys.insert(param.name)
       }
     }
 

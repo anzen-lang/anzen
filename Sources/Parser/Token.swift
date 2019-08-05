@@ -23,6 +23,8 @@ public enum TokenKind: UInt64, CustomStringConvertible {
     case punct = 16384
     /// Denotes a statement starter.
     case stmtStarter = 32768
+    /// Denotes a reserved keyword.
+    case keyword = 65536
 
   }
 
@@ -53,31 +55,31 @@ public enum TokenKind: UInt64, CustomStringConvertible {
   // MARK: Identifiers & Keywords
 
   case identifier   = 512   // name | 0
-  case underscore   = 513   // name | 1
-  case `nullref`    = 514   // name | 2
+  case underscore   = 66049 // keyword | name | 1
+  case `nullref`    = 66050 // keyword | name | 2
 
-  case `let`        = 33283 // stmtStarter | name | 3
-  case `var`        = 33284 // stmtStarter | name | 4
-  case fun          = 33285 // stmtStarter | name | 5
-  case mutating     = 33286 // stmtStarter | name | 6
-  case `static`     = 33287 // stmtStarter | name | 7
-  case `struct`     = 33288 // stmtStarter | name | 8
-  case union        = 33289 // stmtStarter | name | 9
-  case interface    = 33290 // stmtStarter | name | 10
-  case `extension`  = 33291 // stmtStarter | name | 11
-  case new          = 33292 // stmtStarter | name | 12
-  case del          = 33293 // stmtStarter | name | 13
-  case `where`      = 33294 // stmtStarter | name | 14
-  case `while`      = 33295 // stmtStarter | name | 15
-  case `for`        = 33296 // stmtStarter | name | 16
-  case `in`         = 529   // name | 17
-  case `break`      = 33298 // stmtStarter | name | 18
-  case `continue`   = 33299 // stmtStarter | name | 19
-  case `return`     = 33300 // stmtStarter | name | 20
-  case `if`         = 33301 // stmtStarter | name | 21
-  case `else`       = 33302 // stmtStarter | name | 22
-  case `switch`     = 33303 // stmtStarter | name | 23
-  case `case`       = 33304 // stmtStarter | name | 24
+  case `let`        = 98819 // keyword | stmtStarter | name | 3
+  case `var`        = 98820 // keyword | stmtStarter | name | 4
+  case fun          = 98821 // keyword | stmtStarter | name | 5
+  case mutating     = 98822 // keyword | stmtStarter | name | 6
+  case `static`     = 98823 // keyword | stmtStarter | name | 7
+  case `struct`     = 98824 // keyword | stmtStarter | name | 8
+  case union        = 98825 // keyword | stmtStarter | name | 9
+  case interface    = 98826 // keyword | stmtStarter | name | 10
+  case `extension`  = 98827 // keyword | stmtStarter | name | 11
+  case new          = 98828 // keyword | stmtStarter | name | 12
+  case del          = 98829 // keyword | stmtStarter | name | 13
+  case `where`      = 98830 // keyword | stmtStarter | name | 14
+  case `while`      = 98831 // keyword | stmtStarter | name | 15
+  case `for`        = 98832 // keyword | stmtStarter | name | 16
+  case `in`         = 66065 // keyword | name | 17
+  case `break`      = 98834 // keyword | stmtStarter | name | 18
+  case `continue`   = 98835 // keyword | stmtStarter | name | 19
+  case `return`     = 98836 // keyword | stmtStarter | name | 20
+  case `if`         = 98837 // keyword | stmtStarter | name | 21
+  case `else`       = 98838 // keyword | stmtStarter | name | 22
+  case `switch`     = 98839 // keyword | stmtStarter | name | 23
+  case `case`       = 98840 // keyword | stmtStarter | name | 24
 
   // MARK: Operators
 
@@ -273,12 +275,10 @@ public struct Token {
     return (kind & TokenKind.Category.infix) > 0
   }
 
-  /// The kind of the token.
-  public let kind: TokenKind
-  /// The optional value of the token.
-  public let value: String?
-  /// The range of characters that compose the token in the source file.
-  public let range: SourceRange
+  /// Whether or not the token is a reserved keyword.
+  public var isKeyword: Bool {
+    return (kind & TokenKind.Category.keyword) > 0
+  }
 
 }
 

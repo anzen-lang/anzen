@@ -202,7 +202,8 @@ extension Parser {
       var keys: Set<String> = []
       for arg in specArgs {
         if keys.contains(arg.0.value!) {
-          issues.append(parseFailure(.duplicateKey(key: arg.0.value!), range: arg.0.range))
+          issues.append(parseFailure(
+            .duplicateGenericParameter(key: arg.0.value!), range: arg.0.range))
         }
         keys.insert(arg.0.value!)
       }
