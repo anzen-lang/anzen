@@ -1,5 +1,7 @@
 import XCTest
 
+import Utils
+
 /// Asserts that a statement is true.
 ///
 /// This function is inspired by the assertion mechanism proposed in JUnit, which proposes to write
@@ -53,20 +55,6 @@ public struct Assertion<Subject> {
   public static func isInstance<T>(of type: T.Type) -> Assertion<Subject> {
     return Assertion { $0 is T }
   }
-
-}
-
-public protocol OptionalConvertible {
-
-  associatedtype Wrapped
-
-  var optional: Wrapped? { get }
-
-}
-
-extension Optional: OptionalConvertible {
-
-  public var optional: Wrapped? { return self }
 
 }
 
