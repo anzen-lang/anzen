@@ -155,7 +155,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   public func visit(_ node: StructDecl) {
-    self <<< indent <<< "(interface_decl"
+    self <<< indent <<< "(struct_decl"
     self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
@@ -172,7 +172,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   public func visit(_ node: UnionDecl) {
-    self <<< indent <<< "(interface_decl"
+    self <<< indent <<< "(union_decl"
     self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
