@@ -50,6 +50,7 @@ public protocol ASTVisitor {
   func visit(_ node: ArrayLitExpr)
   func visit(_ node: SetLitExpr)
   func visit(_ node: MapLitExpr)
+  func visit(_ node: MapLitElem)
   func visit(_ node: BoolLitExpr)
   func visit(_ node: IntLitExpr)
   func visit(_ node: FloatLitExpr)
@@ -204,6 +205,10 @@ extension ASTVisitor {
   }
 
   public func visit(_ node: MapLitExpr) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: MapLitElem) {
     node.traverse(with: self)
   }
 

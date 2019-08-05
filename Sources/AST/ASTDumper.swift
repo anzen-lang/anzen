@@ -339,8 +339,8 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
         withIndentation { op.accept(visitor: self) }
         self <<< "\n"
         value.accept(visitor: self)
+        self <<< ")"
       }
-      self <<< ")"
     }
     self <<< ")"
   }
@@ -505,12 +505,24 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   public func visit(_ node: MapLitExpr) {
     self <<< indent <<< "(map_lit_expr"
     self <<< " type='" <<< node.type <<< "'"
-    withIndentation {
-      for (key, value) in node.elems {
-        self <<< "\n" <<< indent <<< "(map_lit_elem key='\(key)'\n"
-        withIndentation { value.accept(visitor: self) }
+    if !node.elems.isEmpty {
+      withIndentation {
+        self <<< "\n" <<< indent <<< "(elems\n"
+        withIndentation { self <<< node.elems }
         self <<< ")"
       }
+    }
+    self <<< ")"
+  }
+
+  public func visit(_ node: MapLitElem) {
+    self <<< indent <<< "(map_lit_elem"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(key\n"
+      withIndentation { node.key.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(value\n"
+      withIndentation { node.value.accept(visitor: self) }
+      self <<< ")"
     }
     self <<< ")"
   }

@@ -51,6 +51,7 @@ public protocol ASTTransformer {
   func transform(_ node: ArrayLitExpr) -> ASTNode
   func transform(_ node: SetLitExpr) -> ASTNode
   func transform(_ node: MapLitExpr) -> ASTNode
+  func transform(_ node: MapLitElem) -> ASTNode
   func transform(_ node: BoolLitExpr) -> ASTNode
   func transform(_ node: IntLitExpr) -> ASTNode
   func transform(_ node: FloatLitExpr) -> ASTNode

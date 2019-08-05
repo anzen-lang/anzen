@@ -279,7 +279,8 @@ class ExprParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: MapLitExpr.self))
     if let literal = pr.value as? MapLitExpr {
       assertThat(literal.elems, .count(1))
-      assertThat(literal.elems["a"], .isInstance(of: IntLitExpr.self))
+      assertThat(literal.elems[0].key, .isInstance(of: IdentExpr.self))
+      assertThat(literal.elems[0].value, .isInstance(of: IntLitExpr.self))
     }
 
     pr = parse("{ a: 1, b: 2, c: 3 }", with: Parser.parseExpr)
@@ -287,9 +288,10 @@ class ExprParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: MapLitExpr.self))
     if let literal = pr.value as? MapLitExpr {
       assertThat(literal.elems, .count(3))
-      assertThat(literal.elems["a"], .isInstance(of: IntLitExpr.self))
-      assertThat(literal.elems["b"], .isInstance(of: IntLitExpr.self))
-      assertThat(literal.elems["c"], .isInstance(of: IntLitExpr.self))
+      for i in 0 ..< 3 {
+        assertThat(literal.elems[i].key, .isInstance(of: IdentExpr.self))
+        assertThat(literal.elems[i].value, .isInstance(of: IntLitExpr.self))
+      }
     }
 
     let source = "{ a : 1 , b : 2 , c : 3 , }".split(separator: " ").joined(separator: "\n")

@@ -513,7 +513,7 @@ public final class ArrayLitExpr: Expr {
 
 }
 
-/// An set literal expression.
+/// A set literal expression.
 public final class SetLitExpr: Expr {
 
   // Expr requirements
@@ -550,7 +550,7 @@ public final class SetLitExpr: Expr {
 
 }
 
-/// An map literal expression.
+/// A map literal expression.
 public final class MapLitExpr: Expr {
 
   // Expr requirements
@@ -560,9 +560,9 @@ public final class MapLitExpr: Expr {
   public var range: SourceRange
 
   /// The elements of the literal.
-  public var elems: [String: Expr]
+  public var elems: [MapLitElem]
 
-  public init(elems: [String: Expr], module: Module, range: SourceRange) {
+  public init(elems: [MapLitElem], module: Module, range: SourceRange) {
     self.elems = elems
     self.module = module
     self.range = range
@@ -573,7 +573,7 @@ public final class MapLitExpr: Expr {
   }
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
-    elems.values.forEach { $0.accept(visitor: visitor) }
+    elems.forEach { $0.accept(visitor: visitor) }
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -581,9 +581,48 @@ public final class MapLitExpr: Expr {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    elems = Dictionary(uniqueKeysWithValues: elems.map { (key, value) in
-      (key, value.accept(transformer: transformer) as! Expr)
-    })
+    elems = elems.map { $0.accept(transformer: transformer) } as! [MapLitElem]
+    return self
+  }
+
+}
+
+/// A map literal element.
+public final class MapLitElem: ASTNode {
+
+  // ASTNode requirements
+
+  public unowned var module: Module
+  public var range: SourceRange
+
+  /// The element's key.
+  public var key: Expr
+  /// The element's value.
+  public var value: Expr
+
+  public init(key: Expr, value: Expr, module: Module, range: SourceRange) {
+    self.key = key
+    self.value = value
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V: ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V: ASTVisitor {
+    key.accept(visitor: visitor)
+    value.accept(visitor: visitor)
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
+    key = key.accept(transformer: transformer) as! Expr
+    value = value.accept(transformer: transformer) as! Expr
     return self
   }
 
