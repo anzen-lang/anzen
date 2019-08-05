@@ -128,8 +128,8 @@ class DeclParserTests: XCTestCase, ParserTestCase {
     if let decl = pr.value as? FunDecl {
       assertThat(decl.name, .equals("print"))
       assertThat(decl.attrs, .count(2))
-      assertThat(decl.attrs, .contains { $0.name == "inline" })
-      assertThat(decl.attrs, .contains { $0.name == "air_name" })
+      assertThat(decl.attrs, .contains { $0.name == "@inline" })
+      assertThat(decl.attrs, .contains { $0.name == "@air_name" })
     }
 
     let source = "@inline @air_name(print) static mutating fun f ( )"

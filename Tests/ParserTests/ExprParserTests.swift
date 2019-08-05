@@ -51,7 +51,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
     pr = parse("\"Hello, World!\"", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: StrLitExpr.self))
-    assertThat((pr.value as? StrLitExpr)?.value, .equals("Hello, World!"))
+    assertThat((pr.value as? StrLitExpr)?.value, .equals("\"Hello, World!\""))
   }
 
   func testParsePrefixExpr() {

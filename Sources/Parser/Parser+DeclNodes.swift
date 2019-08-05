@@ -127,7 +127,7 @@ extension Parser {
       else { return Result(value: nil, issues: [unexpectedToken(expected: "'let'")]) }
     var tail = head
 
-    // Parse the name of the property.
+    // Parse the property's name.
     let name: String
     if let nameToken = consume(.identifier, afterMany: .newline) {
       tail = nameToken
@@ -181,12 +181,15 @@ extension Parser {
       head = funToken
       kind = .regular
 
-      // Parse the name of the function.
-      consumeNewlines()
-      if let id = consume(.identifier) {
-        name = id.value!
-      } else if let op = consume(if: { $0.isPrefixOperator || $0.isInfixOperator }) {
-        name = op.kind.description
+      // Parse the function's name.
+      if let nameToken = consume(TokenKind.Category.name, afterMany: .newline) {
+        // Make sure the identifier isn't a reserved keyword.
+        if nameToken.isKeyword {
+          name = ""
+          issues.append(unexpectedToken(expected: "identifier", got: nameToken))
+        } else {
+          name = nameToken.value!
+        }
       } else {
         name = ""
         issues.append(unexpectedToken(expected: "identifier"))
@@ -492,6 +495,47 @@ extension Parser {
     if let head = consume(.identifier) {
       let decl = GenericParamDecl(name: head.value!, module: module, range: head.range)
       return Result(value: decl, issues: [])
+    } else {
+      return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
+    }
+  }
+
+  /// Parses a declaration attribute.
+  func parseDeclAttr() -> Result<DeclAttr?> {
+    // The first token should be an attribute name (i.e. `'@' <name>`).
+    guard let head = consume(.attribute)
+      else { return Result(value: nil, issues: [unexpectedToken(expected: "attribute")]) }
+
+    // Attempt to parse an argument list on the same line.
+    var args: [Token] = []
+    var issues: [Issue] = []
+    var rangeUpperBound = head.range.upperBound
+
+    if consume(.leftParen) != nil {
+      // Commit to parse an argument list.
+      let parseResult = parseCommaSeparatedList(delimitedBy: .rightParen, with: parseDeclAttrArg)
+
+      args = parseResult.value
+      if let delimiter = consume(.rightParen) {
+        rangeUpperBound = delimiter.range.upperBound
+      } else {
+        rangeUpperBound = args.last?.range.upperBound ?? rangeUpperBound
+        issues.append(unexpectedToken(expected: "')'"))
+      }
+    }
+
+    let attr = DeclAttr(
+      name: head.value!,
+      args: args.map { $0.value! },
+      module: module,
+      range: head.range.lowerBound ..< rangeUpperBound)
+    return Result(value: attr, issues: issues)
+  }
+
+  /// Parses a declaration attribute's argument.
+  func parseDeclAttrArg() -> Result<Token?> {
+    if let arg = consume(.identifier) {
+      return Result(value: arg, issues: [])
     } else {
       return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
     }

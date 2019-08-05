@@ -236,9 +236,20 @@ public enum TokenKind: UInt64, CustomStringConvertible {
 /// A lexical token is a chunk of the text input to which a syntactic meaning is assigned.
 public struct Token {
 
-  public init(kind: TokenKind, value: String? = nil, range: SourceRange) {
+  /// The kind of the token.
+  public let kind: TokenKind
+  /// The range of characters that compose the token in the source file.
+  public let range: SourceRange
+
+  /// The text represented by this token.
+  public var value: String? {
+    return try? range.sourceRef.buffer.read(
+      count: range.upperBound.offset - range.lowerBound.offset,
+      from: range.lowerBound.offset)
+  }
+
+  public init(kind: TokenKind, range: SourceRange) {
     self.kind = kind
-    self.value = value
     self.range = range
   }
 

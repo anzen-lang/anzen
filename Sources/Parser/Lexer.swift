@@ -152,32 +152,30 @@ extension Lexer: IteratorProtocol, Sequence {
 
     // Check for number literals.
     if isDigit(c) {
-      let number = take(while: isDigit)
+      _ = take(while: isDigit)
 
       // Check for float literals.
       if currentChar == "." && (char(at: 1).map(isDigit) ?? false) {
         skip()
-        let fraction = take(while: isDigit)
+        _ = take(while: isDigit)
         return Token(
           kind: .float,
-          value: String(number) + "." + String(fraction),
           range: range(from: startLocation))
       }
 
-      return Token(kind: .integer, value: String(number), range: range(from: startLocation))
+      return Token(kind: .integer, range: range(from: startLocation))
     }
 
     // Check for identifiers.
     if isAlnumOrUnderscore(c) {
       let chars = String(take(while: isAlnumOrUnderscore))
       let kind: TokenKind
-      var value: String?
 
       // Check for keywords and operators.
       switch chars {
       case "_"        : kind = .underscore
-      case "true"     : kind = .bool; value = "true"
-      case "false"    : kind = .bool; value = "false"
+      case "true"     : kind = .bool
+      case "false"    : kind = .bool
       case "not"      : kind = .not
       case "as"       : kind = .as
       case "is"       : kind = .is
@@ -206,17 +204,16 @@ extension Lexer: IteratorProtocol, Sequence {
       case "switch"   : kind = .switch
       case "case"     : kind = .case
       case "nullref"  : kind = .nullref
-      default         : kind = .identifier; value = chars
+      default         : kind = .identifier
       }
 
-      return Token(kind: kind, value: value, range: range(from: startLocation))
+      return Token(kind: kind, range: range(from: startLocation))
     }
 
     // Check for string literals.
     if c == "\"" {
       skip()
 
-      let startIndex = charIndex
       while currentChar != "\"" {
         // Make sure the stream isn't depleted.
         guard charIndex < characters.endIndex else {
@@ -232,23 +229,22 @@ extension Lexer: IteratorProtocol, Sequence {
         }
       }
 
-      let value = String(characters[startIndex ..< charIndex])
       skip()
-      return Token(kind: .string, value: value, range: range(from: startLocation))
+      return Token(kind: .string, range: range(from: startLocation))
     }
 
     // Check for qualifiers.
     if c == "@" {
       skip()
-      let value = String(take(while: isAlnumOrUnderscore))
-      return Token(kind: .attribute, value: value, range: range(from: startLocation))
+      _ = take(while: isAlnumOrUnderscore)
+      return Token(kind: .attribute, range: range(from: startLocation))
     }
 
     // Check for directives.
     if c == "#" {
       skip()
-      let value = String(take(while: isAlnumOrUnderscore))
-      return Token(kind: .directive, value: value, range: range(from: startLocation))
+      _ = take(while: isAlnumOrUnderscore)
+      return Token(kind: .directive, range: range(from: startLocation))
     }
 
     // Check for operators.
@@ -296,7 +292,6 @@ extension Lexer: IteratorProtocol, Sequence {
       }
 
       // Check for operators made of a single character.
-      var value: String?
       let kind: TokenKind
 
       switch c {
@@ -319,15 +314,15 @@ extension Lexer: IteratorProtocol, Sequence {
       case "*": kind = .mul
       case "/": kind = .div
       case "%": kind = .mod
-      default : kind = .unknown; value = String(c)
+      default : kind = .unknown
       }
 
       skip()
-      return Token(kind: kind, value: value, range: range(from: startLocation))
+      return Token(kind: kind, range: range(from: startLocation))
     }
 
     skip()
-    return Token(kind: .unknown, value: String(c), range: range(from: startLocation))
+    return Token(kind: .unknown, range: range(from: startLocation))
   }
 
 }

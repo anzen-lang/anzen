@@ -45,8 +45,8 @@ extension Parser {
       range = range.lowerBound ..< attrToken.range.upperBound
 
       switch attrToken.value! {
-      case "cst": qualSet.insert(.cst)
-      case "mut": qualSet.insert(.mut)
+      case "@cst": qualSet.insert(.cst)
+      case "@mut": qualSet.insert(.mut)
       default:
         issues.append(
           parseFailure(.invalidQualifier(value: attrToken.value!), range: attrToken.range))
@@ -304,7 +304,7 @@ extension Parser {
   /// delimiter.
   func parseParamSign() -> Result<ParamSign?> {
     // Parse the label of the parameter.
-    guard let label = consume([.identifier, .underscore])
+    guard let head = consume([.identifier, .underscore])
       else { return Result(value: nil, issues: [unexpectedToken(expected: "identifier")]) }
 
     // Parse the qualified signature of the parameter.
@@ -327,11 +327,15 @@ extension Parser {
         range: colon.range)
     }
 
+    let label: String? = head.kind == .underscore
+      ? nil
+      : head.value
+
     let paramSign = ParamSign(
-      label: label.value,
+      label: label,
       sign: sign,
       module: module,
-      range: label.range.lowerBound ..< sign.range.upperBound)
+      range: head.range.lowerBound ..< sign.range.upperBound)
     return Result(value: paramSign, issues: signParseResult.issues)
   }
 
