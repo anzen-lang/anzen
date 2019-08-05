@@ -16,14 +16,6 @@ extension Sequence {
     return result
   }
 
-  /// Evaluates whether or not all elements in the sequence satisfy a given predicate.
-  public func all(satisfy predicate: (Element) throws -> Bool) rethrows -> Bool {
-    for element in self {
-      guard try predicate(element) else { return false }
-    }
-    return true
-  }
-
 }
 
 extension Array {
