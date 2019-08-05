@@ -23,7 +23,7 @@ public final class CompilerContext {
   /// The modules loaded in the compiler context.
   public private(set) var modules: [Module.ID: Module] = [:]
   /// The issues that resulted from the processing the loaded modules.
-  public var issues: [Module.ID: [Issue]] {
+  public var issues: [Module.ID: Set<Issue>] {
     let allIssues = modules.map({ (id, module) in (id, module.issues) })
     return Dictionary(uniqueKeysWithValues: allIssues)
   }

@@ -45,11 +45,21 @@ public struct SourceLocation {
 
 }
 
-extension SourceLocation: Comparable {
+extension SourceLocation: Hashable {
 
   public static func == (lhs: SourceLocation, rhs: SourceLocation) -> Bool {
-    return lhs.offset == rhs.offset
+    return lhs.sourceRef === rhs.sourceRef
+        && lhs.offset == rhs.offset
   }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(ObjectIdentifier(sourceRef))
+    hasher.combine(offset)
+  }
+
+}
+
+extension SourceLocation: Comparable {
 
   public static func < (lhs: SourceLocation, rhs: SourceLocation) -> Bool {
     return lhs.offset < rhs.offset

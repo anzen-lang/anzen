@@ -17,7 +17,7 @@ public struct Issue {
   /// The issue's message.
   public let message: String
   /// The range in the source related to this issue.
-  public let range: SourceRange?
+  public let range: SourceRange
   /// The AST node related to this issue.
   public let node: ASTNode?
 
@@ -37,15 +37,34 @@ public struct Issue {
 
   public static func < (lhs: Issue, rhs: Issue) -> Bool {
     if lhs.severity == rhs.severity {
-      if lhs.range!.sourceRef.name == rhs.range!.sourceRef.name {
-        return lhs.range!.lowerBound < rhs.range!.lowerBound
+      if lhs.range.sourceRef.name == rhs.range.sourceRef.name {
+        return lhs.range.lowerBound < rhs.range.lowerBound
       } else {
-        return lhs.range!.sourceRef.name < rhs.range!.sourceRef.name
+        return lhs.range.sourceRef.name < rhs.range.sourceRef.name
       }
     } else {
       return lhs.severity.rawValue < rhs.severity.rawValue
     }
   }
 
+}
+
+extension Issue: Hashable {
+
+  public static func == (lhs: Issue, rhs: Issue) -> Bool {
+    return lhs.severity == rhs.severity
+        && lhs.message == rhs.message
+        && lhs.range == rhs.range
+        && lhs.node === rhs.node
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(severity)
+    hasher.combine(message)
+    hasher.combine(range)
+    if node != nil {
+      hasher.combine(ObjectIdentifier(node!))
+    }
+  }
 
 }

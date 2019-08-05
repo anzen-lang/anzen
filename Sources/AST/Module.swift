@@ -41,7 +41,7 @@ public final class Module: DeclContext {
   // MARK: - Issues
 
   /// The list of issues that resulted from the processing of this module.
-  public var issues: [Issue] = []
+  public var issues: Set<Issue> = []
 
   // MARK: - Type constraints
 
