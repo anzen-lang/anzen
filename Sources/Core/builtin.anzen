@@ -6,44 +6,44 @@ struct Nothing {
 
 struct Bool {
 
-  #air_name(__band) fun and (_ rhs: Self) -> Self
-  #air_name(__bor)  fun or  (_ rhs: Self) -> Self
-  #air_name(__beq)  fun ==  (_ rhs: Self) -> Self
-  #air_name(__bne)  fun !=  (_ rhs: Self) -> Self
+  @air_name(__band) fun and (_ rhs: Self) -> Self
+  @air_name(__bor)  fun or  (_ rhs: Self) -> Self
+  @air_name(__beq)  fun ==  (_ rhs: Self) -> Self
+  @air_name(__bne)  fun !=  (_ rhs: Self) -> Self
 
 }
 
 struct Int {
 
-  #air_name(__iadd) fun +  (_ rhs: Self) -> Self
-  #air_name(__isub) fun -  (_ rhs: Self) -> Self
-  #air_name(__imul) fun *  (_ rhs: Self) -> Self
-  #air_name(__idiv) fun /  (_ rhs: Self) -> Self
-  #air_name(__imod) fun %  (_ rhs: Self) -> Self
+  @air_name(__iadd) fun +  (_ rhs: Self) -> Self
+  @air_name(__isub) fun -  (_ rhs: Self) -> Self
+  @air_name(__imul) fun *  (_ rhs: Self) -> Self
+  @air_name(__idiv) fun /  (_ rhs: Self) -> Self
+  @air_name(__imod) fun %  (_ rhs: Self) -> Self
 
-  #air_name(__ieq)  fun == (_ rhs: Self) -> Bool
-  #air_name(__ine)  fun != (_ rhs: Self) -> Bool
-  #air_name(__ilt)  fun <  (_ rhs: Self) -> Bool
-  #air_name(__ile)  fun <= (_ rhs: Self) -> Bool
-  #air_name(__igt)  fun >  (_ rhs: Self) -> Bool
-  #air_name(__ige)  fun >= (_ rhs: Self) -> Bool
+  @air_name(__ieq)  fun == (_ rhs: Self) -> Bool
+  @air_name(__ine)  fun != (_ rhs: Self) -> Bool
+  @air_name(__ilt)  fun <  (_ rhs: Self) -> Bool
+  @air_name(__ile)  fun <= (_ rhs: Self) -> Bool
+  @air_name(__igt)  fun >  (_ rhs: Self) -> Bool
+  @air_name(__ige)  fun >= (_ rhs: Self) -> Bool
 
 }
 
 struct Float {
 
-  #air_name(__fadd) fun +  (_ rhs: Self) -> Self
-  #air_name(__fsub) fun -  (_ rhs: Self) -> Self
-  #air_name(__fmul) fun *  (_ rhs: Self) -> Self
-  #air_name(__fdiv) fun /  (_ rhs: Self) -> Self
-  #air_name(__fmod) fun %  (_ rhs: Self) -> Self
+  @air_name(__fadd) fun +  (_ rhs: Self) -> Self
+  @air_name(__fsub) fun -  (_ rhs: Self) -> Self
+  @air_name(__fmul) fun *  (_ rhs: Self) -> Self
+  @air_name(__fdiv) fun /  (_ rhs: Self) -> Self
+  @air_name(__fmod) fun %  (_ rhs: Self) -> Self
 
-  #air_name(__feq)  fun == (_ rhs: Self) -> Bool
-  #air_name(__fne)  fun != (_ rhs: Self) -> Bool
-  #air_name(__flt)  fun <  (_ rhs: Self) -> Bool
-  #air_name(__fle)  fun <= (_ rhs: Self) -> Bool
-  #air_name(__fgt)  fun >  (_ rhs: Self) -> Bool
-  #air_name(__fge)  fun >= (_ rhs: Self) -> Bool
+  @air_name(__feq)  fun == (_ rhs: Self) -> Bool
+  @air_name(__fne)  fun != (_ rhs: Self) -> Bool
+  @air_name(__flt)  fun <  (_ rhs: Self) -> Bool
+  @air_name(__fle)  fun <= (_ rhs: Self) -> Bool
+  @air_name(__fgt)  fun >  (_ rhs: Self) -> Bool
+  @air_name(__fge)  fun >= (_ rhs: Self) -> Bool
 
 }
 
@@ -59,5 +59,5 @@ struct Set<Element> {
 struct Map<Key, Element> {
 }
 
-#air_name(__print)
+@air_name(__print)
 fun print(_ item: Anything) -> Nothing
