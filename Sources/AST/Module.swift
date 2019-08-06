@@ -12,9 +12,9 @@ public final class Module: DeclContext {
   public typealias ID = String
 
   /// A module's state.
-  public enum State {
-    /// Denotes a module that has not been parsed yet.
-    case unparsed
+  public enum State: Equatable {
+    /// Denotes a module that has been created but not loaded yet.
+    case created
     /// Denotes a module that has been parsed but not typed-checked yet.
     case parsed
     /// Denotes a fully type-checked module.
@@ -33,9 +33,13 @@ public final class Module: DeclContext {
   /// The top-level declarations of the module.
   public var decls: [Decl] = []
 
-  public init(id: ID) {
+  /// Creates a new module.
+  ///
+  /// Note that this initializer is internal to the AST library, because modules must be created by
+  /// a compiler context before they are loaded.
+  internal init(id: ID) {
     self.id = id
-    self.state = .unparsed
+    self.state = .created
   }
 
   // MARK: - Issues

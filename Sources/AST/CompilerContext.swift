@@ -6,20 +6,23 @@ public final class CompilerContext {
 
   /// The path to Anzen's core modules.
   public let anzenPath: Path
+  /// The context's module loader.
+  public let loader: ModuleLoader
 
-  public init?(anzenPath: Path) {
+  public init(anzenPath: Path, loader: ModuleLoader) throws {
     self.anzenPath = anzenPath
+    self.loader = loader
 
     // Load the core modules.
-    guard let (anzenModule, _) = loadModule(fromDirectory: anzenPath, withID: "Anzen")
-      else { return nil }
+    let corePath = anzenPath.joined(with: "Core")
+    let (anzenModule, _) = try loadModule(fromDirectory: corePath, withID: "Anzen")
     self.anzenModule = anzenModule
   }
 
   // MARK: - Modules
 
   /// The core module.
-  public var anzenModule: Module!
+  public private(set) var anzenModule: Module!
   /// The modules loaded in the compiler context.
   public private(set) var modules: [Module.ID: Module] = [:]
   /// The issues that resulted from the processing the loaded modules.
@@ -29,22 +32,34 @@ public final class CompilerContext {
   }
 
   /// Load a module from a directory.
-  ///
-  /// This method will merge fetch source files (i.e. `.anzen` files) **directly** under the given
-  /// directory, merge them in a single compilation unit and compile them as a module.
   @discardableResult
-  public func loadModule(fromDirectory: Path, withID moduleID: Module.ID? = nil)
-    -> (module: Module, loaded: Bool)?
+  public func loadModule(fromDirectory dir: Path, withID id: Module.ID? = nil) throws
+    -> (module: Module, loaded: Bool)
   {
-    return nil
+    let moduleID = id ?? dir.components.last.map(String.init) ?? "unnamed"
+    if let module = modules[moduleID] {
+      return (module, false)
+    }
+
+    let module = Module(id: moduleID)
+    try loader.load(module: module, fromDirectory: dir, in: self)
+    modules[moduleID] = module
+    return (module, true)
   }
 
   /// Loads a single translation unit as a module from a text buffer.
   @discardableResult
-  public func loadModule(fromText: TextInputBuffer, withID moduleID: Module.ID)
-    -> (module: Module, loaded: Bool)?
+  func loadModule(fromText buffer: TextInputBuffer, withID id: Module.ID) throws
+    -> (module: Module, loaded: Bool)
   {
-    return nil
+    if let module = modules[id] {
+      return (module, false)
+    }
+
+    let module = Module(id: id)
+    try loader.load(module: module, fromText: buffer, in: self)
+    modules[id] = module
+    return (module, true)
   }
 
   // MARK: - Types
