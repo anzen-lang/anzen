@@ -6,7 +6,7 @@ import AST
 class StmtParserTests: XCTestCase, ParserTestCase {
 
   func testParseIfStmt() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("if c1 {}", with: Parser.parseStmt)
     assertThat(pr.issues, .isEmpty)
@@ -36,7 +36,7 @@ class StmtParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseWhileStmt() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("while c1 {}", with: Parser.parseStmt)
     assertThat(pr.issues, .isEmpty)
@@ -49,7 +49,7 @@ class StmtParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseReturnStmt() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("return", with: Parser.parseStmt)
     assertThat(pr.issues, .isEmpty)
@@ -73,7 +73,7 @@ class StmtParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseBinding() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("f().x := v[a &- b]", with: Parser.parseStmt)
     assertThat(pr.issues, .isEmpty)

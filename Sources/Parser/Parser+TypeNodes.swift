@@ -3,40 +3,39 @@ import AST
 extension Parser {
 
   /// Parses a qualified type signature.
-  func parseQualSign() -> Result<QualTypeSign?> {
+  func parseQualSign(issues: inout [Issue]) -> QualTypeSign? {
     // If the first token is a left parenthesis, attempt first to parse a function signature, as
     // it is more likely than an enclosed signature.
     if peek().kind == .leftParen {
       let savePoint = streamPosition
-      let funSignParseResult = parseFunSign()
-
-      // If we failed to parse a function signature, attempt to parse an enclosed signature.
-      guard let funSign = funSignParseResult.value else {
+      var funSignIssues: [Issue] = []
+      let funSign = parseFunSign(issues: &funSignIssues)
+      if funSign != nil {
+        // If we succeeded to parse a function signature, we return it without qualifier.
+        issues.append(contentsOf: funSignIssues)
+        return QualTypeSign(quals: [], sign: funSign, module: module, range: funSign!.range)
+      } else {
+        // If we failed to parse a function signature, attempt to parse an enclosed signature.
         rewind(to: savePoint)
         consume(.leftParen)
-
         consumeNewlines()
-        let enclosedParseResult = parseQualSign()
-        if let enclosed = enclosedParseResult.value {
-          // Commit to this path if an enclosed signature could be parsed.
-          var issues = enclosedParseResult.issues
+
+        var enclosedSignIssues: [Issue] = []
+        if let enclosed = parseQualSign(issues: &enclosedSignIssues) {
+          issues.append(contentsOf: enclosedSignIssues)
           if consume(.rightParen, afterMany: .newline) == nil {
             issues.append(unexpectedToken(expected: "')'"))
           }
-          return Result(value: enclosed, issues: issues)
-        } else {
-          // If we couldn't parse an enclosed signature, assume the error occured while parsing a
-          // function signature.
-          return Result(value: nil, issues: funSignParseResult.issues)
+          return enclosed
         }
       }
 
-      // If we succeeded to parse a function signature, we return it without qualifier.
-      let qualSign = QualTypeSign(quals: [], sign: funSign, module: module, range: funSign.range)
-      return Result(value: qualSign, issues: funSignParseResult.issues)
+      // If we couldn't parse an enclosed signature, assume the error occured while parsing a
+      // function signature.
+      issues.append(contentsOf: funSignIssues)
+      return nil
     }
 
-    var issues: [Issue] = []
     var range = peek().range
 
     // Parse the qualifiers (if any).
@@ -58,64 +57,54 @@ extension Parser {
 
     // Parse the unqualified type signature.
     let savePoint = streamPosition
-    let signParseResult = parseTypeSign()
-
-    guard let sign = signParseResult.value else {
+    var signIssues: [Issue] = []
+    guard let sign = parseTypeSign(issues: &signIssues) else {
       // If the signature could not be parsed, make sure at least one qualifier could.
-      guard !qualSet.isEmpty
-        else { return Result(value: nil, issues: issues + signParseResult.issues) }
+      guard !qualSet.isEmpty else {
+        issues.append(contentsOf: signIssues)
+        return nil
+      }
 
       // If there is at least one qualifier, we can ignore the signature's parsing failure, rewind
       // the token stream and return a signature without explicit unqualified signature.
       rewind(to: savePoint)
-      let qualSign = QualTypeSign(quals: qualSet, sign: nil, module: module, range: range)
-      return Result(value: qualSign, issues: issues)
+      return QualTypeSign(quals: qualSet, sign: nil, module: module, range: range)
     }
 
-    issues.append(contentsOf: signParseResult.issues)
+    issues.append(contentsOf: signIssues)
     range = qualSet.isEmpty
       ? sign.range
       : range.lowerBound ..< sign.range.upperBound
-
-    let qualSign = QualTypeSign(
-      quals: qualSet,
-      sign: sign,
-      module: module,
-      range: range)
-    return Result(value: qualSign, issues: issues)
+    return QualTypeSign(quals: qualSet, sign: sign, module: module, range: range)
   }
 
   /// Parses an unqualified type signature.
-  func parseTypeSign() -> Result<TypeSign?> {
+  func parseTypeSign(issues: inout [Issue]) -> TypeSign? {
     var sign: TypeSign
-    var issues: [Issue] = []
 
     switch peek().kind {
     case .identifier:
-      let parseResult = parseIdentSign()
-      issues = parseResult.issues
-      guard let identSign = parseResult.value
-        else { return Result(value: nil, issues: issues) }
-      sign = identSign
+      guard let node = parseIdentSign(issues: &issues)
+        else { return nil }
+      sign = node
 
     case .leftParen:
       // First, attempt to parse a function signature.
       let savePoint = streamPosition
-      let funSignParseResult = parseFunSign()
-
-      if let funSign = funSignParseResult.value {
-        // Parsing a function signature succeeded.
-        sign = funSign
+      var funSignIssues: [Issue] = []
+      let funSign = parseFunSign(issues: &funSignIssues)
+      if funSign != nil {
+        issues.append(contentsOf: funSignIssues)
+        sign = funSign!
       } else {
         // If we failed to parse a function signature, attempt to parse an enclosed signature.
         rewind(to: savePoint)
         consume(.leftParen)
-
         consumeNewlines()
-        let enclosedParseResult = parseTypeSign()
-        if let enclosed = enclosedParseResult.value {
-          // Commit to this path if an enclosed signature could be parsed.
-          issues.append(contentsOf: enclosedParseResult.issues)
+
+        var enclosedSignIssues: [Issue] = []
+        if let enclosed = parseTypeSign(issues: &enclosedSignIssues) {
+          issues.append(contentsOf: enclosedSignIssues)
           if consume(.rightParen, afterMany: .newline) == nil {
             issues.append(unexpectedToken(expected: "')'"))
           }
@@ -123,29 +112,27 @@ extension Parser {
         } else {
           // If we couldn't parse an enclosed signature, assume the error occured while parsing a
           // function signature.
-          return Result(value: nil, issues: funSignParseResult.issues)
+          issues.append(contentsOf: funSignIssues)
+          return nil
         }
       }
 
     case .doubleColon:
       let head = consume()!
-      let parseResult = parseIdentSign()
-      issues = parseResult.issues
-      guard let ident = parseResult.value
-        else { return Result(value: nil, issues: issues) }
+      guard let ident = parseIdentSign(issues: &issues)
+        else { return nil }
       sign = ImplicitNestedIdentSign(
         ownee: ident,
         module: module,
         range: head.range.lowerBound ..< ident.range.upperBound)
 
     default:
-      return Result(value: nil, issues: [unexpectedToken(expected: "type signature")])
+      issues.append(unexpectedToken(expected: "type signature"))
+      return nil
     }
 
     while consume(.doubleColon, afterMany: .newline) != nil {
-      let owneeParseResult = parseIdentSign()
-      issues.append(contentsOf: owneeParseResult.issues)
-      guard let ownee = owneeParseResult.value
+      guard let ownee = parseIdentSign(issues: &issues)
         else { break }
       sign = NestedIdentSign(
         owner: sign,
@@ -154,53 +141,47 @@ extension Parser {
         range: sign.range.lowerBound ..< ownee.range.upperBound)
     }
 
-    return Result(value: sign, issues: issues)
+    return sign
   }
 
   /// Parses a type identifier signature.
-  func parseIdentSign() -> Result<IdentSign?> {
+  func parseIdentSign(issues: inout [Issue]) -> IdentSign? {
     // The first token should be an identifier.
     guard let head = consume(.identifier) else {
-      defer { consume() }
-      return Result(value: nil, issues: [unexpectedToken(expected: "identifier")])
+      issues.append(unexpectedToken(expected: "identifier"))
+      return nil
     }
 
-    // Attempt to parse a specialization list.
-    let specArgsParseResult = parseSpecArgs()
-    let specArgs = specArgsParseResult?.value.list ?? [:]
-    let issues = specArgsParseResult?.issues ?? []
+    let ident = IdentSign(name: head.value!, module: module, range: head.range)
 
-    let range = specArgsParseResult != nil
-      ? head.range.lowerBound ..< specArgsParseResult!.value.range.upperBound
-      : head.range
-    let identSign = IdentSign(name: head.value!, specArgs: specArgs, module: module, range: range)
-    return Result(value: identSign, issues: issues)
+    // Attempt to parse a specialization list.
+    if let (specArgs, specArgsRange) = parseSpecArgs(issues: &issues) {
+      ident.specArgs = specArgs
+      ident.range = ident.range.lowerBound ..< specArgsRange.upperBound
+    }
+
+    return ident
   }
 
   /// Parses a specialization list.
-  func parseSpecArgs() -> Result<(list: [String: QualTypeSign], range: SourceRange)>? {
-    var specArgs: [(Token, QualTypeSign)] = []
-    var issues: [Issue] = []
-
+  func parseSpecArgs(issues: inout [Issue])
+    -> (specArgs: [String: QualTypeSign], range: SourceRange)?
+  {
     if let head = consume(.lt, afterMany: .newline) {
       // Commit to parse a specialization list.
-      let specArgsParseResult = parseCommaSeparatedList(
-        delimitedBy: .gt,
-        with: parseSpecArg)
-      issues.append(contentsOf: specArgsParseResult.issues)
-      specArgs = specArgsParseResult.value
+      let specTokens = parseList(delimitedBy: .gt, issues: &issues, with: parseSpecArg)
 
-      let rangeUpperBound: SourceLocation
+      let range: SourceRange
       if let tail = consume(.gt) {
-        rangeUpperBound = tail.range.upperBound
+        range = head.range.lowerBound ..< tail.range.upperBound
       } else {
         issues.append(unexpectedToken(expected: "'>'"))
-        rangeUpperBound = (specArgs.last?.0 ?? head).range.upperBound
+        range = head.range.lowerBound ..< (specTokens.last?.0 ?? head).range.upperBound
       }
 
       // Make sure there's no duplicate key.
       var keys: Set<String> = []
-      for arg in specArgs {
+      for arg in specTokens {
         if keys.contains(arg.0.value!) {
           issues.append(parseFailure(
             .duplicateGenericParameter(key: arg.0.value!), range: arg.0.range))
@@ -208,10 +189,10 @@ extension Parser {
         keys.insert(arg.0.value!)
       }
 
-      let returnValue = (
-        list: Dictionary(uniqueKeysWithValues: specArgs.map({ arg in (arg.0.value!, arg.1) })),
-        range: head.range.lowerBound ..< rangeUpperBound)
-      return Result(value: returnValue, issues: issues)
+      let specArgs = Dictionary(uniqueKeysWithValues: specTokens.map {
+        (token, sign) in (token.value!, sign)
+      })
+      return (specArgs, range)
     }
 
     return nil
@@ -221,32 +202,31 @@ extension Parser {
   ///
   /// This parser commits if it can recognize a name followed by `=`. If it fails past this point,
   /// it attempts to recover at the next comma, closing angle bracket or statement delimiter.
-  func parseSpecArg() -> Result<(Token, QualTypeSign)?> {
+  func parseSpecArg(issues: inout [Issue]) -> (Token, QualTypeSign)? {
     // Parse the name of the placeholder.
-    guard let name = consume(.identifier)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "identifier")]) }
+    guard let name = consume(.identifier) else {
+      issues.append(unexpectedToken(expected: "identifier"))
+      return nil
+    }
 
     // Parse the signature to which it should map.
-    guard let assign = consume(.assign, afterMany: .newline)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "'='")]) }
+    guard let assign = consume(.assign, afterMany: .newline) else {
+      issues.append(unexpectedToken(expected: "'='"))
+      return nil
+    }
 
     consumeNewlines()
-    let signParseResult = parseQualSign()
-    let sign: QualTypeSign
-    if signParseResult.value != nil {
-      sign = signParseResult.value!
-    } else {
-      // Look for a recovery point.
-      let recoveryKinds: Set<TokenKind> = [.comma, .gt, .newline, .semicolon, .eof]
-      consumeMany { !recoveryKinds.contains($0.kind) }
+    var sign = parseQualSign(issues: &issues)
+    if sign == nil {
       sign = QualTypeSign(
         quals: [],
         sign: InvalidSign(module: module, range: assign.range),
         module: module,
         range: assign.range)
+      recover(atNextKinds: [.comma, .gt, .newline])
     }
 
-    return Result(value: (name, sign), issues: signParseResult.issues)
+    return (name, sign!)
   }
 
   /// Parses a function type signature.
@@ -254,35 +234,31 @@ extension Parser {
   /// This parser commits if it can recognize a parameter list followed by an arrow. If it fails
   /// past this point, it attempts to recover at the next comma, closing parenthesis or statement
   // delimiter.
-  func parseFunSign() -> Result<FunSign?> {
+  func parseFunSign(issues: inout [Issue]) -> FunSign? {
     // The first token should be left parenthesis.
-    guard let head = consume(.leftParen)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "'('")]) }
+    guard let head = consume(.leftParen) else {
+      issues.append(unexpectedToken(expected: "'('"))
+      return nil
+    }
 
     // Parse the domain.
-    let domParseResult = parseCommaSeparatedList(
-      delimitedBy: .rightParen,
-      with: parseParamSign)
-    var issues = domParseResult.issues
-
+    let dom = parseList(delimitedBy: .rightParen, issues: &issues, with: parseParamSign)
     if consume(.rightParen, afterMany: .newline) == nil {
       issues.append(unexpectedToken(expected: "')'"))
     }
 
     // Parse the codomain.
-    guard let arrow = consume(.arrow, afterMany: .newline)
-      else { return Result(value: nil, issues: issues + [unexpectedToken(expected: "'->'")]) }
+    guard let arrow = consume(.arrow, afterMany: .newline) else {
+      // Note that we can't recover from this error, as this will prevent parsing enclosed
+      // signature relying on this particular failure.
+      issues.append(unexpectedToken(expected: "'->'"))
+      return nil
+    }
 
     consumeNewlines()
-    let codomParseResult = parseQualSign()
-    issues.append(contentsOf: codomParseResult.issues)
-    let codom: QualTypeSign
-    if codomParseResult.value != nil {
-      codom = codomParseResult.value!
-    } else {
-      // Look for a recovery point.
-      let recoveryKinds: Set<TokenKind> = [.comma, .rightParen, .newline, .semicolon, .eof]
-      consumeMany { !recoveryKinds.contains($0.kind) }
+    var codom = parseQualSign(issues: &issues)
+    if codom == nil {
+      recover(atNextKinds: [.comma, .rightParen, .newline])
       codom = QualTypeSign(
         quals: [],
         sign: InvalidSign(module: module, range: arrow.range),
@@ -290,12 +266,11 @@ extension Parser {
         range: arrow.range)
     }
 
-    let funSign = FunSign(
-      dom: domParseResult.value,
-      codom: codom,
+    return FunSign(
+      dom: dom,
+      codom: codom!,
       module: module,
-      range: head.range.lowerBound ..< codom.range.upperBound)
-    return Result(value: funSign, issues: issues)
+      range: head.range.lowerBound ..< codom!.range.upperBound)
   }
 
   /// Parses a function parameter signature.
@@ -303,24 +278,23 @@ extension Parser {
   /// This parser commits if it can recognize a label followed by a colon. If it fails past this
   /// point, it attempts to recover at the next comma, closing parenthesis or arrow or statement
   /// delimiter.
-  func parseParamSign() -> Result<ParamSign?> {
+  func parseParamSign(issues: inout [Issue]) -> ParamSign? {
     // Parse the label of the parameter.
-    guard let head = consume([.identifier, .underscore])
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "identifier")]) }
+    guard let head = consume([.identifier, .underscore]) else {
+      issues.append(unexpectedToken(expected: "identifier"))
+      return nil
+    }
 
     // Parse the qualified signature of the parameter.
-    guard let colon = consume(.colon, afterMany: .newline)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "':'")]) }
+    guard let colon = consume(.colon, afterMany: .newline) else {
+      issues.append(unexpectedToken(expected: "':'"))
+      return nil
+    }
 
     consumeNewlines()
-    let signParseResult = parseQualSign()
-    let sign: QualTypeSign
-    if signParseResult.value != nil {
-      sign = signParseResult.value!
-    } else {
-      // Look for a recovery point.
-      let recoveryKinds: Set<TokenKind> = [.comma, .rightParen, .arrow, .newline, .semicolon, .eof]
-      consumeMany { !recoveryKinds.contains($0.kind) }
+    var sign = parseQualSign(issues: &issues)
+    if sign == nil {
+      recover(atNextKinds: [.comma, .rightParen, .newline])
       sign = QualTypeSign(
         quals: [],
         sign: InvalidSign(module: module, range: colon.range),
@@ -332,12 +306,11 @@ extension Parser {
       ? nil
       : head.value
 
-    let paramSign = ParamSign(
+    return ParamSign(
       label: label,
-      sign: sign,
+      sign: sign!,
       module: module,
-      range: head.range.lowerBound ..< sign.range.upperBound)
-    return Result(value: paramSign, issues: signParseResult.issues)
+      range: head.range.lowerBound ..< sign!.range.upperBound)
   }
 
 }

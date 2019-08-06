@@ -6,7 +6,7 @@ import AST
 class ExprParserTests: XCTestCase, ParserTestCase {
 
   func testParseNullExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("nullref", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -14,7 +14,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseBoolLitExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("true", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -28,7 +28,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseIntLitExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("42", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -37,7 +37,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseFloatLitExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("4.2", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -46,7 +46,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseStrLitExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("\"Hello, World!\"", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -55,7 +55,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParsePrefixExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("+1", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -67,7 +67,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testUnsafeCastExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("a as Int", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -80,7 +80,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testInfixExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("a + b", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -111,7 +111,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseIdentExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("x", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -139,7 +139,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseLambdaExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("fun {}", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -194,7 +194,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseArrayLitExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("[]", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -229,7 +229,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseSetExor() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("{}", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -265,7 +265,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseMapExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("{:}", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -301,7 +301,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseImplicitSelectExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse(".a", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -319,7 +319,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseSelectExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("a.a", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -344,7 +344,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseCallExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("f()", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -413,7 +413,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseSubscriptExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("f[]", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
@@ -493,7 +493,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseParenExpr() {
-    var pr: Parser.Result<Expr?>
+    var pr: ParseResult<Expr?>
 
     pr = parse("(a)", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)

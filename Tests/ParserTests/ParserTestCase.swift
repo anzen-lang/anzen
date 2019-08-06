@@ -5,9 +5,10 @@ import AST
 
 protocol ParserTestCase {
 
+  typealias ParseResult<T> = (value: T, issues: [Issue])
+
   func getParser(for source: String) -> Parser
-  func parse<T>(_ source: String, with parse: (Parser) -> () -> Parser.Result<T>)
-    -> Parser.Result<T>
+  func parse<T>(_ source: String, with parse: (Parser) -> (inout [Issue]) -> T) -> ParseResult<T>
 
 }
 
@@ -20,10 +21,9 @@ extension ParserTestCase {
     return parser!
   }
 
-  func parse<T>(_ source: String, with parse: (Parser) -> () -> Parser.Result<T>)
-    -> Parser.Result<T>
-  {
-    return parse(getParser(for: source))()
+  func parse<T>(_ source: String, with parse: (Parser) -> (inout [Issue]) -> T) -> ParseResult<T> {
+    var issues: [Issue] = []
+    return (parse(getParser(for: source))(&issues), issues)
   }
 
 }

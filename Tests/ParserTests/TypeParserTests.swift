@@ -6,7 +6,7 @@ import AST
 class TypeParserTests: XCTestCase, ParserTestCase {
 
   func testParseTypeIdentifier() {
-    var pr: Parser.Result<TypeSign?>
+    var pr: ParseResult<TypeSign?>
 
     pr = parse("Int", with: Parser.parseTypeSign)
     assertThat(pr.issues, .isEmpty)
@@ -34,7 +34,7 @@ class TypeParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseImplicitNestedIdentSign() {
-    var pr: Parser.Result<TypeSign?>
+    var pr: ParseResult<TypeSign?>
 
     pr = parse("::Element", with: Parser.parseTypeSign)
     assertThat(pr.issues, .isEmpty)
@@ -45,7 +45,7 @@ class TypeParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseNestedIdentSign() {
-    var pr: Parser.Result<TypeSign?>
+    var pr: ParseResult<TypeSign?>
 
     pr = parse("Array::Element", with: Parser.parseTypeSign)
     assertThat(pr.issues, .isEmpty)
@@ -63,7 +63,7 @@ class TypeParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseFunSign() {
-    var pr: Parser.Result<TypeSign?>
+    var pr: ParseResult<TypeSign?>
 
     pr = parse("() -> Int", with: Parser.parseTypeSign)
     assertThat(pr.issues, .isEmpty)
@@ -98,7 +98,7 @@ class TypeParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseParenthesized() {
-    var pr: Parser.Result<TypeSign?>
+    var pr: ParseResult<TypeSign?>
 
     pr = parse("(Int)", with: Parser.parseTypeSign)
     assertThat(pr.issues, .isEmpty)
@@ -111,7 +111,7 @@ class TypeParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseQualTypeSign() {
-    var pr: Parser.Result<QualTypeSign?>
+    var pr: ParseResult<QualTypeSign?>
 
     pr = parse("@mut", with: Parser.parseQualSign)
     assertThat(pr.issues, .isEmpty)
@@ -144,7 +144,7 @@ class TypeParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseQualFunSign() {
-    var pr: Parser.Result<QualTypeSign?>
+    var pr: ParseResult<QualTypeSign?>
 
     pr = parse("(a: Int, _: Int, c: Int) -> Int", with: Parser.parseQualSign)
     assertThat(pr.issues, .isEmpty)
@@ -154,7 +154,7 @@ class TypeParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseEnclosedQualifiedType() {
-    var pr: Parser.Result<QualTypeSign?>
+    var pr: ParseResult<QualTypeSign?>
 
     pr = parse("(@mut)", with: Parser.parseQualSign)
     assertThat(pr.issues, .isEmpty)

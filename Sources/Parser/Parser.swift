@@ -11,16 +11,6 @@ import Utils
 /// result of an input's parsing is a (possibly incomplete) AST and a set of errors.
 public class Parser {
 
-  /// The result of construction's parsing.
-  struct Result<T> {
-
-    /// The parsed entity.
-    public let value: T
-    /// The issues related to the entity's parsing.
-    public let issues: [Issue]
-
-  }
-
   /// The token stream.
   private var stream: [Token]
   /// Whether the token stream corresponds to the main code declaration.
@@ -73,9 +63,7 @@ public class Parser {
         else { break }
 
       // Parse the next node.
-      let nodeParseResult = parseTopLevelNode()
-      issues.append(contentsOf: nodeParseResult.issues)
-      if let node = nodeParseResult.value {
+      if let node = parseTopLevelNode(issues: &issues) {
         nodes.append(node)
       } else {
         // If the next node couldn't be parsed, skip all input until the next statement delimiter.
@@ -121,10 +109,10 @@ public class Parser {
   }
 
   /// Parses a single top-level expression, statement or declaration.
-  func parseTopLevelNode() -> Result<ASTNode?> {
+  func parseTopLevelNode(issues: inout [Issue]) -> ASTNode? {
     return (peek().kind & TokenKind.Category.stmtStarter) > 0
-      ? parseDecl()
-      : parseStmt()
+      ? parseDecl(issues: &issues)
+      : parseStmt(issues: &issues)
   }
 
   /// Parses a comma-separated list of elements.
@@ -136,12 +124,12 @@ public class Parser {
   ///
   /// The next token after the method returns is either `delimiter`, the semi-colon, the end of
   /// fileo r the head of an unexpected construct. It is never a new line.
-  func parseCommaSeparatedList<Element>(
+  func parseList<Element>(
     delimitedBy delimiter: TokenKind,
-    with parse: () -> Result<Element?>) -> Result<[Element]>
+    issues: inout [Issue],
+    with parse: (inout [Issue]) -> Element?) -> [Element]
   {
     var elements: [Element] = []
-    var issues: [Issue] = []
 
     // Parse as many elements as possible.
     while peek().kind != delimiter {
@@ -154,9 +142,7 @@ public class Parser {
         else { break }
 
       // Parse the next element.
-      let elementParseResult = parse()
-      issues.append(contentsOf: elementParseResult.issues)
-      if let element = elementParseResult.value {
+      if let element = parse(&issues) {
         elements.append(element)
       } else {
         // If the next element couldn't be parsed, recover at the next a comma or list delimiter.
@@ -175,7 +161,7 @@ public class Parser {
     }
 
     assert(peek().kind != .newline)
-    return Result(value: elements, issues: issues)
+    return elements
   }
 
   /// Returns the token one position ahead, without consuming the stream.

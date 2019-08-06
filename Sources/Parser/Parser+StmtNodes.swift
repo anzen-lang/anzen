@@ -3,45 +3,42 @@ import AST
 extension Parser {
 
   /// Parses a top-level statement.
-  func parseStmt() -> Result<ASTNode?> {
+  func parseStmt(issues: inout [Issue]) -> ASTNode? {
     switch peek().kind {
     case .if:
-      let parseResult = parseIfStmt()
-      return Result(value: parseResult.value, issues: parseResult.issues)
+      return parseIfStmt(issues: &issues)
 
     case .while:
-      let parseResult = parseWhileStmt()
-      return Result(value: parseResult.value, issues: parseResult.issues)
+      return parseWhileStmt(issues: &issues)
 
     case .return:
-      let parseResult = parseReturnStmt()
-      return Result(value: parseResult.value, issues: parseResult.issues)
+      return parseReturnStmt(issues: &issues)
 
     default:
       // Parse an expression.
-      let lhsParseResult = parseExpr()
-      let issues = lhsParseResult.issues
-
-      if let lhs = lhsParseResult.value {
-        // Attempt to parse a return binding.
-        let opToken = peek(afterMany: .newline)
-        if (opToken!.isBindingOperator || opToken!.kind == .assign) {
-          consumeNewlines()
-          let bindingParseResult = parseBinding()
-          if let binding = bindingParseResult.value {
-            let stmt = BindingStmt(
+      if let lhs = parseExpr(issues: &issues) {
+        // Attempt to parse a binding.
+        if consume(if: { $0.isBindingOperator || $0.kind == .assign }, afterMany: .newline) != nil {
+          rewind()
+          if let binding = parseBinding(issues: &issues) {
+            return BindingStmt(
               op: binding.op,
               lvalue: lhs,
               rvalue: binding.value,
               module: module,
               range: lhs.range.lowerBound ..< binding.value.range.upperBound)
-            return Result(value: stmt, issues: issues + bindingParseResult.issues)
           } else {
-            return Result(value: lhs, issues: issues + bindingParseResult.issues)
+            assertionFailure()
           }
+        } else {
+          // If parsing a binding failed, return the parsed expression as a statement.
+          return lhs
         }
       }
-      return Result(value: lhsParseResult.value, issues: issues)
+
+      // Fail to parse any statement.
+      issues.append(unexpectedToken(expected: "statement"))
+      return nil
     }
   }
 
@@ -50,31 +47,29 @@ extension Parser {
   /// This parser recognizes a sequence of statements (in the broad sense), separated by statement
   /// delimiters (i.e. a newline or `;`) and enclosed in braces. In case of failure to parse a
   /// particular statement, the method tries to recover at the next delimiter.
-  ///
-  /// - SeeAlso: `parseCommaSeparatedList(delimitedBy:parsingElementWith:)`
-  func parseBraceStmt() -> Result<BraceStmt?> {
+  func parseBraceStmt(issues: inout [Issue]) -> BraceStmt? {
     // The first token should be a left brace.
-    guard let head = consume(.leftBrace)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "'{'")]) }
+    guard let head = consume(.leftBrace) else {
+      issues.append(unexpectedToken(expected: "'{'"))
+      return nil
+    }
 
     var nodes: [ASTNode] = []
-    var issues: [Issue] = []
 
     // Parse as many nodes as possible.
     while peek().kind != .rightBrace {
       // Skip leading new lines in front of the next statement to avoid triggering an error if the
       // end of the sequence has been reached.
       consumeNewlines()
+
+      // Stop parsing elements if we reach the block delimiter.
       guard (peek().kind != .rightBrace) && (peek().kind != .eof)
         else { break }
 
       // Parse the next node.
-      let nodeParseResult = parseTopLevelNode()
-      issues.append(contentsOf: nodeParseResult.issues)
-      if let node = nodeParseResult.value {
+      if let node = parseTopLevelNode(issues: &issues) {
         nodes.append(node)
       } else {
-        // If the next node couldn't be parsed, skip all input until the next statement delimiter.
         recoverAtNextStatementDelimiter()
       }
 
@@ -95,28 +90,24 @@ extension Parser {
       issues.append(unexpectedToken(expected: "'}'"))
     }
 
-    let stmt = BraceStmt(
+    return BraceStmt(
       stmts: nodes,
       module: module,
       range: head.range.lowerBound ..< tail.range.upperBound)
-    return Result(value: stmt, issues: issues)
   }
 
   /// Parses a conditional expression.
-  func parseIfStmt() -> Result<IfStmt?> {
+  func parseIfStmt(issues: inout [Issue]) -> IfStmt? {
     // The first token should be `if`.
-    guard let head = consume(.if)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "'if'")]) }
+    guard let head = consume(.if) else {
+      issues.append(unexpectedToken(expected: "'if'"))
+      return nil
+    }
 
     // Parse the statement's condition.
     consumeNewlines()
-    let conditionParseResult = parseExpr()
-    var issues = conditionParseResult.issues
-
-    let condition: Expr
-    if let expr = conditionParseResult.value {
-      condition = expr
-    } else {
+    var condition = parseExpr(issues: &issues)
+    if condition == nil {
       // Although we couldn't parse the statement's condition, we should attempt to parse its body
       // anyway, and so we need to skip the tokens inbetween. Failure to produce any expression
       // likely indicates that the parser encountered an unexpected token, so we'll skip all input
@@ -129,7 +120,7 @@ extension Parser {
       guard peek().kind == .leftBrace else {
         // Give up on the current statement if we couldn't find opening braces.
         rewind(to: savePoint)
-        return Result(value: nil, issues: issues)
+        return nil
       }
 
       // Create an invalid expression placeholder for the condition.
@@ -138,8 +129,8 @@ extension Parser {
 
     // Parse the statement's "then" body.
     consumeNewlines()
-    let thenStmtParseResult = parseBraceStmt()
-    issues.append(contentsOf: thenStmtParseResult.issues)
+    let thenStmt: Stmt = parseBraceStmt(issues: &issues)
+      ?? InvalidStmt(module: module, range: head.range)
 
     var elseStmt: Stmt?
     if consume(.else, afterMany: .newline) != nil {
@@ -148,49 +139,34 @@ extension Parser {
       consumeNewlines()
       switch peek().kind {
       case .if:
-        let elseStmtParseResult = parseIfStmt()
-        issues.append(contentsOf: elseStmtParseResult.issues)
-        elseStmt = elseStmtParseResult.value
-
+        elseStmt = parseIfStmt(issues: &issues)
       case .leftBrace:
-        let elseStmtParseResult = parseBraceStmt()
-        issues.append(contentsOf: elseStmtParseResult.issues)
-        elseStmt = elseStmtParseResult.value
-
+        elseStmt = parseBraceStmt(issues: &issues)
       default:
         issues.append(unexpectedToken(expected: "'{'"))
       }
     }
 
-    // We can't produce a valid statement if either its condition or body couldn't be parsed
-    // successfully. Nonetheless we'll produce a "fake" one so that semantic analysis can run on
-    // whathever we were able to parse.
-    let thenStmt: Stmt = thenStmtParseResult.value
-      ?? InvalidStmt(module: module, range: head.range)
-    let stmt = IfStmt(
-      condition: condition,
+    return IfStmt(
+      condition: condition!,
       thenStmt: thenStmt,
       elseStmt: elseStmt,
       module: module,
       range: head.range.lowerBound ..< (elseStmt ?? thenStmt).range.upperBound)
-    return Result(value: stmt, issues: issues)
   }
 
   /// Parses a while-loop.
-  func parseWhileStmt() -> Result<WhileStmt?> {
+  func parseWhileStmt(issues: inout [Issue]) -> WhileStmt? {
     // The first token should be `while`.
-    guard let head = consume(.while)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "'while'")]) }
+    guard let head = consume(.while) else {
+      issues.append(unexpectedToken(expected: "'while'"))
+      return nil
+    }
 
     // Parse the loop's condition.
     consumeNewlines()
-    let conditionParseResult = parseExpr()
-    var issues = conditionParseResult.issues
-
-    let condition: Expr
-    if let expr = conditionParseResult.value {
-      condition = expr
-    } else {
+    var condition = parseExpr(issues: &issues)
+    if condition == nil {
       // Although we couldn't parse the loop's condition, we should attempt to parse its body
       // anyway, and so we need to skip the tokens inbetween. Failure to produce any expression
       // likely indicates that the parser encountered an unexpected token, so we'll skip all input
@@ -203,7 +179,7 @@ extension Parser {
       guard peek().kind == .leftBrace else {
         // Give up on the current statement if we couldn't find opening braces.
         rewind(to: savePoint)
-        return Result(value: nil, issues: issues)
+        return nil
       }
 
       // Create an invalid expression placeholder for the condition.
@@ -212,79 +188,60 @@ extension Parser {
 
     // Parse the loop's body.
     consumeNewlines()
-    let bodyParseResult = parseBraceStmt()
-    issues.append(contentsOf: bodyParseResult.issues)
-
-    // We can't produce a valid statement if either its condition or body couldn't be parsed
-    // successfully. Nonetheless we'll produce a "fake" one so that semantic analysis can run on
-    // whathever we were able to parse.
-    let body: Stmt = bodyParseResult.value
+    let body: Stmt = parseBraceStmt(issues: &issues)
       ?? InvalidStmt(module: module, range: head.range)
-    let stmt = WhileStmt(
-      condition: condition,
+
+    return WhileStmt(
+      condition: condition!,
       body: body,
       module: module,
       range: head.range.lowerBound ..< body.range.upperBound)
-    return Result(value: stmt, issues: issues)
   }
 
   /// Parses a return statement.
-  func parseReturnStmt() -> Result<ReturnStmt?> {
+  func parseReturnStmt(issues: inout [Issue]) -> ReturnStmt? {
     // The first token should be `return`.
-    guard let head = consume(.return)
-      else { return Result(value: nil, issues: [unexpectedToken(expected: "'return'")]) }
+    guard let head = consume(.return) else {
+      issues.append(unexpectedToken(expected: "'return'"))
+      return nil
+    }
 
-    // Attempt to parse a return binding.
-    var binding: (IdentExpr, Expr)?
-    var issues: [Issue] = []
-    var rangeUpperBound = head.range.upperBound
-
-    let opToken = peek(afterMany: .newline)
-    if (opToken!.isBindingOperator || opToken!.kind == .assign) {
-      consumeNewlines()
-      let parseResult = parseBinding()
-      issues.append(contentsOf: parseResult.issues)
-      if let parsedBinding = parseResult.value {
-        binding = parsedBinding
-        rangeUpperBound = parsedBinding.value.range.upperBound
+    // Attempt to parse a binding.
+    if consume(if: { $0.isBindingOperator || $0.kind == .assign }, afterMany: .newline) != nil {
+      rewind()
+      if let binding = parseBinding(issues: &issues) {
+        return ReturnStmt(
+          binding: binding,
+          module: module,
+          range: head.range.lowerBound ..< binding.value.range.upperBound)
+      } else {
+        assertionFailure()
       }
     }
 
-    let stmt = ReturnStmt(
-      binding: binding,
-      module: module,
-      range: head.range.lowerBound ..< rangeUpperBound)
-    return Result(value: stmt, issues: issues)
+    return ReturnStmt(module: module, range: head.range)
   }
 
   /// Parses the right side of a binding (i.e. a binding operator with an r-value).
-  func parseBinding() -> Result<(op: IdentExpr, value: Expr)?> {
-    // Parse the binding operator.
-    guard let opToken = consume(if: { $0.isBindingOperator }) else {
-      if let opToken = consume(.assign) {
-        // Catch invalid uses of the "assign" token in lieu of a binding operator.
-        let issue = parseFailure(
-          .unexpectedToken(expected: "binding operator", got: opToken),
-          range: opToken.range)
+  func parseBinding(issues: inout [Issue]) -> (op: IdentExpr, value: Expr)? {
+    let opIdent: IdentExpr
 
-        // Parse the expression in case it contains syntax issues as well.
-        consumeNewlines()
-        let parseResult = parseExpr()
-        return Result(value: nil, issues: parseResult.issues + [issue])
-      } else {
-        return Result(value: nil, issues: [unexpectedToken(expected: "binding operator")])
-      }
-    }
-
-    // Parse the right operand.
-    consumeNewlines()
-    let parseResult = parseExpr()
-    if let rhs = parseResult.value {
-      let opIdent = IdentExpr(name: opToken.kind.description, module: module, range: opToken.range)
-      return Result(value: (opIdent, rhs), issues: parseResult.issues)
+    if let opToken = consume(if: { $0.isBindingOperator }) {
+      opIdent = IdentExpr(name: opToken.value!, module: module, range: opToken.range)
+    } else if let opToken = consume(.assign) {
+      // Catch invalid uses of the "assign" token in lieu of a binding operator.
+      opIdent = IdentExpr(name: ":=", module: module, range: opToken.range)
+      issues.append(unexpectedToken(expected: "binding operator", got: opToken))
     } else {
-      return Result(value: nil, issues: parseResult.issues)
+      issues.append(unexpectedToken(expected: "binding operator"))
+      return nil
     }
+
+    // Parse the assigned expression.
+    consumeNewlines()
+    let expr = parseExpr(issues: &issues)
+      ?? InvalidExpr(module: module, range: opIdent.range)
+    return (op: opIdent, value: expr)
   }
 
 }

@@ -21,6 +21,8 @@ public enum SyntaxError {
   case invalidQualifier(value: String)
   /// Occurs when the parser encounters a non-declaration node at the top-level.
   case invalidTopLevelDeclaration(node: ASTNode)
+  /// Occurs when the parser encounters a reserved keyword while parsing an identifier.
+  case keywordAsIdentifier(keyword: String)
   /// Occurs when the parser encounters non-associative adjacent infix operators.
   case nonAssociativeOperator(op: String)
   /// Occurs when the parser unexpectedly depletes the stream.
@@ -64,6 +66,9 @@ extension SyntaxError: CustomStringConvertible {
       default:
         return "invalid top-level node '\(node)'"
       }
+
+    case .keywordAsIdentifier(let keyword):
+      return "keyword '\(keyword)' cannot be used as an identifier"
 
     case .nonAssociativeOperator(let op):
       return "use of adjacent non-associative operators '\(op)'"

@@ -6,7 +6,7 @@ import AST
 class DeclParserTests: XCTestCase, ParserTestCase {
 
   func testParsePropDecl() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("let x", with: Parser.parseDecl)
     assertThat(pr.issues, .isEmpty)
@@ -67,7 +67,7 @@ class DeclParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseFunDecl() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("fun f()", with: Parser.parseDecl)
     assertThat(pr.issues, .isEmpty)
@@ -140,7 +140,7 @@ class DeclParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseParamDecl() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("fun f(a: Int, _ b: Int, c d: Int) {}", with: Parser.parseDecl)
     assertThat(pr.issues, .isEmpty)
@@ -195,7 +195,7 @@ class DeclParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseInterfaceDecl() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("interface Foo {}", with: Parser.parseDecl)
     assertThat(pr.issues, .isEmpty)
@@ -249,7 +249,7 @@ class DeclParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseStructDecl() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("struct Foo {}", with: Parser.parseDecl)
     assertThat(pr.issues, .isEmpty)
@@ -303,7 +303,7 @@ class DeclParserTests: XCTestCase, ParserTestCase {
   }
 
   func testParseUnionDecl() {
-    var pr: Parser.Result<ASTNode?>
+    var pr: ParseResult<ASTNode?>
 
     pr = parse("union Foo {}", with: Parser.parseDecl)
     assertThat(pr.issues, .isEmpty)
@@ -337,7 +337,7 @@ class DeclParserTests: XCTestCase, ParserTestCase {
       if let body = decl.body as? BraceStmt {
         assertThat(body.stmts, .count(3))
         if body.stmts.count > 2 {
-          assertThat(body.stmts[0], .isInstance(of: UnionNestedMemberDecl.self))
+          assertThat(body.stmts[0], .isInstance(of: UnionNestedDecl.self))
           assertThat(body.stmts[2], .isInstance(of: FunDecl.self))
           if let method = body.stmts[0] as? FunDecl {
             assertThat(method.kind, .equals(.method))
