@@ -188,9 +188,9 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
-  public func visit(_ node: UnionNestedMemberDecl) {
-    self <<< indent <<< "(union_nested_member_decl\n"
-    withIndentation { node.nominalTypeDecl.accept(visitor: self) }
+  public func visit(_ node: UnionNestedDecl) {
+    self <<< indent <<< "(union_nested_decl\n"
+    withIndentation { node.nestedDecl.accept(visitor: self) }
     self <<< ")"
   }
 

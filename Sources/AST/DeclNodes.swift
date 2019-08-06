@@ -623,7 +623,7 @@ public final class UnionDecl: NominalTypeDecl {
 }
 
 /// A union nested member declaration.
-public final class UnionNestedMemberDecl: Decl {
+public final class UnionNestedDecl: Decl {
 
   // ASTNode requirements
 
@@ -631,10 +631,10 @@ public final class UnionNestedMemberDecl: Decl {
   public var range: SourceRange
 
   /// The member's type declaration.
-  public var nominalTypeDecl: NominalTypeDecl
+  public var nestedDecl: NominalTypeDecl
 
-  public init(nominalTypeDecl: NominalTypeDecl, module: Module, range: SourceRange) {
-    self.nominalTypeDecl = nominalTypeDecl
+  public init(nestedDecl: NominalTypeDecl, module: Module, range: SourceRange) {
+    self.nestedDecl = nestedDecl
     self.module = module
     self.range = range
   }
@@ -644,7 +644,7 @@ public final class UnionNestedMemberDecl: Decl {
   }
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
-    nominalTypeDecl.accept(visitor: visitor)
+    nestedDecl.accept(visitor: visitor)
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -652,7 +652,7 @@ public final class UnionNestedMemberDecl: Decl {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    nominalTypeDecl = nominalTypeDecl.accept(transformer: transformer) as! NominalTypeDecl
+    nestedDecl = nestedDecl.accept(transformer: transformer) as! NominalTypeDecl
     return self
   }
 

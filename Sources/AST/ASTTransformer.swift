@@ -15,7 +15,7 @@ public protocol ASTTransformer {
   func transform(_ node: InterfaceDecl) -> ASTNode
   func transform(_ node: StructDecl) -> ASTNode
   func transform(_ node: UnionDecl) -> ASTNode
-  func transform(_ node: UnionNestedMemberDecl) -> ASTNode
+  func transform(_ node: UnionNestedDecl) -> ASTNode
 
   // MARK: - Type signatures
 
