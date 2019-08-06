@@ -80,7 +80,7 @@ public struct ParseFinalizer {
 
     func visit(_ node: FunDecl) {
       // Check for invalid attributes.
-      for attr in node.attrs where attr.name != "air_name" {
+      for attr in node.attrs where attr.name != "@air_name" {
         attr.registerWarning(
           message: "unexpected attribute '\(attr.name)' on function declaration will be ignored")
       }
@@ -96,8 +96,10 @@ public struct ParseFinalizer {
       // Check for invalid redeclarations. Since function names are overloadable, a redeclaration
       // is invalid only if the previously declared entity isn't another function declaration.
       var isUniquelyDeclared = true
-      for sibling in currentDeclContext.decls where sibling is NamedDecl {
-        guard sibling is FunDecl else {
+      for sibling in currentDeclContext.decls {
+        if let decl = sibling as? NamedDecl,
+          (decl !== node) && (decl.name != "") && (decl.name == node.name) && !(decl is FunDecl)
+        {
           node.registerError(message: "invalid redeclaration of '\(node.name)'")
           isUniquelyDeclared = false
           break
@@ -140,10 +142,11 @@ public struct ParseFinalizer {
     }
 
     private func unsureUniquelyDeclared(_ node: NamedDecl) -> Bool {
-      let siblingNamedDecls = currentDeclContext.decls.lazy.compactMap { $0 as? NamedDecl }
-      for decl in siblingNamedDecls {
-        if (decl.name == node.name) && (decl.name != "") {
-          node.registerError(message: "invalid redeclaration of '\(decl.name)'")
+      for sibling in currentDeclContext.decls {
+        if let decl = sibling as? NamedDecl,
+          (decl !== node) && (decl.name != "") && (decl.name == node.name)
+        {
+          node.registerError(message: "invalid redeclaration of '\(node.name)'")
           return false
         }
       }
