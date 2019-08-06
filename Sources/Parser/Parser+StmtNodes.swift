@@ -37,7 +37,6 @@ extension Parser {
       }
 
       // Fail to parse any statement.
-      issues.append(unexpectedToken(expected: "statement"))
       return nil
     }
   }

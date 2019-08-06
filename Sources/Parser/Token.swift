@@ -257,7 +257,7 @@ public struct Token {
 
   /// Whether or not the token is a statement delimiter.
   public var isStatementDelimiter: Bool {
-    return (kind & 255 & (TokenKind.newline | TokenKind.semicolon)) != 0
+    return (kind == .newline) || (kind == .semicolon)
   }
 
   /// Whether or not the token is an prefix operator.
