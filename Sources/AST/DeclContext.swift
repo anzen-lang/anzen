@@ -19,6 +19,11 @@ public protocol DeclContext: AnyObject {
 
 extension DeclContext {
 
+  /// The named declarations contained in this context.
+  public var namedDecls: [NamedDecl] {
+    return decls.compactMap({ $0 as? NamedDecl })
+  }
+
   public func isEnclosed(in other: DeclContext) -> Bool {
     var parent = self.parent
     while parent != nil {
