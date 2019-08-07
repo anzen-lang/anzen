@@ -101,7 +101,7 @@ public class Parser {
       if let decl = node as? Decl {
         decls.append(decl)
       } else {
-        issues.append(parseFailure(Issue.invalidTopLevelDecl(node: node), range: node.range))
+        issues.append(parseFailure(Issue.invalidTopLevelStmt(node: node), range: node.range))
       }
     }
 

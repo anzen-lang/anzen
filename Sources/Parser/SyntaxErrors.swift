@@ -28,10 +28,10 @@ extension Issue {
     return "invalid redeclaration of '\(name)'"
   }
 
-  static func invalidTopLevelDecl(node: ASTNode) -> String {
+  static func invalidTopLevelStmt(node: ASTNode) -> String {
     switch node {
     case is Stmt, is Expr:
-      return "top-level expressions are allowed only in main files"
+      return "top-level statements are only allowed in main files"
     default:
       return "invalid top-level node '\(node)'"
     }
@@ -43,6 +43,10 @@ extension Issue {
 
   static func missingParamSign() -> String {
     return "parameter declaration requires an explicit type"
+  }
+
+  static func nestedExtDecl(extDecl: TypeExtDecl) -> String {
+    return "extensions are only allowed at top-level scope"
   }
 
   static func nonAssociativeOp(op: String) -> String {

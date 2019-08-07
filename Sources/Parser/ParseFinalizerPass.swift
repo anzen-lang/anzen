@@ -142,6 +142,11 @@ public struct ParseFinalizerPass {
     }
 
     func visit(_ node: TypeExtDecl) {
+      // Check that the extension is declared at top-level.
+      if currentDeclContext !== node.module {
+        node.registerError(message: Issue.nestedExtDecl(extDecl: node))
+      }
+
       currentDeclContext.decls.append(node)
       inDeclContext(node) {
         node.traverse(with: self)
