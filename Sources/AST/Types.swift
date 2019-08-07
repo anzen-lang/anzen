@@ -196,7 +196,17 @@ public final class FunType: TypeBase {
 
 }
 
-public final class InterfaceType: TypeBase {
+public class NominalType: TypeBase {
+
+  /// The member lookup table of this type.
+  ///
+  /// This table is populated during various passes of the semantic analysis for fast name lookup
+  /// of the member's properties, methods and nested types.
+  public var memberLookupTable: MemberLookupTable?
+
+}
+
+public final class InterfaceType: NominalType {
 
   /// The type's decl.
   public unowned let decl: InterfaceDecl
@@ -223,7 +233,7 @@ public final class InterfaceType: TypeBase {
 
 }
 
-public final class StructType: TypeBase {
+public final class StructType: NominalType {
 
   /// The type's decl.
   public unowned let decl: StructDecl
@@ -250,7 +260,7 @@ public final class StructType: TypeBase {
 
 }
 
-public final class UnionType: TypeBase {
+public final class UnionType: NominalType {
 
   /// The type's decl.
   public unowned let decl: UnionDecl
