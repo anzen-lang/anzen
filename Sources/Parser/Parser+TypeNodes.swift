@@ -131,9 +131,15 @@ extension Parser {
       return nil
     }
 
-    while consume(.doubleColon, afterMany: .newline) != nil {
+    while let separator = consume(.doubleColon, afterMany: .newline) {
+      // Make sure the owner is a type identifier, by construction.
+      guard (sign is IdentSign) || (sign is NestedIdentSign) || (sign is ImplicitSelectExpr) else {
+        issues.append(unexpectedToken(got: separator))
+        break
+      }
       guard let ownee = parseIdentSign(issues: &issues)
         else { break }
+
       sign = NestedIdentSign(
         owner: sign,
         ownee: ownee,
