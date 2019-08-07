@@ -33,7 +33,7 @@ public struct MemberLookupTable {
   }
 
   /// Retrieves the declarations matching the given name.
-  subscript(name: String) -> [NamedDecl]? {
+  public subscript(name: String) -> [NamedDecl]? {
     return lookupTable[name]
   }
 

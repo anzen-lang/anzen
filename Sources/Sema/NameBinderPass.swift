@@ -1,6 +1,6 @@
 import AST
 
-/// An AST pass that binds identifiers to their declaration contexts.
+/// A module pass that binds identifiers to their declaration contexts.
 ///
 /// This pass takes place immediately after parsing, and links value and type identifiers to their
 /// declaration context. Because of overloading, the actual declaration node to which an identifier
@@ -183,4 +183,127 @@ extension IdentExpr: Identifier {
 }
 
 extension IdentSign: Identifier {
+}
+
+// MARK: - Identifier lookup
+
+extension DeclContext {
+
+  /// Search for a declaration that matches the given unqualified identifier in this declaration
+  /// context and its parents.
+  ///
+  /// This method may produce multiple results in cased the given identifier refers to overloaded
+  /// declarations (i.e. function definitions). In this case, declarations are returned from the
+  /// innermost to the outermost context.
+  func lookup(unqualifiedName: String, inCompilerContext context: CompilerContext) -> [NamedDecl] {
+    var results: [NamedDecl] = []
+    var declContext: DeclContext? = self
+    while declContext != nil {
+      // Find the declarations whose name matches the given unqualified identifier.
+      let matches = declContext!.allDecls(named: unqualifiedName)
+      if !matches.isEmpty {
+        if !matches[0].isOverloadable {
+          // If the match is not overloadable, keep it only if its the first and stop searching.
+          assert(matches.count == 1)
+          if results.isEmpty {
+            results.append(matches[0])
+          }
+          return results
+        } else {
+          // If the matches are overloadable, keep them and continue searching for other
+          // overloadable matches in enclosing contexts.
+          results.append(contentsOf: matches)
+        }
+      }
+      declContext = declContext!.parent
+    }
+
+    // If there aren't any results, look for built-in symbols.
+    if results.isEmpty && CompilerContext.builtinTypeNames.contains(unqualifiedName) {
+      return [context.builtinModule.firstDecl(named: unqualifiedName)!]
+    } else {
+      return results
+    }
+  }
+
+}
+
+extension NominalTypeDecl {
+
+  /// Finds all extensions of this type declaration in the given module.
+  func findExtensions(in searchModule: Module) -> [TypeExtDecl] {
+    // Compute this type's qualified name.
+    var parentContext = declContext!
+    var qName = [name]
+    while parentContext.parent != nil {
+      if let nominalTypeDecl = (parentContext as? BraceStmt)?.parent as? NominalTypeDecl {
+        qName.append(nominalTypeDecl.name)
+        parentContext = nominalTypeDecl.parent!
+      } else {
+        // The nominal type is nested in a non-type context, so it can't be extended.
+        return []
+      }
+    }
+    assert(parentContext === module)
+
+    // Search for all extensions.
+    if qName.count == 1 {
+      // The type isn't nested, so we can lookup its name directly.
+      return searchModule.decls.compactMap { decl in
+        ((decl as? TypeExtDecl)?.type as? IdentSign)?.name == qName[0] ? decl : nil
+      } as! [TypeExtDecl]
+    } else {
+      var extDecls: [TypeExtDecl] = []
+      // The type is nested, so we need to match its qualified name with a nested type signature.
+      for extDecl in searchModule.decls
+        where (extDecl as? TypeExtDecl)?.type is NestedIdentSign
+      {
+        var sign = (extDecl as! TypeExtDecl).type
+        var i = 0
+        while let nestedIdent = sign as? NestedIdentSign {
+          guard nestedIdent.ownee.name == qName[i]
+            else { break }
+          sign = nestedIdent.owner
+          i += 1
+        }
+
+        if i == qName.count {
+          extDecls.append(extDecl as! TypeExtDecl)
+        }
+      }
+      return extDecls
+    }
+  }
+
+  /// Searches for a member declarations that matches the given unqualified identifier.
+  ///
+  /// This method may produce multiple results in cased the given identifier refers to overloaded
+  /// declarations (i.e. function definitions). In this case, declarations are returned from the
+  /// innermost to the outermost contexts.
+  func lookup(memberName: String, inCompilerContext context: CompilerContext) -> [NamedDecl]
+  {
+    // Initialize or update the member lookup table as required.
+    if memberLookupTable == nil {
+      memberLookupTable = MemberLookupTable(generationNumber: context.currentGeneration)
+      for member in decls where member is NamedDecl {
+        memberLookupTable!.insert(member: member as! NamedDecl)
+      }
+
+      // Search for extensions. Since the lookup table had not been initialized before, we can
+      // assume there aren't any extensions in the modules we've already loaded.
+      let extDecls = findExtensions(in: module)
+      for decl in extDecls {
+        memberLookupTable!.merge(extension: decl)
+      }
+    } else if memberLookupTable!.generationNumber < context.currentGeneration {
+      // Update the lookup table with this module's extensions.
+      let extDecls = findExtensions(in: module)
+      for decl in extDecls {
+        memberLookupTable!.merge(extension: decl)
+      }
+    }
+
+    return memberLookupTable![memberName] ?? []
+  }
+
 }

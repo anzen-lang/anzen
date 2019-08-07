@@ -446,7 +446,7 @@ public protocol NominalTypeDecl: NamedDecl, DeclContext {
   ///
   /// This table is populated during various passes of the semantic analysis for fast name lookup
   /// of the member's properties, methods and nested types.
-  var memberLookupTable: MemberLookupTable? { get }
+  var memberLookupTable: MemberLookupTable? { get set }
 
 }
 
