@@ -66,6 +66,8 @@ public final class IdentSign: TypeSign {
   public var name: String
   /// The identifier's specialization arguments.
   public var specArgs: [String: QualTypeSign]
+  /// The declaration context in which the identifier's defined.
+  public var declContext: DeclContext?
   /// The declaration that corresponds to this type identifier.
   public var decl: NamedDecl?
 
@@ -209,11 +211,6 @@ public final class FunSign: TypeSign {
     self.codom = codom
     self.module = module
     self.range = range
-  }
-
-  public func realizeType(in context: CompilerContext) -> TypeBase {
-    // let from = params.map { FunType.Param(label: $0.label, type: $0.realizeType(in: context)) }
-    fatalError()
   }
 
   public func accept<V>(visitor: V) where V: ASTVisitor {

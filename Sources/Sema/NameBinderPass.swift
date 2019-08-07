@@ -79,26 +79,50 @@ public struct NameBinderPass {
     }
 
     func visit(_ node: InterfaceDecl) {
+      node.decls.append(ProxiedNamedDecl(node, name: "Self"))
       inDeclContext(node) {
         node.traverse(with: self)
       }
     }
 
     func visit(_ node: StructDecl) {
+      node.decls.append(ProxiedNamedDecl(node, name: "Self"))
       inDeclContext(node) {
         node.traverse(with: self)
       }
     }
 
     func visit(_ node: UnionDecl) {
+      node.decls.append(ProxiedNamedDecl(node, name: "Self"))
       inDeclContext(node) {
         node.traverse(with: self)
       }
     }
 
     func visit(_ node: TypeExtDecl) {
+      func isExtendableTypeDecl(_ decl: NamedDecl) -> Bool {
+        return (decl is NominalTypeDecl)
+            || (decl is ProxiedNamedDecl)
+            || (decl is BuiltinTypeDecl)
+      }
+
+      // Resolve the declaration of `Self`.
+      if let ident = node.type as? IdentSign {
+        let decls = currentDeclContext.lookup(
+          unqualifiedName: ident.name, inCompilerContext: context)
+        if decls.isEmpty {
+          ident.registerError(message: Issue.unboundIdentifier(name: ident.name))
+        } else if !isExtendableTypeDecl(decls[0]) {
+          ident.registerError(message: Issue.invalidTypeIdentifier(name: ident.name))
+        }
+
+        assert(decls.count == 1, "bad extension on overloaded type name")
+        node.decls.append(ProxiedNamedDecl(decls[0], name: "Self"))
+      }
+
+      node.type.accept(visitor: self)
       inDeclContext(node) {
-        node.traverse(with: self)
+        node.body.accept(visitor: self)
       }
     }
 
@@ -144,8 +168,14 @@ public struct NameBinderPass {
       // Find the closest declaration context in which the identifier is declared.
       var declContext: DeclContext? = currentDeclContext
       while declContext != nil {
-        if let decl = declContext!.namedDecls.first(where: { $0.name == node.name }) {
+        if let decl = declContext!.firstDecl(named: node.name) {
           if !declBeingVisited.contains(ObjectIdentifier(decl)) {
+            if !decl.isOverloadable {
+              // If the declaration isn't overloadable, we can already link it to the identifier.
+              node.decl = decl
+            }
+
+            // Either way, we link the declaration's context to the identifier.
             node.declContext = declContext!
             return
           }
@@ -155,7 +185,8 @@ public struct NameBinderPass {
 
       // If the identifier couldn't be found in any context, then it may be a built-in type name.
       if CompilerContext.builtinTypeNames.contains(node.name) {
-        node.declContext = context.anzenModule
+        node.decl = context.builtinModule.firstDecl(named: node.name)
+        node.declContext = context.builtinModule
         return
       }
 
@@ -175,8 +206,11 @@ public struct NameBinderPass {
 }
 
 private protocol Identifier: ASTNode {
+
   var name: String { get }
+  var decl: NamedDecl? { get set }
   var declContext: DeclContext? { get set }
+
 }
 
 extension IdentExpr: Identifier {

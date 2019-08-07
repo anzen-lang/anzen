@@ -712,3 +712,42 @@ public final class TypeExtDecl: Decl, DeclContext {
   }
 
 }
+
+/// A built-in type declaration.
+public final class BuiltinTypeDecl: NamedDecl {
+
+  // NamedDecl requirements
+
+  public var declContext: DeclContext?
+  public unowned var module: Module
+  public var range: SourceRange
+
+  public let name: String
+  public var type: TypeBase?
+  public var memberLookupTable: MemberLookupTable?
+
+  public init(name: String, module: Module) {
+    self.name = name
+    self.module = module
+
+    let loc = SourceLocation(sourceRef: BuiltinTypeDecl.source)
+    self.range = loc ..< loc
+  }
+
+  private static let source = SourceRef(name: "Builtin", buffer: "")
+
+  public func accept<V>(visitor: V) where V : ASTVisitor {
+  }
+
+  public func traverse<V>(with visitor: V) where V : ASTVisitor {
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T : ASTTransformer {
+    return self
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T : ASTTransformer {
+    return self
+  }
+
+}
