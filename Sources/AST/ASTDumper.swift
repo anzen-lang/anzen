@@ -195,7 +195,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   public func visit(_ node: TypeExtDecl) {
-    self <<< indent <<< "(type_ext_decl\n"
+    self <<< indent <<< "(type_ext_decl"
     withIndentation {
       self <<< "\n" <<< indent <<< "(type\n"
       withIndentation { node.type.accept(visitor: self) }
