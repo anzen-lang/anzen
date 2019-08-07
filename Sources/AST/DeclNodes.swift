@@ -657,3 +657,49 @@ public final class UnionNestedDecl: Decl {
   }
 
 }
+
+/// A type extension declaration.
+public final class TypeExtDecl: Decl, DeclContext {
+
+  // Decl requirements
+
+  public var module: Module
+  public var range: SourceRange
+
+  // DeclContext requirements
+
+  public var parent: DeclContext?
+  public var decls: [Decl] = []
+
+  /// The signature of the type being extended. This should represent a nominal type.
+  public var type: TypeSign
+  /// The extensions's body.
+  public var body: Stmt
+
+  public init(type: TypeSign, body: Stmt, module: Module, range: SourceRange) {
+    self.type = type
+    self.body = body
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V: ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V: ASTVisitor {
+    type.accept(visitor: visitor)
+    body.accept(visitor: visitor)
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
+    type = type.accept(transformer: transformer) as! TypeSign
+    body = body.accept(transformer: transformer) as! Stmt
+    return self
+  }
+
+}

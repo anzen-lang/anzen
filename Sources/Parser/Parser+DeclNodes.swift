@@ -100,6 +100,9 @@ extension Parser {
     case .case:
       return parseUnionNestedMemberDecl(issues: &issues)
 
+    case .extension:
+      return parseTypeExtDecl(issues: &issues)
+
     default:
       issues.append(unexpectedToken(expected: "declaration"))
       return nil
@@ -323,6 +326,38 @@ extension Parser {
       range: head.range.lowerBound ..< nominalType.body.range.upperBound)
   }
 
+  /// Helper that factorizes nominal type parsing.
+  private func parseNominalType(issues: inout [Issue]) -> NominalType {
+    let head = peek()
+
+    // Parse the name of the type.
+    let name: String
+    if let nameToken = consume(.identifier) {
+      name = nameToken.value!
+    } else {
+      name = ""
+      issues.append(unexpectedToken(expected: "identifier"))
+      recover(atNextKinds: [.leftBrace])
+    }
+
+    // Attempt to parse a list of generic parameter declarations.
+    let genericParams = parseGenericParamDeclList(issues: &issues)
+
+    // Parse the body of the type.
+    consumeNewlines()
+    let body = parseBraceStmt(issues: &issues)
+      ?? BraceStmt(stmts: [], module: module, range: head.range)
+
+    // Mark all regular functions as methods.
+    for stmt in body.stmts {
+      if let methDecl = stmt as? FunDecl, methDecl.kind == .regular {
+        methDecl.kind = .method
+      }
+    }
+
+    return NominalType(name: name, genericParams: genericParams, body: body)
+  }
+
   /// Parses a union nested member declaration.
   func parseUnionNestedMemberDecl(issues: inout [Issue]) -> UnionNestedDecl? {
     // The first token should be `case`.
@@ -360,36 +395,28 @@ extension Parser {
     }
   }
 
-  /// Helper that factorizes nominal type parsing.
-  private func parseNominalType(issues: inout [Issue]) -> NominalType {
-    let head = peek()
-
-    // Parse the name of the type.
-    let name: String
-    if let nameToken = consume(.identifier) {
-      name = nameToken.value!
-    } else {
-      name = ""
-      issues.append(unexpectedToken(expected: "identifier"))
-      recover(atNextKinds: [.leftBrace])
+  func parseTypeExtDecl(issues: inout [Issue]) -> TypeExtDecl? {
+    // The first token should be `extension`.
+    guard let head = consume(.extension) else {
+      issues.append(unexpectedToken(expected: "'extension'"))
+      return nil
     }
 
-    // Attempt to parse a list of generic parameter declarations.
-    let genericParams = parseGenericParamDeclList(issues: &issues)
+    // Parse the declaration's extended type.
+    consumeNewlines()
+    let sign = parseTypeSign(issues: &issues)
+      ?? InvalidSign(module: module, range: head.range)
 
-    // Parse the body of the type.
+    // Parse a the declaration's body.
     consumeNewlines()
     let body = parseBraceStmt(issues: &issues)
       ?? BraceStmt(stmts: [], module: module, range: head.range)
 
-    // Mark all regular functions as methods.
-    for stmt in body.stmts {
-      if let methDecl = stmt as? FunDecl, methDecl.kind == .regular {
-        methDecl.kind = .method
-      }
-    }
-
-    return NominalType(name: name, genericParams: genericParams, body: body)
+    return TypeExtDecl(
+      type: sign,
+      body: body,
+      module: module,
+      range: head.range.lowerBound ..< body.range.upperBound)
   }
 
   /// Parses a list of generic parameter declarations.

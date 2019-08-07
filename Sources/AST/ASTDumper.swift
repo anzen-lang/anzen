@@ -194,6 +194,18 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: TypeExtDecl) {
+    self <<< indent <<< "(type_ext_decl\n"
+    withIndentation {
+      self <<< "\n" <<< indent <<< "(type\n"
+      withIndentation { node.type.accept(visitor: self) }
+      self <<< ")\n" <<< indent <<< "(body\n"
+      withIndentation { node.body.accept(visitor: self) }
+      self <<< ")"
+    }
+    self <<< ")"
+  }
+
   public func visit(_ node: QualTypeSign) {
     self <<< indent <<< "(qual_type_sign"
     if !node.quals.isEmpty {
@@ -249,9 +261,9 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(fun_sign"
     self <<< " type='" <<< node.type <<< "'"
     withIndentation {
-      if !node.dom.isEmpty {
-        self <<< "\n" <<< indent <<< "(dom\n"
-        withIndentation { self <<< node.dom }
+      if !node.params.isEmpty {
+        self <<< "\n" <<< indent <<< "(params\n"
+        withIndentation { self <<< node.params }
         self <<< ")"
       }
       if let codom = node.codom {
