@@ -6,6 +6,7 @@ public final class CompilerContext {
 
   /// The path to Anzen's core modules.
   public let anzenPath: Path
+
   /// The context's module loader.
   public let loader: ModuleLoader
 
@@ -15,14 +16,17 @@ public final class CompilerContext {
 
     // Load the core modules.
     let corePath = anzenPath.joined(with: "Core")
-    let (anzenModule, _) = try loadModule(fromDirectory: corePath, withID: "Anzen")
-    self.anzenModule = anzenModule
+    try loadModule(fromDirectory: corePath, withID: "Anzen")
   }
 
   // MARK: - Modules
 
-  /// The core module.
-  public private(set) var anzenModule: Module!
+  /// The current generation number, denoting the number of times new modules have been loaded.
+  ///
+  /// Some module passes, such as the set of extensions associated with a nominal type, have to
+  /// keep track of this generation number to update when they are out of date.
+  public private(set) var currentGeneration = 0
+
   /// The modules loaded in the compiler context.
   public private(set) var modules: [Module.ID: Module] = [:]
   /// The issues that resulted from the processing the loaded modules.
@@ -42,8 +46,9 @@ public final class CompilerContext {
     }
 
     let module = Module(id: moduleID)
-    try loader.load(module: module, fromDirectory: dir, in: self)
     modules[moduleID] = module
+    currentGeneration += 1
+    try loader.load(module: module, fromDirectory: dir, in: self)
     return (module, true)
   }
 

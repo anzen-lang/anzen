@@ -4,7 +4,14 @@ public struct MemberLookupTable {
   /// The internal lookup table cache.
   private var lookupTable: [String: [NamedDecl]] = [:]
 
-  public init() {}
+  /// The compiler context's generation with which this lookup table is synchronized.
+  public var generationNumber: Int
+
+  /// Whether all extensions
+
+  public init(generationNumber: Int) {
+    self.generationNumber = generationNumber
+  }
 
   /// Inserts the given member to the lookup table.
   public mutating func insert(member: NamedDecl) {
