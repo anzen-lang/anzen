@@ -1,7 +1,7 @@
 import AST
 import Utils
 
-/// An AST pass that finalizes the construction of a parsed AST.
+/// A module pass that finalizes the construction of a parsed AST.
 ///
 /// Once the module's AST has been parsed, this pass walks all top-level declarations to link named
 /// declarations to their declaration context, and check that the AST is "well-formed" with respect
@@ -51,7 +51,6 @@ public struct ParseFinalizerPass {
     }
 
     func visit(_ node: MainCodeDecl) {
-      node.module.children.append(node)
       currentDeclContext = node
       node.traverse(with: self)
       currentDeclContext = node.module
@@ -147,13 +146,16 @@ public struct ParseFinalizerPass {
         node.registerError(message: Issue.nestedExtDecl(extDecl: node))
       }
 
-      currentDeclContext.decls.append(node)
+      if currentDeclContext !== node.module {
+        currentDeclContext.decls.append(node)
+      }
       inDeclContext(node) {
         node.traverse(with: self)
       }
     }
 
     func visit(_ node: BraceStmt) {
+      node.parent = currentDeclContext
       inDeclContext(node) {
         node.traverse(with: self)
       }
@@ -181,13 +183,17 @@ public struct ParseFinalizerPass {
     }
 
     private func finalizeNamedDecl<Node>(_ node: Node) where Node: NamedDecl {
-      currentDeclContext.decls.append(node)
+      if currentDeclContext !== node.module {
+        currentDeclContext.decls.append(node)
+      }
       node.declContext = currentDeclContext
       node.traverse(with: self)
     }
 
     private func finalizeNamedContext<Node>(_ node: Node) where Node: NamedDecl & DeclContext {
-      currentDeclContext.decls.append(node)
+      if currentDeclContext !== node.module {
+        currentDeclContext.decls.append(node)
+      }
       node.declContext = currentDeclContext
       inDeclContext(node) {
         node.traverse(with: self)
