@@ -9,12 +9,6 @@ public protocol DeclContext: AnyObject {
   /// The declarations contained in this context.
   var decls: [Decl] { get set }
 
-  /// Returns whether this declaration context is enclosed if the given one.
-  func isEnclosed(in other: DeclContext) -> Bool
-
-  /// Returns whether this declaration context is enclosing the given one.
-  func isEnclosing(_ other: DeclContext) -> Bool
-
 }
 
 extension DeclContext {
@@ -24,6 +18,20 @@ extension DeclContext {
     return decls.compactMap({ $0 as? NamedDecl })
   }
 
+  public func firstDecl(named name: String) -> NamedDecl? {
+    for decl in decls {
+      if let namedDecl = decl as? NamedDecl, namedDecl.name == name {
+        return namedDecl
+      }
+    }
+    return nil
+  }
+
+  public func allDecls(named name: String) -> [NamedDecl] {
+    return decls.filter { ($0 as? NamedDecl)?.name == name } as! [NamedDecl]
+  }
+
+  /// Returns whether this declaration context is enclosed if the given one.
   public func isEnclosed(in other: DeclContext) -> Bool {
     var parent = self.parent
     while parent != nil {
