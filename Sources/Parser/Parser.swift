@@ -75,7 +75,7 @@ public class Parser {
         // Otherwise, we assume one is missing and attempt to parse the next statement after
         // raising an issue.
         guard peek().isStatementDelimiter else {
-          issues.append(parseFailure(.expectedStatementDelimiter, range: peek().range))
+          issues.append(parseFailure(Issue.expectedStmtDelimiter(), range: peek().range))
           continue
         }
       }
@@ -101,7 +101,7 @@ public class Parser {
       if let decl = node as? Decl {
         decls.append(decl)
       } else {
-        issues.append(parseFailure(.invalidTopLevelDeclaration(node: node), range: node.range))
+        issues.append(parseFailure(Issue.invalidTopLevelDecl(node: node), range: node.range))
       }
     }
 
@@ -154,7 +154,7 @@ public class Parser {
         // If the next token isn't the list delimiter, we **must** parse a comma. Otherwise, we
         // assume one is missing and attempt to parse the next element after raising an issue.
         guard consume(.comma) != nil else {
-          issues.append(parseFailure(.expectedSeparator(separator: ","), range: peek().range))
+          issues.append(parseFailure(Issue.expectedSeparator(), range: peek().range))
           continue
         }
       }
@@ -317,19 +317,14 @@ public class Parser {
   }
 
   /// Tiny helper to build parse errors.
-  func parseFailure(_ syntaxError: SyntaxError, range: SourceRange) -> Issue {
-    return Issue(severity: .error, message: syntaxError.description, range: range)
-  }
-
-  /// Tiny helper to build unexpected construction errors.
-  func unexpectedConstruction(expected: String? = nil, got node: ASTNode) -> Issue {
-    return parseFailure(.unexpectedConstruction(expected: expected, got: node), range: node.range)
+  func parseFailure(_ message: String, range: SourceRange) -> Issue {
+    return Issue(severity: .error, message: message, range: range)
   }
 
   /// Tiny helper to build unexpected token errors.
   func unexpectedToken(expected: String? = nil, got token: Token? = nil) -> Issue {
     let t = token ?? peek()
-    return parseFailure(.unexpectedToken(expected: expected, got: t), range: t.range)
+    return parseFailure(Issue.unexpectedToken(expected: expected, got: t), range: t.range)
   }
 
   /// The infix operators' precedence groups.

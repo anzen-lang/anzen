@@ -200,15 +200,20 @@ public final class FunSign: TypeSign {
   public var range: SourceRange
 
   /// The function's domain (i.e. parameters' types).
-  public var dom: [ParamSign]
+  public var params: [ParamSign]
   /// The function's codomain (i.e. return type).
   public var codom: QualTypeSign?
 
-  public init(dom: [ParamSign], codom: QualTypeSign, module: Module, range: SourceRange) {
-    self.dom = dom
+  public init(params: [ParamSign], codom: QualTypeSign, module: Module, range: SourceRange) {
+    self.params = params
     self.codom = codom
     self.module = module
     self.range = range
+  }
+
+  public func realizeType(in context: CompilerContext) -> TypeBase {
+    // let from = params.map { FunType.Param(label: $0.label, type: $0.realizeType(in: context)) }
+    fatalError()
   }
 
   public func accept<V>(visitor: V) where V: ASTVisitor {
@@ -216,7 +221,7 @@ public final class FunSign: TypeSign {
   }
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
-    dom.forEach { $0.accept(visitor: visitor) }
+    params.forEach { $0.accept(visitor: visitor) }
     codom?.accept(visitor: visitor)
   }
 
@@ -225,7 +230,7 @@ public final class FunSign: TypeSign {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    dom = dom.map { $0.accept(transformer: transformer) } as! [ParamSign]
+    params = params.map { $0.accept(transformer: transformer) } as! [ParamSign]
     codom = codom?.accept(transformer: transformer) as? QualTypeSign
     return self
   }

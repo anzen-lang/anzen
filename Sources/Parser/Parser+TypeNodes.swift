@@ -48,7 +48,7 @@ extension Parser {
       case "@mut": qualSet.insert(.mut)
       default:
         issues.append(
-          parseFailure(.invalidQualifier(value: attrToken.value!), range: attrToken.range))
+          parseFailure(Issue.invalidTypeQual(value: attrToken.value!), range: attrToken.range))
       }
 
       // Skip trailing new lines.
@@ -184,7 +184,7 @@ extension Parser {
       for arg in specTokens {
         if keys.contains(arg.0.value!) {
           issues.append(parseFailure(
-            .duplicateGenericParameter(key: arg.0.value!), range: arg.0.range))
+            Issue.duplicateGenericParam(key: arg.0.value!), range: arg.0.range))
         }
         keys.insert(arg.0.value!)
       }
@@ -242,7 +242,7 @@ extension Parser {
     }
 
     // Parse the domain.
-    let dom = parseList(delimitedBy: .rightParen, issues: &issues, with: parseParamSign)
+    let params = parseList(delimitedBy: .rightParen, issues: &issues, with: parseParamSign)
     if consume(.rightParen, afterMany: .newline) == nil {
       issues.append(unexpectedToken(expected: "')'"))
     }
@@ -267,7 +267,7 @@ extension Parser {
     }
 
     return FunSign(
-      dom: dom,
+      params: params,
       codom: codom!,
       module: module,
       range: head.range.lowerBound ..< codom!.range.upperBound)

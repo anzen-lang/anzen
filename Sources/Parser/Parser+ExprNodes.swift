@@ -43,10 +43,11 @@ extension Parser {
         switch expr {
         case is UnsafeCastExpr:
           issues.append(parseFailure(
-            .nonAssociativeOperator(op: infixToken.kind.description), range: infixToken.range))
+            Issue.nonAssociativeOp(op: infixToken.kind.description),
+            range: infixToken.range))
 
         case is InfixExpr:
-          issues.append(parseFailure(.ambiguousCastOperand, range: infixToken.range))
+          issues.append(parseFailure(Issue.ambiguousCastOperand(), range: infixToken.range))
 
         default:
           break
@@ -95,7 +96,7 @@ extension Parser {
         // Check associativity to resolve identical adjacent operators.
         switch precedenceGroup.associativity {
         case .none:
-          issues.append(parseFailure(.nonAssociativeOperator(op: op.name), range: op.range))
+          issues.append(parseFailure(Issue.nonAssociativeOp(op: op.name), range: op.range))
         case .right:
           shouldBindRight = true
         case .left:
@@ -305,7 +306,7 @@ extension Parser {
       ident = IdentExpr(name: nameToken.value!, module: module, range: nameToken.range)
       if (nameToken.kind & TokenKind.Category.keyword) != 0 {
         issues.append(parseFailure(
-          .keywordAsIdentifier(keyword: ident.name), range: nameToken.range))
+          Issue.keywordAsIdent(keyword: ident.name), range: nameToken.range))
       }
     } else {
       issues.append(unexpectedToken(expected: "identifier"))

@@ -77,7 +77,7 @@ extension Parser {
         // statement delimiter. Otherwise, we assume one is missing and attempt to parse the next
         // statement after raising an issue.
         guard peek().isStatementDelimiter || (peek().kind == .eof) else {
-          issues.append(parseFailure(.expectedStatementDelimiter, range: peek().range))
+          issues.append(parseFailure(Issue.expectedStmtDelimiter(), range: peek().range))
           continue
         }
       }

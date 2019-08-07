@@ -37,7 +37,7 @@ extension Parser {
 
       case .some(let node):
         issues.append(parseFailure(
-          .unexpectedConstruction(expected: "property or function declaration", got: node),
+          Issue.unexpectedEntity(expected: "property or function declaration", got: node),
           range: node.range))
         return node
 
@@ -77,7 +77,7 @@ extension Parser {
 
       case .some(let node):
         issues.append(parseFailure(
-          .unexpectedConstruction(expected: "property or function declaration", got: node),
+          Issue.unexpectedEntity(expected: "property or function declaration", got: node),
           range: node.range))
         return node
       }
@@ -169,7 +169,8 @@ extension Parser {
       if let nameToken = consume(TokenKind.Category.name, afterMany: .newline) {
         name = nameToken.value!
         if nameToken.isKeyword {
-          issues.append(parseFailure(.keywordAsIdentifier(keyword: name), range: nameToken.range))
+          issues.append(
+            parseFailure(Issue.keywordAsIdent(keyword: name), range: nameToken.range))
         }
       } else {
         name = ""
