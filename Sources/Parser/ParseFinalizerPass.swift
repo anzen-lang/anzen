@@ -12,7 +12,7 @@ import Utils
 ///
 /// The parser intentionally accepts a superset of Anzen's grammar, so as to reduce the complexity
 /// of its internal state. Consequently, some syntax errors are not caught during parsing, and
-/// must be found by this visitor.
+/// must be found with this pass, so as to verify that all AST invariants hold.
 ///
 /// Lexical scoping:
 /// ================
