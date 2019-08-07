@@ -15,6 +15,14 @@ public final class CompilerContext {
     self.loader = loader
 
     // Load the core modules.
+    builtinModule = Module(id: "__Builtin", state: .typeChecked)
+    for name in CompilerContext.builtinTypeNames {
+      let decl = BuiltinTypeDecl(name: name, module: builtinModule)
+      decl.type = BuiltinType(quals: [], context: self)
+      builtinModule.decls.append(decl)
+    }
+    modules["__Builtin"] = builtinModule
+
     let corePath = anzenPath.joined(with: "Core")
     try loadModule(fromDirectory: corePath, withID: "Anzen")
   }
@@ -29,6 +37,13 @@ public final class CompilerContext {
 
   /// The modules loaded in the compiler context.
   public private(set) var modules: [Module.ID: Module] = [:]
+
+  /// The Anzen built-in module, that defines built-in type declarations.
+  public var builtinModule: Module!
+
+  /// The Anzen module, that defines the standard library.
+  public var anzenModule: Module { return modules["Anzen"]! }
+
   /// The issues that resulted from the processing the loaded modules.
   public var issues: [Module.ID: Set<Issue>] {
     let allIssues = modules.map({ (id, module) in (id, module.issues) })
@@ -63,11 +78,34 @@ public final class CompilerContext {
 
     let module = Module(id: id)
     modules[id] = module
+    currentGeneration += 1
     try loader.load(module: module, fromText: buffer, in: self)
     return (module, true)
   }
 
   // MARK: - Types
+
+  /// The names of the built-in types.
+  public static let builtinTypeNames: Set<String> = [
+    "Nothing", "Anything", "Bool", "Int", "Float", "String",
+  ]
+
+  /// Anzen's `Nothing` type.
+  public private(set) lazy var nothingType: BuiltinType = { [unowned self] in
+    let decl = self.anzenModule.decls.first { ($0 as? BuiltinTypeDecl)?.name == "Nothing" }
+    return (decl as! BuiltinTypeDecl).type as! BuiltinType
+  }()
+
+  /// Anzen's `Anything` type.
+  public private(set) lazy var anythingType: BuiltinType = { [unowned self] in
+    let decl = self.anzenModule.decls.first { ($0 as? BuiltinTypeDecl)?.name == "Anything" }
+    return (decl as! BuiltinTypeDecl).type as! BuiltinType
+  }()
+
+  /// The error type, representing type errors.
+  public private(set) lazy var errorType: ErrorType = { [unowned self] in
+    ErrorType(quals: [], context: self)
+  }()
 
   /// The type uniqueness table.
   private var typeCache: [Int: [TypeBase]] = [:]

@@ -278,3 +278,23 @@ public final class UnionType: NominalType {
   }
 
 }
+
+// MARK: - Built-ins
+
+/// A built-in type.
+public final class BuiltinType: TypeBase {
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
+  }
+
+}
+
+/// The type of invalid expressions and signatures.
+public final class ErrorType: TypeBase {
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
+  }
+
+}

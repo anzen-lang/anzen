@@ -14,4 +14,7 @@ public protocol TypeTransformer {
   func transform(_ ty: StructType) -> Result
   func transform(_ ty: UnionType) -> Result
 
+  func transform(_ ty: BuiltinType) -> Result
+  func transform(_ ty: ErrorType) -> Result
+
 }

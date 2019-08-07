@@ -114,4 +114,12 @@ public class TypeOpener: TypeTransformer {
     return context.getBoundGenericType(type: ty, bindings: newBindings)
   }
 
+  public func transform(_ ty: BuiltinType) -> TypeBase {
+    return ty
+  }
+
+  public func transform(_ ty: ErrorType) -> TypeBase {
+    return ty
+  }
+
 }
