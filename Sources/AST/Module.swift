@@ -37,9 +37,9 @@ public final class Module: DeclContext {
   ///
   /// Note that this initializer is internal to the AST library, because modules must be created by
   /// a compiler context before they are loaded.
-  internal init(id: ID) {
+  internal init(id: ID, state: State = .created) {
     self.id = id
-    self.state = .created
+    self.state = state
   }
 
   // MARK: - Issues
