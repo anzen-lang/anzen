@@ -41,6 +41,10 @@ extension Issue {
     return "keyword '\(keyword)' cannot be used as an identifier"
   }
 
+  static func missingParamSign() -> String {
+    return "parameter declaration requires an explicit type"
+  }
+
   static func nonAssociativeOp(op: String) -> String {
     return "use of adjacent non-associative operators '\(op)'"
   }

@@ -101,6 +101,11 @@ public struct ParseFinalizerPass {
         }
       }
 
+      // Make sure all parameters have a type signature.
+      for param in node.params where param.sign == nil {
+        param.registerError(message: Issue.missingParamSign())
+      }
+
       if isUniquelyDeclared {
         finalizeNamedContext(node)
       }
