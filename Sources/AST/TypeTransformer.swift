@@ -10,6 +10,7 @@ public protocol TypeTransformer {
   func transform(_ ty: TypePlaceholder) -> Result
   func transform(_ ty: BoundGenericType) -> Result
   func transform(_ ty: FunType) -> Result
+  func transform(_ ty: InterfaceType) -> Result
   func transform(_ ty: StructType) -> Result
   func transform(_ ty: UnionType) -> Result
 

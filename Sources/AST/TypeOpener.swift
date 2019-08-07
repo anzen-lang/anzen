@@ -66,6 +66,22 @@ public class TypeOpener: TypeTransformer {
       codom: ty.codom.accept(transformer: newOpener))
   }
 
+  /// Opens an interface type.
+  ///
+  /// Opening an interface type creates a substitution for each of its generic argument, so that
+  /// the type can be monomorphized.
+  public func transform(_ ty: InterfaceType) -> TypeBase {
+    guard !ty.decl.genericParams.isEmpty
+      else { return ty }
+
+    var newBindings = bindings
+    for param in ty.genericParams where bindings[param] == nil {
+      newBindings[param] = context.getTypeVar()
+    }
+
+    return context.getBoundGenericType(type: ty, bindings: newBindings)
+  }
+
   /// Opens a struct type.
   ///
   /// Opening a struct type creates a substitution for each of its generic argument, so that the

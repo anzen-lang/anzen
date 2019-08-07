@@ -196,6 +196,33 @@ public final class FunType: TypeBase {
 
 }
 
+public final class InterfaceType: TypeBase {
+
+  /// The type's decl.
+  public unowned let decl: InterfaceDecl
+  /// The types's generic parameters.
+  public var genericParams: [TypePlaceholder] {
+    return decl.genericParams.map { $0.type as! TypePlaceholder }
+  }
+
+  internal init(quals: TypeQualSet, decl: InterfaceDecl, in context: CompilerContext) {
+    self.decl = decl
+    super.init(quals: quals, context: context)
+  }
+
+  internal override func equals(to other: TypeBase) -> Bool {
+    guard let rhs = other as? InterfaceType
+      else { return false }
+    return (self.quals == rhs.quals)
+      && (self.decl === rhs.decl)
+  }
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
+  }
+
+}
+
 public final class StructType: TypeBase {
 
   /// The type's decl.

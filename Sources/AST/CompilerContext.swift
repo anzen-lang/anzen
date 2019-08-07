@@ -97,7 +97,7 @@ public final class CompilerContext {
   }
 
   /// Builds (if necessary) and returns the requested type placeholder.
-  public func getTypePlaceholder(quals: TypeQualSet, decl: GenericParamDecl) -> TypePlaceholder {
+  public func getTypePlaceholder(quals: TypeQualSet = [], decl: GenericParamDecl) -> TypePlaceholder {
     let ty = TypePlaceholder(quals: quals, decl: decl, in: self)
     return insertType(ty) as! TypePlaceholder
   }
@@ -113,8 +113,8 @@ public final class CompilerContext {
 
   /// Creates (if necessary) and returns the requested function type.
   public func getFunType(
-    quals: TypeQualSet,
-    genericParams: [TypePlaceholder],
+    quals: TypeQualSet = [],
+    genericParams: [TypePlaceholder] = [],
     dom: [FunType.Param],
     codom: TypeBase) -> FunType
   {
@@ -122,14 +122,20 @@ public final class CompilerContext {
     return insertType(ty) as! FunType
   }
 
+  /// Creates (if necessary) and returns the requested interface type.
+  public func getInterfaceType(quals: TypeQualSet = [], decl: InterfaceDecl) -> InterfaceType {
+    let ty = InterfaceType(quals: quals, decl: decl, in: self)
+    return insertType(ty) as! InterfaceType
+  }
+
   /// Creates (if necessary) and returns the requested struct type.
-  public func getStructType(quals: TypeQualSet, decl: StructDecl) -> StructType {
+  public func getStructType(quals: TypeQualSet = [], decl: StructDecl) -> StructType {
     let ty = StructType(quals: quals, decl: decl, in: self)
     return insertType(ty) as! StructType
   }
 
   /// Creates (if necessary) and returns the requested union type.
-  public func getUnionType(quals: TypeQualSet, decl: UnionDecl) -> UnionType {
+  public func getUnionType(quals: TypeQualSet = [], decl: UnionDecl) -> UnionType {
     let ty = UnionType(quals: quals, decl: decl, in: self)
     return insertType(ty) as! UnionType
   }
