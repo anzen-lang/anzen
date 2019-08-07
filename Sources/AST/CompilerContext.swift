@@ -57,8 +57,8 @@ public final class CompilerContext {
     }
 
     let module = Module(id: id)
-    try loader.load(module: module, fromText: buffer, in: self)
     modules[id] = module
+    try loader.load(module: module, fromText: buffer, in: self)
     return (module, true)
   }
 

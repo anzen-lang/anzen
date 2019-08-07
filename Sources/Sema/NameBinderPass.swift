@@ -49,11 +49,6 @@ public struct NameBinderPass {
     /// The current declaration context.
     var currentDeclContext: DeclContext
 
-    /// The names of the built-in types.
-    static let builtinTypeNames: Set<String> = [
-      "Nothing", "Anything", "Bool", "Int", "Float", "String",
-    ]
-
     init(topLevelDeclContext: Module, context: CompilerContext) {
       self.context = context
       self.currentDeclContext = topLevelDeclContext
@@ -159,7 +154,7 @@ public struct NameBinderPass {
       }
 
       // If the identifier couldn't be found in any context, then it may be a built-in type name.
-      if Binder.builtinTypeNames.contains(node.name) {
+      if CompilerContext.builtinTypeNames.contains(node.name) {
         node.declContext = context.anzenModule
         return
       }
