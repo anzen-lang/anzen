@@ -3,25 +3,27 @@ import Utils
 
 /// An AST pass that finalizes the construction of a parsed AST.
 ///
-/// This pass has two tasks:
-/// 1. Annotate the AST with information related to lexical scoping. the creation of the AST.
-/// 2. Report syntax errors that were not detected during
+/// Once the module's AST has been parsed, this pass walks all top-level declarations to link named
+/// declarations to their declaration context, and check that the AST is "well-formed" with respect
+/// to Anzen's grammar.
 ///
-/// # Lexical scoping:
-///
-/// Named declarations (e.g. instances of `PropDecl`) have to be associated with a declaration
-/// context, denoting a lexical region that delimits the "visibility" of a named entity.
-///
-/// Note that duplicate named declarations are not added to their declaring context. Consequently,
-/// named declaration whose `declContext` property is `nil` after finalization must not be
-/// considered to resolve identifiers during semantic analysis.
-///
-/// # Additional syntax errors:
+/// Well-formedness:
+/// ================
 ///
 /// The parser intentionally accepts a superset of Anzen's grammar, so as to reduce the complexity
 /// of its internal state. Consequently, some syntax errors are not caught during parsing, and
 /// must be found by this visitor.
-public struct ParseFinalizer {
+///
+/// Lexical scoping:
+/// ================
+///
+/// Named declarations (e.g. instances of `PropDecl`) have to be associated with a corresponding
+/// declaration context (i.e. the lexical region in which named entities are "visible").
+///
+/// Note that duplicate named declarations are not added to their declaring context. Consequently,
+/// named declaration whose `declContext` property is `nil` after finalization must not be
+/// considered to resolve identifiers during semantic analysis.
+public struct ParseFinalizerPass {
 
   /// The module being processed.
   public let module: Module
@@ -31,7 +33,7 @@ public struct ParseFinalizer {
   }
 
   public func process() {
-    let finalizer = FinalizerVisitor(module: module)
+    let finalizer = Finalizer(module: module)
     for decl in module.decls {
       decl.accept(visitor: finalizer)
     }
@@ -39,15 +41,12 @@ public struct ParseFinalizer {
 
   // MARK: Internal visitor
 
-  private class FinalizerVisitor: ASTVisitor {
+  private final class Finalizer: ASTVisitor {
 
-    /// The module being processed.
-    let module: Module
     /// The current declaration context.
     var currentDeclContext: DeclContext
 
     init(module: Module) {
-      self.module = module
       self.currentDeclContext = module
     }
 
@@ -61,15 +60,13 @@ public struct ParseFinalizer {
     func visit(_ node: PropDecl) {
       // Check for invalid attributes.
       for attr in node.attrs {
-        attr.registerWarning(
-          message: "unexpected attribute '\(attr.name)' on property declaration will be ignored")
+        attr.registerWarning(message: Issue.unexpectedPropAttr(attr: attr))
       }
 
       // Check for invalid modifiers.
-      if !(currentDeclContext is NominalTypeDecl) {
+      if !(currentDeclContext is NominalTypeDecl || currentDeclContext is TypeExtDecl) {
         for modifier in node.modifiers {
-          modifier.registerError(
-            message: "modifier '\(modifier.kind)' may only appear in type declaration")
+          modifier.registerError(message: Issue.unexpectedDeclModifier(modifier: modifier))
         }
       }
 
@@ -81,15 +78,13 @@ public struct ParseFinalizer {
     func visit(_ node: FunDecl) {
       // Check for invalid attributes.
       for attr in node.attrs where attr.name != "@air_name" {
-        attr.registerWarning(
-          message: "unexpected attribute '\(attr.name)' on function declaration will be ignored")
+        attr.registerWarning(message: Issue.unexpectedFunAttr(attr: attr))
       }
 
       // Check for invalid modifiers.
-      if !(currentDeclContext is NominalTypeDecl) {
+      if !(currentDeclContext is NominalTypeDecl || currentDeclContext is TypeExtDecl) {
         for modifier in node.modifiers {
-          modifier.registerError(
-            message: "modifier '\(modifier.kind)' may only appear in type declaration")
+          modifier.registerError(message: Issue.unexpectedDeclModifier(modifier: modifier))
         }
       }
 
@@ -100,7 +95,7 @@ public struct ParseFinalizer {
         if let decl = sibling as? NamedDecl,
           (decl !== node) && (decl.name != "") && (decl.name == node.name) && !(decl is FunDecl)
         {
-          node.registerError(message: "invalid redeclaration of '\(node.name)'")
+          node.registerError(message: Issue.invalidRedeclaration(name: node.name))
           isUniquelyDeclared = false
           break
         }
@@ -141,19 +136,39 @@ public struct ParseFinalizer {
       }
     }
 
+    func visit(_ node: TypeExtDecl) {
+      currentDeclContext.decls.append(node)
+      inDeclContext(node) {
+        node.traverse(with: self)
+      }
+    }
+
+    func visit(_ node: BraceStmt) {
+      inDeclContext(node) {
+        node.traverse(with: self)
+      }
+    }
+
+    // MARK: Helpers
+
     private func unsureUniquelyDeclared(_ node: NamedDecl) -> Bool {
       for sibling in currentDeclContext.decls {
         if let decl = sibling as? NamedDecl,
           (decl !== node) && (decl.name != "") && (decl.name == node.name)
         {
-          node.registerError(message: "invalid redeclaration of '\(node.name)'")
+          node.registerError(message: Issue.invalidRedeclaration(name: node.name))
           return false
         }
       }
       return true
     }
 
-    // MARK: Lexical scoping
+    private func inDeclContext(_ declContext: DeclContext, run block: () -> Void) {
+      let previousDeclContext = currentDeclContext
+      currentDeclContext = declContext
+      block()
+      currentDeclContext = previousDeclContext
+    }
 
     private func finalizeNamedDecl<Node>(_ node: Node) where Node: NamedDecl {
       currentDeclContext.decls.append(node)
@@ -164,9 +179,9 @@ public struct ParseFinalizer {
     private func finalizeNamedContext<Node>(_ node: Node) where Node: NamedDecl & DeclContext {
       currentDeclContext.decls.append(node)
       node.declContext = currentDeclContext
-      currentDeclContext = node
-      node.traverse(with: self)
-      currentDeclContext = node.declContext!
+      inDeclContext(node) {
+        node.traverse(with: self)
+      }
     }
 
   }
