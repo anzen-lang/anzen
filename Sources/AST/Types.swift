@@ -197,13 +197,6 @@ public final class FunType: TypeBase {
 }
 
 public class NominalType: TypeBase {
-
-  /// The member lookup table of this type.
-  ///
-  /// This table is populated during various passes of the semantic analysis for fast name lookup
-  /// of the member's properties, methods and nested types.
-  public var memberLookupTable: MemberLookupTable?
-
 }
 
 public final class InterfaceType: NominalType {

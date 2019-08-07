@@ -442,6 +442,12 @@ public protocol NominalTypeDecl: NamedDecl, DeclContext {
   /// The type declaration's body.
   var body: Stmt { get }
 
+  /// The member lookup table of this type.
+  ///
+  /// This table is populated during various passes of the semantic analysis for fast name lookup
+  /// of the member's properties, methods and nested types.
+  var memberLookupTable: MemberLookupTable? { get }
+
 }
 
 /// An interface declaration.
@@ -453,6 +459,7 @@ public final class InterfaceDecl: NominalTypeDecl {
 
   public var genericParams: [GenericParamDecl]
   public var body: Stmt
+  public var memberLookupTable: MemberLookupTable?
 
   // NamedDecl requirements
 
@@ -512,6 +519,7 @@ public final class StructDecl: NominalTypeDecl {
 
   public var genericParams: [GenericParamDecl]
   public var body: Stmt
+  public var memberLookupTable: MemberLookupTable?
 
   // NamedDecl requirements
 
@@ -572,6 +580,7 @@ public final class UnionDecl: NominalTypeDecl {
 
   public var genericParams: [GenericParamDecl]
   public var body: Stmt
+  public var memberLookupTable: MemberLookupTable?
 
   // NamedDecl requirements
 
