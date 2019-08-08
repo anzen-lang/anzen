@@ -184,12 +184,13 @@ extension DeclContext {
         if decls.isEmpty {
           ident.registerError(message: Issue.unboundIdentifier(name: ident.name))
           return nil
-        } else if decls.count > 0 {
+        } else if !decls[0].isTypeDecl {
           ident.registerError(message: Issue.invalidTypeIdentifier(name: ident.name))
           return nil
-        } else {
-          ownerDecl = decls[0]
         }
+
+        assert(decls.count == 1, "bad overloaded type name")
+        ownerDecl = decls[0]
       }
 
       // Look up the ownee in the owner's context.
@@ -371,6 +372,9 @@ extension NominalTypeDecl {
           sign = nestedIdent.owner
           i += 1
         }
+        if let ident = sign as? IdentSign, (ident.name == qName[i]) {
+          i += 1
+        }
 
         if i == qName.count {
           extDecls.append(extDecl as! TypeExtDecl)
@@ -431,7 +435,7 @@ extension TypeExtDecl {
       if ident.referredDecl != nil {
         return ident.referredDecl!
       } else {
-        let decls = parent!.lookup(unqualifiedName: ident.name, inCompilerContext: context)
+        let decls = module.lookup(unqualifiedName: ident.name, inCompilerContext: context)
         if decls.isEmpty {
           ident.registerError(message: Issue.unboundIdentifier(name: ident.name))
           return nil
@@ -445,7 +449,7 @@ extension TypeExtDecl {
       }
 
     case let nestedIdent as NestedIdentSign:
-      fatalError("not implemented")
+      return module.lookup(qualifiedTypeName: nestedIdent, inCompilerContext: context)
 
     default:
       fatalError("bad extension")
