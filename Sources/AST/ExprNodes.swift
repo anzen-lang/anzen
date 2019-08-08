@@ -357,12 +357,16 @@ public final class IdentExpr: Expr {
 
   /// The name of the identifier.
   public var name: String
+
   /// The identifier's specialization arguments.
   public var specArgs: [String: QualTypeSign]
-  /// The declaration context in which the identifier's defined.
-  public var declContext: DeclContext?
-  /// The declaration that corresponds to this identifier.
-  public var decl: NamedDecl?
+
+  /// The declarations to which this identifier refers.
+  ///
+  /// Due to overloading, this property may hold multiple declarations after name binding. Once
+  /// type inference manages to determine this identifier's type, the actual declaration to which
+  /// this identifiers can be selected, and the other discarded.
+  public var referredDecls: [NamedDecl] = []
 
   public init(
     name: String,

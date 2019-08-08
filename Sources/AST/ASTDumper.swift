@@ -198,7 +198,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(type_ext_decl"
     withIndentation {
       self <<< "\n" <<< indent <<< "(type\n"
-      withIndentation { node.type.accept(visitor: self) }
+      withIndentation { node.extType.accept(visitor: self) }
       self <<< ")\n" <<< indent <<< "(body\n"
       withIndentation { node.body.accept(visitor: self) }
       self <<< ")"

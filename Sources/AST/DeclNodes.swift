@@ -681,12 +681,12 @@ public final class TypeExtDecl: Decl, DeclContext {
   public var decls: [Decl] = []
 
   /// The signature of the type being extended. This should represent a nominal type.
-  public var type: TypeSign
+  public var extType: TypeSign
   /// The extensions's body.
   public var body: Stmt
 
   public init(type: TypeSign, body: Stmt, module: Module, range: SourceRange) {
-    self.type = type
+    self.extType = type
     self.body = body
     self.module = module
     self.range = range
@@ -697,7 +697,7 @@ public final class TypeExtDecl: Decl, DeclContext {
   }
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
-    type.accept(visitor: visitor)
+    extType.accept(visitor: visitor)
     body.accept(visitor: visitor)
   }
 
@@ -706,7 +706,7 @@ public final class TypeExtDecl: Decl, DeclContext {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    type = type.accept(transformer: transformer) as! TypeSign
+    extType = extType.accept(transformer: transformer) as! TypeSign
     body = body.accept(transformer: transformer) as! Stmt
     return self
   }

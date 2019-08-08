@@ -64,12 +64,12 @@ public final class IdentSign: TypeSign {
 
   /// The name of the type.
   public var name: String
+
   /// The identifier's specialization arguments.
   public var specArgs: [String: QualTypeSign]
-  /// The declaration context in which the identifier's defined.
-  public var declContext: DeclContext?
-  /// The declaration that corresponds to this type identifier.
-  public var decl: NamedDecl?
+
+  /// The declaration to which this identifier refers.
+  public var referredDecl: NamedDecl?
 
   public init(
     name: String,
