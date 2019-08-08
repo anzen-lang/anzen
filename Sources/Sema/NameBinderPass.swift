@@ -9,6 +9,7 @@ public struct NameBinderPass {
 
   /// The compiler context.
   public let context: CompilerContext
+
   /// The module being processed.
   public let module: Module
 
@@ -46,6 +47,7 @@ public struct NameBinderPass {
     /// The identifier `x` inside function `f` should be bound to the outermost declaration rather
     /// than that in `f`'s body.
     var declBeingVisited: Set<ObjectIdentifier> = []
+
     /// The current declaration context.
     var currentDeclContext: DeclContext
 
@@ -334,16 +336,48 @@ extension NamedDecl {
 
 }
 
+extension NestedIdentSign {
+
+  /// The relative qualified name represented by this signature.
+  ///
+  /// Qualified name are represented by array of name components, starting from the innermost one.
+  /// For instance, the signature `Foo::Bar::Baz` is represented by the components
+  /// `["Baz", "Bar", "Foo"]`.
+  ///
+  /// If the root signature is implicit, the last component is a single dot. For instance
+  /// `::Bar::Baz` is represented by the components `["Baz", "Bar", "."]`.
+  var qualifiedName: [String] {
+    var components = [ownee.name]
+    var sign: TypeSign = owner
+    while let nestedIdent = sign as? NestedIdentSign {
+      components.append(nestedIdent.ownee.name)
+      sign = nestedIdent.owner
+    }
+
+    if let ident = sign as? IdentSign {
+      components.append(ident.name)
+    } else if let implictNestedIdent = sign as? ImplicitNestedIdentSign {
+      components.append(implictNestedIdent.ownee.name)
+      components.append(".")
+    } else {
+      assertionFailure("bad owner in nested type signature")
+    }
+
+    return components
+  }
+
+}
+
 extension NominalTypeDecl {
 
   /// Finds all extensions of this type declaration in the given module.
   func findExtensions(in searchModule: Module) -> [TypeExtDecl] {
-    // Compute this type's qualified name.
+    // Compute this type's qualified name components.
     var parentContext = declContext!
-    var qName = [name]
+    var nameComponents = [name]
     while parentContext.parent != nil {
       if let nominalTypeDecl = (parentContext as? BraceStmt)?.parent as? NominalTypeDecl {
-        qName.append(nominalTypeDecl.name)
+        nameComponents.append(nominalTypeDecl.name)
         parentContext = nominalTypeDecl.parent!
       } else {
         // The nominal type is nested in a non-type context, so it can't be extended.
@@ -353,35 +387,30 @@ extension NominalTypeDecl {
     assert(parentContext === module)
 
     // Search for all extensions.
-    if qName.count == 1 {
+    var extDecls: [TypeExtDecl] = []
+    if nameComponents.count == 1 {
       // The type isn't nested, so we can look up its name directly.
-      return searchModule.decls.compactMap { decl in
-        ((decl as? TypeExtDecl)?.extType as? IdentSign)?.name == qName[0] ? decl : nil
-      } as! [TypeExtDecl]
-    } else {
-      var extDecls: [TypeExtDecl] = []
-      // The type is nested, so we need to match its qualified name with a nested type signature.
-      for extDecl in searchModule.decls
-        where (extDecl as? TypeExtDecl)?.extType is NestedIdentSign
-      {
-        var sign = (extDecl as! TypeExtDecl).extType
-        var i = 0
-        while let nestedIdent = sign as? NestedIdentSign {
-          guard nestedIdent.ownee.name == qName[i]
-            else { break }
-          sign = nestedIdent.owner
-          i += 1
-        }
-        if let ident = sign as? IdentSign, (ident.name == qName[i]) {
-          i += 1
-        }
-
-        if i == qName.count {
-          extDecls.append(extDecl as! TypeExtDecl)
+      for decl in searchModule.decls {
+        if let extDecl = decl as? TypeExtDecl,
+           let sign = extDecl.extType as? IdentSign,
+           nameComponents[0] == sign.name
+        {
+          extDecls.append(extDecl)
         }
       }
-      return extDecls
+    } else {
+      // The type is nested, so we need to match its qualified name with a nested type signature.
+      for decl in searchModule.decls {
+        if let extDecl = decl as? TypeExtDecl,
+           let sign = extDecl.extType as? NestedIdentSign,
+           nameComponents == sign.qualifiedName
+        {
+          extDecls.append(extDecl)
+        }
+      }
     }
+
+    return extDecls
   }
 
   /// Searches for a member declarations that matches the given unqualified identifier.
