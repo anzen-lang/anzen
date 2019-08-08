@@ -69,7 +69,7 @@ public final class CompilerContext {
 
   /// Loads a single translation unit as a module from a text buffer.
   @discardableResult
-  func loadModule(fromText buffer: TextInputBuffer, withID id: Module.ID) throws
+  public func loadModule(fromText buffer: TextInputBuffer, withID id: Module.ID) throws
     -> (module: Module, loaded: Bool)
   {
     if let module = modules[id] {
