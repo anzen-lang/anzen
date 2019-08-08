@@ -2,6 +2,7 @@ import XCTest
 
 import AssertThat
 import AST
+
 @testable import Parser
 
 class TypeParserTests: XCTestCase, ParserTestCase {

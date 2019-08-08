@@ -1,5 +1,6 @@
 import XCTest
 
+import AssertThat
 import AST
 import Parser
 import SystemKit
@@ -16,7 +17,45 @@ class NameBinderTests: XCTestCase {
     context = try! CompilerContext(anzenPath: anzenPath, loader: Loader())
   }
 
-  func testNothing() {
+  func testNameBinding() {
+    let program = """
+    extension Foo {
+      let a: Self
+      let b: Foo
+      let c: T
+      let d: Bar
+      let e: Ham
+
+      struct Baz {}
+    }
+
+    extension Foo {
+      struct Ham {}
+    }
+
+    extension Foo::Bar {
+      let a: Foo
+      let b: Bar
+      let c: Baz
+
+      struct Qux {}
+    }
+
+    struct Foo<T> {
+      let z: Self
+      let y: T
+      let x: Foo
+      let w: Bar
+
+      struct Bar {
+        let x: Baz
+        let y: Qux
+      }
+    }
+    """
+
+    let (module, _) = try! context.loadModule(fromText: program, withID: "<test>")
+    assertThat(module.issues, .isEmpty)
   }
 
 }
