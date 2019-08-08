@@ -20,6 +20,13 @@ extension NamedDecl {
 
   public var isOverloadable: Bool { return false }
 
+  /// Whether this declaration is a type declaration.
+  public var isTypeDecl: Bool {
+    return (self is NominalTypeDecl)
+      || (self is GenericParamDecl)
+      || (self is BuiltinTypeDecl)
+  }
+
 }
 
 /// A declaration node that wraps top-level statements of the main translation unit.
