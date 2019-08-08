@@ -27,8 +27,11 @@ public struct MemberLookupTable {
 
   /// Merges the members of an extension with this lookup table.
   public mutating func merge(extension typeExtDecl: TypeExtDecl) {
-    for member in typeExtDecl.namedDecls {
-      insert(member: member)
+    // Insert members in the context of the declaration extension's body.
+    if let body = typeExtDecl.body as? BraceStmt {
+      for member in body.decls where member is NamedDecl {
+        insert(member: member as! NamedDecl)
+      }
     }
   }
 

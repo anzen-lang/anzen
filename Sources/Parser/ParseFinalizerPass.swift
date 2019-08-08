@@ -143,6 +143,8 @@ public struct ParseFinalizerPass {
       if currentDeclContext !== node.module {
         currentDeclContext.decls.append(node)
       }
+      node.parent = currentDeclContext
+
       inDeclContext(node) {
         node.traverse(with: self)
       }

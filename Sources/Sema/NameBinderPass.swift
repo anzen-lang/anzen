@@ -100,27 +100,21 @@ public struct NameBinderPass {
     }
 
     func visit(_ node: TypeExtDecl) {
-      func isExtendableTypeDecl(_ decl: NamedDecl) -> Bool {
-        return (decl is NominalTypeDecl)
-            || (decl is ProxiedNamedDecl)
-            || (decl is BuiltinTypeDecl)
-      }
-
       // Resolve the declaration of `Self`.
-      if let ident = node.type as? IdentSign {
-        let decls = currentDeclContext.lookup(
-          unqualifiedName: ident.name, inCompilerContext: context)
-        if decls.isEmpty {
-          ident.registerError(message: Issue.unboundIdentifier(name: ident.name))
-        } else if !isExtendableTypeDecl(decls[0]) {
-          ident.registerError(message: Issue.invalidTypeIdentifier(name: ident.name))
+      node.extType.accept(visitor: self)
+      switch node.extType {
+      case let ident as IdentSign:
+        if ident.referredDecl != nil {
+          node.decls.append(ProxiedNamedDecl(ident.referredDecl!, name: "Self"))
         }
 
-        assert(decls.count == 1, "bad extension on overloaded type name")
-        node.decls.append(ProxiedNamedDecl(decls[0], name: "Self"))
+      case let nestedIdent as NestedIdentSign:
+        fatalError("not implemented")
+
+      default:
+        assertionFailure("bad extended signature")
       }
 
-      node.type.accept(visitor: self)
       inDeclContext(node) {
         node.body.accept(visitor: self)
       }
@@ -138,7 +132,13 @@ public struct NameBinderPass {
     }
 
     func visit(_ node: IdentExpr) {
-      linkToDeclContext(node)
+      let decls = currentDeclContext.lookup(unqualifiedName: node.name, inCompilerContext: context)
+      if decls.isEmpty {
+        node.registerError(message: Issue.unboundIdentifier(name: node.name))
+      } else {
+        node.referredDecls = decls
+      }
+
       node.traverse(with: self)
     }
 
@@ -158,41 +158,20 @@ public struct NameBinderPass {
     }
 
     func visit(_ node: IdentSign) {
-      linkToDeclContext(node)
+      let decls = currentDeclContext.lookup(unqualifiedName: node.name, inCompilerContext: context)
+      if decls.isEmpty {
+        node.registerError(message: Issue.unboundIdentifier(name: node.name))
+      } else if !decls[0].isTypeDecl {
+        node.registerError(message: Issue.invalidTypeIdentifier(name: node.name))
+      } else {
+        assert(decls.count == 1, "bad extension on overloaded type name")
+        node.referredDecl = decls[0]
+      }
+
       node.traverse(with: self)
     }
 
     // MARK: Helpers
-
-    private func linkToDeclContext<Ident>(_ node: Ident) where Ident: Identifier {
-      // Find the closest declaration context in which the identifier is declared.
-      var declContext: DeclContext? = currentDeclContext
-      while declContext != nil {
-        if let decl = declContext!.firstDecl(named: node.name) {
-          if !declBeingVisited.contains(ObjectIdentifier(decl)) {
-            if !decl.isOverloadable {
-              // If the declaration isn't overloadable, we can already link it to the identifier.
-              node.decl = decl
-            }
-
-            // Either way, we link the declaration's context to the identifier.
-            node.declContext = declContext!
-            return
-          }
-        }
-        declContext = declContext!.parent
-      }
-
-      // If the identifier couldn't be found in any context, then it may be a built-in type name.
-      if CompilerContext.builtinTypeNames.contains(node.name) {
-        node.decl = context.builtinModule.firstDecl(named: node.name)
-        node.declContext = context.builtinModule
-        return
-      }
-
-      // The identifier's unbound.
-      node.registerError(message: Issue.unboundIdentifier(name: node.name))
-    }
 
     private func inDeclContext(_ declContext: DeclContext, run block: () -> Void) {
       let previousDeclContext = currentDeclContext
@@ -205,59 +184,150 @@ public struct NameBinderPass {
 
 }
 
-private protocol Identifier: ASTNode {
-
-  var name: String { get }
-  var decl: NamedDecl? { get set }
-  var declContext: DeclContext? { get set }
-
-}
-
-extension IdentExpr: Identifier {
-}
-
-extension IdentSign: Identifier {
-}
-
 // MARK: - Identifier lookup
 
 extension DeclContext {
 
-  /// Search for a declaration that matches the given unqualified identifier in this declaration
-  /// context and its parents.
+  func lookup(qualifiedTypeName: NestedIdentSign, inCompilerContext context: CompilerContext)
+    -> NamedDecl?
+  {
+    switch qualifiedTypeName.owner {
+    case let ident as IdentSign:
+      // Look up the owner's declaration.
+      var ownerDecl: NamedDecl
+      if ident.referredDecl != nil {
+        ownerDecl = ident.referredDecl!
+      } else {
+        let decls = lookup(unqualifiedName: ident.name, inCompilerContext: context)
+        if decls.isEmpty {
+          ident.registerError(message: Issue.unboundIdentifier(name: ident.name))
+          return nil
+        } else if decls.count > 0 {
+          ident.registerError(message: Issue.invalidTypeIdentifier(name: ident.name))
+          return nil
+        } else {
+          ownerDecl = decls[0]
+        }
+      }
+
+      // Resolve proxied declarations.
+      while let proxy = ownerDecl as? ProxiedNamedDecl {
+        ownerDecl = proxy.proxiedDecl
+      }
+
+      // Look up the ownee in the owner's context.
+      let ownee = qualifiedTypeName.ownee
+      switch ownerDecl {
+      case let nominalTypeDecl as NominalTypeDecl:
+        let decls = nominalTypeDecl.lookup(memberName: ownee.name, inCompilerContext: context)
+        if decls.isEmpty {
+          ownee.registerError(
+            message: Issue.nonExistingNestedType(ownerDecl: ownerDecl, owneeName: ownee.name))
+          return nil
+        } else if !decls[0].isTypeDecl {
+          ownee.registerError(message: Issue.invalidTypeIdentifier(name: ownee.name))
+          return nil
+        }
+
+        assert(decls.count == 1, "bad extension on overloaded type name")
+        return decls[0]
+
+      case is BuiltinType:
+        ownee.registerError(
+          message: Issue.nonExistingNestedType(ownerDecl: ownerDecl, owneeName: ownee.name))
+        return nil
+
+      default:
+        fatalError("bad owner in nested type signature")
+      }
+
+    default:
+      fatalError("bad owner in nested type signature")
+    }
+  }
+
+  /// Search for a declaration that matches the given unqualified identifier that is visible from
+  /// this declaration context.
   ///
   /// This method may produce multiple results in cased the given identifier refers to overloaded
   /// declarations (i.e. function definitions). In this case, declarations are returned from the
-  /// innermost to the outermost context.
+  /// closest to the farthest context.
   func lookup(unqualifiedName: String, inCompilerContext context: CompilerContext) -> [NamedDecl] {
-    var results: [NamedDecl] = []
-    var declContext: DeclContext? = self
-    while declContext != nil {
-      // Find the declarations whose name matches the given unqualified identifier.
-      let matches = declContext!.allDecls(named: unqualifiedName)
-      if !matches.isEmpty {
-        if !matches[0].isOverloadable {
-          // If the match is not overloadable, keep it only if its the first and stop searching.
-          assert(matches.count == 1)
-          if results.isEmpty {
-            results.append(matches[0])
-          }
-          return results
+    var currentContext: DeclContext? = self
+    var matches: [NamedDecl] = []
+
+    while currentContext != nil {
+      // In all cases, look in the current declaration context.
+      let newMatches = currentContext!.allDecls(named: unqualifiedName)
+      if !newMatches.isEmpty {
+        if newMatches[0].isOverloadable {
+          matches.append(contentsOf: newMatches)
+        } else if matches.isEmpty {
+          return newMatches
         } else {
-          // If the matches are overloadable, keep them and continue searching for other
-          // overloadable matches in enclosing contexts.
-          results.append(contentsOf: matches)
+          return matches
         }
       }
-      declContext = declContext!.parent
+
+      // Handle nominal type declarations.
+      if let nominalTypeDecl = currentContext as? NominalTypeDecl {
+        // Search in the member and its extensions.
+        let memberMatches = nominalTypeDecl
+          .lookup(memberName: unqualifiedName, inCompilerContext: context)
+        if !memberMatches.isEmpty {
+          if memberMatches[0].isOverloadable {
+            matches.append(contentsOf: memberMatches)
+          } else if matches.isEmpty {
+            return memberMatches
+          } else {
+            return matches
+          }
+        }
+
+        // FIXME: Search in implemented interfaces.
+
+        // If the type is nested in another type, continue the lookup in its enclosing context.
+        if currentContext?.parent?.parent is NominalTypeDecl {
+          currentContext = currentContext?.parent?.parent
+          continue
+        }
+
+        // Continue the lookup at the module level.
+        currentContext = nominalTypeDecl.module
+        continue
+      }
+
+      // Handle extension declarations.
+      if let extDecl = currentContext as? TypeExtDecl {
+        if let extendedDecl = extDecl.resolveExtendedTypeDecl(inCompilerContext: context) {
+          currentContext = extendedDecl as? DeclContext
+          continue
+        }
+      }
+
+      // Walk outward declaration contexts to find overloaded symbols.
+      assert(matches.isEmpty || matches[0].isOverloadable)
+      currentContext = currentContext!.parent
     }
 
-    // If there aren't any results, look for built-in symbols.
-    if results.isEmpty && CompilerContext.builtinTypeNames.contains(unqualifiedName) {
+    // If no match could be bound, search in built-in types.
+    if matches.isEmpty && CompilerContext.builtinTypeNames.contains(unqualifiedName) {
       return [context.builtinModule.firstDecl(named: unqualifiedName)!]
     } else {
-      return results
+      // Should we ensure uniqueness of each result?
+      return matches
     }
+  }
+
+}
+
+extension NamedDecl {
+
+  var isTypeDecl: Bool {
+    return (self is NominalTypeDecl)
+        || (self is GenericParamDecl)
+        || (self is ProxiedNamedDecl)
+        || (self is BuiltinTypeDecl)
   }
 
 }
@@ -282,17 +352,17 @@ extension NominalTypeDecl {
 
     // Search for all extensions.
     if qName.count == 1 {
-      // The type isn't nested, so we can lookup its name directly.
+      // The type isn't nested, so we can look up its name directly.
       return searchModule.decls.compactMap { decl in
-        ((decl as? TypeExtDecl)?.type as? IdentSign)?.name == qName[0] ? decl : nil
+        ((decl as? TypeExtDecl)?.extType as? IdentSign)?.name == qName[0] ? decl : nil
       } as! [TypeExtDecl]
     } else {
       var extDecls: [TypeExtDecl] = []
       // The type is nested, so we need to match its qualified name with a nested type signature.
       for extDecl in searchModule.decls
-        where (extDecl as? TypeExtDecl)?.type is NestedIdentSign
+        where (extDecl as? TypeExtDecl)?.extType is NestedIdentSign
       {
-        var sign = (extDecl as! TypeExtDecl).type
+        var sign = (extDecl as! TypeExtDecl).extType
         var i = 0
         while let nestedIdent = sign as? NestedIdentSign {
           guard nestedIdent.ownee.name == qName[i]
@@ -318,9 +388,19 @@ extension NominalTypeDecl {
   {
     // Initialize or update the member lookup table as required.
     if memberLookupTable == nil {
+      // Create the lookup table.
       memberLookupTable = MemberLookupTable(generationNumber: context.currentGeneration)
+
+      // Insert members defined in the context of the declaration's header.
       for member in decls where member is NamedDecl {
         memberLookupTable!.insert(member: member as! NamedDecl)
+      }
+
+      // Insert members in the context of the declaration's body.
+      if let body = body as? BraceStmt {
+        for member in body.decls where member is NamedDecl {
+          memberLookupTable!.insert(member: member as! NamedDecl)
+        }
       }
 
       // Search for extensions. Since the lookup table had not been initialized before, we can
@@ -338,6 +418,37 @@ extension NominalTypeDecl {
     }
 
     return memberLookupTable![memberName] ?? []
+  }
+
+}
+
+extension TypeExtDecl {
+
+  func resolveExtendedTypeDecl(inCompilerContext context: CompilerContext) -> NamedDecl? {
+    switch extType {
+    case let ident as IdentSign:
+      if ident.referredDecl != nil {
+        return ident.referredDecl!
+      } else {
+        let decls = parent!.lookup(unqualifiedName: ident.name, inCompilerContext: context)
+        if decls.isEmpty {
+          ident.registerError(message: Issue.unboundIdentifier(name: ident.name))
+          return nil
+        } else if !decls[0].isTypeDecl {
+          ident.registerError(message: Issue.invalidTypeIdentifier(name: ident.name))
+          return nil
+        }
+
+        ident.referredDecl = decls[0]
+        return decls[0]
+      }
+
+    case let nestedIdent as NestedIdentSign:
+      fatalError("not implemented")
+
+    default:
+      fatalError("bad extension")
+    }
   }
 
 }
