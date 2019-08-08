@@ -69,9 +69,10 @@ public struct ParseFinalizerPass {
         }
       }
 
-      if unsureUniquelyDeclared(node) {
-        finalizeNamedDecl(node)
+      if isValidDeclaration(node) && (currentDeclContext !== node.module) {
+        currentDeclContext.decls.append(node)
       }
+      finalizeNamedDecl(node)
     }
 
     func visit(_ node: FunDecl) {
@@ -87,57 +88,50 @@ public struct ParseFinalizerPass {
         }
       }
 
-      // Check for invalid redeclarations. Since function names are overloadable, a redeclaration
-      // is invalid only if the previously declared entity isn't another function declaration.
-      var isUniquelyDeclared = true
-      for sibling in currentDeclContext.decls {
-        if let decl = sibling as? NamedDecl,
-          (decl !== node) && (decl.name != "") && (decl.name == node.name) && !(decl is FunDecl)
-        {
-          node.registerError(message: Issue.invalidRedeclaration(name: node.name))
-          isUniquelyDeclared = false
-          break
-        }
-      }
-
       // Make sure all parameters have a type signature.
       for param in node.params where param.sign == nil {
         param.registerError(message: Issue.missingParamSign())
       }
 
-      if isUniquelyDeclared {
-        finalizeNamedContext(node)
+      if isValidDeclaration(node) && (currentDeclContext !== node.module) {
+        currentDeclContext.decls.append(node)
       }
+      finalizeNamedContext(node)
     }
 
     func visit(_ node: GenericParamDecl) {
-      if unsureUniquelyDeclared(node) {
-        finalizeNamedDecl(node)
+      if isValidDeclaration(node) && (currentDeclContext !== node.module) {
+        currentDeclContext.decls.append(node)
       }
+      finalizeNamedDecl(node)
     }
 
     func visit(_ node: ParamDecl) {
-      if unsureUniquelyDeclared(node) {
-        finalizeNamedDecl(node)
+      if isValidDeclaration(node) && (currentDeclContext !== node.module) {
+        currentDeclContext.decls.append(node)
       }
+      finalizeNamedDecl(node)
     }
 
     func visit(_ node: InterfaceDecl) {
-      if unsureUniquelyDeclared(node) {
-        finalizeNamedContext(node)
+      if isValidDeclaration(node) && (currentDeclContext !== node.module) {
+        currentDeclContext.decls.append(node)
       }
+      finalizeNamedContext(node)
     }
 
     func visit(_ node: StructDecl) {
-      if unsureUniquelyDeclared(node) {
-        finalizeNamedContext(node)
+      if isValidDeclaration(node) && (currentDeclContext !== node.module) {
+        currentDeclContext.decls.append(node)
       }
+      finalizeNamedContext(node)
     }
 
     func visit(_ node: UnionDecl) {
-      if unsureUniquelyDeclared(node) {
-        finalizeNamedContext(node)
+      if isValidDeclaration(node) && (currentDeclContext !== node.module) {
+        currentDeclContext.decls.append(node)
       }
+      finalizeNamedContext(node)
     }
 
     func visit(_ node: TypeExtDecl) {
@@ -163,15 +157,35 @@ public struct ParseFinalizerPass {
 
     // MARK: Helpers
 
-    private func unsureUniquelyDeclared(_ node: NamedDecl) -> Bool {
+    private func isValidDeclaration(_ node: NamedDecl) -> Bool {
+      // Skip nodes that do not have a valid name.
+      guard node.name != ""
+        else { return false }
+
+      // Check for sibling declarations with the same name.
       for sibling in currentDeclContext.decls {
         if let decl = sibling as? NamedDecl,
-          (decl !== node) && (decl.name != "") && (decl.name == node.name)
+          (decl !== node) && (decl.name == node.name)
+            && !(decl.isOverloadable && node.isOverloadable)
         {
           node.registerError(message: Issue.invalidRedeclaration(name: node.name))
           return false
         }
       }
+
+      // Check for declarations in function and declaration headers.
+      let parent = currentDeclContext.parent
+      if (parent is FunDecl) || (parent is NominalTypeDecl) {
+        for sibling in parent!.decls {
+          if let decl = sibling as? NamedDecl,
+            (decl.name == node.name) && !(decl.isOverloadable && node.isOverloadable)
+          {
+            node.registerError(message: Issue.invalidRedeclaration(name: node.name))
+            return false
+          }
+        }
+      }
+
       return true
     }
 
@@ -183,17 +197,11 @@ public struct ParseFinalizerPass {
     }
 
     private func finalizeNamedDecl<Node>(_ node: Node) where Node: NamedDecl {
-      if currentDeclContext !== node.module {
-        currentDeclContext.decls.append(node)
-      }
       node.declContext = currentDeclContext
       node.traverse(with: self)
     }
 
     private func finalizeNamedContext<Node>(_ node: Node) where Node: NamedDecl & DeclContext {
-      if currentDeclContext !== node.module {
-        currentDeclContext.decls.append(node)
-      }
       node.declContext = currentDeclContext
       inDeclContext(node) {
         node.traverse(with: self)
