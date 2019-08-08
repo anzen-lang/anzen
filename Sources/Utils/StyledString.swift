@@ -1,7 +1,10 @@
 import SystemKit
 
 // Check for color support.
-let hasColorSupport = System.environment["TERM"] != nil
+let hasColorSupport = { () -> Bool in
+  let term = System.environment["TERM"]
+  return term != nil && term != ""
+}()
 
 /// A syled string.
 ///
