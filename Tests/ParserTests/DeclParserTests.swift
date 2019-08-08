@@ -358,5 +358,51 @@ class DeclParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: UnionDecl.self))
   }
+
+  func testParseTypeExtDecl() {
+    var pr: ParseResult<ASTNode?>
+
+    pr = parse("extension Foo<T=Bar> {}", with: Parser.parseDecl)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: TypeExtDecl.self))
+    if let decl = pr.value as? TypeExtDecl {
+      assertThat(decl.extType, .isInstance(of: IdentSign.self))
+    }
+
+    pr = parse(
+      """
+      extension Foo {
+        let x
+        fun f()
+      }
+      """,
+      with: Parser.parseDecl)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: TypeExtDecl.self))
+    if let decl = pr.value as? TypeExtDecl {
+      assertThat(decl.body, .isInstance(of: BraceStmt.self))
+      if let body = decl.body as? BraceStmt {
+        assertThat(body.stmts, .count(2))
+        if body.stmts.count > 1 {
+          assertThat(body.stmts[1], .isInstance(of: FunDecl.self))
+          if let method = body.stmts[0] as? FunDecl {
+            assertThat(method.kind, .equals(.method))
+          }
+        }
+      }
+    }
+
+    let source =
+      """
+      extension Foo < T = Bar , > {
+        static mutating let x : Int <- 42
+        static mutating fun f < T , > ( _ x : Int , ) -> Int { }
+      }
+      """.split(separator: " ").joined(separator: "\n")
+    pr = parse(source, with: Parser.parseDecl)
+    print(pr.issues)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: TypeExtDecl.self))
+  }
   
 }

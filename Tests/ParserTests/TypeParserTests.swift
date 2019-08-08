@@ -69,7 +69,7 @@ class TypeParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: FunSign.self))
     if let sign = pr.value as? FunSign {
-      assertThat(sign.dom, .isEmpty)
+      assertThat(sign.params, .isEmpty)
       assertThat(sign.codom, .isInstance(of: QualTypeSign.self))
     }
 
@@ -77,16 +77,16 @@ class TypeParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: FunSign.self))
     if let sign = pr.value as? FunSign {
-      assertThat(sign.dom, .count(3))
-      if sign.dom.count > 2 {
-        assertThat(sign.dom[0].label, .equals("a"))
-        assertThat(sign.dom[0].sign, .isInstance(of: QualTypeSign.self))
+      assertThat(sign.params, .count(3))
+      if sign.params.count > 2 {
+        assertThat(sign.params[0].label, .equals("a"))
+        assertThat(sign.params[0].sign, .isInstance(of: QualTypeSign.self))
 
-        assertThat(sign.dom[1].label, .isNil)
-        assertThat(sign.dom[1].sign, .isInstance(of: QualTypeSign.self))
+        assertThat(sign.params[1].label, .isNil)
+        assertThat(sign.params[1].sign, .isInstance(of: QualTypeSign.self))
 
-        assertThat(sign.dom[2].label, .equals("c"))
-        assertThat(sign.dom[2].sign, .isInstance(of: QualTypeSign.self))
+        assertThat(sign.params[2].label, .equals("c"))
+        assertThat(sign.params[2].sign, .isInstance(of: QualTypeSign.self))
       }
     }
 

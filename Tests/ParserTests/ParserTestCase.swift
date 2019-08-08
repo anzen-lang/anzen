@@ -1,6 +1,6 @@
 import XCTest
 
-import AST
+@testable import AST
 @testable import Parser
 
 protocol ParserTestCase {
