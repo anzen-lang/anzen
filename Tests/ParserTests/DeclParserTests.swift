@@ -1,5 +1,6 @@
 import XCTest
 
+import AssertThat
 import AST
 @testable import Parser
 
@@ -404,5 +405,5 @@ class DeclParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: TypeExtDecl.self))
   }
-  
+
 }

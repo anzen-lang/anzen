@@ -1,5 +1,6 @@
 import XCTest
 
+import AssertThat
 import AST
 @testable import Parser
 
