@@ -79,42 +79,24 @@ public struct NameBinderPass {
     }
 
     func visit(_ node: InterfaceDecl) {
-      node.decls.append(ProxiedNamedDecl(node, name: "Self"))
       inDeclContext(node) {
         node.traverse(with: self)
       }
     }
 
     func visit(_ node: StructDecl) {
-      node.decls.append(ProxiedNamedDecl(node, name: "Self"))
       inDeclContext(node) {
         node.traverse(with: self)
       }
     }
 
     func visit(_ node: UnionDecl) {
-      node.decls.append(ProxiedNamedDecl(node, name: "Self"))
       inDeclContext(node) {
         node.traverse(with: self)
       }
     }
 
     func visit(_ node: TypeExtDecl) {
-      // Resolve the declaration of `Self`.
-      node.extType.accept(visitor: self)
-      switch node.extType {
-      case let ident as IdentSign:
-        if ident.referredDecl != nil {
-          node.decls.append(ProxiedNamedDecl(ident.referredDecl!, name: "Self"))
-        }
-
-      case let nestedIdent as NestedIdentSign:
-        fatalError("not implemented")
-
-      default:
-        assertionFailure("bad extended signature")
-      }
-
       inDeclContext(node) {
         node.body.accept(visitor: self)
       }
@@ -210,11 +192,6 @@ extension DeclContext {
         }
       }
 
-      // Resolve proxied declarations.
-      while let proxy = ownerDecl as? ProxiedNamedDecl {
-        ownerDecl = proxy.proxiedDecl
-      }
-
       // Look up the ownee in the owner's context.
       let ownee = qualifiedTypeName.ownee
       switch ownerDecl {
@@ -229,7 +206,7 @@ extension DeclContext {
           return nil
         }
 
-        assert(decls.count == 1, "bad extension on overloaded type name")
+        assert(decls.count == 1, "bad overloaded type name")
         return decls[0]
 
       case is BuiltinType:
@@ -271,6 +248,12 @@ extension DeclContext {
 
       // Handle nominal type declarations.
       if let nominalTypeDecl = currentContext as? NominalTypeDecl {
+        // `Self` in a nominal type always refers to the type itself.
+        if unqualifiedName == "Self" {
+          assert(matches.isEmpty, "'Self' should not be overloaded")
+          return [nominalTypeDecl]
+        }
+
         // Search in the member and its extensions.
         let memberMatches = nominalTypeDecl
           .lookup(memberName: unqualifiedName, inCompilerContext: context)
@@ -300,8 +283,27 @@ extension DeclContext {
       // Handle extension declarations.
       if let extDecl = currentContext as? TypeExtDecl {
         if let extendedDecl = extDecl.resolveExtendedTypeDecl(inCompilerContext: context) {
-          currentContext = extendedDecl as? DeclContext
-          continue
+          switch extendedDecl {
+          case let declContext as DeclContext:
+            // Continue the lookup in the extended declaration.
+            currentContext = declContext
+            continue
+
+          case is BuiltinTypeDecl:
+            // `Self` in a nominal type always refers to the type itself.
+            if unqualifiedName == "Self" {
+              assert(matches.isEmpty, "'Self' should not be overloaded")
+              return [extendedDecl]
+            }
+
+            // FIXME: Search in built-in type extensions.
+            currentContext = nil
+            continue
+
+          default:
+            assertionFailure("bad extended declaration")
+            break
+          }
         }
       }
 
@@ -326,7 +328,6 @@ extension NamedDecl {
   var isTypeDecl: Bool {
     return (self is NominalTypeDecl)
         || (self is GenericParamDecl)
-        || (self is ProxiedNamedDecl)
         || (self is BuiltinTypeDecl)
   }
 
