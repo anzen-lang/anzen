@@ -8,8 +8,8 @@ extension Issue {
     return "'\(name)' is not a type"
   }
 
-  static func nonExistingNestedType(owner: TypeSign, ownee: String) -> String {
-    return "type '\(owner)' does not have a nested type '\(ownee)'"
+  static func nonExistingNestedType(ownerDecl: NamedDecl, owneeName: String) -> String {
+    return "type '\(ownerDecl.name)' does not have a nested type '\(owneeName)'"
   }
 
   static func unboundIdentifier(name: String) -> String {
