@@ -16,9 +16,9 @@ public final class CompilerContext {
 
     // Load the core modules.
     builtinModule = Module(id: "__Builtin", state: .typeChecked)
-    for name in CompilerContext.builtinTypeNames {
-      let decl = BuiltinTypeDecl(name: name, module: builtinModule)
-      decl.type = BuiltinType(quals: [], context: self)
+    for name in BuiltinTypeName.allCases {
+      let decl = BuiltinTypeDecl(name: name.rawValue, module: builtinModule)
+      decl.type = BuiltinType(name: name.rawValue, context: self)
       builtinModule.decls.append(decl)
     }
     modules["__Builtin"] = builtinModule
@@ -85,21 +85,36 @@ public final class CompilerContext {
 
   // MARK: - Types
 
-  /// The names of the built-in types.
-  public static let builtinTypeNames: Set<String> = [
-    "Nothing", "Anything", "Bool", "Int", "Float", "String",
-  ]
+  /// An enumeration of the built-in types' names.
+  public enum BuiltinTypeName: String, CaseIterable {
+
+    case nothing = "Nothing"
+    case anything = "Anything"
+    case bool = "Bool"
+    case int = "Int"
+    case float = "Float"
+    case string = "String"
+
+    public static func contains(_ name: String) -> Bool {
+      return allCases.contains { $0.rawValue == name }
+    }
+
+  }
+
+  /// Returns the built-in semantic type corresponding the given name.
+  public func getBuiltinType(_ name: BuiltinTypeName) -> BuiltinType {
+    let decl = anzenModule.decls.first { ($0 as? BuiltinTypeDecl)?.name == name.rawValue }
+    return (decl as! BuiltinTypeDecl).type as! BuiltinType
+  }
 
   /// Anzen's `Nothing` type.
   public private(set) lazy var nothingType: BuiltinType = { [unowned self] in
-    let decl = self.anzenModule.decls.first { ($0 as? BuiltinTypeDecl)?.name == "Nothing" }
-    return (decl as! BuiltinTypeDecl).type as! BuiltinType
+    return self.getBuiltinType(.nothing)
   }()
 
   /// Anzen's `Anything` type.
   public private(set) lazy var anythingType: BuiltinType = { [unowned self] in
-    let decl = self.anzenModule.decls.first { ($0 as? BuiltinTypeDecl)?.name == "Anything" }
-    return (decl as! BuiltinTypeDecl).type as! BuiltinType
+    return self.getBuiltinType(.anything)
   }()
 
   /// The error type, representing type errors.

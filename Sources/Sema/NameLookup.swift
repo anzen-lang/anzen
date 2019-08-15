@@ -103,7 +103,7 @@ extension DeclContext {
     }
 
     // If no match could be bound, search in built-in types.
-    if matches.isEmpty && CompilerContext.builtinTypeNames.contains(unqualifiedName) {
+    if matches.isEmpty && CompilerContext.BuiltinTypeName.contains(unqualifiedName) {
       return [context.builtinModule.firstDecl(named: unqualifiedName)!]
     } else {
       // Should we ensure uniqueness of each result?

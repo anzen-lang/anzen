@@ -284,6 +284,14 @@ public final class UnionType: NominalType {
 /// A built-in type.
 public final class BuiltinType: TypeBase {
 
+  /// The type's name.
+  public let name: String
+
+  public init(name: String, context: CompilerContext) {
+    self.name = name
+    super.init(quals: [], context: context)
+  }
+
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
     return transformer.transform(self)
   }
