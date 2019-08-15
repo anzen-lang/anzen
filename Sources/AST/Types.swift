@@ -17,11 +17,17 @@ public class TypeBase: Hashable {
 
   /// The compiler context.
   public unowned let context: CompilerContext
+
   /// The type's qualifiers.
   public let quals: TypeQualSet
 
   /// The type's kind.
   public var kind: TypeKind { return context.getTypeKind(of: self) }
+
+  /// Returns the set of unbound generic placeholders occuring in the type.
+  public func getUnboundPlaceholders() -> Set<TypePlaceholder> {
+    return []
+  }
 
   internal init(quals: TypeQualSet, context: CompilerContext) {
     self.quals = quals
@@ -68,6 +74,10 @@ public final class TypeKind: TypeBase {
   /// The type constructed by this kind.
   public let type: TypeBase
 
+  public override func getUnboundPlaceholders() -> Set<TypePlaceholder> {
+    return type.getUnboundPlaceholders()
+  }
+
   internal init(of type: TypeBase, in context: CompilerContext) {
     self.type = type
     super.init(quals: [], context: context)
@@ -96,6 +106,10 @@ public final class TypePlaceholder: TypeBase {
   /// The placeholder's decl.
   public unowned let decl: GenericParamDecl
 
+  public override func getUnboundPlaceholders() -> Set<TypePlaceholder> {
+    return Set([self])
+  }
+
   internal init(quals: TypeQualSet, decl: GenericParamDecl, in context: CompilerContext) {
     self.decl = decl
     super.init(quals: quals, context: context)
@@ -118,8 +132,13 @@ public final class BoundGenericType: TypeBase {
 
   /// The type with unbound generic parameters.
   public let type: TypeBase
+
   /// The generic parameters' assignments.
   public let bindings: [TypePlaceholder: TypeBase]
+
+  public override func getUnboundPlaceholders() -> Set<TypePlaceholder> {
+    return type.getUnboundPlaceholders().subtracting(bindings.keys)
+  }
 
   internal init(
     type: TypeBase,
@@ -151,6 +170,7 @@ public final class FunType: TypeBase {
 
     /// The parameter's label.
     public let label: String?
+
     /// The parameter's type.
     public let type: TypeBase
 
@@ -163,10 +183,16 @@ public final class FunType: TypeBase {
 
   /// The function's generic paramters.
   public var genericParams: [TypePlaceholder]
+
   /// The function's domain.
   public var dom: [Param]
+
   /// The function's codomain
   public var codom: TypeBase
+
+  public override func getUnboundPlaceholders() -> Set<TypePlaceholder> {
+    return Set(genericParams)
+  }
 
   internal init(
     quals: TypeQualSet,
@@ -197,20 +223,30 @@ public final class FunType: TypeBase {
 }
 
 public class NominalType: TypeBase {
-}
-
-public final class InterfaceType: NominalType {
 
   /// The type's decl.
-  public unowned let decl: InterfaceDecl
+  public unowned let decl: NominalTypeDecl
+
   /// The types's generic parameters.
   public var genericParams: [TypePlaceholder] {
     return decl.genericParams.map { $0.type as! TypePlaceholder }
   }
 
-  internal init(quals: TypeQualSet, decl: InterfaceDecl, in context: CompilerContext) {
+  public override func getUnboundPlaceholders() -> Set<TypePlaceholder> {
+    return Set(genericParams)
+  }
+
+  fileprivate init(quals: TypeQualSet, decl: NominalTypeDecl, context: CompilerContext) {
     self.decl = decl
     super.init(quals: quals, context: context)
+  }
+
+}
+
+public final class InterfaceType: NominalType {
+
+  internal init(quals: TypeQualSet, decl: InterfaceDecl, in context: CompilerContext) {
+    super.init(quals: quals, decl: decl, context: context)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
@@ -228,16 +264,8 @@ public final class InterfaceType: NominalType {
 
 public final class StructType: NominalType {
 
-  /// The type's decl.
-  public unowned let decl: StructDecl
-  /// The type's generic paramters.
-  public var genericParams: [TypePlaceholder] {
-    return decl.genericParams.map { $0.type as! TypePlaceholder }
-  }
-
   internal init(quals: TypeQualSet, decl: StructDecl, in context: CompilerContext) {
-    self.decl = decl
-    super.init(quals: quals, context: context)
+    super.init(quals: quals, decl: decl, context: context)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
@@ -255,16 +283,8 @@ public final class StructType: NominalType {
 
 public final class UnionType: NominalType {
 
-  /// The type's decl.
-  public unowned let decl: UnionDecl
-  /// The type's generic paramters.
-  public var genericParams: [TypePlaceholder] {
-    return decl.genericParams.map { $0.type as! TypePlaceholder }
-  }
-
   internal init(quals: TypeQualSet, decl: UnionDecl, in context: CompilerContext) {
-    self.decl = decl
-    super.init(quals: quals, context: context)
+    super.init(quals: quals, decl: decl, context: context)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
