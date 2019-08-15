@@ -1,10 +1,4 @@
-struct Anything {
-}
-
-struct Nothing {
-}
-
-struct Bool {
+extension Bool {
 
   @air_name(__band) fun and (_ rhs: Self) -> Self
   @air_name(__bor)  fun or  (_ rhs: Self) -> Self
@@ -13,7 +7,7 @@ struct Bool {
 
 }
 
-struct Int {
+extension Int {
 
   @air_name(__iadd) fun +  (_ rhs: Self) -> Self
   @air_name(__isub) fun -  (_ rhs: Self) -> Self
@@ -30,7 +24,7 @@ struct Int {
 
 }
 
-struct Float {
+extension Float {
 
   @air_name(__fadd) fun +  (_ rhs: Self) -> Self
   @air_name(__fsub) fun -  (_ rhs: Self) -> Self
@@ -45,18 +39,6 @@ struct Float {
   @air_name(__fgt)  fun >  (_ rhs: Self) -> Bool
   @air_name(__fge)  fun >= (_ rhs: Self) -> Bool
 
-}
-
-struct String {
-}
-
-struct Array<Element> {
-}
-
-struct Set<Element> {
-}
-
-struct Map<Key, Element> {
 }
 
 @air_name(__print)
