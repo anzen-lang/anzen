@@ -228,7 +228,7 @@ public class Parser {
   func consume(_ category: TokenKind.Category, afterMany skipKind: TokenKind) -> Token? {
     let backtrackPosition = streamPosition
     consumeMany { $0.kind == skipKind }
-    if let result = consume(if: { ($0.kind | category) > 0 }) {
+    if let result = consume(if: { ($0.kind & category) > 0 }) {
       return result
     }
     rewind(to: backtrackPosition)
