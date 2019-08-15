@@ -206,6 +206,10 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: BuiltinTypeDecl) {
+    self <<< indent <<< "(builtin_type_decl \(node.name))"
+  }
+
   public func visit(_ node: QualTypeSign) {
     self <<< indent <<< "(qual_type_sign"
     if !node.quals.isEmpty {

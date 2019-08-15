@@ -16,6 +16,7 @@ public protocol ASTVisitor {
   func visit(_ node: UnionDecl)
   func visit(_ node: UnionNestedDecl)
   func visit(_ node: TypeExtDecl)
+  func visit(_ node: BuiltinTypeDecl)
 
   // MARK: - Type signatures
 
@@ -106,6 +107,10 @@ extension ASTVisitor {
   }
 
   public func visit(_ node: TypeExtDecl) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: BuiltinTypeDecl) {
     node.traverse(with: self)
   }
 
