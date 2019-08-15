@@ -3,8 +3,8 @@ import AST
 /// A module pass that binds identifiers to their declaration contexts.
 ///
 /// This pass takes place immediately after parsing, and links value and type identifiers to their
-/// declaration context. Because of overloading, the actual declaration node to which an identifier
-/// refers cannot be decided before type inference completes.
+/// declarations. Because of overloading, determining the declaration node to which an identifier
+/// refers might have to be delayed until after type inference completes.
 public struct NameBinderPass {
 
   /// The compiler context.
@@ -31,7 +31,7 @@ public struct NameBinderPass {
   private final class Binder: ASTVisitor {
 
     /// The compiler context.
-    public let context: CompilerContext
+    let context: CompilerContext
 
     /// An array that keeps track of the property or parameter declaration being visited
     ///
