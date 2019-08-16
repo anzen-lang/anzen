@@ -22,7 +22,7 @@ public final class QualTypeSign: ASTNode {
   /// The semantic type definition of the signature.
   public var sign: TypeSign?
   /// The type realized from this signature.
-  public var type: TypeBase?
+  public var type: QualType?
 
   public init(quals: TypeQualSet, sign: TypeSign?, module: Module, range: SourceRange) {
     self.quals = quals
@@ -69,7 +69,7 @@ public final class IdentSign: TypeSign {
   public var specArgs: [String: QualTypeSign]
 
   /// The declaration to which this identifier refers.
-  public var referredDecl: NamedDecl?
+  public var referredDecl: (NamedDecl & TypeDecl)?
 
   public init(
     name: String,
@@ -118,6 +118,7 @@ public final class NestedIdentSign: TypeSign {
 
   /// The identifier's owning type.
   public var owner: TypeSign
+
   /// The nested identifier.
   public var ownee: IdentSign
 
@@ -235,11 +236,7 @@ public final class FunSign: TypeSign {
 }
 
 /// A parameter of a function type signature.
-public final class ParamSign: TypeSign {
-
-  /// TypeSign requirements
-
-  public var type: TypeBase?
+public final class ParamSign: ASTNode {
 
   /// ASTNode requirements
 
@@ -248,8 +245,12 @@ public final class ParamSign: TypeSign {
 
   /// The parameter's label.
   public var label: String?
+
   /// The parameter's signature.
   public var sign: QualTypeSign
+
+  /// The parameter's type.
+  public var type: QualType?
 
   public init(label: String?, sign: QualTypeSign, module: Module, range: SourceRange) {
     self.label = label

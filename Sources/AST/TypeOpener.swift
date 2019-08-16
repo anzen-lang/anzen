@@ -58,12 +58,16 @@ public class TypeOpener: TypeTransformer {
     let newOpener = TypeOpener(bindings: newBindings, context: context)
 
     return context.getFunType(
-      quals: ty.quals,
       genericParams: [],
       dom: ty.dom.map({
-        FunType.Param(label: $0.label, type: $0.type.accept(transformer: newOpener))
+        let ty = QualType(
+          bareType: $0.type.bareType.accept(transformer: newOpener),
+          quals: $0.type.quals)
+        return FunType.Param(label: $0.label, type: ty)
       }),
-      codom: ty.codom.accept(transformer: newOpener))
+      codom: QualType(
+        bareType: ty.codom.bareType.accept(transformer: newOpener),
+        quals: ty.codom.quals))
   }
 
   /// Opens an interface type.

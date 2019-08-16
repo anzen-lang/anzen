@@ -12,26 +12,79 @@ public struct TypeQualSet: OptionSet, Hashable {
 
 }
 
-/// A type object
+/// A qualified semantic type.
+public struct QualType: Hashable {
+
+  /// The unqualified type.
+  public let bareType: TypeBase
+
+  /// The type's qualifieirs.
+  public let quals: TypeQualSet
+
+  public init(bareType: TypeBase, quals: TypeQualSet) {
+    self.bareType = bareType
+    self.quals = quals
+  }
+
+}
+
+/// A structure that stores various information about a type.
+public struct TypeInfo {
+
+  private let bits: Int
+
+  public init(bits: Int) {
+    self.bits = bits
+  }
+
+  public init(props: Int, typeID: Int) {
+    // Stores the type ID in the 16 most significant bits.
+    let n = Int.bitWidth - 16
+    self.bits = (typeID << n) | props
+  }
+
+  /// The type's identifier, if any.
+  var typeID: Int {
+    let n = Int.bitWidth - 16
+    let m = ((1 << 16) - 1) << n
+    return (bits & m) >> n
+  }
+
+  /// Indicates a type in which one or more type variables occur.
+  static let hasTypeVar = 1
+
+  static func | (lhs: TypeInfo, rhs: TypeInfo) -> TypeInfo {
+    return TypeInfo(bits: lhs.bits | rhs.bits)
+  }
+
+}
+
+/// A semantic type.
 public class TypeBase: Hashable {
 
   /// The compiler context.
   public unowned let context: CompilerContext
 
-  /// The type's qualifiers.
-  public let quals: TypeQualSet
+  /// Various information about this type.
+  var info: TypeInfo
 
   /// The type's kind.
   public var kind: TypeKind { return context.getTypeKind(of: self) }
+
+  /// The type qualified with the `@cst` qualifier.
+  public var cst: QualType { return QualType(bareType: self, quals: [.cst]) }
+
+  /// The type qualified with the `@mut` qualifier.
+  public var mut: QualType { return QualType(bareType: self, quals: [.mut]) }
 
   /// Returns the set of unbound generic placeholders occuring in the type.
   public func getUnboundPlaceholders() -> Set<TypePlaceholder> {
     return []
   }
 
-  internal init(quals: TypeQualSet, context: CompilerContext) {
-    self.quals = quals
+  internal init(context: CompilerContext, info: TypeInfo) {
     self.context = context
+    self.info = info
   }
 
   public static func == (lhs: TypeBase, rhs: TypeBase) -> Bool {
@@ -78,16 +131,15 @@ public final class TypeKind: TypeBase {
     return type.getUnboundPlaceholders()
   }
 
-  internal init(of type: TypeBase, in context: CompilerContext) {
+  internal init(of type: TypeBase, context: CompilerContext, info: TypeInfo) {
     self.type = type
-    super.init(quals: [], context: context)
+    super.init(context: context, info: info)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
     guard let rhs = other as? TypeKind
       else { return false }
-    return (self.quals == rhs.quals)
-        && (self.type === rhs.type)
+    return self.type === rhs.type
   }
 
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
@@ -110,15 +162,15 @@ public final class TypePlaceholder: TypeBase {
     return Set([self])
   }
 
-  internal init(quals: TypeQualSet, decl: GenericParamDecl, in context: CompilerContext) {
+  internal init(decl: GenericParamDecl, context: CompilerContext, info: TypeInfo) {
     self.decl = decl
-    super.init(quals: quals, context: context)
+    super.init(context: context, info: info)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
-    guard let rhs = other as? TypePlaceholder else { return false }
-    return (self.quals == rhs.quals)
-        && (self.decl === rhs.decl)
+    guard let rhs = other as? TypePlaceholder
+      else { return false }
+    return self.decl === rhs.decl
   }
 
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
@@ -143,17 +195,17 @@ public final class BoundGenericType: TypeBase {
   internal init(
     type: TypeBase,
     bindings: [TypePlaceholder: TypeBase],
-    in context: CompilerContext)
+    context: CompilerContext,
+    info: TypeInfo)
   {
     self.type = type
     self.bindings = bindings
-    super.init(quals: type.quals, context: context)
+    super.init(context: context, info: info)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
     guard let rhs = other as? BoundGenericType else { return false }
-    return (self.quals == rhs.quals)
-        && (self.type === rhs.type)
+    return (self.type === rhs.type)
         && (self.bindings == rhs.bindings)
   }
 
@@ -172,9 +224,9 @@ public final class FunType: TypeBase {
     public let label: String?
 
     /// The parameter's type.
-    public let type: TypeBase
+    public let type: QualType
 
-    public init(label: String? = nil, type: TypeBase) {
+    public init(label: String? = nil, type: QualType) {
       self.label = label
       self.type = type
     }
@@ -188,30 +240,29 @@ public final class FunType: TypeBase {
   public var dom: [Param]
 
   /// The function's codomain
-  public var codom: TypeBase
+  public var codom: QualType
 
   public override func getUnboundPlaceholders() -> Set<TypePlaceholder> {
     return Set(genericParams)
   }
 
   internal init(
-    quals: TypeQualSet,
     genericParams: [TypePlaceholder],
     dom: [Param],
-    codom: TypeBase,
-    in context: CompilerContext)
+    codom: QualType,
+    context: CompilerContext,
+    info: TypeInfo)
   {
     self.genericParams = genericParams
     self.dom = dom
     self.codom = codom
-    super.init(quals: quals, context: context)
+    super.init(context: context, info: info)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
     guard let rhs = other as? FunType
       else { return false }
-    return (self.quals == rhs.quals)
-        && (self.genericParams == rhs.genericParams)
+    return (self.genericParams == rhs.genericParams)
         && (self.dom == rhs.dom)
         && (self.codom == rhs.codom)
   }
@@ -236,24 +287,23 @@ public class NominalType: TypeBase {
     return Set(genericParams)
   }
 
-  fileprivate init(quals: TypeQualSet, decl: NominalTypeDecl, context: CompilerContext) {
+  fileprivate init(decl: NominalTypeDecl, context: CompilerContext, info: TypeInfo) {
     self.decl = decl
-    super.init(quals: quals, context: context)
+    super.init(context: context, info: info)
   }
 
 }
 
 public final class InterfaceType: NominalType {
 
-  internal init(quals: TypeQualSet, decl: InterfaceDecl, in context: CompilerContext) {
-    super.init(quals: quals, decl: decl, context: context)
+  internal init(decl: InterfaceDecl, context: CompilerContext, info: TypeInfo) {
+    super.init(decl: decl, context: context, info: info)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
     guard let rhs = other as? InterfaceType
       else { return false }
-    return (self.quals == rhs.quals)
-      && (self.decl === rhs.decl)
+    return self.decl === rhs.decl
   }
 
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
@@ -264,15 +314,14 @@ public final class InterfaceType: NominalType {
 
 public final class StructType: NominalType {
 
-  internal init(quals: TypeQualSet, decl: StructDecl, in context: CompilerContext) {
-    super.init(quals: quals, decl: decl, context: context)
+  internal init(decl: StructDecl, context: CompilerContext, info: TypeInfo) {
+    super.init(decl: decl, context: context, info: info)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
     guard let rhs = other as? StructType
       else { return false }
-    return (self.quals == rhs.quals)
-        && (self.decl === rhs.decl)
+    return self.decl === rhs.decl
   }
 
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
@@ -283,14 +332,14 @@ public final class StructType: NominalType {
 
 public final class UnionType: NominalType {
 
-  internal init(quals: TypeQualSet, decl: UnionDecl, in context: CompilerContext) {
-    super.init(quals: quals, decl: decl, context: context)
+  internal init(decl: UnionDecl, context: CompilerContext, info: TypeInfo) {
+    super.init(decl: decl, context: context, info: info)
   }
 
   internal override func equals(to other: TypeBase) -> Bool {
-    guard let rhs = other as? UnionType else { return false }
-    return (self.quals == rhs.quals)
-        && (self.decl === rhs.decl)
+    guard let rhs = other as? UnionType
+      else { return false }
+    return self.decl === rhs.decl
   }
 
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
@@ -309,7 +358,7 @@ public final class BuiltinType: TypeBase {
 
   public init(name: String, context: CompilerContext) {
     self.name = name
-    super.init(quals: [], context: context)
+    super.init(context: context, info: TypeInfo(bits: 0))
   }
 
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
@@ -320,6 +369,10 @@ public final class BuiltinType: TypeBase {
 
 /// The type of invalid expressions and signatures.
 public final class ErrorType: TypeBase {
+
+  public init(context: CompilerContext) {
+    super.init(context: context, info: TypeInfo(bits: 0))
+  }
 
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
     return transformer.transform(self)

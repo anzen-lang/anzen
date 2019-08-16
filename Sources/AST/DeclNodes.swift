@@ -9,8 +9,6 @@ public protocol NamedDecl: Decl {
   var declContext: DeclContext? { get set }
   /// The declared entity's name.
   var name: String { get }
-  /// This declared entity's type.
-  var type: TypeBase? { get }
   /// Whether this declaration is overloadable.
   var isOverloadable: Bool { get }
 
@@ -20,14 +18,17 @@ extension NamedDecl {
 
   public var isOverloadable: Bool { return false }
 
-  /// Whether this declaration is a type declaration.
-  public var isTypeDecl: Bool {
-    return (self is NominalTypeDecl)
-      || (self is GenericParamDecl)
-      || (self is BuiltinTypeDecl)
-  }
+}
+
+/// A node that represents a type declaration.
+public protocol TypeDecl: ASTNode {
+
+  /// The semantic type corresponding to the declaration.
+  var type: TypeBase? { get }
 
 }
+
+public typealias NamedTypeDecl = NamedDecl & TypeDecl
 
 /// A declaration node that wraps top-level statements of the main translation unit.
 public final class MainCodeDecl: Decl, DeclContext {
@@ -178,10 +179,12 @@ public final class PropDecl: NamedDecl, Stmt {
   // NamedDecl requirements
 
   public var name: String
-  public var type: TypeBase?
   public weak var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
+
+  /// The property's semantic type.
+  public var type: QualType?
 
   /// Whether the property's reassignable.
   public var isReassignable: Bool
@@ -279,7 +282,6 @@ public final class FunDecl: NamedDecl, Stmt, DeclContext {
   }
 
   public var name: String
-  public var type: TypeBase?
   public weak var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
@@ -288,6 +290,9 @@ public final class FunDecl: NamedDecl, Stmt, DeclContext {
 
   public var parent: DeclContext? { return declContext }
   public var decls: [Decl] = []
+
+  /// The function's semantic type.
+  public var type: QualType?
 
   /// The function's declaration attributes.
   public var attrs: Set<DeclAttr>
@@ -355,15 +360,21 @@ public final class FunDecl: NamedDecl, Stmt, DeclContext {
 }
 
 /// A generic parameter declaration.
-public final class GenericParamDecl: NamedDecl {
+public final class GenericParamDecl: NamedDecl, TypeDecl {
 
   // NamedDecl requirements
 
   public var name: String
-  public var type: TypeBase?
   public weak var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
+
+  // TypeDecl requirements
+
+  /// The semantic type corresponding to the declaration. This must be a type placeholder.
+  public var type: TypeBase? {
+    didSet { assert((type == nil) || (type is TypePlaceholder)) }
+  }
 
   public init(name: String, module: Module, range: SourceRange) {
     self.name = name
@@ -394,15 +405,19 @@ public final class ParamDecl: NamedDecl {
   // NamedDecl requirements
 
   public var name: String
-  public var type: TypeBase?
   public weak var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
 
+  /// The parameter's semantic type.
+  public var type: QualType?
+
   /// The parameter's label.
   public var label: String?
+
   /// The parameter's type signature.
   public var sign: QualTypeSign?
+
   /// The parameter's default value.
   public var defaultValue: Expr?
 
@@ -442,10 +457,12 @@ public final class ParamDecl: NamedDecl {
 
 }
 
-public protocol NominalTypeDecl: NamedDecl, DeclContext {
+/// A nominal type declaration.
+public protocol NominalTypeDecl: NamedDecl, TypeDecl, DeclContext {
 
   /// The type's generic parameters.
   var genericParams: [GenericParamDecl] { get }
+
   /// The type declaration's body.
   var body: Stmt { get }
 
@@ -471,10 +488,13 @@ public final class InterfaceDecl: NominalTypeDecl {
   // NamedDecl requirements
 
   public var name: String
-  public var type: TypeBase?
   public weak var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
+
+  // TypeDecl requirements
+
+  public var type: TypeBase?
 
   // DeclContext requirements
 
@@ -531,10 +551,13 @@ public final class StructDecl: NominalTypeDecl {
   // NamedDecl requirements
 
   public var name: String
-  public var type: TypeBase?
   public weak var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
+
+  // TypeDecl requirements
+
+  public var type: TypeBase?
 
   // DeclContext requirements
 
@@ -592,10 +615,13 @@ public final class UnionDecl: NominalTypeDecl {
   // NamedDecl requirements
 
   public var name: String
-  public var type: TypeBase?
   public weak var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
+
+  // TypeDecl requirements
+
+  public var type: TypeBase?
 
   // DeclContext requirements
 
@@ -688,12 +714,13 @@ public final class TypeExtDecl: Decl, DeclContext {
   public var decls: [Decl] = []
 
   /// The signature of the type being extended. This should represent a nominal type.
-  public var extType: TypeSign
+  public var extTypeSign: TypeSign
+
   /// The extensions's body.
   public var body: Stmt
 
   public init(type: TypeSign, body: Stmt, module: Module, range: SourceRange) {
-    self.extType = type
+    self.extTypeSign = type
     self.body = body
     self.module = module
     self.range = range
@@ -704,7 +731,7 @@ public final class TypeExtDecl: Decl, DeclContext {
   }
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
-    extType.accept(visitor: visitor)
+    extTypeSign.accept(visitor: visitor)
     body.accept(visitor: visitor)
   }
 
@@ -713,7 +740,7 @@ public final class TypeExtDecl: Decl, DeclContext {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    extType = extType.accept(transformer: transformer) as! TypeSign
+    extTypeSign = extTypeSign.accept(transformer: transformer) as! TypeSign
     body = body.accept(transformer: transformer) as! Stmt
     return self
   }
@@ -721,17 +748,20 @@ public final class TypeExtDecl: Decl, DeclContext {
 }
 
 /// A built-in type declaration.
-public final class BuiltinTypeDecl: NamedDecl {
+public final class BuiltinTypeDecl: NamedDecl, TypeDecl {
 
   // NamedDecl requirements
 
   public var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
-
   public let name: String
-  public var type: TypeBase?
+
   public var memberLookupTable: MemberLookupTable?
+
+  // TypeDecl requirements
+
+  public var type: TypeBase?
 
   public init(name: String, module: Module) {
     self.name = name

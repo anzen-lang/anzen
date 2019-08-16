@@ -145,14 +145,21 @@ public struct NameBinderPass {
       let decls = currentDeclContext.lookup(unqualifiedName: node.name, inCompilerContext: context)
       if decls.isEmpty {
         node.registerError(message: Issue.unboundIdentifier(name: node.name))
-      } else if !decls[0].isTypeDecl {
+      } else if !(decls[0] is TypeDecl) {
         node.registerError(message: Issue.invalidTypeIdentifier(name: node.name))
       } else {
         assert(decls.count == 1, "bad extension on overloaded type name")
-        node.referredDecl = decls[0]
+        node.referredDecl = (decls[0] as! NamedTypeDecl)
       }
 
       node.traverse(with: self)
+    }
+
+    func visit(_ node: NestedIdentSign) {
+      node.owner.accept(visitor: self)
+    }
+
+    func visit(_ node: ImplicitNestedIdentSign) {
     }
 
     // MARK: Helpers

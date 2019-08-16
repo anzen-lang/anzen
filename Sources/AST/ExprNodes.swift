@@ -1,8 +1,8 @@
 /// A node that represents an expression.
 public protocol Expr: ASTNode {
 
-  /// The expression's type.
-  var type: TypeBase? { get set }
+  /// The expression's semantic type.
+  var type: QualType? { get set }
 
 }
 
@@ -11,7 +11,7 @@ public final class NullExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -42,7 +42,7 @@ public final class LambdaExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -95,7 +95,7 @@ public final class UnsafeCastExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -159,7 +159,7 @@ public final class InfixExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -216,7 +216,7 @@ public final class PrefixExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -258,7 +258,7 @@ public final class CallExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -300,7 +300,7 @@ public final class CallArgExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -351,7 +351,7 @@ public final class IdentExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -406,7 +406,7 @@ public final class SelectExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -448,7 +448,7 @@ public final class ImplicitSelectExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -485,7 +485,7 @@ public final class ArrayLitExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -522,7 +522,7 @@ public final class SetLitExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -559,7 +559,7 @@ public final class MapLitExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -637,7 +637,7 @@ public final class BoolLitExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -672,7 +672,7 @@ public final class IntLitExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -707,7 +707,7 @@ public final class FloatLitExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -742,7 +742,7 @@ public final class StrLitExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -773,13 +773,11 @@ public final class StrLitExpr: Expr {
 }
 
 /// An expression enclosed in parenthesis.
-///
-/// This type is for internal use only. It serves to parse operator precedence correctly.
 public final class ParenExpr: Expr {
 
   // Expr requirements
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 
@@ -817,7 +815,7 @@ public final class ParenExpr: Expr {
 /// that couldn't not be parsed.
 public final class InvalidExpr: Expr {
 
-  public var type: TypeBase?
+  public var type: QualType?
   public unowned var module: Module
   public var range: SourceRange
 

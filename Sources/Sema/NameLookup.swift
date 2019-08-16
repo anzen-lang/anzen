@@ -126,7 +126,7 @@ extension DeclContext {
         if decls.isEmpty {
           ident.registerError(message: Issue.unboundIdentifier(name: ident.name))
           return nil
-        } else if !decls[0].isTypeDecl {
+        } else if !(decls[0] is TypeDecl) {
           ident.registerError(message: Issue.invalidTypeIdentifier(name: ident.name))
           return nil
         }
@@ -144,7 +144,7 @@ extension DeclContext {
           ownee.registerError(
             message: Issue.nonExistingNestedType(ownerDecl: ownerDecl, owneeName: ownee.name))
           return nil
-        } else if !decls[0].isTypeDecl {
+        } else if !(decls[0] is TypeDecl) {
           ownee.registerError(message: Issue.invalidTypeIdentifier(name: ownee.name))
           return nil
         }
@@ -192,7 +192,7 @@ extension NominalTypeDecl {
       // The type isn't nested, so we can look up its name directly.
       for decl in searchModule.decls {
         if let extDecl = decl as? TypeExtDecl,
-          let sign = extDecl.extType as? IdentSign,
+          let sign = extDecl.extTypeSign as? IdentSign,
           nameComponents[0] == sign.name
         {
           extDecls.append(extDecl)
@@ -202,7 +202,7 @@ extension NominalTypeDecl {
       // The type is nested, so we need to match its qualified name with a nested type signature.
       for decl in searchModule.decls {
         if let extDecl = decl as? TypeExtDecl,
-          let sign = extDecl.extType as? NestedIdentSign,
+          let sign = extDecl.extTypeSign as? NestedIdentSign,
           nameComponents == sign.qualifiedName
         {
           extDecls.append(extDecl)
@@ -260,7 +260,7 @@ extension TypeExtDecl {
 
   /// Resolves the extended type's declaration node.
   func resolveExtendedTypeDecl(inCompilerContext context: CompilerContext) -> NamedDecl? {
-    switch extType {
+    switch extTypeSign {
     case let ident as IdentSign:
       if ident.referredDecl != nil {
         return ident.referredDecl!
@@ -269,12 +269,12 @@ extension TypeExtDecl {
         if decls.isEmpty {
           ident.registerError(message: Issue.unboundIdentifier(name: ident.name))
           return nil
-        } else if !decls[0].isTypeDecl {
+        } else if !(decls[0] is TypeDecl) {
           ident.registerError(message: Issue.invalidTypeIdentifier(name: ident.name))
           return nil
         }
 
-        ident.referredDecl = decls[0]
+        ident.referredDecl = (decls[0] as! (TypeDecl & NamedDecl))
         return decls[0]
       }
 

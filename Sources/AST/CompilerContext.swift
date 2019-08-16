@@ -119,7 +119,7 @@ public final class CompilerContext {
 
   /// The error type, representing type errors.
   public private(set) lazy var errorType: ErrorType = { [unowned self] in
-    ErrorType(quals: [], context: self)
+    ErrorType(context: self)
   }()
 
   /// The type uniqueness table.
@@ -145,18 +145,22 @@ public final class CompilerContext {
 
   /// Returns the kind of the given type.
   public func getTypeKind(of type: TypeBase) -> TypeKind {
-    let ty = TypeKind(of: type, in: self)
+    let ty = TypeKind(of: type, context: self, info: type.info)
     return insertType(ty) as! TypeKind
   }
 
+  private var nextTypeVarID = 0
+
   /// Returns a new type variable.
-  public func getTypeVar(quals: TypeQualSet = []) -> TypeVar {
-    return TypeVar(quals: quals, context: self)
+  public func getTypeVar() -> TypeVar {
+    nextTypeVarID += 1
+    let info = TypeInfo(props: TypeInfo.hasTypeVar, typeID: nextTypeVarID)
+    return TypeVar(context: self, info: info)
   }
 
   /// Builds (if necessary) and returns the requested type placeholder.
-  public func getTypePlaceholder(quals: TypeQualSet = [], decl: GenericParamDecl) -> TypePlaceholder {
-    let ty = TypePlaceholder(quals: quals, decl: decl, in: self)
+  public func getTypePlaceholder(decl: GenericParamDecl) -> TypePlaceholder {
+    let ty = TypePlaceholder(decl: decl, context: self, info: TypeInfo(bits: 0))
     return insertType(ty) as! TypePlaceholder
   }
 
@@ -165,36 +169,57 @@ public final class CompilerContext {
     type: TypeBase,
     bindings: [TypePlaceholder: TypeBase]) -> BoundGenericType
   {
-    let ty = BoundGenericType(type: type, bindings: bindings, in: self)
+    let info = type.info
+
+    // Make sure to build a canonical representation of the bounds.
+    let ty: BoundGenericType
+    if let underlying = type as? BoundGenericType {
+      ty = BoundGenericType(
+        type: underlying.type,
+        bindings: underlying.bindings.merging(bindings) { lhs, _ in lhs },
+        context: self,
+        info: info)
+    } else {
+      ty = BoundGenericType(type: type, bindings: bindings, context: self, info: info)
+    }
+    assert(!(ty.type is BoundGenericType))
     return insertType(ty) as! BoundGenericType
   }
 
   /// Creates (if necessary) and returns the requested function type.
   public func getFunType(
-    quals: TypeQualSet = [],
     genericParams: [TypePlaceholder] = [],
     dom: [FunType.Param],
-    codom: TypeBase) -> FunType
+    codom: QualType) -> FunType
   {
-    let ty = FunType(quals: quals, genericParams: genericParams, dom: dom, codom: codom, in: self)
+    let info = dom.reduce(codom.bareType.info) { result, param in
+      result | param.type.bareType.info
+    }
+
+    let ty = FunType(
+      genericParams: genericParams,
+      dom: dom,
+      codom: codom,
+      context: self,
+      info: info)
     return insertType(ty) as! FunType
   }
 
   /// Creates (if necessary) and returns the requested interface type.
-  public func getInterfaceType(quals: TypeQualSet = [], decl: InterfaceDecl) -> InterfaceType {
-    let ty = InterfaceType(quals: quals, decl: decl, in: self)
+  public func getInterfaceType(decl: InterfaceDecl) -> InterfaceType {
+    let ty = InterfaceType(decl: decl, context: self, info: TypeInfo(bits: 0))
     return insertType(ty) as! InterfaceType
   }
 
   /// Creates (if necessary) and returns the requested struct type.
-  public func getStructType(quals: TypeQualSet = [], decl: StructDecl) -> StructType {
-    let ty = StructType(quals: quals, decl: decl, in: self)
+  public func getStructType(decl: StructDecl) -> StructType {
+    let ty = StructType(decl: decl, context: self, info: TypeInfo(bits: 0))
     return insertType(ty) as! StructType
   }
 
   /// Creates (if necessary) and returns the requested union type.
-  public func getUnionType(quals: TypeQualSet = [], decl: UnionDecl) -> UnionType {
-    let ty = UnionType(quals: quals, decl: decl, in: self)
+  public func getUnionType(decl: UnionDecl) -> UnionType {
+    let ty = UnionType(decl: decl, context: self, info: TypeInfo(bits: 0))
     return insertType(ty) as! UnionType
   }
 
