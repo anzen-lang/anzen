@@ -5,7 +5,7 @@ import SystemKit
 do {
   // Create the compiler context.
   let anzenPath = Path(pathname: System.environment["ANZENPATH"] ?? "/usr/local/include/Anzen")
-  let loader = ConcreteModuleLoader ()
+  let loader = ConcreteModuleLoader()
   let context: CompilerContext
   do {
     context = try CompilerContext(anzenPath: anzenPath, loader: loader)

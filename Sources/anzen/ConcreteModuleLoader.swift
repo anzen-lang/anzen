@@ -28,7 +28,7 @@ public struct ConcreteModuleLoader: ModuleLoader {
 
     // Typecheck the module.
     NameBinderPass(module: module, context: context).process()
-    // TypeRealizerPass(module: module, context: context).process()
+    TypeRealizerPass(module: module, context: context).process()
 
     return module
   }
