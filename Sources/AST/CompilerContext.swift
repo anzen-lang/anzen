@@ -18,7 +18,9 @@ public final class CompilerContext {
     builtinModule = Module(id: "__Builtin", generationNumber: 0, state: .typeChecked)
     for name in BuiltinTypeName.allCases {
       let decl = BuiltinTypeDecl(name: name.rawValue, module: builtinModule)
-      decl.type = BuiltinType(name: name.rawValue, context: self)
+      decl.type = BuiltinType(decl: decl, context: self)
+      decl.declContext = builtinModule
+
       builtinModule.decls.append(decl)
     }
     modules["__Builtin"] = builtinModule

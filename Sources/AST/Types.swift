@@ -353,11 +353,14 @@ public final class UnionType: NominalType {
 /// A built-in type.
 public final class BuiltinType: TypeBase {
 
-  /// The type's name.
-  public let name: String
+  /// The type's decl.
+  public unowned let decl: BuiltinTypeDecl
 
-  public init(name: String, context: CompilerContext) {
-    self.name = name
+  /// The type's name.
+  public var name: String { return decl.name }
+
+  public init(decl: BuiltinTypeDecl, context: CompilerContext) {
+    self.decl = decl
     super.init(context: context, info: TypeInfo(bits: 0))
   }
 
