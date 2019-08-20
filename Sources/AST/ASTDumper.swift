@@ -147,9 +147,11 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
         withIndentation { self <<< node.genericParams }
         self <<< ")"
       }
-      self <<< "\n" <<< indent <<< "(body\n"
-      withIndentation { node.body.accept(visitor: self) }
-      self <<< ")"
+      if let body = node.body {
+        self <<< "\n" <<< indent <<< "(body\n"
+        withIndentation { body.accept(visitor: self) }
+        self <<< ")"
+      }
     }
     self <<< ")"
   }
@@ -164,9 +166,11 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
         withIndentation { self <<< node.genericParams }
         self <<< ")"
       }
-      self <<< "\n" <<< indent <<< "(body\n"
-      withIndentation { node.body.accept(visitor: self) }
-      self <<< ")"
+      if let body = node.body {
+        self <<< "\n" <<< indent <<< "(body\n"
+        withIndentation { body.accept(visitor: self) }
+        self <<< ")"
+      }
     }
     self <<< ")"
   }
@@ -181,9 +185,11 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
         withIndentation { self <<< node.genericParams }
         self <<< ")"
       }
-      self <<< "\n" <<< indent <<< "(body\n"
-      withIndentation { node.body.accept(visitor: self) }
-      self <<< ")"
+      if let body = node.body {
+        self <<< "\n" <<< indent <<< "(body\n"
+        withIndentation { body.accept(visitor: self) }
+        self <<< ")"
+      }
     }
     self <<< ")"
   }

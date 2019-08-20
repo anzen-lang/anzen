@@ -464,7 +464,7 @@ public protocol NominalTypeDecl: NamedDecl, TypeDecl, DeclContext {
   var genericParams: [GenericParamDecl] { get }
 
   /// The type declaration's body.
-  var body: Stmt { get }
+  var body: BraceStmt? { get }
 
   /// The member lookup table of this type.
   ///
@@ -482,7 +482,7 @@ public final class InterfaceDecl: NominalTypeDecl {
   // NominalTypeDecl requirements
 
   public var genericParams: [GenericParamDecl]
-  public var body: Stmt
+  public var body: BraceStmt?
   public var memberLookupTable: MemberLookupTable?
 
   // NamedDecl requirements
@@ -504,7 +504,7 @@ public final class InterfaceDecl: NominalTypeDecl {
   public init(
     name: String,
     genericParams: [GenericParamDecl] = [],
-    body: Stmt,
+    body: BraceStmt?,
     module: Module,
     range: SourceRange)
   {
@@ -521,7 +521,7 @@ public final class InterfaceDecl: NominalTypeDecl {
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
     genericParams.forEach { $0.accept(visitor: visitor) }
-    body.accept(visitor: visitor)
+    body?.accept(visitor: visitor)
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -531,7 +531,7 @@ public final class InterfaceDecl: NominalTypeDecl {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
-    body = body.accept(transformer: transformer) as! Stmt
+    body = body?.accept(transformer: transformer) as? BraceStmt
     return self
   }
 
@@ -545,7 +545,7 @@ public final class StructDecl: NominalTypeDecl {
   // NominalTypeDecl requirements
 
   public var genericParams: [GenericParamDecl]
-  public var body: Stmt
+  public var body: BraceStmt?
   public var memberLookupTable: MemberLookupTable?
 
   // NamedDecl requirements
@@ -567,7 +567,7 @@ public final class StructDecl: NominalTypeDecl {
   public init(
     name: String,
     genericParams: [GenericParamDecl] = [],
-    body: Stmt,
+    body: BraceStmt?,
     module: Module,
     range: SourceRange)
   {
@@ -584,7 +584,7 @@ public final class StructDecl: NominalTypeDecl {
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
     genericParams.forEach { $0.accept(visitor: visitor) }
-    body.accept(visitor: visitor)
+    body?.accept(visitor: visitor)
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -594,7 +594,7 @@ public final class StructDecl: NominalTypeDecl {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
-    body = body.accept(transformer: transformer) as! Stmt
+    body = body?.accept(transformer: transformer) as? BraceStmt
     return self
   }
 
@@ -609,7 +609,7 @@ public final class UnionDecl: NominalTypeDecl {
   // NominalTypeDecl requirements
 
   public var genericParams: [GenericParamDecl]
-  public var body: Stmt
+  public var body: BraceStmt?
   public var memberLookupTable: MemberLookupTable?
 
   // NamedDecl requirements
@@ -631,7 +631,7 @@ public final class UnionDecl: NominalTypeDecl {
   public init(
     name: String,
     genericParams: [GenericParamDecl] = [],
-    body: Stmt,
+    body: BraceStmt?,
     module: Module,
     range: SourceRange)
   {
@@ -648,7 +648,7 @@ public final class UnionDecl: NominalTypeDecl {
 
   public func traverse<V>(with visitor: V) where V: ASTVisitor {
     genericParams.forEach { $0.accept(visitor: visitor) }
-    body.accept(visitor: visitor)
+    body?.accept(visitor: visitor)
   }
 
   public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
@@ -658,7 +658,7 @@ public final class UnionDecl: NominalTypeDecl {
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     genericParams = genericParams.map { $0.accept(transformer: transformer) }
       as! [GenericParamDecl]
-    body = body.accept(transformer: transformer) as! Stmt
+    body = body?.accept(transformer: transformer) as? BraceStmt
     return self
   }
 

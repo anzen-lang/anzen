@@ -320,13 +320,11 @@ extension Parser {
       genericParams: nominalTypeDecl.genericParams,
       body: nominalTypeDecl.body,
       module: module,
-      range: head.range.lowerBound ..< nominalTypeDecl.body.range.upperBound)
+      range: head.range.lowerBound ..< lastConsumedToken!.range.upperBound)
   }
 
   /// Helper that factorizes nominal type parsing.
-  private func parseNominalTypeDecl(issues: inout [Issue]) -> NominalType {
-    let head = peek()
-
+  private func parseNominalTypeDecl(issues: inout [Issue]) -> _NominalTypeDecl {
     // Parse the name of the type.
     let name: String
     if let nameToken = consume(.identifier) {
@@ -343,16 +341,17 @@ extension Parser {
     // Parse the body of the type.
     consumeNewlines()
     let body = parseBraceStmt(issues: &issues)
-      ?? BraceStmt(stmts: [], module: module, range: head.range)
 
     // Mark all regular functions as methods.
-    for stmt in body.stmts {
-      if let methDecl = stmt as? FunDecl, methDecl.kind == .regular {
-        methDecl.kind = .method
+    if body != nil {
+      for stmt in body!.stmts {
+        if let methDecl = stmt as? FunDecl, methDecl.kind == .regular {
+          methDecl.kind = .method
+        }
       }
     }
 
-    return NominalType(name: name, genericParams: genericParams, body: body)
+    return _NominalTypeDecl(name: name, genericParams: genericParams, body: body)
   }
 
   /// Parses a union nested member declaration.
@@ -385,7 +384,7 @@ extension Parser {
       return UnionNestedDecl(
         nestedDecl: StructDecl(
           name: "__error",
-          body: InvalidStmt(module: module, range: head.range),
+          body: nil,
           module: module,
           range: head.range),
         module: module, range: head.range)
@@ -479,10 +478,10 @@ extension Parser {
 
 }
 
-private struct NominalType {
+private struct _NominalTypeDecl {
 
   let name: String
   let genericParams: [GenericParamDecl]
-  let body: BraceStmt
+  let body: BraceStmt?
 
 }
