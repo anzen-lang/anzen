@@ -118,7 +118,7 @@ extension Parser {
     }
 
     let propDecl = PropDecl(
-      name: "",
+      name: "__error",
       isReassignable: head.kind == .var,
       module: module,
       range: head.range)
@@ -167,13 +167,15 @@ extension Parser {
 
       // Parse the function's name.
       if let nameToken = consume(TokenKind.Category.name, afterMany: .newline) {
-        name = nameToken.value!
         if nameToken.isKeyword {
+          name = "__error"
           issues.append(
             parseFailure(Issue.keywordAsIdent(keyword: name), range: nameToken.range))
+        } else {
+          name = nameToken.value!
         }
       } else {
-        name = ""
+        name = "__error"
         issues.append(unexpectedToken(expected: "identifier"))
       }
 
@@ -336,7 +338,7 @@ extension Parser {
     if let nameToken = consume(.identifier) {
       name = nameToken.value!
     } else {
-      name = ""
+      name = "__error"
       issues.append(unexpectedToken(expected: "identifier"))
       recover(atNextKinds: [.leftBrace])
     }
@@ -388,7 +390,7 @@ extension Parser {
     } else {
       return UnionNestedDecl(
         nestedDecl: StructDecl(
-          name: "",
+          name: "__error",
           body: InvalidStmt(module: module, range: head.range),
           module: module,
           range: head.range),

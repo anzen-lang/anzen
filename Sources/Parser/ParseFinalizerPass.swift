@@ -161,7 +161,7 @@ public struct ParseFinalizerPass {
 
     private func isValidDeclaration(_ node: NamedDecl) -> Bool {
       // Skip nodes that do not have a valid name.
-      guard node.name != ""
+      guard node.name != "__error"
         else { return false }
 
       // Check for sibling declarations with the same name.
