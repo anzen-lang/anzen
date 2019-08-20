@@ -145,7 +145,7 @@ public enum TokenKind: UInt64, CustomStringConvertible {
   // MARK: Annotations
 
   case directive    = 225
-  case attribute    = 32994 // stmtStarter | 226
+  case attribute    = 131298 // declStarter | 226
 
   // MARK: Error tokens
 

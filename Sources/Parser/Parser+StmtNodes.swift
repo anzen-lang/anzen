@@ -59,7 +59,7 @@ extension Parser {
     while peek().kind != .rightBrace {
       // Skip leading new lines in front of the next statement to avoid triggering an error if the
       // end of the sequence has been reached.
-      consumeNewlines()
+      consumeMany(while: { $0.isStatementDelimiter })
 
       // Stop parsing elements if we reach the block delimiter.
       guard (peek().kind != .rightBrace) && (peek().kind != .eof)

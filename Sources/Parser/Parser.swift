@@ -58,7 +58,7 @@ public class Parser {
     while peek().kind != .eof {
       // Skip leading new lines in front of the next element to avoid triggering an error if the
       // end of the sequence has been reached.
-      consumeNewlines()
+      consumeMany(while: { $0.isStatementDelimiter })
       guard peek().kind != .eof
         else { break }
 
@@ -110,9 +110,9 @@ public class Parser {
 
   /// Parses a single top-level expression, statement or declaration.
   func parseTopLevelNode(issues: inout [Issue]) -> ASTNode? {
-    return (peek().kind & TokenKind.Category.stmtStarter) != 0
-      ? parseStmt(issues: &issues)
-      : parseDecl(issues: &issues)
+    return (peek().kind & TokenKind.Category.declStarter) != 0
+      ? parseDecl(issues: &issues)
+      : parseStmt(issues: &issues)
   }
 
   /// Parses a comma-separated list of elements.
