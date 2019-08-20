@@ -15,7 +15,7 @@ public final class CompilerContext {
     self.loader = loader
 
     // Load the core modules.
-    builtinModule = Module(id: "__Builtin", state: .typeChecked)
+    builtinModule = Module(id: "__Builtin", generationNumber: 0, state: .typeChecked)
     for name in BuiltinTypeName.allCases {
       let decl = BuiltinTypeDecl(name: name.rawValue, module: builtinModule)
       decl.type = BuiltinType(name: name.rawValue, context: self)
@@ -60,9 +60,9 @@ public final class CompilerContext {
       return (module, false)
     }
 
-    let module = Module(id: moduleID)
-    modules[moduleID] = module
     currentGeneration += 1
+    let module = Module(id: moduleID, generationNumber: currentGeneration)
+    modules[moduleID] = module
     try loader.load(module: module, fromDirectory: dir, in: self)
     return (module, true)
   }
@@ -76,9 +76,9 @@ public final class CompilerContext {
       return (module, false)
     }
 
-    let module = Module(id: id)
-    modules[id] = module
     currentGeneration += 1
+    let module = Module(id: id, generationNumber: currentGeneration)
+    modules[id] = module
     try loader.load(module: module, fromText: buffer, in: self)
     return (module, true)
   }

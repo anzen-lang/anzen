@@ -28,8 +28,13 @@ public final class Module: DeclContext {
 
   /// The module's identifier.
   public var id: ID
+
+  /// The module's generation number.
+  public let generationNumber: Int
+
   /// The module's compilation state.
   public var state: State
+
   /// The top-level declarations of the module.
   public var decls: [Decl] = []
 
@@ -37,8 +42,9 @@ public final class Module: DeclContext {
   ///
   /// Note that this initializer is internal to the AST library, because modules must be created by
   /// a compiler context before they are loaded.
-  internal init(id: ID, state: State = .created) {
+  internal init(id: ID, generationNumber: Int, state: State = .created) {
     self.id = id
+    self.generationNumber = generationNumber
     self.state = state
   }
 
