@@ -110,9 +110,9 @@ public class Parser {
 
   /// Parses a single top-level expression, statement or declaration.
   func parseTopLevelNode(issues: inout [Issue]) -> ASTNode? {
-    return (peek().kind & TokenKind.Category.stmtStarter) > 0
-      ? parseDecl(issues: &issues)
-      : parseStmt(issues: &issues)
+    return (peek().kind & TokenKind.Category.stmtStarter) != 0
+      ? parseStmt(issues: &issues)
+      : parseDecl(issues: &issues)
   }
 
   /// Parses a comma-separated list of elements.
