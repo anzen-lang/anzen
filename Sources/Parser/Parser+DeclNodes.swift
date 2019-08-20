@@ -282,13 +282,13 @@ extension Parser {
     }
 
     consumeNewlines()
-    let nominalType = parseNominalType(issues: &issues)
+    let nominalTypeDecl = parseNominalTypeDecl(issues: &issues)
     return InterfaceDecl(
-      name: nominalType.name,
-      genericParams: nominalType.genericParams,
-      body: nominalType.body,
+      name: nominalTypeDecl.name,
+      genericParams: nominalTypeDecl.genericParams,
+      body: nominalTypeDecl.body,
       module: module,
-      range: head.range.lowerBound ..< nominalType.body.range.upperBound)
+      range: head.range.lowerBound ..< nominalTypeDecl.body.range.upperBound)
   }
 
   /// Parses a struct declaration.
@@ -300,13 +300,13 @@ extension Parser {
     }
 
     consumeNewlines()
-    let nominalType = parseNominalType(issues: &issues)
+    let nominalTypeDecl = parseNominalTypeDecl(issues: &issues)
     return StructDecl(
-      name: nominalType.name,
-      genericParams: nominalType.genericParams,
-      body: nominalType.body,
+      name: nominalTypeDecl.name,
+      genericParams: nominalTypeDecl.genericParams,
+      body: nominalTypeDecl.body,
       module: module,
-      range: head.range.lowerBound ..< nominalType.body.range.upperBound)
+      range: head.range.lowerBound ..< nominalTypeDecl.body.range.upperBound)
   }
 
   /// Parses a union declaration.
@@ -318,17 +318,17 @@ extension Parser {
     }
 
     consumeNewlines()
-    let nominalType = parseNominalType(issues: &issues)
+    let nominalTypeDecl = parseNominalTypeDecl(issues: &issues)
     return UnionDecl(
-      name: nominalType.name,
-      genericParams: nominalType.genericParams,
-      body: nominalType.body,
+      name: nominalTypeDecl.name,
+      genericParams: nominalTypeDecl.genericParams,
+      body: nominalTypeDecl.body,
       module: module,
-      range: head.range.lowerBound ..< nominalType.body.range.upperBound)
+      range: head.range.lowerBound ..< nominalTypeDecl.body.range.upperBound)
   }
 
   /// Helper that factorizes nominal type parsing.
-  private func parseNominalType(issues: inout [Issue]) -> NominalType {
+  private func parseNominalTypeDecl(issues: inout [Issue]) -> NominalType {
     let head = peek()
 
     // Parse the name of the type.
