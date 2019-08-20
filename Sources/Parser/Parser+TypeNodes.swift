@@ -161,47 +161,40 @@ extension Parser {
     let ident = IdentSign(name: head.value!, module: module, range: head.range)
 
     // Attempt to parse a specialization list.
-    if let (specArgs, specArgsRange) = parseSpecArgs(issues: &issues) {
+    if let specArgs = parseSpecArgs(issues: &issues) {
       ident.specArgs = specArgs
-      ident.range = ident.range.lowerBound ..< specArgsRange.upperBound
     }
 
+    ident.range = ident.range.lowerBound ..< lastConsumedToken!.range.upperBound
     return ident
   }
 
   /// Parses a specialization list.
-  func parseSpecArgs(issues: inout [Issue])
-    -> (specArgs: [String: QualTypeSign], range: SourceRange)?
-  {
-    if let head = consume(.lt, afterMany: .newline) {
-      // Commit to parse a specialization list.
-      let specTokens = parseList(delimitedBy: .gt, issues: &issues, with: parseSpecArg)
+  func parseSpecArgs(issues: inout [Issue]) -> [String: QualTypeSign]? {
+    guard consume(.lt, afterMany: .newline) != nil
+      else { return nil }
 
-      let range: SourceRange
-      if let tail = consume(.gt) {
-        range = head.range.lowerBound ..< tail.range.upperBound
-      } else {
-        issues.append(unexpectedToken(expected: "'>'"))
-        range = head.range.lowerBound ..< (specTokens.last?.0 ?? head).range.upperBound
-      }
+    // Commit to parse a specialization list.
+    let specTokens = parseList(delimitedBy: .gt, issues: &issues, with: parseSpecArg)
 
-      // Make sure there's no duplicate key.
-      var keys: Set<String> = []
-      for arg in specTokens {
-        if keys.contains(arg.0.value!) {
-          issues.append(parseFailure(
-            Issue.duplicateGenericParam(key: arg.0.value!), range: arg.0.range))
-        }
-        keys.insert(arg.0.value!)
-      }
-
-      let specArgs = Dictionary(uniqueKeysWithValues: specTokens.map {
-        (token, sign) in (token.value!, sign)
-      })
-      return (specArgs, range)
+    if consume(.gt) == nil {
+      issues.append(unexpectedToken(expected: "'>'"))
     }
 
-    return nil
+    // Make sure there's no duplicate key.
+    var keys: Set<String> = []
+    for arg in specTokens {
+      if keys.contains(arg.0.value!) {
+        issues.append(parseFailure(
+          Issue.duplicateGenericParam(key: arg.0.value!), range: arg.0.range))
+      }
+      keys.insert(arg.0.value!)
+    }
+
+    let specArgs = Dictionary(uniqueKeysWithValues: specTokens.map {
+      (token, sign) in (token.value!, sign)
+    })
+    return specArgs
   }
 
   /// Parses a specialization argument.

@@ -126,7 +126,6 @@ extension Parser {
     // Parse the property's name.
     if let nameToken = consume(.identifier, afterMany: .newline) {
       propDecl.name = nameToken.value!
-      propDecl.range = head.range.lowerBound ..< nameToken.range.upperBound
     } else {
       issues.append(unexpectedToken(expected: "identifier"))
     }
@@ -136,7 +135,6 @@ extension Parser {
       consumeNewlines()
       if let sign = parseQualSign(issues: &issues) {
         propDecl.sign = sign
-        propDecl.range = head.range.lowerBound ..< sign.range.upperBound
       }
     }
 
@@ -145,12 +143,12 @@ extension Parser {
       rewind()
       if let initializer = parseBinding(issues: &issues) {
         propDecl.initializer = initializer
-        propDecl.range = head.range.lowerBound ..< initializer.value.range.upperBound
       } else {
         assertionFailure()
       }
     }
 
+    propDecl.range = head.range.lowerBound ..< lastConsumedToken!.range.upperBound
     return propDecl
   }
 
@@ -202,9 +200,7 @@ extension Parser {
     // Parse a parameter list.
     if consume(.leftParen, afterMany: .newline) != nil {
       funDecl.params = parseList(delimitedBy: .rightParen, issues: &issues, with: parseParamDecl)
-      if let paren = consume(.rightParen, afterMany: .newline) {
-        funDecl.range = head.range.lowerBound ..< paren.range.upperBound
-      } else {
+      if consume(.rightParen, afterMany: .newline) == nil {
         issues.append(unexpectedToken(expected: "')'"))
       }
     } else {
@@ -217,7 +213,6 @@ extension Parser {
       consumeNewlines()
       if let sign = parseQualSign(issues: &issues) {
         funDecl.codom = sign
-        funDecl.range = head.range.lowerBound ..< sign.range.upperBound
       } else {
         recover(atNextKinds: [.leftBrace, .newline])
       }
@@ -228,10 +223,10 @@ extension Parser {
       consumeNewlines()
       if let body = parseBraceStmt(issues: &issues) {
         funDecl.body = body
-        funDecl.range = head.range.lowerBound ..< body.range.upperBound
       }
     }
 
+    funDecl.range = head.range.lowerBound ..< lastConsumedToken!.range.upperBound
     return funDecl
   }
 
@@ -259,7 +254,6 @@ extension Parser {
       consumeNewlines()
       if let sign = parseQualSign(issues: &issues) {
         paramDecl.sign = sign
-        paramDecl.range = first.range.lowerBound ..< sign.range.upperBound
       }
     }
 
@@ -268,10 +262,10 @@ extension Parser {
       consumeNewlines()
       if let expr = parseExpr(issues: &issues) {
         paramDecl.defaultValue = expr
-        paramDecl.range = first.range.lowerBound ..< expr.range.upperBound
       }
     }
 
+    paramDecl.range = first.range.lowerBound ..< lastConsumedToken!.range.upperBound
     return paramDecl
   }
 
@@ -290,7 +284,7 @@ extension Parser {
       genericParams: nominalTypeDecl.genericParams,
       body: nominalTypeDecl.body,
       module: module,
-      range: head.range.lowerBound ..< nominalTypeDecl.body.range.upperBound)
+      range: head.range.lowerBound ..< lastConsumedToken!.range.upperBound)
   }
 
   /// Parses a struct declaration.
@@ -308,7 +302,7 @@ extension Parser {
       genericParams: nominalTypeDecl.genericParams,
       body: nominalTypeDecl.body,
       module: module,
-      range: head.range.lowerBound ..< nominalTypeDecl.body.range.upperBound)
+      range: head.range.lowerBound ..< lastConsumedToken!.range.upperBound)
   }
 
   /// Parses a union declaration.
@@ -458,20 +452,19 @@ extension Parser {
       return nil
     }
 
-    let attr = DeclAttr(name: head.value!, args: [], module: module, range: head.range)
+    let attrDecl = DeclAttr(name: head.value!, args: [], module: module, range: head.range)
 
     // Attempt to parse an argument list on the same line.
     if consume(.leftParen) != nil {
       // Commit to parse an argument list.
-      attr.args = parseList(delimitedBy: .rightParen, issues: &issues, with: parseDeclAttrArg)
-      if let delimiter = consume(.rightParen) {
-        attr.range = head.range.lowerBound ..< delimiter.range.upperBound
-      } else {
+      attrDecl.args = parseList(delimitedBy: .rightParen, issues: &issues, with: parseDeclAttrArg)
+      if consume(.rightParen) == nil {
         issues.append(unexpectedToken(expected: "')'"))
       }
     }
 
-    return attr
+    attrDecl.range = head.range.lowerBound ..< lastConsumedToken!.range.upperBound
+    return attrDecl
   }
 
   /// Parses a declaration attribute's argument.

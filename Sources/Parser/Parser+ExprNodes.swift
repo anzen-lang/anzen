@@ -314,11 +314,11 @@ extension Parser {
     }
 
     // Attempt to parse a specialization list.
-    if let (specArgs, specArgsRange) = parseSpecArgs(issues: &issues) {
+    if let specArgs = parseSpecArgs(issues: &issues) {
       ident.specArgs = specArgs
-      ident.range = ident.range.lowerBound ..< specArgsRange.upperBound
     }
 
+    ident.range = ident.range.lowerBound ..< lastConsumedToken!.range.upperBound
     return ident
   }
 

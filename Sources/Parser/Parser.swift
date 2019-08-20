@@ -164,6 +164,13 @@ public class Parser {
     return elements
   }
 
+  /// The last consumed token.
+  var lastConsumedToken: Token? {
+    return streamPosition > 0
+      ? stream[streamPosition - 1]
+      : nil
+  }
+
   /// Returns the token one position ahead, without consuming the stream.
   func peek() -> Token {
     guard streamPosition < stream.count
