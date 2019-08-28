@@ -362,7 +362,7 @@ extension Parser {
       return nil
     }
 
-    let nestedDecl: NominalTypeDecl?
+    let nestedDecl: NominalOrBuiltinTypeDecl?
 
     consumeNewlines()
     switch peek().kind {

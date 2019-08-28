@@ -63,7 +63,7 @@ public struct ParseFinalizerPass {
       }
 
       // Check for invalid modifiers.
-      if !(currentDeclContext is NominalTypeDecl || currentDeclContext is TypeExtDecl) {
+      if !(currentDeclContext is NominalOrBuiltinTypeDecl || currentDeclContext is TypeExtDecl) {
         for modifier in node.modifiers {
           modifier.registerError(message: Issue.unexpectedDeclModifier(modifier: modifier))
         }
@@ -82,7 +82,7 @@ public struct ParseFinalizerPass {
       }
 
       // Check for invalid modifiers.
-      if !(currentDeclContext is NominalTypeDecl || currentDeclContext is TypeExtDecl) {
+      if !(currentDeclContext is NominalOrBuiltinTypeDecl || currentDeclContext is TypeExtDecl) {
         for modifier in node.modifiers {
           modifier.registerError(message: Issue.unexpectedDeclModifier(modifier: modifier))
         }
@@ -177,7 +177,7 @@ public struct ParseFinalizerPass {
 
       // Check for declarations in function and declaration headers.
       let parent = currentDeclContext.parent
-      if (parent is FunDecl) || (parent is NominalTypeDecl) {
+      if (parent is FunDecl) || (parent is NominalOrBuiltinTypeDecl) {
         for sibling in parent!.decls {
           if let decl = sibling as? NamedDecl,
             (decl.name == node.name) && !(decl.isOverloadable && node.isOverloadable)

@@ -37,7 +37,7 @@ extension DeclContext {
       }
 
       // Handle nominal type declarations.
-      if let nominalTypeDecl = currentContext as? NominalTypeDecl {
+      if let nominalTypeDecl = currentContext as? NominalOrBuiltinTypeDecl {
         // `Self` in a nominal type always refers to the type itself.
         if unqualifiedName == "Self" {
           assert(matches.isEmpty, "'Self' should not be overloaded")
@@ -60,7 +60,7 @@ extension DeclContext {
         // FIXME: Search in implemented interfaces.
 
         // If the type is nested in another type, continue the lookup in its enclosing context.
-        if currentContext?.parent?.parent is NominalTypeDecl {
+        if currentContext?.parent?.parent is NominalOrBuiltinTypeDecl {
           currentContext = currentContext?.parent?.parent
           continue
         }
@@ -77,17 +77,6 @@ extension DeclContext {
           case let declContext as DeclContext:
             // Continue the lookup in the extended declaration.
             currentContext = declContext
-            continue
-
-          case is BuiltinTypeDecl:
-            // `Self` in a nominal type always refers to the type itself.
-            if unqualifiedName == "Self" {
-              assert(matches.isEmpty, "'Self' should not be overloaded")
-              return [extendedDecl]
-            }
-
-            // FIXME: Search in built-in type extensions.
-            currentContext = nil
             continue
 
           default:
@@ -138,7 +127,7 @@ extension DeclContext {
       // Look up the ownee in the owner's context.
       let ownee = qualifiedTypeName.ownee
       switch ownerDecl {
-      case let nominalTypeDecl as NominalTypeDecl:
+      case let nominalTypeDecl as NominalOrBuiltinTypeDecl:
         let decls = nominalTypeDecl.lookup(memberName: ownee.name, inCompilerContext: context)
         if decls.isEmpty {
           ownee.registerError(
@@ -168,7 +157,7 @@ extension DeclContext {
 
 }
 
-extension NominalTypeDecl {
+extension NominalOrBuiltinTypeDecl {
 
   /// Finds all extensions of this type declaration in the given module.
   func findExtensions(in searchModule: Module) -> [TypeExtDecl] {
@@ -176,7 +165,7 @@ extension NominalTypeDecl {
     var parentContext = declContext!
     var nameComponents = [name]
     while parentContext.parent != nil {
-      if let nominalTypeDecl = (parentContext as? BraceStmt)?.parent as? NominalTypeDecl {
+      if let nominalTypeDecl = (parentContext as? BraceStmt)?.parent as? NominalOrBuiltinTypeDecl {
         nameComponents.append(nominalTypeDecl.name)
         parentContext = nominalTypeDecl.parent!
       } else {
@@ -218,12 +207,11 @@ extension NominalTypeDecl {
   /// This method may produce multiple results in cased the given identifier refers to overloaded
   /// declarations (i.e. function definitions). In this case, declarations are returned from the
   /// innermost to the outermost contexts.
-  func lookup(memberName: String, inCompilerContext context: CompilerContext) -> [NamedDecl]
-  {
-    // Initialize or update the member lookup table as required.
+  func lookup(memberName: String, inCompilerContext context: CompilerContext) -> [NamedDecl] {
+    // Initialize the member lookup table as required.
     if memberLookupTable == nil {
       // Create the lookup table.
-      memberLookupTable = MemberLookupTable(generationNumber: context.currentGeneration)
+      memberLookupTable = MemberLookupTable(generationNumber: 0)
 
       // Insert members defined in the context of the declaration's header.
       for member in decls where member is NamedDecl {
@@ -231,23 +219,22 @@ extension NominalTypeDecl {
       }
 
       // Insert members in the context of the declaration's body.
-      if let body = body as? BraceStmt {
-        for member in body.decls where member is NamedDecl {
+      if body != nil {
+        for member in body!.decls where member is NamedDecl {
           memberLookupTable!.insert(member: member as! NamedDecl)
         }
       }
+    }
 
-      // Search for extensions. Since the lookup table had not been initialized before, we can
-      // assume there aren't any extensions in the modules we've already loaded.
-      let extDecls = findExtensions(in: module)
-      for decl in extDecls {
-        memberLookupTable!.merge(extension: decl)
-      }
-    } else if memberLookupTable!.generationNumber < context.currentGeneration {
-      // Update the lookup table with this module's extensions.
-      let extDecls = findExtensions(in: module)
-      for decl in extDecls {
-        memberLookupTable!.merge(extension: decl)
+    // Update the lookup table with this module's extensions.
+    if memberLookupTable!.generationNumber < context.currentGeneration {
+      for searchModule in context.modules.values
+        where searchModule.generationNumber > memberLookupTable!.generationNumber
+      {
+        let extDecls = findExtensions(in: searchModule)
+        for decl in extDecls {
+          memberLookupTable!.merge(extension: decl)
+        }
       }
     }
 
