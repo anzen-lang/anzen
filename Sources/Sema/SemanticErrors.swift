@@ -16,4 +16,8 @@ extension Issue {
     return "use of unbound identifier '\(name)'"
   }
 
+  static func superfluousSpecArg(name: String) -> String {
+    return "superfluous specialization argument '\(name)'"
+  }
+
 }

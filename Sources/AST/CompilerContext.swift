@@ -105,7 +105,7 @@ public final class CompilerContext {
 
   /// Returns the built-in semantic type corresponding the given name.
   public func getBuiltinType(_ name: BuiltinTypeName) -> BuiltinType {
-    let decl = anzenModule.decls.first { ($0 as? BuiltinTypeDecl)?.name == name.rawValue }
+    let decl = builtinModule.decls.first { ($0 as? BuiltinTypeDecl)?.name == name.rawValue }
     return (decl as! BuiltinTypeDecl).type as! BuiltinType
   }
 
@@ -122,6 +122,15 @@ public final class CompilerContext {
   /// The error type, representing type errors.
   public private(set) lazy var errorType: ErrorType = { [unowned self] in
     ErrorType(context: self)
+  }()
+
+  /// The type of assignment operators.
+  public private(set) lazy var assignmentType: QualType = { [unowned self] in
+    let anyTy = self.anythingType.cst
+    let funTy = self.getFunType(
+      dom: [FunType.Param(type: anyTy), FunType.Param(type: anyTy)],
+      codom: anyTy)
+    return funTy.cst
   }()
 
   /// The type uniqueness table.

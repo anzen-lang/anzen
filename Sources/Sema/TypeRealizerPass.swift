@@ -1,6 +1,6 @@
 import AST
 
-/// A module pass that realizes the semantic types of all type declarations.
+/// A module pass that realizes the semantic types of type declarations and signatures.
 public struct TypeRealizerPass {
 
   /// The compiler context.
@@ -51,14 +51,52 @@ public struct TypeRealizerPass {
       node.traverse(with: self)
 
       // Build the function's type.
+      let placeholders = node.genericParams.map { $0.type as! TypePlaceholder }
       let dom = node.params.map { FunType.Param(label: $0.label, type: $0.type!) }
       let codom = node.codom?.type! ?? context.nothingType.cst
-      let funTy = context.getFunType(
-        genericParams: node.genericParams.map { $0.type as! TypePlaceholder },
-        dom: dom,
-        codom: codom)
 
-      node.type = funTy.cst
+      if node.kind == .regular {
+        node.type = context.getFunType(placeholders: placeholders, dom: dom, codom: codom).cst
+        return
+      }
+
+      assert(node.kind ~= [.method, .constructor, .destructor], "bad function kind")
+
+      // If the function's declared in a type declaration, we need to retrieve `Self`'s type.
+      assert(node.declContext != nil, "member function declared outside of a type declaration")
+      let selfTypeDecls = node.declContext!
+        .lookup(unqualifiedName: "Self", inCompilerContext: context)
+      let selfTypeDecl = selfTypeDecls[0] as! TypeDecl
+
+      if selfTypeDecl.type == nil {
+        selfTypeDecl.accept(visitor: self)
+        assert(selfTypeDecl.type != nil)
+      }
+      let isMutating = (node.kind != .method) || node.attrs.contains { $0.name == "mutating" }
+      let bareSelfTy = selfTypeDecl.type!
+      let qualSelfTy = isMutating
+        ? bareSelfTy.mut
+        : bareSelfTy.cst
+
+      let selfValueDecl = node.decls.first { ($0 as? PropDecl)?.name == "self" }
+      assert(selfValueDecl != nil, "missing `self` declaration")
+      (selfValueDecl as! PropDecl).type = qualSelfTy
+
+      if node.kind == .constructor {
+        // A constructor's codomain is always `Self`, so we can ignore the node's codomain.
+        node.type = context.getFunType(dom: dom, codom: qualSelfTy).cst
+      } else if node.kind ~= [.method, .destructor] {
+        // Methods and constructor have signatures of the form `Self -> Domain -> Codomain`.
+        let funTy = context.getFunType(dom: dom, codom: codom)
+        let mtdTy = context.getFunType(
+          placeholders: placeholders,
+          dom: [FunType.Param(label: nil, type: qualSelfTy)],
+          codom: funTy.cst)
+
+        node.type = mtdTy.cst
+      } else {
+        assertionFailure("bad function")
+      }
     }
 
     func visit(_ node: GenericParamDecl) {
@@ -81,133 +119,44 @@ public struct TypeRealizerPass {
 
     func visit(_ node: InterfaceDecl) {
       assert(node.type == nil, "declaration's type already realized")
-      node.traverse(with: self)
       node.type = context.getInterfaceType(decl: node)
+      node.traverse(with: self)
     }
 
     func visit(_ node: StructDecl) {
       assert(node.type == nil, "declaration's type already realized")
-      node.traverse(with: self)
       node.type = context.getStructType(decl: node)
+      node.traverse(with: self)
     }
 
     func visit(_ node: UnionDecl) {
       assert(node.type == nil, "declaration's type already realized")
-      node.traverse(with: self)
       node.type = context.getUnionType(decl: node)
-    }
-
-    func visit(_ node: NullExpr) {
-      node.type = context.anythingType.cst
-    }
-
-    func visit(_ node: LambdaExpr) {
       node.traverse(with: self)
-
-      // Build the function's type.
-      let dom = node.params.map { FunType.Param(label: $0.label, type: $0.type!) }
-      let codom = node.codom?.type! ?? context.getTypeVar().cst
-      let funTy = context.getFunType(dom: dom, codom: codom)
-
-      node.type = QualType(bareType: funTy, quals: [])
-    }
-
-    func visit(_ node: UnsafeCastExpr) {
-      node.traverse(with: self)
-      node.type = QualType(bareType: node.castSign.type!, quals: node.operand.type!.quals)
-    }
-
-    func visit(_ node: InfixExpr) {
-      node.traverse(with: self)
-      node.type = QualType(bareType: context.getTypeVar(), quals: [])
-    }
-
-    func visit(_ node: PrefixExpr) {
-      node.traverse(with: self)
-      node.type = QualType(bareType: context.getTypeVar(), quals: [])
-    }
-
-    func visit(_ node: CallExpr) {
-      node.traverse(with: self)
-      node.type = QualType(bareType: context.getTypeVar(), quals: [])
-    }
-
-    func visit(_ node: CallArgExpr) {
-      node.traverse(with: self)
-      node.type = QualType(bareType: context.getTypeVar(), quals: [])
-    }
-
-    func visit(_ node: IdentExpr) {
-      node.traverse(with: self)
-      node.type = QualType(bareType: context.getTypeVar(), quals: [])
-    }
-
-    func visit(_ node: SelectExpr) {
-      node.traverse(with: self)
-      node.type = node.ownee.type
-    }
-
-    func visit(_ node: ImplicitSelectExpr) {
-      node.traverse(with: self)
-      node.type = node.ownee.type
-    }
-
-    func visit(_ node: ArrayLitExpr) {
-      node.traverse(with: self)
-      node.type = QualType(bareType: context.getTypeVar(), quals: [])
-    }
-
-    func visit(_ node: SetLitExpr) {
-      node.traverse(with: self)
-      node.type = QualType(bareType: context.getTypeVar(), quals: [])
-    }
-
-    func visit(_ node: MapLitExpr) {
-      node.traverse(with: self)
-      node.type = QualType(bareType: context.getTypeVar(), quals: [])
-    }
-
-    func visit(_ node: BoolLitExpr) {
-      node.type = context.getBuiltinType(.bool).cst
-    }
-
-    func visit(_ node: IntLitExpr) {
-      node.type = context.getBuiltinType(.int).cst
-    }
-
-    func visit(_ node: FloatLitExpr) {
-      node.type = context.getBuiltinType(.float).cst
-    }
-
-    func visit(_ node: StrLitExpr) {
-      node.type = context.getBuiltinType(.string).cst
-    }
-
-    func visit(_ node: ParenExpr) {
-      node.traverse(with: self)
-      node.type = node.expr.type
-    }
-
-    func visit(_ node: InvalidExpr) {
-      node.type = QualType(bareType: context.errorType, quals: [])
     }
 
     func visit(_ node: QualTypeSign) {
       node.traverse(with: self)
 
-      // Add the default `@cst` qualifier if necessary.
-      let quals = node.quals.isEmpty
-        ? [.cst]
-        : node.quals
+      // Notice that we do not add any default qualifier at this point, so that empty qualifier
+      // sets can be used to designate unspecified placehoder qualifiers. This allows generic types
+      // to be specialized with different placeholders.
 
       // Build the signature's qualified type.
       let bareType = node.sign != nil
         ? node.sign!.type!
         : context.getTypeVar()
-      node.type = QualType(bareType: bareType, quals: quals)
+      node.type = QualType(bareType: bareType, quals: node.quals)
     }
 
     func visit(_ node: IdentSign) {
+      // Resolve the specialization arguments, if any.
+      var specArgs: [String: QualType] = [:]
+      for (name, sign) in node.specArgs {
+        sign.accept(visitor: self)
+        specArgs[name] = sign.type
+      }
+
       // Since types identifiers are not overloadable, the corresponding type declaration should
       // have been resolved during name binding.
 
@@ -218,14 +167,29 @@ public struct TypeRealizerPass {
           assert(decl.type != nil)
         }
 
-        let placeholders = decl.type!.getUnboundPlaceholders()
-        if placeholders.isEmpty {
-          node.type = decl.type!
-        } else {
-          // Open the unbound placeholders.
-          let bindings = Dictionary(
-            uniqueKeysWithValues: placeholders.map { ($0, context.getTypeVar()) })
+        // FIXME: Check for superfluous specialization arguments later.
+
+        if decl.type!.canBeOpened {
+          // Check for superfluous specialization arguments.
+          let placeholders = decl.type!.getUnboundPlaceholders()
+          let superfluous = Set(specArgs.keys)
+            .symmetricDifference(placeholders.map({ $0.name }))
+          for name in superfluous {
+            node.registerError(message: Issue.superfluousSpecArg(name: name))
+          }
+
+          // Preserve the specialization arguments in a bound generic type.
+          let bindings = Dictionary(uniqueKeysWithValues: placeholders.map {
+            ($0, specArgs[$0.name] ?? QualType(bareType: context.getTypeVar(), quals: []))
+          })
           node.type = context.getBoundGenericType(type: decl.type!, bindings: bindings)
+        } else {
+          // If the referred type can't be opened, all specialization arguments are superfluous.
+          for name in specArgs.keys {
+            node.registerError(message: Issue.superfluousSpecArg(name: name))
+          }
+
+          node.type = decl.type!
         }
       }
     }
