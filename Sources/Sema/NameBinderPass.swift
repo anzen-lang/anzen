@@ -106,6 +106,22 @@ public struct NameBinderPass {
       }
     }
 
+    func visit(_ node: UnionAliasCaseDecl) {
+      declBeingVisited.insert(ObjectIdentifier(node))
+
+      let decls = node.declContext!.lookup(unqualifiedName: node.name, inCompilerContext: context)
+      if decls.isEmpty {
+        node.registerError(message: Issue.unboundIdentifier(name: node.name))
+      } else if !(decls[0] is TypeDecl) {
+        node.registerError(message: Issue.invalidTypeIdentifier(name: node.name))
+      } else {
+        assert(decls.count == 1, "bad union case on overloaded type name")
+        node.referredDecl = (decls[0] as! NamedTypeDecl)
+      }
+
+      declBeingVisited.remove(ObjectIdentifier(node))
+    }
+
     func visit(_ node: TypeExtDecl) {
       inDeclContext(node) {
         node.body.accept(visitor: self)

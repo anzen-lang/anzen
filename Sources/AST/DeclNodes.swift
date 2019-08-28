@@ -729,6 +729,9 @@ public final class UnionAliasCaseDecl: NamedTypeDecl {
   public unowned var module: Module
   public var range: SourceRange
 
+  /// The declaration to which this identifier refers.
+  public var referredDecl: (NamedDecl & TypeDecl)?
+
   public init(name: String, module: Module, range: SourceRange) {
     self.name = name
     self.module = module

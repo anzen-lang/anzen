@@ -159,38 +159,40 @@ public struct TypeRealizerPass {
 
       // Since types identifiers are not overloadable, the corresponding type declaration should
       // have been resolved during name binding.
+      guard let decl = node.referredDecl else {
+        node.type = context.errorType
+        return
+      }
 
-      if let decl = node.referredDecl {
-        // Realize the declaration's type if necessary.
-        if decl.type == nil {
-          decl.accept(visitor: self)
-          assert(decl.type != nil)
+      // Realize the declaration's type if necessary.
+      if decl.type == nil {
+        decl.accept(visitor: self)
+        assert(decl.type != nil)
+      }
+
+      // FIXME: Check for superfluous specialization arguments later.
+
+      if decl.type!.canBeOpened {
+        // Check for superfluous specialization arguments.
+        let placeholders = decl.type!.getUnboundPlaceholders()
+        let superfluous = Set(specArgs.keys)
+          .symmetricDifference(placeholders.map({ $0.name }))
+        for name in superfluous {
+          node.registerError(message: Issue.superfluousSpecArg(name: name))
         }
 
-        // FIXME: Check for superfluous specialization arguments later.
-
-        if decl.type!.canBeOpened {
-          // Check for superfluous specialization arguments.
-          let placeholders = decl.type!.getUnboundPlaceholders()
-          let superfluous = Set(specArgs.keys)
-            .symmetricDifference(placeholders.map({ $0.name }))
-          for name in superfluous {
-            node.registerError(message: Issue.superfluousSpecArg(name: name))
-          }
-
-          // Preserve the specialization arguments in a bound generic type.
-          let bindings = Dictionary(uniqueKeysWithValues: placeholders.map {
-            ($0, specArgs[$0.name] ?? QualType(bareType: context.getTypeVar(), quals: []))
-          })
-          node.type = context.getBoundGenericType(type: decl.type!, bindings: bindings)
-        } else {
-          // If the referred type can't be opened, all specialization arguments are superfluous.
-          for name in specArgs.keys {
-            node.registerError(message: Issue.superfluousSpecArg(name: name))
-          }
-
-          node.type = decl.type!
+        // Preserve the specialization arguments in a bound generic type.
+        let bindings = Dictionary(uniqueKeysWithValues: placeholders.map {
+          ($0, specArgs[$0.name] ?? QualType(bareType: context.getTypeVar(), quals: []))
+        })
+        node.type = context.getBoundGenericType(type: decl.type!, bindings: bindings)
+      } else {
+        // If the referred type can't be opened, all specialization arguments are superfluous.
+        for name in specArgs.keys {
+          node.registerError(message: Issue.superfluousSpecArg(name: name))
         }
+
+        node.type = decl.type!
       }
     }
 
