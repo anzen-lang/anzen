@@ -1,3 +1,5 @@
+import AST
+
 /// Locates a constraint within an expression.
 ///
 /// So as to better diagnose inference issues, it is important to keep track of the expression or
@@ -15,12 +17,12 @@ public struct ConstraintLocation {
   /// The node at which the constraint is anchored.
   public let anchor: ASTNode
   /// The path from the anchor to the exact entity the constraint is about.
-  public let paths: [ConstraintPath]
+  public let path: [ConstraintPath]
 
-  public init(anchor: ASTNode, paths: [ConstraintPath]) {
-    precondition(!paths.isEmpty)
+  public init(anchor: ASTNode, path: [ConstraintPath]) {
+    precondition(!path.isEmpty)
     self.anchor = anchor
-    self.paths = paths
+    self.path = path
   }
 
   /// The resolved path of the location, i.e. the node it actually points to.
@@ -35,14 +37,14 @@ public struct ConstraintLocation {
     return anchor
   }
 
-  public static func location(_ anchor: ASTNode, _ paths: ConstraintPath...)
+  public static func location(_ anchor: ASTNode, _ path: ConstraintPath...)
     -> ConstraintLocation
   {
-    return ConstraintLocation(anchor: anchor, paths: paths)
+    return ConstraintLocation(anchor: anchor, path: path)
   }
 
   public static func + (lhs: ConstraintLocation, rhs: ConstraintPath) -> ConstraintLocation {
-    return ConstraintLocation(anchor: lhs.anchor, paths: lhs.paths + [rhs])
+    return ConstraintLocation(anchor: lhs.anchor, path: lhs.path + [rhs])
   }
 
 }
@@ -52,12 +54,12 @@ public enum ConstraintPath: Equatable {
 
   /// The type annotation of a property or parameter declaration.
   case annotation
-  /// The operator of a binary expression.
-  case binaryOperator
-  // The right operand of a binary expression.
-  case binaryRHS
-  /// A generic binding.
-  case binding(TypePlaceholder)
+  /// The operator of an infix expression.
+  case infixOp
+  // The right operand of an infix expression.
+  case infixRHS
+  /// A binding statement.
+  case binding
   /// The call site of a function.
   case call
   /// The codomain of a function type.
@@ -66,10 +68,14 @@ public enum ConstraintPath: Equatable {
   case condition
   /// An identifier.
   case identifier
+  /// The initializer of a property or parameter declaration.
+  case initializer
+  /// The operator of a prefix expression.
+  case prefixOp
   /// The i-th parameter of a function.
   case parameter(Int)
-  /// The r-value of a binding statement.
-  case rvalue
+  /// The return value of a function.
+  case `return`
   /// The ownee of a select expression.
   case select
 

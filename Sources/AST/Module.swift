@@ -53,9 +53,4 @@ public final class Module: DeclContext {
   /// The list of issues that resulted from the processing of this module.
   public var issues: Set<Issue> = []
 
-  // MARK: - Type constraints
-
-  /// The list of type constraints collected before type inference.
-  public var typeConstraints: [TypeConstraint] = []
-
 }
