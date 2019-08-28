@@ -162,16 +162,18 @@ public final class CompilerContext {
 
   /// Builds (if necessary) and returns the requested type placeholder.
   public func getTypePlaceholder(decl: GenericParamDecl) -> TypePlaceholder {
-    let ty = TypePlaceholder(decl: decl, context: self, info: TypeInfo(bits: 0))
+    let info = TypeInfo(bits: TypeInfo.hasTypePlaceholder)
+    let ty = TypePlaceholder(decl: decl, context: self, info: info)
     return insertType(ty) as! TypePlaceholder
   }
 
   /// Creates (if necessary) and returns a bound generic type.
   public func getBoundGenericType(
     type: TypeBase,
-    bindings: [TypePlaceholder: TypeBase]) -> BoundGenericType
+    bindings: [TypePlaceholder: QualType]) -> BoundGenericType
   {
-    let info = type.info
+    assert(!bindings.isEmpty)
+    let info = type.info | TypeInfo.hasTypePlaceholder
 
     // Make sure to build a canonical representation of the bounds.
     let ty: BoundGenericType
@@ -184,13 +186,14 @@ public final class CompilerContext {
     } else {
       ty = BoundGenericType(type: type, bindings: bindings, context: self, info: info)
     }
+
     assert(!(ty.type is BoundGenericType))
     return insertType(ty) as! BoundGenericType
   }
 
   /// Creates (if necessary) and returns the requested function type.
   public func getFunType(
-    genericParams: [TypePlaceholder] = [],
+    placeholders: [TypePlaceholder] = [],
     dom: [FunType.Param],
     codom: QualType) -> FunType
   {
@@ -199,7 +202,7 @@ public final class CompilerContext {
     }
 
     let ty = FunType(
-      genericParams: genericParams,
+      placeholders: placeholders,
       dom: dom,
       codom: codom,
       context: self,
@@ -209,20 +212,37 @@ public final class CompilerContext {
 
   /// Creates (if necessary) and returns the requested interface type.
   public func getInterfaceType(decl: InterfaceDecl) -> InterfaceType {
-    let ty = InterfaceType(decl: decl, context: self, info: TypeInfo(bits: 0))
+    let info = decl.genericParams.isEmpty
+      ? TypeInfo(bits: 0)
+      : TypeInfo(bits: TypeInfo.hasTypePlaceholder)
+    let ty = InterfaceType(decl: decl, context: self, info: info)
     return insertType(ty) as! InterfaceType
   }
 
   /// Creates (if necessary) and returns the requested struct type.
   public func getStructType(decl: StructDecl) -> StructType {
-    let ty = StructType(decl: decl, context: self, info: TypeInfo(bits: 0))
+    let info = decl.genericParams.isEmpty
+      ? TypeInfo(bits: 0)
+      : TypeInfo(bits: TypeInfo.hasTypePlaceholder)
+    let ty = StructType(decl: decl, context: self, info: info)
     return insertType(ty) as! StructType
   }
 
   /// Creates (if necessary) and returns the requested union type.
   public func getUnionType(decl: UnionDecl) -> UnionType {
-    let ty = UnionType(decl: decl, context: self, info: TypeInfo(bits: 0))
+    let info = decl.genericParams.isEmpty
+      ? TypeInfo(bits: 0)
+      : TypeInfo(bits: TypeInfo.hasTypePlaceholder)
+    let ty = UnionType(decl: decl, context: self, info: info)
     return insertType(ty) as! UnionType
+  }
+
+  /// Returns all types conforming to the given one.
+  public func getTypesConforming(to type: TypeBase) -> [TypeBase] {
+    assert(type != anythingType, "all types conform to `Anything`")
+
+    // TODO: Implement me
+    return []
   }
 
 }
