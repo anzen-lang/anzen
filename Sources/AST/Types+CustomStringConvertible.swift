@@ -82,7 +82,7 @@ extension FunType.Param: CustomStringConvertible {
 
 }
 
-extension StructType: CustomStringConvertible {
+extension NominalType: CustomStringConvertible {
 
   public var description: String {
     if placeholders.isEmpty {
@@ -100,7 +100,14 @@ extension StructType: CustomStringConvertible {
 extension BuiltinType: CustomStringConvertible {
 
   public var description: String {
-    return name
+    if placeholders.isEmpty {
+      return name
+    } else {
+      let params = self.placeholders
+        .map(String.init)
+        .joined(separator: ", ")
+      return "\(name)<\(params)>"
+    }
   }
 
 }

@@ -247,11 +247,41 @@ public final class CompilerContext {
   }
 
   /// Returns all types conforming to the given one.
-  public func getTypesConforming(to type: TypeBase) -> [TypeBase] {
+  public func getTypesConforming(to type: TypeBase, transitively: Bool = true) -> Set<TypeBase> {
+    assert(!(type is TypeVar), "cannot compute the conformance set of type variable")
     assert(type != anythingType, "all types conform to `Anything`")
 
-    // TODO: Implement me
-    return []
+    switch type {
+    case let ty as UnionType:
+      guard let body = (ty.decl as! UnionDecl).body
+        else { return [] }
+
+      let conformingTypes = body.stmts.compactMap { stmt -> TypeBase? in
+        switch stmt {
+        case let decl as UnionTypeCaseDecl:
+          return decl.nestedDecl.type
+        case let decl as UnionAliasCaseDecl:
+          return decl.referredDecl?.type
+        default:
+          return nil
+        }
+      }
+
+      if transitively {
+        return conformingTypes.reduce(Set(conformingTypes)) { (result, type) in
+          result.union(getTypesConforming(to: type))
+        }
+      } else {
+        return Set(conformingTypes)
+      }
+
+    case is InterfaceType:
+      // FIXME: Implement me
+      return []
+
+    default:
+      return []
+    }
   }
 
 }

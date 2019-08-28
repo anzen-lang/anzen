@@ -248,45 +248,13 @@ struct TypeConstraintSolver {
       break
 
     default:
-      assertionFailure("bad conformance constraint")
+      guard context.getTypesConforming(to: rhs).contains(lhs) else {
+        errors.append(.incompatibleTypes(constraint))
+        weight += ERROR_WEIGHT
+        return
+      }
     }
   }
-
-//  /// Solves a construction constraint.
-//  private mutating func solve(_ constraint: TypeConstructionConstraint) {
-//    let owner = assumptions.get(for: constraint.u)
-//
-//    switch owner {
-//    case is TypeVar:
-//      // If the owning type is unknown, we can't solve the constraint yet.
-//      constraints.insert(constraint, at: 0)
-//
-//    case let nominalTy as NominalType:
-//      // Performs an unqualified lookup in the owning type declaration for constructors.
-//      let decls = (nominalTy.decl as! NominalOrBuiltinTypeDecl)
-//        .lookup(memberName: "new", inCompilerContext: context)
-//        .compactMap { $0 as? FunDecl }
-//      assert(decls.allSatisfy { $0.kind == .constructor })
-//
-//      guard !decls.isEmpty  else {
-//        // TODO: Handle synthethized constructors.
-//        errors.append(.noSuchConstructor(constraint))
-//        weight += ERROR_WEIGHT
-//        return
-//      }
-//
-//      var builder = TypeConstraintDisjunctionBuilder()
-//      for decl in decls {
-//        builder.add(
-//          TypeEqualityConstraint(t: constraint.t, u: decl.type!.bareType, at: constraint.location))
-//      }
-//      constraints.append(builder.finalize())
-//
-//    default:
-//      errors.append(.noSuchConstructor(constraint))
-//      weight += ERROR_WEIGHT
-//    }
-//  }
 
   /// Sovles a specialization constraint.
   private mutating func solve(_ constraint: TypeSpecializationConstraint) {
