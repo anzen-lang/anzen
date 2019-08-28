@@ -194,9 +194,16 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
-  public func visit(_ node: UnionNestedDecl) {
-    self <<< indent <<< "(union_nested_decl\n"
+  public func visit(_ node: UnionTypeCaseDecl) {
+    self <<< indent <<< "(union_type_case_decl\n"
     withIndentation { node.nestedDecl.accept(visitor: self) }
+    self <<< ")"
+  }
+
+  public func visit(_ node: UnionAliasCaseDecl) {
+    self <<< indent <<< "(union_alias_case_decl"
+    self <<< " name='\(node.name)'"
+    self <<< " type='" <<< node.type <<< "'"
     self <<< ")"
   }
 

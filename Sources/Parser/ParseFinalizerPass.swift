@@ -134,6 +134,14 @@ public struct ParseFinalizerPass {
       finalizeNamedContext(node)
     }
 
+    func visit(_ node: UnionAliasCaseDecl) {
+      // Skip nodes that do not have a valid name.
+      guard node.name != "__error"
+        else { return }
+
+      finalizeNamedDecl(node)
+    }
+
     func visit(_ node: TypeExtDecl) {
       // Check that the extension is declared at top-level.
       if currentDeclContext !== node.module {

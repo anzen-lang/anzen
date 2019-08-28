@@ -98,7 +98,7 @@ extension Parser {
       return parseUnionDecl(issues: &issues)
 
     case .case:
-      return parseUnionNestedMemberDecl(issues: &issues)
+      return parseUnionCaseDecl(issues: &issues)
 
     case .extension:
       return parseTypeExtDecl(issues: &issues)
@@ -354,41 +354,46 @@ extension Parser {
     return _NominalTypeDecl(name: name, genericParams: genericParams, body: body)
   }
 
-  /// Parses a union nested member declaration.
-  func parseUnionNestedMemberDecl(issues: inout [Issue]) -> UnionNestedDecl? {
+  /// Parses a union case declaration.
+  func parseUnionCaseDecl(issues: inout [Issue]) -> Decl? {
     // The first token should be `case`.
     guard let head = consume(.case) else {
       issues.append(unexpectedToken(expected: "'case'"))
       return nil
     }
 
-    let nestedDecl: NominalOrBuiltinTypeDecl?
-
+    // If the next consumable token is `struct` or `union`, parse a nested type declaration.
+    // Otherwise, parses a simple bare identifier.
     consumeNewlines()
     switch peek().kind {
     case .struct:
-      nestedDecl = parseStructDecl(issues: &issues)
+      if let nestedDecl = parseStructDecl(issues: &issues) {
+        return UnionTypeCaseDecl(
+          nestedDecl: nestedDecl,
+          module: module,
+          range: head.range.lowerBound ..< nestedDecl.range.upperBound)
+      }
+
     case .union:
-      nestedDecl = parseUnionDecl(issues: &issues)
+      if let nestedDecl = parseUnionDecl(issues: &issues) {
+        return UnionTypeCaseDecl(
+          nestedDecl: nestedDecl,
+          module: module,
+          range: head.range.lowerBound ..< nestedDecl.range.upperBound)
+      }
+
+    case .identifier:
+      let nameToken = consume(.identifier)!
+      return UnionAliasCaseDecl(
+        name: nameToken.value!,
+        module: module,
+        range: head.range.lowerBound ..< nameToken.range.upperBound)
+
     default:
-      nestedDecl = nil
-      issues.append(unexpectedToken(expected: "struct or union declaration"))
+      issues.append(unexpectedToken(expected: "type declaration"))
     }
 
-    if nestedDecl != nil {
-      return UnionNestedDecl(
-        nestedDecl: nestedDecl!,
-        module: module,
-        range: head.range.lowerBound ..< nestedDecl!.range.upperBound)
-    } else {
-      return UnionNestedDecl(
-        nestedDecl: StructDecl(
-          name: "__error",
-          body: nil,
-          module: module,
-          range: head.range),
-        module: module, range: head.range)
-    }
+    return UnionAliasCaseDecl(name: "__error", module: module, range: head.range)
   }
 
   func parseTypeExtDecl(issues: inout [Issue]) -> TypeExtDecl? {

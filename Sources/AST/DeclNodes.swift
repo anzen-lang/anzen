@@ -679,8 +679,8 @@ public final class UnionDecl: NominalOrBuiltinTypeDecl {
 
 }
 
-/// A union nested member declaration.
-public final class UnionNestedDecl: Decl {
+/// A union type case declaration.
+public final class UnionTypeCaseDecl: Decl {
 
   // ASTNode requirements
 
@@ -710,6 +710,43 @@ public final class UnionNestedDecl: Decl {
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     nestedDecl = nestedDecl.accept(transformer: transformer) as! NominalOrBuiltinTypeDecl
+    return self
+  }
+
+}
+
+/// A union alias case declaration.
+public final class UnionAliasCaseDecl: NamedTypeDecl {
+
+  // TypeDecl requirements
+
+  public var type: TypeBase?
+
+  // NamedDecl requirements
+
+  public var name: String
+  public weak var declContext: DeclContext?
+  public unowned var module: Module
+  public var range: SourceRange
+
+  public init(name: String, module: Module, range: SourceRange) {
+    self.name = name
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V: ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V: ASTVisitor {
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
     return self
   }
 

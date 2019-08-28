@@ -14,7 +14,8 @@ public protocol ASTVisitor {
   func visit(_ node: InterfaceDecl)
   func visit(_ node: StructDecl)
   func visit(_ node: UnionDecl)
-  func visit(_ node: UnionNestedDecl)
+  func visit(_ node: UnionTypeCaseDecl)
+  func visit(_ node: UnionAliasCaseDecl)
   func visit(_ node: TypeExtDecl)
   func visit(_ node: BuiltinTypeDecl)
 
@@ -102,7 +103,11 @@ extension ASTVisitor {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: UnionNestedDecl) {
+  public func visit(_ node: UnionTypeCaseDecl) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: UnionAliasCaseDecl) {
     node.traverse(with: self)
   }
 

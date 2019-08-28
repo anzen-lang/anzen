@@ -227,7 +227,7 @@ class DeclParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: InterfaceDecl.self))
     if let decl = pr.value as? InterfaceDecl {
       assertThat(decl.body, .isInstance(of: BraceStmt.self))
-      if let body = decl.body as? BraceStmt {
+      if let body = decl.body {
         assertThat(body.stmts, .count(2))
         if body.stmts.count > 1 {
           assertThat(body.stmts[1], .isInstance(of: FunDecl.self))
@@ -281,7 +281,7 @@ class DeclParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: StructDecl.self))
     if let decl = pr.value as? StructDecl {
       assertThat(decl.body, .isInstance(of: BraceStmt.self))
-      if let body = decl.body as? BraceStmt {
+      if let body = decl.body {
         assertThat(body.stmts, .count(2))
         if body.stmts.count > 1 {
           assertThat(body.stmts[1], .isInstance(of: FunDecl.self))
@@ -336,10 +336,10 @@ class DeclParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: UnionDecl.self))
     if let decl = pr.value as? UnionDecl {
       assertThat(decl.body, .isInstance(of: BraceStmt.self))
-      if let body = decl.body as? BraceStmt {
+      if let body = decl.body {
         assertThat(body.stmts, .count(3))
         if body.stmts.count > 2 {
-          assertThat(body.stmts[0], .isInstance(of: UnionNestedDecl.self))
+          assertThat(body.stmts[0], .isInstance(of: UnionTypeCaseDecl.self))
           assertThat(body.stmts[2], .isInstance(of: FunDecl.self))
           if let method = body.stmts[0] as? FunDecl {
             assertThat(method.kind, .equals(.method))
@@ -368,7 +368,7 @@ class DeclParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: TypeExtDecl.self))
     if let decl = pr.value as? TypeExtDecl {
-      assertThat(decl.extType, .isInstance(of: IdentSign.self))
+      assertThat(decl.extTypeSign, .isInstance(of: IdentSign.self))
     }
 
     pr = parse(
