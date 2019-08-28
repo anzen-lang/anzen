@@ -20,6 +20,14 @@ extension NamedDecl {
 
 }
 
+/// A node that represents the declaration of an l-value.
+public protocol LValueDecl {
+
+  /// The entity's semantic type.
+  var type: QualType? { get set }
+
+}
+
 /// A node that represents a type declaration.
 public protocol TypeDecl: ASTNode {
 
@@ -174,7 +182,7 @@ public final class DeclModifier: ASTNode, Hashable {
 }
 
 /// A property (i.e. a variable or type field) declaration.
-public final class PropDecl: NamedDecl, Stmt {
+public final class PropDecl: NamedDecl, LValueDecl, Stmt {
 
   // NamedDecl requirements
 
@@ -183,7 +191,8 @@ public final class PropDecl: NamedDecl, Stmt {
   public unowned var module: Module
   public var range: SourceRange
 
-  /// The property's semantic type.
+  // LValueDecl requirements
+
   public var type: QualType?
 
   /// Whether the property's reassignable.
@@ -259,19 +268,23 @@ public final class PropDecl: NamedDecl, Stmt {
 /// The domain of the function comprises two parameters `x` and `y`, both of type `Int`. Note that
 /// the second parameter is associated with a label (named `by`). Both parameters are instances of
 /// `ParamDecl`. The codomain is a type identifier, that is an instance of `Ident`.
-public final class FunDecl: NamedDecl, Stmt, DeclContext {
+public final class FunDecl: NamedDecl, LValueDecl, Stmt, DeclContext {
 
   /// Enumeration of the function kinds.
-  public enum Kind {
+  public enum Kind: Int {
 
     /// Denotes a regular function.
-    case regular
+    case regular     = 1
     /// Denotes a method.
-    case method
+    case method      = 2
     /// Denotes a type constructor.
-    case constructor
+    case constructor = 4
     /// Denotes a type desctructor.
-    case destructor
+    case destructor  = 8
+
+    public static func ~= (lhs: Kind, rhs: [Kind]) -> Bool {
+      return (lhs.rawValue & rhs.reduce(0) { $0 | $1.rawValue }) != 0
+    }
 
   }
 
@@ -291,7 +304,8 @@ public final class FunDecl: NamedDecl, Stmt, DeclContext {
   public var parent: DeclContext? { return declContext }
   public var decls: [Decl] = []
 
-  /// The function's semantic type.
+  // LValueDecl requirements
+
   public var type: QualType?
 
   /// The function's declaration attributes.
@@ -400,7 +414,7 @@ public final class GenericParamDecl: NamedDecl, TypeDecl {
 }
 
 /// A function parameter declaration.
-public final class ParamDecl: NamedDecl {
+public final class ParamDecl: NamedDecl, LValueDecl {
 
   // NamedDecl requirements
 
@@ -409,7 +423,8 @@ public final class ParamDecl: NamedDecl {
   public unowned var module: Module
   public var range: SourceRange
 
-  /// The parameter's semantic type.
+  // LValueDecl requirements
+
   public var type: QualType?
 
   /// The parameter's label.
@@ -457,8 +472,8 @@ public final class ParamDecl: NamedDecl {
 
 }
 
-/// A nominal type declaration.
-public protocol NominalTypeDecl: NamedDecl, TypeDecl, DeclContext {
+/// A nominal or built-in type declaration.
+public protocol NominalOrBuiltinTypeDecl: NamedDecl, TypeDecl, DeclContext {
 
   /// The type's generic parameters.
   var genericParams: [GenericParamDecl] { get }
@@ -477,9 +492,9 @@ public protocol NominalTypeDecl: NamedDecl, TypeDecl, DeclContext {
 /// An interface declaration.
 ///
 /// Interfaces are blueprint of requirements (properties and methods) for types to conform to.
-public final class InterfaceDecl: NominalTypeDecl {
+public final class InterfaceDecl: NominalOrBuiltinTypeDecl {
 
-  // NominalTypeDecl requirements
+  // NominalOrBuiltinTypeDecl requirements
 
   public var genericParams: [GenericParamDecl]
   public var body: BraceStmt?
@@ -540,9 +555,9 @@ public final class InterfaceDecl: NominalTypeDecl {
 /// A structure declaration.
 ///
 /// Structures represent aggregate of properties and methods.
-public final class StructDecl: NominalTypeDecl {
+public final class StructDecl: NominalOrBuiltinTypeDecl {
 
-  // NominalTypeDecl requirements
+  // NominalOrBuiltinTypeDecl requirements
 
   public var genericParams: [GenericParamDecl]
   public var body: BraceStmt?
@@ -604,9 +619,9 @@ public final class StructDecl: NominalTypeDecl {
 ///
 /// Union types (a.k.a. sum types) are types that can have several separate representations, in
 /// contrast to structures (a.k.a. product types) which represent aggregates of properties.
-public final class UnionDecl: NominalTypeDecl {
+public final class UnionDecl: NominalOrBuiltinTypeDecl {
 
-  // NominalTypeDecl requirements
+  // NominalOrBuiltinTypeDecl requirements
 
   public var genericParams: [GenericParamDecl]
   public var body: BraceStmt?
@@ -673,9 +688,9 @@ public final class UnionNestedDecl: Decl {
   public var range: SourceRange
 
   /// The member's type declaration.
-  public var nestedDecl: NominalTypeDecl
+  public var nestedDecl: NominalOrBuiltinTypeDecl
 
-  public init(nestedDecl: NominalTypeDecl, module: Module, range: SourceRange) {
+  public init(nestedDecl: NominalOrBuiltinTypeDecl, module: Module, range: SourceRange) {
     self.nestedDecl = nestedDecl
     self.module = module
     self.range = range
@@ -694,7 +709,7 @@ public final class UnionNestedDecl: Decl {
   }
 
   public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
-    nestedDecl = nestedDecl.accept(transformer: transformer) as! NominalTypeDecl
+    nestedDecl = nestedDecl.accept(transformer: transformer) as! NominalOrBuiltinTypeDecl
     return self
   }
 
@@ -748,23 +763,33 @@ public final class TypeExtDecl: Decl, DeclContext {
 }
 
 /// A built-in type declaration.
-public final class BuiltinTypeDecl: NamedDecl, TypeDecl {
+public final class BuiltinTypeDecl: NominalOrBuiltinTypeDecl {
+
+  // NominalOrBuiltinTypeDecl requirements
+
+  public var genericParams: [GenericParamDecl]
+  public let body: BraceStmt? = nil
+  public var memberLookupTable: MemberLookupTable?
 
   // NamedDecl requirements
 
-  public var declContext: DeclContext?
+  public var name: String
+  public weak var declContext: DeclContext?
   public unowned var module: Module
   public var range: SourceRange
-  public let name: String
-
-  public var memberLookupTable: MemberLookupTable?
 
   // TypeDecl requirements
 
   public var type: TypeBase?
 
-  public init(name: String, module: Module) {
+  // DeclContext requirements
+
+  public var parent: DeclContext? { return declContext }
+  public var decls: [Decl] = []
+
+  public init(name: String, genericParams: [GenericParamDecl] = [], module: Module) {
     self.name = name
+    self.genericParams = genericParams
     self.module = module
 
     let loc = SourceLocation(sourceRef: BuiltinTypeDecl.source)
