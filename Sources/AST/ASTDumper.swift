@@ -721,11 +721,3 @@ extension FunDecl.Kind: CustomStringConvertible {
   }
 
 }
-
-extension TypeQualSet: CustomStringConvertible {
-
-  public var description: String {
-    return contains(.cst) ? "@cst" : "@mut"
-  }
-
-}
