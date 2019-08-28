@@ -116,6 +116,12 @@ public struct NameBinderPass {
     }
 
     func visit(_ node: IdentExpr) {
+      // Ignore name binding for assignment operators.
+      if [":=", "&-", "<-"].contains(node.name) {
+        assert(node.specArgs.isEmpty)
+        return
+      }
+
       let decls = currentDeclContext.lookup(unqualifiedName: node.name, inCompilerContext: context)
       if decls.isEmpty {
         node.registerError(message: Issue.unboundIdentifier(name: node.name))
