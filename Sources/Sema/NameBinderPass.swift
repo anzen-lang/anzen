@@ -63,6 +63,14 @@ public struct NameBinderPass {
     }
 
     func visit(_ node: FunDecl) {
+      if node.kind ~= [.method, .constructor, .destructor] {
+        // Insert a `self` declaration in methods, constructors and destructors so that the `self`
+        // identifier can be properly mapped.
+        assert(!node.decls.contains(where: { ($0 as? NamedDecl)?.name == "self" }))
+        let selfDecl = PropDecl(name: "self", module: node.module, range: node.range)
+        node.decls.append(selfDecl)
+      }
+
       inDeclContext(node) {
         node.traverse(with: self)
       }
