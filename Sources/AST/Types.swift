@@ -151,7 +151,7 @@ public class TypeBase: Hashable {
   /// This method is intended to be overriden by type subclasses and used internally to compute the
   /// type hash values based on their structures rather than on their identity.
   internal func hashContents(into hasher: inout Hasher) {
-    hash(into: &hasher)
+    fatalError("call to abstract method 'hashContents(into:)'")
   }
 
   /// Accepts a type transformer.
@@ -190,6 +190,10 @@ public final class TypeKind: TypeBase {
     return self.type === rhs.type
   }
 
+  internal override func hashContents(into hasher: inout Hasher) {
+    hasher.combine(ObjectIdentifier(type))
+  }
+
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
     return transformer.transform(self)
   }
@@ -198,6 +202,11 @@ public final class TypeKind: TypeBase {
 
 /// A type variable used during type inference.
 public final class TypeVar: TypeBase {
+
+  internal override func hashContents(into hasher: inout Hasher) {
+    hasher.combine(info.typeID)
+  }
+
 }
 
 /// A type placeholder in a generic type.
@@ -223,6 +232,10 @@ public final class TypePlaceholder: TypeBase {
     guard let rhs = other as? TypePlaceholder
       else { return false }
     return self.decl === rhs.decl
+  }
+
+  internal override func hashContents(into hasher: inout Hasher) {
+    hasher.combine(ObjectIdentifier(decl!))
   }
 
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
@@ -269,6 +282,11 @@ public final class BoundGenericType: TypeBase {
         && (self.bindings == rhs.bindings)
   }
 
+  internal override func hashContents(into hasher: inout Hasher) {
+    hasher.combine(type)
+    hasher.combine(bindings)
+  }
+
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
     return transformer.transform(self)
   }
@@ -278,7 +296,7 @@ public final class BoundGenericType: TypeBase {
 public final class FunType: TypeBase {
 
   /// A function type's parameter.
-  public struct Param: Equatable {
+  public struct Param: Hashable {
 
     /// The parameter's label.
     public let label: String?
@@ -342,6 +360,12 @@ public final class FunType: TypeBase {
         && (self.codom == rhs.codom)
   }
 
+  internal override func hashContents(into hasher: inout Hasher) {
+    hasher.combine(placeholders)
+    hasher.combine(dom)
+    hasher.combine(codom)
+  }
+
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
     return transformer.transform(self)
   }
@@ -375,6 +399,10 @@ public class NominalType: TypeBase {
   fileprivate init(decl: NominalOrBuiltinTypeDecl, context: CompilerContext, info: TypeInfo) {
     super.init(context: context, info: info)
     self.decl = decl
+  }
+
+  internal override func hashContents(into hasher: inout Hasher) {
+    hasher.combine(ObjectIdentifier(decl!))
   }
 
 }
@@ -461,6 +489,10 @@ public final class BuiltinType: TypeBase {
       : context.getBoundGenericType(type: self, bindings: bindings)
   }
 
+  internal override func hashContents(into hasher: inout Hasher) {
+    hasher.combine(ObjectIdentifier(decl!))
+  }
+
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
     return transformer.transform(self)
   }
@@ -472,6 +504,10 @@ public final class ErrorType: TypeBase {
 
   public init(context: CompilerContext) {
     super.init(context: context, info: TypeInfo(bits: 0))
+  }
+
+  internal override func hashContents(into hasher: inout Hasher) {
+    hasher.combine(ObjectIdentifier(self))
   }
 
   public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
