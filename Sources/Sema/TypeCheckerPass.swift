@@ -9,6 +9,9 @@ public struct TypeCheckerPass {
   /// The module being processed.
   public let module: Module
 
+  /// The checker's type constraint factory.
+  private let factory = TypeConstraintFactory()
+
   public init(module: Module, context: CompilerContext) {
     assert(module.state == .parsed, "module has not been parsed yet")
     self.context = context
@@ -17,7 +20,7 @@ public struct TypeCheckerPass {
 
   public func process() {
     // Extract all type constraints.
-    let extractor = TypeConstraintExtractor(context: context)
+    let extractor = TypeConstraintExtractor(context: context, factory: factory)
     for decl in module.decls {
       decl.accept(visitor: extractor)
     }
@@ -31,6 +34,7 @@ public struct TypeCheckerPass {
     var solver = TypeConstraintSolver(
       constraints: extractor.constraints,
       context: context,
+      factory: factory,
       assumptions: SubstitutionTable())
     let solution = solver.solve()
     solution.substitutions.dump()

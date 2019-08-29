@@ -17,6 +17,9 @@ struct TypeConstraintSolver {
   /// The compiler context.
   private var context: CompilerContext
 
+  /// The type checker's constraint factory.
+  private let factory: TypeConstraintFactory
+
   /// The constraints that are yet to be solved.
   private var constraints: [TypeConstraint]
 
@@ -35,6 +38,7 @@ struct TypeConstraintSolver {
   init<S>(
     constraints: S,
     context: CompilerContext,
+    factory: TypeConstraintFactory,
     assumptions: SubstitutionTable,
     weight: Int = 0,
     bestWeight: Int = Int.max)
@@ -42,12 +46,16 @@ struct TypeConstraintSolver {
   {
     self.context = context
     self.constraints = constraints.sorted(by: { type(of: $0).priority < type(of: $1).priority })
+    self.factory = factory
     self.assumptions = assumptions
     self.weight = weight
     self.bestWeight = bestWeight
   }
 
   mutating func solve() -> SolverResult {
+    // Save the ID of all unsolved constraints to make sure the solver isn't stuck.
+    var unsolvedIDs = [constraints.map { $0.id }]
+
     while let constraint = constraints.popLast() {
       // Make sure the current solution is still worth exploring.
       guard weight <= bestWeight
@@ -59,9 +67,6 @@ struct TypeConstraintSolver {
 
       case let conformance as TypeConformanceConstraint:
         solve(conformance)
-
-//      case let construction as TypeConstructionConstraint:
-//        solve(construction)
 
       case let specialization as TypeSpecializationConstraint:
         solve(specialization)
@@ -76,6 +81,7 @@ struct TypeConstraintSolver {
           var subsolver = TypeConstraintSolver(
             constraints: constraints + [choice.constraint],
             context: context,
+            factory: factory,
             assumptions: assumptions,
             weight: weight + choice.weight,
             bestWeight: bestWeight)
@@ -95,7 +101,10 @@ struct TypeConstraintSolver {
 
         if solutions.count == 1 {
           // There is only one solution, so we simply return in.
-          return solutions[0]
+          return SolverResult(
+            substitutions: solutions[0].substitutions,
+            weight: solutions[0].weight,
+            errors: solutions[0].errors + errors)
         } else {
           // There are multiple equivalent solutions.
           fatalError("TODO: ambiguous constraint")
@@ -103,6 +112,22 @@ struct TypeConstraintSolver {
 
       default:
         assertionFailure("bad type constraint '\(type(of: constraint))'")
+      }
+
+      // If the number of remaining constraints differs, the solver has necessarily progressed and
+      // there's no need to keep any of the previous configurations. In the other case, we need to
+      // make sure the solver hasn't already seen the same configuration. This would mean that all
+      // constraints would have been delayed, hence indicating that there are not enough
+      // information in the constraint system to bind all its free variables.
+      let remainingIDs = constraints.map { $0.id }
+      if remainingIDs.count != unsolvedIDs[unsolvedIDs.count - 1].count {
+        unsolvedIDs = [remainingIDs]
+      } else if !unsolvedIDs.contains(remainingIDs) {
+        unsolvedIDs.append(remainingIDs)
+      } else {
+        errors.append(.irreducibleConstraints(constraints))
+        weight += ERROR_WEIGHT
+        return SolverResult(substitutions: assumptions, weight: weight, errors: errors)
       }
     }
 
@@ -133,7 +158,7 @@ struct TypeConstraintSolver {
       }
 
       // Break the constraints.
-      constraints.append(TypeEqualityConstraint(
+      constraints.append(factory.equality(
         t: lty.codom.bareType,
         u: rty.codom.bareType,
         at: constraint.location + .codomain))
@@ -143,12 +168,12 @@ struct TypeConstraintSolver {
 
         // Make sure both parameters have the same label.
         if params.0.label != params.1.label {
-          let cons = TypeEqualityConstraint(t: constraint.t, u: constraint.u, at: loc)
+          let cons = factory.equality(t: constraint.t, u: constraint.u, at: loc)
           errors.append(.incompatibleParameterLabels(cons))
           weight += ERROR_WEIGHT
         }
 
-        constraints.append(TypeEqualityConstraint(
+        constraints.append(factory.equality(
           t: params.0.type.bareType,
           u: params.1.type.bareType,
           at: constraint.location + .parameter(i)))
@@ -186,11 +211,11 @@ struct TypeConstraintSolver {
       // Otherwise, trying to unify it with `U` might be too broad. Instead, we have to compute the
       // "join" of both types. We do that by successiveky attempting to unify `T` with all types
       // known to be conforming to `U`.
-      var builder = TypeConstraintDisjunctionBuilder()
-      builder.add(TypeEqualityConstraint(t: lhs, u: rhs, at: constraint.location))
+      var builder = TypeConstraintDisjunctionBuilder(factory: factory)
+      builder.add(factory.equality(t: lhs, u: rhs, at: constraint.location))
 
       for ty in context.getTypesConforming(to: rhs) {
-        builder.add(TypeEqualityConstraint(t: lhs, u: ty, at: constraint.location), weight: 1)
+        builder.add(factory.equality(t: lhs, u: ty, at: constraint.location), weight: 1)
       }
 
       constraints.append(builder.finalize())
@@ -203,10 +228,10 @@ struct TypeConstraintSolver {
         assumptions.set(substitution: lhs, for: var_)
       } else {
         // FIXME: Add conformed interfaces.
-        var builder = TypeConstraintDisjunctionBuilder()
-        builder.add(TypeEqualityConstraint(t: rhs, u: lhs, at: constraint.location))
+        var builder = TypeConstraintDisjunctionBuilder(factory: factory)
+        builder.add(factory.equality(t: rhs, u: lhs, at: constraint.location))
         builder.add(
-          TypeEqualityConstraint(t: rhs, u: context.anythingType, at: constraint.location),
+          factory.equality(t: rhs, u: context.anythingType, at: constraint.location),
           weight: 1)
         constraints.append(builder.finalize())
       }
@@ -222,7 +247,7 @@ struct TypeConstraintSolver {
       }
 
       // Break the constraints.
-      constraints.append(TypeConformanceConstraint(
+      constraints.append(factory.conformance(
         t: lty.codom.bareType,
         u: rty.codom.bareType,
         at: constraint.location + .codomain))
@@ -232,12 +257,12 @@ struct TypeConstraintSolver {
 
         // Make sure both parameters have the same label.
         if params.0.label != params.1.label {
-          let cons = TypeEqualityConstraint(t: constraint.t, u: constraint.u, at: loc)
+          let cons = factory.equality(t: constraint.t, u: constraint.u, at: loc)
           errors.append(.incompatibleParameterLabels(cons))
           weight += ERROR_WEIGHT
         }
 
-        constraints.append(TypeConformanceConstraint(
+        constraints.append(factory.conformance(
           t: params.0.type.bareType,
           u: params.1.type.bareType,
           at: constraint.location + .parameter(i)))
@@ -271,13 +296,13 @@ struct TypeConstraintSolver {
 
     case is FunType:
       // If both `T` and `U` are monomorphic, the constraint can be solved as an equality.
-      constraints.append(TypeEqualityConstraint(t: lhs, u: rhs, at: constraint.location))
+      constraints.append(factory.equality(t: lhs, u: rhs, at: constraint.location))
 
     case let rty as BoundGenericType where rty.type is FunType:
       // If `U` is a bound generic function type, the constraint can be solved as an equality
       // between `T` and `U` where each placeholder has been substituted.
       let monoTy = (rty.type as! FunType).subst(rty.bindings)
-      constraints.append(TypeEqualityConstraint(t: lhs, u: monoTy, at: constraint.location))
+      constraints.append(factory.equality(t: lhs, u: monoTy, at: constraint.location))
 
     default:
       errors.append(.incompatibleTypes(constraint))
@@ -313,14 +338,14 @@ struct TypeConstraintSolver {
     }
 
     let ownerBindings = (owner as? BoundGenericType)?.bindings ?? [:]
-    var builder = TypeConstraintDisjunctionBuilder()
+    var builder = TypeConstraintDisjunctionBuilder(factory: factory)
     for decl in decls {
       let placeholders = decl.type!.bareType.getUnboundPlaceholders()
       let bindings = ownerBindings.filter { placeholders.contains($0.key) }
       let memberTy = bindings.isEmpty
         ? decl.type!.bareType
         : context.getBoundGenericType(type: decl.type!.bareType, bindings: bindings)
-      builder.add(TypeEqualityConstraint(t: constraint.t, u: memberTy, at: constraint.location))
+      builder.add(factory.equality(t: constraint.t, u: memberTy, at: constraint.location))
     }
     constraints.append(builder.finalize())
   }

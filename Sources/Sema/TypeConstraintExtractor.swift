@@ -5,14 +5,18 @@ final class TypeConstraintExtractor: ASTVisitor {
   /// The compiler context.
   let context: CompilerContext
 
+  /// The type checker's constraint factory.
+  let factory: TypeConstraintFactory
+
   /// The extracted type constraints.
   var constraints: [TypeConstraint] = []
 
   /// The type of the function declaration being visited (if any).
   var visitedFunType: FunType?
 
-  init(context: CompilerContext) {
+  init(context: CompilerContext, factory: TypeConstraintFactory) {
     self.context = context
+    self.factory = factory
   }
 
   func visit(_ node: PropDecl) {
@@ -20,8 +24,8 @@ final class TypeConstraintExtractor: ASTVisitor {
       value.accept(visitor: self)
       let loc: ConstraintLocation = .location(node, .initializer)
       let cons: TypeConstraint = node.sign?.sign != nil
-        ? TypeConformanceConstraint(t: value.type!.bareType, u: node.type!.bareType, at: loc)
-        : TypeEqualityConstraint(t: value.type!.bareType, u: node.type!.bareType, at: loc)
+        ? factory.conformance(t: value.type!.bareType, u: node.type!.bareType, at: loc)
+        : factory.equality(t: value.type!.bareType, u: node.type!.bareType, at: loc)
       constraints.append(cons)
     }
   }
@@ -38,8 +42,8 @@ final class TypeConstraintExtractor: ASTVisitor {
       value.accept(visitor: self)
       let loc: ConstraintLocation = .location(node, .initializer)
       let cons: TypeConstraint = node.sign?.sign != nil
-        ? TypeConformanceConstraint(t: value.type!.bareType, u: node.type!.bareType, at: loc)
-        : TypeEqualityConstraint(t: value.type!.bareType, u: node.type!.bareType, at: loc)
+        ? factory.conformance(t: value.type!.bareType, u: node.type!.bareType, at: loc)
+        : factory.equality(t: value.type!.bareType, u: node.type!.bareType, at: loc)
       constraints.append(cons)
     }
   }
@@ -87,14 +91,14 @@ final class TypeConstraintExtractor: ASTVisitor {
     node.op.type = funTy.cst
 
     // The type of the right operand should conform to the argument of the operator's type.
-    constraints.append(TypeConformanceConstraint(
+    constraints.append(factory.conformance(
       t: node.rhs.type!.bareType,
       u: rhsTy.bareType,
       at: .location(node, .infixRHS)))
 
     // The type of the left operand should have a method named after the operator, with the same
     // signature as that of the operator.
-    constraints.append(TypeValueMemberConstraint(
+    constraints.append(factory.valueMember(
       t: node.op.type!.bareType,
       u: node.lhs.type!.bareType,
       memberName: node.op.name,
@@ -112,7 +116,7 @@ final class TypeConstraintExtractor: ASTVisitor {
 
     // The type of the left operand should have a method named after the operator, with the same
     // signature as that of the operator.
-    constraints.append(TypeValueMemberConstraint(
+    constraints.append(factory.valueMember(
       t: node.op.type!.bareType,
       u: node.operand.type!.bareType,
       memberName: node.op.name,
@@ -132,14 +136,14 @@ final class TypeConstraintExtractor: ASTVisitor {
 
     // Create a specialization constraint between the callee and the function type we've built.
     let loc: ConstraintLocation = .location(node, .call)
-    constraints.append(TypeSpecializationConstraint(
+    constraints.append(factory.specialization(
       t: funTy,
       u: node.callee.type!.bareType,
       at: loc))
 
     // Create a conformance constraint for each argument.
     for (i, (arg, param)) in zip(node.args, funTy.dom).enumerated() {
-      constraints.append(TypeConformanceConstraint(
+      constraints.append(factory.conformance(
         t: arg.type!.bareType,
         u: param.type.bareType,
         at: loc + .parameter(i)))
@@ -171,7 +175,7 @@ final class TypeConstraintExtractor: ASTVisitor {
     node.type = QualType(bareType: identTy, quals: [])
 
     // Build the set of constraints related to the referred location.
-    var builder = TypeConstraintDisjunctionBuilder()
+    var builder = TypeConstraintDisjunctionBuilder(factory: factory)
     let loc: ConstraintLocation = .location(node, .identifier)
     for decl in node.referredDecls {
       switch decl {
@@ -187,7 +191,7 @@ final class TypeConstraintExtractor: ASTVisitor {
           valueTy = context.getBoundGenericType(type: valueTy, bindings: bindings)
         }
 
-        builder.add(TypeEqualityConstraint(t: identTy, u: valueTy, at: loc))
+        builder.add(factory.equality(t: identTy, u: valueTy, at: loc))
 
       case let typeDecl as TypeDecl:
         var typeTy = typeDecl.type!
@@ -205,8 +209,8 @@ final class TypeConstraintExtractor: ASTVisitor {
         // for possible constructors has to be created, in addition to the equality constraint on
         // the type's kind. Notice that the membership constraint is created first, as identifiers
         // are more likely to represent constructors than first-class types.
-        builder.add(TypeValueMemberConstraint(t: identTy, u: typeTy, memberName: "new", at: loc))
-        builder.add(TypeEqualityConstraint(t: identTy, u: typeTy, at: loc))
+        builder.add(factory.valueMember(t: identTy, u: typeTy, memberName: "new", at: loc))
+        builder.add(factory.equality(t: identTy, u: typeTy, at: loc))
 
       default:
         assertionFailure("bad declaration")
@@ -223,7 +227,7 @@ final class TypeConstraintExtractor: ASTVisitor {
     // visited as a regular identifier. Instead, we create a membership constraint.
     node.ownee.type = QualType(bareType: context.getTypeVar(), quals: [])
     node.type = node.ownee.type!
-    constraints.append(TypeValueMemberConstraint(
+    constraints.append(factory.valueMember(
       t: node.ownee.type!.bareType,
       u: node.owner.type!.bareType,
       memberName: node.ownee.name,
@@ -235,7 +239,7 @@ final class TypeConstraintExtractor: ASTVisitor {
     // can create a membership constraint on the ownee's type.
     node.ownee.type = QualType(bareType: context.getTypeVar(), quals: [])
     node.type = node.ownee.type
-    constraints.append(TypeValueMemberConstraint(
+    constraints.append(factory.valueMember(
       t: node.ownee.type!.bareType,
       u: node.ownee.type!.bareType,
       memberName: node.ownee.name,
@@ -282,7 +286,7 @@ final class TypeConstraintExtractor: ASTVisitor {
   func visit(_ node: BindingStmt) {
     node.lvalue.accept(visitor: self)
     node.rvalue.accept(visitor: self)
-    constraints.append(TypeConformanceConstraint(
+    constraints.append(factory.conformance(
       t: node.rvalue.type!.bareType,
       u: node.lvalue.type!.bareType,
       at: .location(node, .binding)))
@@ -291,7 +295,7 @@ final class TypeConstraintExtractor: ASTVisitor {
   func visit(_ node: ReturnStmt) {
     if let (_, value) = node.binding {
       value.accept(visitor: self)
-      constraints.append(TypeConformanceConstraint(
+      constraints.append(factory.conformance(
         t: value.type!.bareType,
         u: visitedFunType!.codom.bareType,
         at: .location(node, .return)))

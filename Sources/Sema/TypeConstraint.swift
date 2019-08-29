@@ -1,8 +1,10 @@
 import AST
-import Utils
 
 /// A type constraint.
 public protocol TypeConstraint {
+
+  /// The constraint's unique ID.
+  var id: Int { get }
 
   /// The constraint's priority.
   ///
@@ -15,13 +17,16 @@ public protocol TypeConstraint {
 /// An equality constraint `T ~= U` that requires `T` to match `U`.
 public struct TypeEqualityConstraint: TypeConstraint, CustomStringConvertible {
 
-  /// The location from which the constraint originates.
-  public let location: ConstraintLocation
+  public let id: Int
 
   public let t: TypeBase
   public let u: TypeBase
 
-  public init(t: TypeBase, u: TypeBase, at location: ConstraintLocation) {
+  /// The location from which the constraint originates.
+  public let location: ConstraintLocation
+
+  internal init(t: TypeBase, u: TypeBase, at location: ConstraintLocation, id: Int) {
+    self.id = id
     self.t = t
     self.u = u
     self.location = location
@@ -46,13 +51,16 @@ public struct TypeEqualityConstraint: TypeConstraint, CustomStringConvertible {
 ///   `Ai <= Ci` and `B <= D`.
 public struct TypeConformanceConstraint: TypeConstraint, CustomStringConvertible {
 
-  /// The location from which the constraint originates.
-  public let location: ConstraintLocation
+  public let id: Int
 
   public let t: TypeBase
   public let u: TypeBase
 
-  public init(t: TypeBase, u: TypeBase, at location: ConstraintLocation) {
+  /// The location from which the constraint originates.
+  public let location: ConstraintLocation
+
+  internal init(t: TypeBase, u: TypeBase, at location: ConstraintLocation, id: Int) {
+    self.id = id
     self.t = t
     self.u = u
     self.location = location
@@ -68,45 +76,22 @@ public struct TypeConformanceConstraint: TypeConstraint, CustomStringConvertible
 
 }
 
-/// A construction constraint `T <+ U` requires `U` to be the kind of some type and `T` the
-/// signature of a construtor thereof.
-public struct TypeConstructionConstraint: TypeConstraint, CustomStringConvertible {
-
-  /// The location from which the constraint originates.
-  public let location: ConstraintLocation
-
-  public let t: TypeBase
-  public let u: TypeBase
-
-  public init(t: TypeBase, u: TypeBase, at location: ConstraintLocation) {
-    self.t = t
-    self.u = u
-    self.location = location
-  }
-
-  public static let priority: Int = 300
-
-  // MARK: CustomStringConvertible
-
-  public var description: String {
-    return "\(t) <+ \(u)"
-  }
-
-}
-
 /// A type specialization constraint `T <s U` requires either that `T` be a specialization of a
 /// generic type `U`, or that `T` be equal to `U`.
 ///
 /// This constraint typically serves to typecheck the callee of a function call.
 public struct TypeSpecializationConstraint: TypeConstraint, CustomStringConvertible {
 
-  /// The location from which the constraint originates.
-  public let location: ConstraintLocation
+  public let id: Int
 
   public let t: FunType
   public let u: TypeBase
 
-  public init(t: FunType, u: TypeBase, at location: ConstraintLocation) {
+  /// The location from which the constraint originates.
+  public let location: ConstraintLocation
+
+  internal init(t: FunType, u: TypeBase, at location: ConstraintLocation, id: Int) {
+    self.id = id
     self.t = t
     self.u = u
     self.location = location
@@ -126,14 +111,19 @@ public struct TypeSpecializationConstraint: TypeConstraint, CustomStringConverti
 /// type matches `T`
 public struct TypeValueMemberConstraint: TypeConstraint, CustomStringConvertible {
 
-  /// The location from which the constraint originates.
-  public let location: ConstraintLocation
+  public let id: Int
 
   public let t: TypeBase
   public let u: TypeBase
   public let memberName: String
 
-  public init(t: TypeBase, u: TypeBase, memberName: String, at location: ConstraintLocation) {
+  /// The location from which the constraint originates.
+  public let location: ConstraintLocation
+
+  internal init(
+    t: TypeBase, u: TypeBase, memberName: String, at location: ConstraintLocation, id: Int)
+  {
+    self.id = id
     self.t = t
     self.u = u
     self.memberName = memberName
@@ -154,14 +144,19 @@ public struct TypeValueMemberConstraint: TypeConstraint, CustomStringConvertible
 /// type matches `T`
 public struct TypeTypeMemberConstraint: TypeConstraint {
 
-  /// The location from which the constraint originates.
-  public let location: ConstraintLocation
+  public let id: Int
 
   public let t: TypeBase
   public let u: TypeBase
   public let memberName: String
 
-  public init(t: TypeBase, u: TypeBase, memberName: String, at location: ConstraintLocation) {
+  /// The location from which the constraint originates.
+  public let location: ConstraintLocation
+
+  internal init(
+    t: TypeBase, u: TypeBase, memberName: String, at location: ConstraintLocation, id: Int)
+  {
+    self.id = id
     self.t = t
     self.u = u
     self.memberName = memberName
@@ -177,9 +172,13 @@ public struct TypeConstraintDisjunction: TypeConstraint, CustomStringConvertible
 
   public typealias Element = (constraint: TypeConstraint, weight: Int)
 
+  public let id: Int
+
+  /// The elements of the conjunction.
   public let choices: [Element]
 
-  public init<S>(choices: S) where S: Sequence, S.Element == Element {
+  internal init<S>(choices: S, id: Int) where S: Sequence, S.Element == Element {
+    self.id = id
     self.choices = Array(choices)
   }
 
@@ -196,9 +195,12 @@ public struct TypeConstraintDisjunction: TypeConstraint, CustomStringConvertible
 /// A disjunction builder.
 public struct TypeConstraintDisjunctionBuilder {
 
-  public var choices: [TypeConstraintDisjunction.Element] = []
+  private let factory: TypeConstraintFactory
+  private var choices: [TypeConstraintDisjunction.Element] = []
 
-  public init() {}
+  internal init(factory: TypeConstraintFactory) {
+    self.factory = factory
+  }
 
   public mutating func add(_ constraint: TypeConstraint, weight: Int = 0) {
     choices.append((constraint: constraint, weight: weight))
@@ -208,7 +210,7 @@ public struct TypeConstraintDisjunctionBuilder {
     assert(choices.count > 0)
     return choices.count == 1
       ? choices[0].constraint
-      : TypeConstraintDisjunction(choices: choices)
+      : factory.disjunction(choices: choices)
   }
 
 }
