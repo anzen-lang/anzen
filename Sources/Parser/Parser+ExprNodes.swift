@@ -30,8 +30,8 @@ extension Parser {
       // Build the infix operator's identifier.
       let infixIdent = IdentExpr(name: infixToken.value!, module: module, range: infixToken.range)
 
-      if infixToken.kind == .as {
-        // If the infix token is a cast operator (e.g. `as`), then the right operand should be
+      if infixToken.kind == .unsafeAs {
+        // If the infix token is a cast operator (e.g. `as!`), then the right operand should be
         // parsed as an unqualified type signature rather than an expression.
         var rhs = parseTypeSign(issues: &issues)
         if rhs == nil {

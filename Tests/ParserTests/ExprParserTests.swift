@@ -71,11 +71,11 @@ class ExprParserTests: XCTestCase, ParserTestCase {
   func testUnsafeCastExpr() {
     var pr: ParseResult<Expr?>
 
-    pr = parse("a as Int", with: Parser.parseExpr)
+    pr = parse("a as! Int", with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: UnsafeCastExpr.self))
 
-    let source = "a as Int".split(separator: " ").joined(separator: "\n")
+    let source = "a as! Int".split(separator: " ").joined(separator: "\n")
     pr = parse(source, with: Parser.parseExpr)
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: UnsafeCastExpr.self))

@@ -168,7 +168,7 @@ extension Lexer: IteratorProtocol, Sequence {
 
     // Check for identifiers.
     if isAlnumOrUnderscore(c) {
-      let chars = String(take(while: isAlnumOrUnderscore))
+      var chars = String(take(while: isAlnumOrUnderscore))
       let kind: TokenKind
 
       // Check for keywords and operators.
@@ -177,7 +177,6 @@ extension Lexer: IteratorProtocol, Sequence {
       case "true"     : kind = .bool
       case "false"    : kind = .bool
       case "not"      : kind = .not
-      case "as"       : kind = .as
       case "is"       : kind = .is
       case "and"      : kind = .and
       case "or"       : kind = .or
@@ -204,7 +203,16 @@ extension Lexer: IteratorProtocol, Sequence {
       case "switch"   : kind = .switch
       case "case"     : kind = .case
       case "nullref"  : kind = .nullref
-      default         : kind = .identifier
+      default:
+        if (currentChar == "!") || (currentChar == "?") {
+          // Append the `!` or `?` suffix for cast operators and other identifiers.
+          chars.append(String(take()))
+        }
+        switch chars {
+        case "as!": kind = .unsafeAs
+        case "as?": kind = .safeAs
+        default   : kind = .identifier
+        }
       }
 
       return Token(kind: kind, range: range(from: startLocation))

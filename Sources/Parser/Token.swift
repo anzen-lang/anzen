@@ -87,32 +87,33 @@ public enum TokenKind: UInt64, CustomStringConvertible {
 
   case not          = 5697   // prefix | op | name | 65
 
-  case `as`         = 3650   // infix | op | name | 66
-  case `is`         = 3651   // infix | op | name | 67
-  case and          = 3652   // infix | op | name | 68
-  case or           = 3653   // infix | op | name | 69
-  case add          = 7750   // prefix | infix | op | name | 70
-  case sub          = 7751   // prefix | infix | op | name | 71
-  case mul          = 3656   // infix | op | name | 72
-  case div          = 3657   // infix | op | name | 73
-  case mod          = 3658   // infix | op | name | 74
-  case lt           = 3659   // infix | op | name | 75
-  case le           = 3660   // infix | op | name | 76
-  case ge           = 3661   // infix | op | name | 77
-  case gt           = 3662   // infix | op | name | 78
-  case eq           = 3663   // infix | op | name | 79
-  case ne           = 3664   // infix | op | name | 80
-  case ellipsis     = 3665   // infix | op | name | 81
+  case unsafeAs     = 3650   // infix | op | name | 66
+  case safeAs       = 3651   // infix | op | name | 67
+  case `is`         = 3652   // infix | op | name | 68
+  case and          = 3653   // infix | op | name | 69
+  case or           = 3654   // infix | op | name | 70
+  case add          = 7751   // prefix | infix | op | name | 71
+  case sub          = 7752   // prefix | infix | op | name | 72
+  case mul          = 3657   // infix | op | name | 73
+  case div          = 3658   // infix | op | name | 74
+  case mod          = 3659   // infix | op | name | 75
+  case lt           = 3660   // infix | op | name | 76
+  case le           = 3661   // infix | op | name | 77
+  case ge           = 3662   // infix | op | name | 78
+  case gt           = 3663   // infix | op | name | 79
+  case eq           = 3664   // infix | op | name | 80
+  case ne           = 3665   // infix | op | name | 81
+  case ellipsis     = 3666   // infix | op | name | 82
 
-  case refeq        = 3154   // infix | op | 82
-  case refne        = 3155   // infix | op | 83
+  case refeq        = 3155   // infix | op | 83
+  case refne        = 3156   // infix | op | 84
 
-  case copy         = 9300   // binding | op | 84
-  case alias        = 9301   // binding | op | 85
-  case move         = 9302   // binding | op | 86
-  case arrow        = 9303   // binding | op | 87
+  case copy         = 9301   // binding | op | 85
+  case alias        = 9302   // binding | op | 86
+  case move         = 9303   // binding | op | 87
+  case arrow        = 9304   // binding | op | 88
 
-  case assign       = 1112   // op | 88
+  case assign       = 1112   // op | 89
 
   // MARK: Punctuation
 
@@ -183,7 +184,8 @@ public enum TokenKind: UInt64, CustomStringConvertible {
     case .case:         return "case"
     case .nullref:      return "nullref"
     case .not:          return "not"
-    case .as:           return "as"
+    case .unsafeAs:     return "as!"
+    case .safeAs:       return "as?"
     case .is:           return "is"
     case .and:          return "and"
     case .or:           return "or"
