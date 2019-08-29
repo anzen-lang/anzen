@@ -44,6 +44,7 @@ public protocol ASTVisitor {
   func visit(_ node: LambdaExpr)
   func visit(_ node: UnsafeCastExpr)
   func visit(_ node: SafeCastExpr)
+  func visit(_ node: SubtypeTestExpr)
   func visit(_ node: InfixExpr)
   func visit(_ node: PrefixExpr)
   func visit(_ node: CallExpr)
@@ -185,6 +186,10 @@ extension ASTVisitor {
   }
 
   public func visit(_ node: SafeCastExpr) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: SubtypeTestExpr) {
     node.traverse(with: self)
   }
 

@@ -45,6 +45,7 @@ public protocol ASTTransformer {
   func transform(_ node: LambdaExpr) -> ASTNode
   func transform(_ node: UnsafeCastExpr) -> ASTNode
   func transform(_ node: SafeCastExpr) -> ASTNode
+  func transform(_ node: SubtypeTestExpr) -> ASTNode
   func transform(_ node: InfixExpr) -> ASTNode
   func transform(_ node: PrefixExpr) -> ASTNode
   func transform(_ node: CallExpr) -> ASTNode

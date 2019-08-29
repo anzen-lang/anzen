@@ -174,10 +174,47 @@ public final class SafeCastExpr: Expr {
 
 }
 
-/// A subtype text expression (e.g. `x is Int`).
-//public final class SubtypeTextExpr: Expr {
-//
-//}
+/// A subtype test expression (e.g. `x is Int`).
+public final class SubtypeTestExpr: Expr {
+
+  // Expr requirements
+
+  public var type: QualType?
+  public unowned var module: Module
+  public var range: SourceRange
+
+  /// The expression's operand.
+  public var operand: Expr
+  /// The signature of the type to which the operand should conform.
+  public var subtypeSign: TypeSign
+
+  public init(operand: Expr, subtypeSign: TypeSign, module: Module, range: SourceRange) {
+    self.operand = operand
+    self.subtypeSign = subtypeSign
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V: ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V: ASTVisitor {
+    operand.accept(visitor: visitor)
+    subtypeSign.accept(visitor: visitor)
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
+    operand = operand.accept(transformer: transformer) as! Expr
+    subtypeSign = subtypeSign.accept(transformer: transformer) as! TypeSign
+    return self
+  }
+
+}
 
 /// An infix expression.
 public final class InfixExpr: Expr {

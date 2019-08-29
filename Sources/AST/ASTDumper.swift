@@ -429,6 +429,18 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
+  public func visit(_ node: SubtypeTestExpr) {
+    self <<< indent <<< "(conf_test_expr"
+    self <<< " type='" <<< node.type <<< "'"
+    withIndentation {
+      self <<< "\n"
+      node.operand.accept(visitor: self)
+      self <<< "\n"
+      node.subtypeSign.accept(visitor: self)
+    }
+    self <<< ")"
+  }
+
   public func visit(_ node: InfixExpr) {
     self <<< indent <<< "(infix_expr"
     self <<< " type='" <<< node.type <<< "'"
