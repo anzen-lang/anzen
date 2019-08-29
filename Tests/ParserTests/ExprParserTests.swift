@@ -68,7 +68,7 @@ class ExprParserTests: XCTestCase, ParserTestCase {
     }
   }
 
-  func testUnsafeCastExpr() {
+  func testParseUnsafeCastExpr() {
     var pr: ParseResult<Expr?>
 
     pr = parse("a as! Int", with: Parser.parseExpr)
@@ -81,7 +81,33 @@ class ExprParserTests: XCTestCase, ParserTestCase {
     assertThat(pr.value, .isInstance(of: UnsafeCastExpr.self))
   }
 
-  func testInfixExpr() {
+  func testParseSafeCastExpr() {
+    var pr: ParseResult<Expr?>
+
+    pr = parse("a as? Int", with: Parser.parseExpr)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: SafeCastExpr.self))
+
+    let source = "a as? Int".split(separator: " ").joined(separator: "\n")
+    pr = parse(source, with: Parser.parseExpr)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: SafeCastExpr.self))
+  }
+
+  func testParseSubtypeTestExpr() {
+    var pr: ParseResult<Expr?>
+
+    pr = parse("a is Int", with: Parser.parseExpr)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: SubtypeTestExpr.self))
+
+    let source = "a is Int".split(separator: " ").joined(separator: "\n")
+    pr = parse(source, with: Parser.parseExpr)
+    assertThat(pr.issues, .isEmpty)
+    assertThat(pr.value, .isInstance(of: SubtypeTestExpr.self))
+  }
+
+  func testParseInfixExpr() {
     var pr: ParseResult<Expr?>
 
     pr = parse("a + b", with: Parser.parseExpr)

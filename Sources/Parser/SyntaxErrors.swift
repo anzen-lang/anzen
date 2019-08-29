@@ -4,8 +4,8 @@ extension Issue {
 
   // MARK: Syntax errors
 
-  static func ambiguousCastOperand() -> String {
-    return "ambiguous cast expression, infix expressions should be parenthesized"
+  static func ambiguousCastOrTypeTestOperand() -> String {
+    return "infix expressions should be parenthesized when used as operands in cast and type tests"
   }
 
   static func duplicateGenericParam(key: String) -> String {

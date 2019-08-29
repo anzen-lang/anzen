@@ -1,11 +1,6 @@
 import AST
 import Utils
 
-let exprStartTokens: Set<TokenKind> = [
-  .identifier, .nullref, .bool, .integer, .float, .string, .fun, .dot,
-  .leftParen, .leftBracket, .leftBrace,
-]
-
 extension Parser {
 
   /// Parses an expression.
@@ -30,9 +25,10 @@ extension Parser {
       // Build the infix operator's identifier.
       let infixIdent = IdentExpr(name: infixToken.value!, module: module, range: infixToken.range)
 
-      if infixToken.kind == .unsafeAs {
-        // If the infix token is a cast operator (e.g. `as!`), then the right operand should be
-        // parsed as an unqualified type signature rather than an expression.
+      let opKind = infixToken.kind
+      if (opKind == .unsafeAs) || (opKind == .safeAs) || (opKind == .is) {
+        // If the infix token is a type operator (e.g. a cast or a subtype test), then the right
+        // operand should be parsed as an unqualified type signature rather than an expression.
         var rhs = parseTypeSign(issues: &issues)
         if rhs == nil {
           recoverAtNextStatementDelimiter()
@@ -40,25 +36,26 @@ extension Parser {
         }
 
         // Apply some grammar disambiguation rules.
-        switch expr {
-        case is UnsafeCastExpr:
-          issues.append(parseFailure(
-            Issue.nonAssociativeOp(op: infixToken.kind.description),
-            range: infixToken.range))
+        if (expr is InfixExpr) ||
+           (expr is UnsafeCastExpr) ||
+           (expr is SafeCastExpr) ||
+           (expr is SubtypeTestExpr)
+        {
+          issues.append(parseWarning(
+            Issue.ambiguousCastOrTypeTestOperand(), range: infixToken.range))
+        }
 
-        case is InfixExpr:
-          issues.append(parseFailure(Issue.ambiguousCastOperand(), range: infixToken.range))
-
+        let range = expr.range.lowerBound ..< rhs!.range.upperBound
+        switch opKind {
+        case .unsafeAs:
+          expr = UnsafeCastExpr(operand: expr, castSign: rhs!, module: module, range: range)
+        case .safeAs:
+          expr = SafeCastExpr(operand: expr, castSign: rhs!, module: module, range: range)
+        case .is:
+          expr = SubtypeTestExpr(operand: expr, subtypeSign: rhs!, module: module, range: range)
         default:
           break
         }
-
-        // Add the right operand to the left hand side expression.
-        expr = UnsafeCastExpr(
-          operand: expr,
-          castSign: rhs!,
-          module: module,
-          range: expr.range.lowerBound ..< rhs!.range.upperBound)
       } else {
         // For any other operators, the right operand should be parsed as an expression.
         var rhs = parseAtom(issues: &issues)

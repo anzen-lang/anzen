@@ -328,6 +328,11 @@ public class Parser {
     return Issue(severity: .error, message: message, range: range)
   }
 
+  /// Tiny helper to build parse warnings.
+  func parseWarning(_ message: String, range: SourceRange) -> Issue {
+    return Issue(severity: .warning, message: message, range: range)
+  }
+
   /// Tiny helper to build unexpected token errors.
   func unexpectedToken(expected: String? = nil, got token: Token? = nil) -> Issue {
     let t = token ?? peek()
