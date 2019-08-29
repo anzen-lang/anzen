@@ -90,7 +90,7 @@ public final class LambdaExpr: Expr {
 
 }
 
-/// An unsafe cast expression.
+/// An unsafe cast expression (e.g. `x as! Int`).
 public final class UnsafeCastExpr: Expr {
 
   // Expr requirements
@@ -131,6 +131,53 @@ public final class UnsafeCastExpr: Expr {
   }
 
 }
+
+/// A safe cast expression (e.g. `x as? Int`).
+public final class SafeCastExpr: Expr {
+
+  // Expr requirements
+
+  public var type: QualType?
+  public unowned var module: Module
+  public var range: SourceRange
+
+  /// The expression's operand.
+  public var operand: Expr
+  /// The signature of the type to which the expression should cast.
+  public var castSign: TypeSign
+
+  public init(operand: Expr, castSign: TypeSign, module: Module, range: SourceRange) {
+    self.operand = operand
+    self.castSign = castSign
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V: ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V: ASTVisitor {
+    operand.accept(visitor: visitor)
+    castSign.accept(visitor: visitor)
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
+    operand = operand.accept(transformer: transformer) as! Expr
+    castSign = castSign.accept(transformer: transformer) as! TypeSign
+    return self
+  }
+
+}
+
+/// A subtype text expression (e.g. `x is Int`).
+//public final class SubtypeTextExpr: Expr {
+//
+//}
 
 /// An infix expression.
 public final class InfixExpr: Expr {
