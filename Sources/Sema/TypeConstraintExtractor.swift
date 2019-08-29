@@ -64,6 +64,16 @@ final class TypeConstraintExtractor: ASTVisitor {
     node.type = QualType(bareType: node.castSign.type!, quals: node.operand.type!.quals)
   }
 
+  func visit(_ node: SafeCastExpr) {
+    node.traverse(with: self)
+    node.type = QualType(bareType: node.castSign.type!, quals: node.operand.type!.quals)
+  }
+
+  func visit(_ node: SubtypeTestExpr) {
+    node.traverse(with: self)
+    node.type = context.getBuiltinType(.bool).cst
+  }
+
   func visit(_ node: InfixExpr) {
     node.lhs.accept(visitor: self)
     node.rhs.accept(visitor: self)
