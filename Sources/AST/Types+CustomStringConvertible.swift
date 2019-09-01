@@ -1,13 +1,12 @@
-extension TypeQualSet: CustomStringConvertible {
+extension TypeQual: CustomStringConvertible {
 
   public var description: String {
-    var components: [String] = []
-    if contains(.cst) { components.append("@cst") }
-    if contains(.mut) { components.append("@mut") }
-
-    return components.isEmpty
-      ? "@_"
-      : components.joined(separator: ",")
+    if args.isEmpty {
+      return "\(name)"
+    } else {
+      let argsRepr = args.map({ String(describing: $0) }).joined(separator: ", ")
+      return "\(name)(\(argsRepr))"
+    }
   }
 
 }
@@ -15,9 +14,15 @@ extension TypeQualSet: CustomStringConvertible {
 extension QualType: CustomStringConvertible {
 
   public var description: String {
-    return quals.isEmpty
-      ? "@? \(bareType)"
-      : "\(quals) \(bareType)"
+    if quals.isEmpty {
+      return "@? \(bareType)"
+    } else {
+      let qualsRepr = quals
+        .sorted(by: { a, b in a.name < b.name })
+        .map(String.init)
+        .joined(separator: " ")
+      return "\(qualsRepr) \(bareType)"
+    }
   }
 
 }

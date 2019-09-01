@@ -1,14 +1,38 @@
-/// A type qualifier set.
-public struct TypeQualSet: OptionSet, Hashable {
+/// A type qualifier.
+public struct TypeQual: Hashable, ExpressibleByStringLiteral {
 
-  public let rawValue: Int
+  public let name: String
+  public let decl: TypeQualDecl?
 
-  public init(rawValue: Int) {
-    self.rawValue = rawValue
+  public var args: [Expr] {
+    return decl?.args ?? []
   }
 
-  public static let cst = TypeQualSet(rawValue: 1 << 0)
-  public static let mut = TypeQualSet(rawValue: 1 << 1)
+  public init(decl: TypeQualDecl) {
+    self.name = decl.name
+    self.decl = decl
+  }
+
+  public init(name: String) {
+    self.name = name
+    self.decl = nil
+  }
+
+  public init(stringLiteral value: String) {
+    self.name = value
+    self.decl = nil
+  }
+
+  public static func == (lhs: TypeQual, rhs: TypeQual) -> Bool {
+    return (lhs.name == rhs.name) && (lhs.decl === rhs.decl)
+  }
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(name)
+    if decl != nil {
+      hasher.combine(ObjectIdentifier(decl!))
+    }
+  }
 
 }
 
@@ -19,11 +43,16 @@ public struct QualType: Hashable {
   public let bareType: TypeBase
 
   /// The type's qualifieirs.
-  public let quals: TypeQualSet
+  public let quals: Set<TypeQual>
 
-  public init(bareType: TypeBase, quals: TypeQualSet) {
+  public init(bareType: TypeBase, quals: Set<TypeQual>) {
     self.bareType = bareType
     self.quals = quals
+  }
+
+  public init<S>(bareType: TypeBase, qualDecls: S) where S: Sequence, S.Element == TypeQualDecl {
+    self.bareType = bareType
+    self.quals = Set(qualDecls.map(TypeQual.init))
   }
 
   fileprivate func subst(_ substitutions: [TypePlaceholder: QualType]) -> QualType {
@@ -110,10 +139,14 @@ public class TypeBase: Hashable {
   public final var kind: TypeKind { return context.getTypeKind(of: self) }
 
   /// The type qualified with the `@cst` qualifier.
-  public final var cst: QualType { return QualType(bareType: self, quals: [.cst]) }
+  public final var cst: QualType {
+    return QualType(bareType: self, quals: ["@cst"])
+  }
 
   /// The type qualified with the `@mut` qualifier.
-  public final var mut: QualType { return QualType(bareType: self, quals: [.mut]) }
+  public final var mut: QualType {
+    return QualType(bareType: self, quals: ["@mut"])
+  }
 
   /// Returns the set of unbound generic placeholders occuring in the type.
   public func getUnboundPlaceholders() -> Set<TypePlaceholder> {
