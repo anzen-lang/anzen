@@ -79,8 +79,8 @@ public final class MainCodeDecl: Decl, DeclContext {
 
 }
 
-/// A declaration attribute.
-public final class DeclAttr: ASTNode, Hashable {
+/// A declaration attribute's declaration.
+public final class DeclAttrDecl: ASTNode, Hashable {
 
   // ASTNode requirements
 
@@ -116,7 +116,7 @@ public final class DeclAttr: ASTNode, Hashable {
 
   /// Hashable requirements
 
-  public static func == (lhs: DeclAttr, rhs: DeclAttr) -> Bool {
+  public static func == (lhs: DeclAttrDecl, rhs: DeclAttrDecl) -> Bool {
     return (lhs.name == rhs.name) && (lhs.args == rhs.args)
   }
 
@@ -127,8 +127,8 @@ public final class DeclAttr: ASTNode, Hashable {
 
 }
 
-/// A declaration modifier.
-public final class DeclModifier: ASTNode, Hashable {
+/// A declaration modifier's declaration.
+public final class DeclModifierDecl: ASTNode, Hashable {
 
   /// Enumeration of the declaration modifier kinds.
   public enum Kind: Int {
@@ -171,7 +171,7 @@ public final class DeclModifier: ASTNode, Hashable {
 
   /// Hashable requirements
 
-  public static func == (lhs: DeclModifier, rhs: DeclModifier) -> Bool {
+  public static func == (lhs: DeclModifierDecl, rhs: DeclModifierDecl) -> Bool {
     return lhs.kind == rhs.kind
   }
 
@@ -198,9 +198,9 @@ public final class PropDecl: NamedDecl, LValueDecl, Stmt {
   /// Whether the property's reassignable.
   public var isReassignable: Bool
   /// The property's declaration attributes.
-  public var attrs: Set<DeclAttr>
+  public var attrs: Set<DeclAttrDecl>
   /// The property's declaration modifiers.
-  public var modifiers: Set<DeclModifier>
+  public var modifiers: Set<DeclModifierDecl>
   /// The property's type signature.
   public var sign: QualTypeSign?
   /// The property's initial binding.
@@ -209,8 +209,8 @@ public final class PropDecl: NamedDecl, LValueDecl, Stmt {
   public init(
     name: String,
     isReassignable: Bool = false,
-    attrs: Set<DeclAttr> = [],
-    modifiers: Set<DeclModifier> = [],
+    attrs: Set<DeclAttrDecl> = [],
+    modifiers: Set<DeclModifierDecl> = [],
     sign: QualTypeSign? = nil,
     initializer: (op: IdentExpr, value: Expr)? = nil,
     module: Module,
@@ -309,9 +309,9 @@ public final class FunDecl: NamedDecl, LValueDecl, Stmt, DeclContext {
   public var type: QualType?
 
   /// The function's declaration attributes.
-  public var attrs: Set<DeclAttr>
+  public var attrs: Set<DeclAttrDecl>
   /// The function's declaration modifiers.
-  public var modifiers: Set<DeclModifier>
+  public var modifiers: Set<DeclModifierDecl>
   /// The function's kind.
   public var kind: Kind
   /// The function's generic parameters.
@@ -325,8 +325,8 @@ public final class FunDecl: NamedDecl, LValueDecl, Stmt, DeclContext {
 
   public init(
     name: String,
-    attrs: Set<DeclAttr> = [],
-    modifiers: Set<DeclModifier> = [],
+    attrs: Set<DeclAttrDecl> = [],
+    modifiers: Set<DeclModifierDecl> = [],
     kind: Kind = .regular,
     genericParams: [GenericParamDecl] = [],
     params: [ParamDecl] = [],

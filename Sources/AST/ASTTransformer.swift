@@ -68,8 +68,8 @@ public protocol ASTTransformer {
 
   // MARK: - Attributes, modifiers and directives
 
-  func transform(_ node: DeclAttr) -> ASTNode
-  func transform(_ node: DeclModifier) -> ASTNode
+  func transform(_ node: DeclAttrDecl) -> ASTNode
+  func transform(_ node: DeclModifierDecl) -> ASTNode
   func transform(_ node: Directive) -> ASTNode
 
 }

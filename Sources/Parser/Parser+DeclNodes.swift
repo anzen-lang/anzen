@@ -6,10 +6,10 @@ extension Parser {
   /// Parses a top-level declaration.
   func parseDecl(issues: inout [Issue]) -> ASTNode? {
     switch peek().kind {
-    case .attribute:
+    case .qualifier:
       // Qualifiers prefixing a declarations denote attributes.
-      var attrs: [DeclAttr] = []
-      while peek().kind == .attribute {
+      var attrs: [DeclAttrDecl] = []
+      while peek().kind == .qualifier {
         if let attr = parseDeclAttr(issues: &issues) {
           attrs.append(attr)
           consumeNewlines()
@@ -49,13 +49,13 @@ extension Parser {
       // If the statement starts with a declaration modifier, it can describe either a property or
       // a function declaration. Hence we need to parse all modifiers before we can desambiguise.
       let head = peek()
-      var modifiers: [DeclModifier] = []
+      var modifiers: [DeclModifierDecl] = []
 
       repeat {
-        let declKind: DeclModifier.Kind = consume()!.kind == .static
+        let declKind: DeclModifierDecl.Kind = consume()!.kind == .static
           ? .static
           : .mutating
-        modifiers.append(DeclModifier(kind: declKind, module: module, range: head.range))
+        modifiers.append(DeclModifierDecl(kind: declKind, module: module, range: head.range))
         consumeNewlines()
       } while (peek().kind == .static) || (peek().kind == .mutating)
 
@@ -449,14 +449,14 @@ extension Parser {
   }
 
   /// Parses a declaration attribute.
-  func parseDeclAttr(issues: inout [Issue]) -> DeclAttr? {
-    // The first token should be an attribute name (i.e. `'@' <name>`).
-    guard let head = consume(.attribute) else {
+  func parseDeclAttr(issues: inout [Issue]) -> DeclAttrDecl? {
+    // The first token should be an qualifier name (i.e. `'@' <name>`).
+    guard let head = consume(.qualifier) else {
       issues.append(unexpectedToken(expected: "attribute"))
       return nil
     }
 
-    let attrDecl = DeclAttr(name: head.value!, args: [], module: module, range: head.range)
+    let attrDecl = DeclAttrDecl(name: head.value!, args: [], module: module, range: head.range)
 
     // Attempt to parse an argument list on the same line.
     if consume(.leftParen) != nil {

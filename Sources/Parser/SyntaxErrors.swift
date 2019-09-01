@@ -59,15 +59,15 @@ extension Issue {
       : "unexpected token '\(found)'"
   }
 
-  static func unexpectedFunAttr(attr: DeclAttr) -> String {
+  static func unexpectedFunAttr(attr: DeclAttrDecl) -> String {
     return "unexpected attribute '\(attr.name)' on function declaration will be ignored"
   }
 
-  static func unexpectedDeclModifier(modifier: DeclModifier) -> String {
+  static func unexpectedDeclModifier(modifier: DeclModifierDecl) -> String {
     return "modifier '\(modifier.kind)' may only appear in type declaration"
   }
 
-  static func unexpectedPropAttr(attr: DeclAttr) -> String {
+  static func unexpectedPropAttr(attr: DeclAttrDecl) -> String {
     return "unexpected attribute '\(attr.name)' on property declaration will be ignored"
   }
 

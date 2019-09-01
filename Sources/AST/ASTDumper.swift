@@ -621,8 +621,8 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
-  public func visit(_ node: DeclAttr) {
-    self <<< indent <<< "(decl_attr"
+  public func visit(_ node: DeclAttrDecl) {
+    self <<< indent <<< "(decl_attr_decl"
     self <<< " name='\(node.name)'"
     if !node.args.isEmpty {
       self <<< " " + node.args.joined(separator: " ")
@@ -630,8 +630,8 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< ")"
   }
 
-  public func visit(_ node: DeclModifier) {
-    self <<< indent <<< "(decl_modifier \(node.kind))"
+  public func visit(_ node: DeclModifierDecl) {
+    self <<< indent <<< "(decl_modifier_decl \(node.kind))"
   }
 
   public func visit(_ node: Directive) {
@@ -697,9 +697,9 @@ extension Optional: AnyOptional {
   var value: Any? { return self }
 }
 
-extension DeclAttr: Comparable {
+extension DeclAttrDecl: Comparable {
 
-  public static func < (lhs: DeclAttr, rhs: DeclAttr) -> Bool {
+  public static func < (lhs: DeclAttrDecl, rhs: DeclAttrDecl) -> Bool {
     if lhs.name == rhs.name {
       return lhs.args.joined() < rhs.args.joined()
     } else {
@@ -709,7 +709,7 @@ extension DeclAttr: Comparable {
 
 }
 
-extension DeclAttr: CustomStringConvertible {
+extension DeclAttrDecl: CustomStringConvertible {
 
   public var description: String {
     return ""
@@ -717,15 +717,15 @@ extension DeclAttr: CustomStringConvertible {
 
 }
 
-extension DeclModifier: Comparable {
+extension DeclModifierDecl: Comparable {
 
-  public static func < (lhs: DeclModifier, rhs: DeclModifier) -> Bool {
+  public static func < (lhs: DeclModifierDecl, rhs: DeclModifierDecl) -> Bool {
     return lhs.kind.rawValue < rhs.kind.rawValue
   }
 
 }
 
-extension DeclModifier.Kind: CustomStringConvertible {
+extension DeclModifierDecl.Kind: CustomStringConvertible {
 
   public var description: String {
     switch self {

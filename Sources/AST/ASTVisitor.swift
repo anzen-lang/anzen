@@ -66,8 +66,8 @@ public protocol ASTVisitor {
 
   // MARK: - Attributes, modifiers and directives
 
-  func visit(_ node: DeclAttr)
-  func visit(_ node: DeclModifier)
+  func visit(_ node: DeclAttrDecl)
+  func visit(_ node: DeclModifierDecl)
   func visit(_ node: Directive)
 
 }
@@ -270,11 +270,11 @@ extension ASTVisitor {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: DeclModifier) {
+  public func visit(_ node: DeclModifierDecl) {
     node.traverse(with: self)
   }
 
-  public func visit(_ node: DeclAttr) {
+  public func visit(_ node: DeclAttrDecl) {
     node.traverse(with: self)
   }
 
