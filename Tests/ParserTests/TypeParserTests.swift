@@ -118,13 +118,13 @@ class TypeParserTests: XCTestCase, ParserTestCase {
     pr = parse("@mut", with: Parser.parseQualSign)
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.quals ?? []) { $0.contains(.mut) }
+    assertThat(pr.value?.quals ?? []) { $0.contains { $0.name == "@mut" } }
     assertThat(pr.value?.sign, .isNil)
 
     pr = parse("@cst", with: Parser.parseQualSign)
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.quals ?? []) { $0.contains(.cst) }
+    assertThat(pr.value?.quals ?? []) { $0.contains { $0.name == "@cst" } }
     assertThat(pr.value?.sign, .isNil)
 
     pr = parse("Int", with: Parser.parseQualSign)
@@ -136,7 +136,7 @@ class TypeParserTests: XCTestCase, ParserTestCase {
     pr = parse("@mut Int", with: Parser.parseQualSign)
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.quals ?? []) { $0.contains(.mut) }
+    assertThat(pr.value?.quals ?? []) { $0.contains { $0.name == "@mut" } }
     assertThat(pr.value?.sign, .isInstance(of: IdentSign.self))
 
     let source = "@mut Int".split(separator: " ").joined(separator: "\n")
@@ -161,12 +161,12 @@ class TypeParserTests: XCTestCase, ParserTestCase {
     pr = parse("(@mut)", with: Parser.parseQualSign)
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.quals ?? []) { $0.contains(.mut) }
+    assertThat(pr.value?.quals ?? []) { $0.contains { $0.name == "@mut" } }
 
     pr = parse("(@mut Int)", with: Parser.parseQualSign)
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: QualTypeSign.self))
-    assertThat(pr.value?.quals ?? []) { $0.contains(.mut) }
+    assertThat(pr.value?.quals ?? []) { $0.contains { $0.name == "@mut" } }
     assertThat(pr.value?.sign, .isInstance(of: IdentSign.self))
 
     let source = "( @mut Int )".split(separator: " ").joined(separator: "\n")
