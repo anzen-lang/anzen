@@ -50,6 +50,46 @@ public final class QualTypeSign: ASTNode {
 
 }
 
+/// A type qualifier's declaration.
+public final class TypeQualDecl: ASTNode {
+
+  /// Node requirements
+
+  public unowned let module: Module
+  public var range: SourceRange
+
+  /// The qualifier's name.
+  public var name: String
+
+  /// The qualifier's arguments.
+  public var args: [Expr]
+
+  public init(name: String, args: [Expr] = [], module: Module, range: SourceRange) {
+    self.name = name
+    self.args = args
+    self.module = module
+    self.range = range
+  }
+
+  public func accept<V>(visitor: V) where V: ASTVisitor {
+    visitor.visit(self)
+  }
+
+  public func traverse<V>(with visitor: V) where V: ASTVisitor {
+    args.forEach { $0.accept(visitor: visitor) }
+  }
+
+  public func accept<T>(transformer: T) -> ASTNode where T: ASTTransformer {
+    return transformer.transform(self)
+  }
+
+  public func traverse<T>(with transformer: T) -> ASTNode where T: ASTTransformer {
+    args = args.map { $0.accept(transformer: transformer) } as! [Expr]
+    return self
+  }
+
+}
+
 /// A type identifier.
 public final class IdentSign: TypeSign {
 

@@ -23,6 +23,7 @@ public protocol ASTTransformer {
   // MARK: - Type signatures
 
   func transform(_ node: QualTypeSign) -> ASTNode
+  func transform(_ node: TypeQualDecl) -> ASTNode
   func transform(_ node: IdentSign) -> ASTNode
   func transform(_ node: NestedIdentSign) -> ASTNode
   func transform(_ node: ImplicitNestedIdentSign) -> ASTNode

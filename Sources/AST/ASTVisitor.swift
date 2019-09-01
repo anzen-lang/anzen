@@ -22,6 +22,7 @@ public protocol ASTVisitor {
   // MARK: - Type signatures
 
   func visit(_ node: QualTypeSign)
+  func visit(_ node: TypeQualDecl)
   func visit(_ node: IdentSign)
   func visit(_ node: NestedIdentSign)
   func visit(_ node: ImplicitNestedIdentSign)
@@ -122,6 +123,10 @@ extension ASTVisitor {
   }
 
   public func visit(_ node: QualTypeSign) {
+    node.traverse(with: self)
+  }
+
+  public func visit(_ node: TypeQualDecl) {
     node.traverse(with: self)
   }
 
