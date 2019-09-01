@@ -363,6 +363,6 @@ public class Parser {
 
 /// The list of token kinds that denote a declaration's head.
 private let DECL_KINDS: Set<TokenKind> = [
-  .directive, .attribute, .static, .mutating, .let, .var, .fun, .new, .del,
+  .directive, .qualifier, .static, .mutating, .let, .var, .fun, .new, .del,
   .interface, .struct, .union, .case,
 ]

@@ -36,20 +36,14 @@ extension Parser {
       return nil
     }
 
-    var range = peek().range
+    let rangeStart = peek().range.lowerBound
 
     // Parse the qualifiers (if any).
-    var qualSet: TypeQualSet = []
-    while let attrToken = consume(.attribute) {
-      range = range.lowerBound ..< attrToken.range.upperBound
-
-      switch attrToken.value! {
-      case "@cst": qualSet.insert(.cst)
-      case "@mut": qualSet.insert(.mut)
-      default:
-        issues.append(
-          parseFailure(Issue.invalidTypeQual(value: attrToken.value!), range: attrToken.range))
-      }
+    var quals: [TypeQualDecl] = []
+    while peek().kind == .qualifier {
+      guard let qual = parseTypeQualDecl(issues: &issues)
+        else { break }
+      quals.append(qual)
 
       // Skip trailing new lines.
       consumeNewlines()
@@ -60,7 +54,7 @@ extension Parser {
     var signIssues: [Issue] = []
     guard let sign = parseTypeSign(issues: &signIssues) else {
       // If the signature could not be parsed, make sure at least one qualifier could.
-      guard !qualSet.isEmpty else {
+      guard !quals.isEmpty else {
         issues.append(contentsOf: signIssues)
         return nil
       }
@@ -68,14 +62,38 @@ extension Parser {
       // If there is at least one qualifier, we can ignore the signature's parsing failure, rewind
       // the token stream and return a signature without explicit unqualified signature.
       rewind(to: savePoint)
-      return QualTypeSign(quals: qualSet, sign: nil, module: module, range: range)
+      let range = rangeStart ..< lastConsumedToken!.range.upperBound
+      return QualTypeSign(quals: quals, sign: nil, module: module, range: range)
     }
 
     issues.append(contentsOf: signIssues)
-    range = qualSet.isEmpty
-      ? sign.range
-      : range.lowerBound ..< sign.range.upperBound
-    return QualTypeSign(quals: qualSet, sign: sign, module: module, range: range)
+    let range = rangeStart ..< lastConsumedToken!.range.upperBound
+    return QualTypeSign(quals: quals, sign: sign, module: module, range: range)
+  }
+
+  /// Parses a type qualifier.
+  func parseTypeQualDecl(issues: inout [Issue]) -> TypeQualDecl? {
+    // The first token should be a qualifier.
+    guard let head = consume(.qualifier) else {
+      issues.append(unexpectedToken(expected: "qualifier"))
+      return nil
+    }
+
+    let qual = TypeQualDecl(name: head.value!, module: module, range: head.range)
+
+    // Attempt to parse arguments
+    if consume(.leftParen, afterMany: .newline) != nil {
+      // Commit to parse a comma-separated list of arguments.
+      let args = parseList(delimitedBy: .rightParen, issues: &issues, with: parseExpr)
+      if consume(.rightParen) == nil {
+        issues.append(unexpectedToken(expected: "'>'"))
+      }
+
+      qual.args = args
+      qual.range = qual.range.lowerBound ..< lastConsumedToken!.range.upperBound
+    }
+
+    return qual
   }
 
   /// Parses an unqualified type signature.

@@ -18,13 +18,13 @@ public final class QualTypeSign: ASTNode {
   public var range: SourceRange
 
   /// The qualifiers of the signature.
-  public var quals: TypeQualSet
+  public var quals: [TypeQualDecl]
   /// The semantic type definition of the signature.
   public var sign: TypeSign?
   /// The type realized from this signature.
   public var type: QualType?
 
-  public init(quals: TypeQualSet, sign: TypeSign?, module: Module, range: SourceRange) {
+  public init(quals: [TypeQualDecl], sign: TypeSign?, module: Module, range: SourceRange) {
     self.quals = quals
     self.sign = sign
     self.module = module

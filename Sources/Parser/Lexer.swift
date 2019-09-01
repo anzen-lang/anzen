@@ -245,7 +245,7 @@ extension Lexer: IteratorProtocol, Sequence {
     if c == "@" {
       skip()
       _ = take(while: isAlnumOrUnderscore)
-      return Token(kind: .attribute, range: range(from: startLocation))
+      return Token(kind: .qualifier, range: range(from: startLocation))
     }
 
     // Check for directives.

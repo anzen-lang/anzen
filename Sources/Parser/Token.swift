@@ -146,7 +146,7 @@ public enum TokenKind: UInt64, CustomStringConvertible {
   // MARK: Annotations
 
   case directive    = 225
-  case attribute    = 131298 // declStarter | 226
+  case qualifier    = 131298 // declStarter | 226
 
   // MARK: Error tokens
 
@@ -228,7 +228,7 @@ public enum TokenKind: UInt64, CustomStringConvertible {
     case .float:        return "float"
     case .string:       return "string"
     case .directive:    return "<directive>"
-    case .attribute:    return "<attribute>"
+    case .qualifier:    return "<qualifier>"
     case .unterminatedBlockComment: return "<unterminated comment block>"
     case .unterminatedStringLiteral: return "<unterminated string literal>"
     case .unknown:      return "<unknown>"
