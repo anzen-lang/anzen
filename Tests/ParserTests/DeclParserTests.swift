@@ -402,7 +402,6 @@ class DeclParserTests: XCTestCase, ParserTestCase {
       }
       """.split(separator: " ").joined(separator: "\n")
     pr = parse(source, with: Parser.parseDecl)
-    print(pr.issues)
     assertThat(pr.issues, .isEmpty)
     assertThat(pr.value, .isInstance(of: TypeExtDecl.self))
   }

@@ -1,6 +1,6 @@
 import AST
 
-final class Dispatcher: ASTVisitor {
+final class TypeDispatcher: ASTVisitor {
 
   /// The set of visited declaration, used to handle forward declarations.
   ///

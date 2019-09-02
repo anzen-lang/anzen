@@ -45,7 +45,7 @@ public struct TypeCheckerPass {
     }
 
     // Dispatch the solution.
-    let dispatcher = Dispatcher(typeFinalizer: typeFinalizer)
+    let dispatcher = TypeDispatcher(typeFinalizer: typeFinalizer)
     for decl in module.decls {
       decl.accept(visitor: dispatcher)
     }
