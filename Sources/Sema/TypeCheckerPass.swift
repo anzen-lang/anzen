@@ -1,6 +1,9 @@
 import AST
 
 /// A module pass that infers type variables and checks for type correctness.
+///
+/// This pass must take place after type realization, as it requires all nodes to be associated
+/// with a type (fully realized or not).
 public struct TypeCheckerPass {
 
   /// The compiler context.
@@ -39,6 +42,13 @@ public struct TypeCheckerPass {
     let solution = solver.solve()
     solution.substitutions.dump()
     print("weight: \(solution.weight)")
+
+    // Dispatch the solution.
+    let dispatcher = Dispatcher(context: context, substitutions: solution.substitutions)
+    for decl in module.decls {
+      decl.accept(visitor: dispatcher)
+      decl.dump()
+    }
   }
 
 }

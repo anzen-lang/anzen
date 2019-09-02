@@ -1,233 +1,239 @@
 import AST
-import Utils
 
-/// A visitor that annotates expressions with their reified type (as inferred by the type solver),
-/// and associates identifiers with their corresponding symbol.
-///
-/// The main purpose of this pass is to resolve identifiers' symbols, so as to know which variable,
-/// function or type they refer to. The choice is based on the identifier's inferred type, which is
-/// why this pass also reifies all types.
-///
-/// Dispatching may fail if the pass is unable to unambiguously resolve an identifier's symbol,
-/// which may happen in the presence of function declarations whose normalized (and specialized)
-/// signature are found identical.
-public final class Dispatcher: ASTTransformer {
+final class Dispatcher: ASTVisitor, TypeTransformer {
 
-  /// The AST context.
-  public let context: ASTContext
-  /// The substitution map obtained after inference.
-  public let solution: SubstitutionTable
-  /// The nominal types already reified.
-  private var visited: [NominalType] = []
+  /// The compiler context.
+  let context: CompilerContext
 
-  public init(context: ASTContext) {
+  /// The type substitutions.
+  let substitutions: [TypeVar: TypeBase]
+
+  /// The set of visited declaration, used to handle forward declarations.
+  ///
+  /// As Anzen allows forward references to type and functions, there can be situations in which an
+  /// identifier will be visited before its declaration. Thus, in order to avoid having to perform
+  /// two visitor passes, declarations are visited directly when referring identifiers are. This
+  /// set is then used to prevent infinite recursions, in case an identifier would be referred to
+  /// the body of its own declaration (e.g. the declaration of a recursive function).
+  ///
+  /// Since Anzen only lets function be overloaded, type matching is only required to disambiguate
+  /// between function declarations. Therefore, identifiers for other kinds of declarations need
+  /// not to be inserted in this set.
+  private var visitedDecls: Set<ObjectIdentifier> = []
+
+  init(context: CompilerContext, substitutions: SubstitutionTable) {
     self.context = context
-    self.solution = [:]
+    self.substitutions = substitutions.canonized
   }
 
-  public init(context: ASTContext, solution: SubstitutionTable) {
-    self.context = context
-    self.solution = solution
+  // MARK:- ASTVisitor
+
+  func visit(_ node: PropDecl) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
   }
 
-  public func transform(_ node: ModuleDecl) -> Node {
-    visitDeclarationContext(node)
-    return defaultTransform(node)
+  func visit(_ node: FunDecl) {
+    guard !visitedDecls.contains(ObjectIdentifier(node))
+      else { return }
+
+    node.type = finalize(type: node.type!)
+    visitedDecls.insert(ObjectIdentifier(node))
+    node.traverse(with: self)
   }
 
-  public func transform(_ node: Block) -> Node {
-    visitDeclarationContext(node)
-    return defaultTransform(node)
+  func visit(_ node: ParamDecl) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
   }
 
-  public func transform(_ node: FunDecl) -> Node {
-    visitDeclarationContext(node)
-    return defaultTransform(node)
+  func visit(_ node: QualTypeSign) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
   }
 
-  public func transform(_ node: TypeIdent) -> Node {
-    node.type = reify(type: node.type)
-    return defaultTransform(node)
+  func visit(_ node: IdentSign) {
+    node.type = node.type?.accept(transformer: self)
+    node.traverse(with: self)
   }
 
-  public func transform(_ node: IfExpr) -> Node {
-    node.type = reify(type: node.type)
-    return defaultTransform(node)
+  func visit(_ node: NestedIdentSign) {
+    node.type = node.type?.accept(transformer: self)
+    node.traverse(with: self)
   }
 
-  public func transform(_ node: LambdaExpr) -> Node {
-    node.type = reify(type: node.type)
-    return defaultTransform(node)
+  func visit(_ node: ImplicitNestedIdentSign) {
+    node.type = node.type?.accept(transformer: self)
+    node.traverse(with: self)
   }
 
-  public func transform(_ node: BinExpr) -> Node {
-    node.type = reify(type: node.type)
+  func visit(_ node: FunSign) {
+    node.type = node.type?.accept(transformer: self)
+    node.traverse(with: self)
+  }
 
-    let lhs = transform(node.left) as! Expr
-    let rhs = transform(node.right) as! Expr
+  func visit(_ node: ParamSign) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
+  }
 
-    // Optimization opportunity:
-    // Rather than transforming all overloadable operators into function calls, we could keep
-    // built-in operators as binary expressions and emit decicated AIR instructions, just like it's
-    // done for reference identity checks.
+  func visit(_ node: LambdaExpr) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
+  }
 
-    if (node.op == .refeq) || (node.op == .refne) {
-      // As reference identity operators cannot be overloaded, there is no need to look for the
-      // symbol to which the operator corresponds.
-      node.left = lhs
-      node.right = rhs
-      return node
-    } else {
-      // Transform the binary expression into a function application of the form `lhs.op(rhs)`.
-      let opIdent = Ident(name: node.op.rawValue, module: node.module, range: node.range)
-      opIdent.scope = (lhs.type as! NominalType).memberScope
-      opIdent.type = reify(type: node.operatorType)
+  func visit(_ node: UnsafeCastExpr) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
+  }
 
-      let callee = SelectExpr(
-        owner: lhs,
-        ownee: transform(opIdent) as! Ident,
-        module: node.module,
-        range: node.range)
-      callee.type = opIdent.type
+  func visit(_ node: SafeCastExpr) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
+  }
 
-      let arg = CallArg(value: rhs, module: node.module, range: node.range)
-      arg.type = rhs.type
+  func visit(_ node: InfixExpr) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
+  }
 
-      let call = CallExpr(callee: callee, arguments: [arg], module: node.module, range: node.range)
-      call.type = node.type
+  func visit(_ node: PrefixExpr) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
+  }
 
-      return call
+  func visit(_ node: CallExpr) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
+  }
+
+  func visit(_ node: CallArgExpr) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
+  }
+
+  func visit(_ node: IdentExpr) {
+    node.type = finalize(type: node.type!)
+    node.traverse(with: self)
+
+    // We identifying the declaration that corresponds to a given identifier by checking for type
+    // matches. These require that both the identifier's type and that of the declarations to which
+    // it might refer be fully formed (i.e. do not contain any type veriable).
+    if node.referredDecls.count <= 1 {
+      // Nothing to do if the declaration isn't overloaded.
+      return
     }
-  }
-
-  public func transform(_ node: UnExpr) -> Node {
-    node.type = reify(type: node.type)
-    return defaultTransform(node)
-  }
-
-  public func transform(_ node: CallExpr) -> Node {
-    node.type = reify(type: node.type)
-    return defaultTransform(node)
-  }
-
-  public func transform(_ node: CallArg) -> Node {
-    node.type = reify(type: node.type)
-    return defaultTransform(node)
-  }
-
-  public func transform(_ node: SubscriptExpr) -> Node {
-    node.type = reify(type: node.type)
-    return defaultTransform(node)
-  }
-
-  public func transform(_ node: SelectExpr) -> Node {
-    node.type = reify(type: node.type)
-    node.owner = node.owner.map { transform($0) as! Expr }
-
-    let ownerTy = node.owner != nil
-      ? node.owner!.type!
-      : node.type!
-
-    // Once the owner's type's been inferred, we can determine the scope of the ownee. We can
-    // expect the owner to be either a nominal type or the metatype of a nominal type, as other
-    // types don't have members.
-    switch ownerTy {
-    case let nominal as NominalType:
-      node.ownee.scope = nominal.memberScope
-    case let bound as BoundGenericType:
-      node.ownee.scope = (bound.unboundType as! NominalType).memberScope
-    case let meta as Metatype where meta.type is NominalType:
-      node.ownee.scope = (meta.type as! NominalType).memberScope!.parent
-    case let meta as Metatype where meta.type is BoundGenericType:
-      let unbound = (meta.type as! BoundGenericType).unboundType
-      node.ownee.scope = (unbound as! NominalType).memberScope!.parent
-    default:
-      unreachable()
+    for decl in node.referredDecls {
+      assert(decl is FunDecl, "bad overloaded declaration")
+      decl.accept(visitor: self)
     }
 
-    // Dispatch the symbol of the ownee, now that its scope's been determined.
-    node.ownee = transform(node.ownee) as! Ident
+    // Search for the declaration that matches the identifier's type.
+    switch node.type!.bareType {
+    case let funTy as FunType:
+      node.referredDecls = node.referredDecls.filter { decl -> Bool in
+        (decl as? FunDecl)?.type?.bareType == funTy
+      }
 
-    return node
-  }
-
-  public func transform(_ node: Ident) -> Node {
-    node.type = node.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
-    node.specializations = Dictionary(
-      uniqueKeysWithValues: node.specializations.map({
-        ($0, transform($1) as! QualTypeSign)
-      }))
-
-    assert(node.scope != nil)
-    assert(node.scope!.symbols[node.name] != nil)
-    var choices = node.scope!.symbols[node.name]!
-    assert(!choices.isEmpty)
-
-    if node.type is FunctionType {
-
-      // There are various situations to consider if the identifier has a function type.
-      // * The identifier might refer to a functional property, in which case the only solution
-      //   is to dispatch to that property's symbol.
-      // * The identifier might refer to a function constructor, in which case we may dispatch to
-      //   any constructor symbol in the member scope of the type it refers to.
-      // * The identifier might refer directly to a function declaration, in which case we may
-      //   dispatch to any overloaded symbol in the accessible scope.
-
-      if !(choices[0].isOverloadable || choices[0].type is Metatype) {
-        // First case: the identifier refers to a property.
-        assert(choices.count == 1)
-        node.symbol = choices[0]
-      } else if let ty = (choices[0].type as? Metatype)?.type as? NominalType {
-        // Second case: the identifier refers to a constructor.
-        choices = ty.memberScope!.symbols["new"]!
-        node.symbol = inferSymbol(type: node.type!, choices: choices)
-      } else {
-        // Thid case: the identifier refers to a function.
-        var scope = node.scope
-        while let parent = scope?.parent {
-          if let symbols = parent.symbols[node.name] {
-            guard symbols.first!.isOverloadable
-              else { break }
-            choices += symbols
-          }
-          scope = parent
+    case let ty as BoundGenericType where ty.type is FunType:
+      let funTy = (ty.type as! FunType).subst(ty.bindings)
+      node.referredDecls = node.referredDecls.filter { decl -> Bool in
+        if let declTy = (decl as? FunDecl)?.type?.bareType as? FunType {
+          return declTy.subst(ty.bindings) == funTy
         }
-        node.symbol = inferSymbol(type: node.type!, choices: choices)
+        return true
       }
 
+    default:
+      assertionFailure("bad overloaded type")
+    }
+
+    assert(!node.referredDecls.isEmpty)
+    if node.referredDecls.count != 1 {
+      node.registerError(message: Issue.ambiguousFunctionUse(
+        name: node.name,
+        candidates: node.referredDecls as! [FunDecl]))
+      node.referredDecls.removeSubrange(1...)
+    }
+
+    // Check for superfluous specialization arguments.
+    let placeholders = (node.referredDecls[0] as! FunDecl).genericParams.map { $0.name }
+    let superfluous = Set(node.specArgs.keys).subtracting(placeholders)
+    for name in superfluous {
+      node.registerWarning(message: Issue.superfluousSpecArg(name: name))
+    }
+  }
+
+  // MARK:- Type transformer
+
+  typealias Result = TypeBase
+
+  func transform(_ ty: TypeKind) -> TypeBase {
+    guard ty.info.check(TypeInfo.hasTypeVar)
+      else { return ty }
+    return ty.type.accept(transformer: self).kind
+  }
+
+  func transform(_ ty: TypeVar) -> TypeBase {
+    if let replacement = substitutions[ty] {
+      return replacement.accept(transformer: self)
     } else {
-      assert(choices.count == 1)
-      node.symbol = choices[0]
-    }
-
-    return node
-  }
-
-  private func visitDeclarationContext(_ node: DeclContext) {
-    if let scope = node.innerScope {
-      for symbol in scope.symbols.values.joined() {
-        symbol.type = symbol.type.map { solution.reify(type: $0, in: context, skipping: &visited) }
-      }
+      return ty
     }
   }
 
-  private func reify(type: TypeBase?) -> TypeBase? {
-    return type.map { solution.reify(type: $0, in: context, skipping: &visited) }
+  func transform(_ ty: TypePlaceholder) -> TypeBase {
+    return ty
   }
 
-  private func inferSymbol(type: TypeBase, choices: [Symbol]) -> Symbol {
-    // Filter out incompatible symbols.
-    let compatible = choices.filter { symbol in
-      let ty = symbol.isMethod && !symbol.isStatic
-        ? (symbol.type as! FunctionType).codomain
-        : symbol.type!
-      var bindings: [PlaceholderType: TypeBase] = [:]
-      return specializes(lhs: type, rhs: ty, in: context, bindings: &bindings)
+  func transform(_ ty: BoundGenericType) -> TypeBase {
+    let bindings = ty.bindings.mapValues(finalize)
+    return context.getBoundGenericType(
+      type: ty.type.accept(transformer: self),
+      bindings: bindings)
+  }
+
+  func transform(_ ty: FunType) -> TypeBase {
+    let dom = ty.dom.map { param -> FunType.Param in
+      let paramTy = self.finalize(type: param.type)
+      return FunType.Param(label: param.label, type: paramTy)
     }
 
-    // FIXME: Disambiguise when there are several choices.
-    assert(compatible.count > 0)
-    return compatible[0]
+    let codom = QualType(
+      bareType: ty.codom.bareType.accept(transformer: self),
+      quals: ty.codom.quals)
+
+    return context.getFunType(placeholders: ty.placeholders, dom: dom, codom: codom)
+  }
+
+  func transform(_ ty: InterfaceType) -> TypeBase {
+    return ty
+  }
+
+  func transform(_ ty: StructType) -> TypeBase {
+    return ty
+  }
+
+  func transform(_ ty: UnionType) -> TypeBase {
+    return ty
+  }
+
+  func transform(_ ty: BuiltinType) -> TypeBase {
+    return ty
+  }
+
+  func transform(_ ty: ErrorType) -> TypeBase {
+    return ty
+  }
+
+  // MARK:- Internal helpers
+
+  private func finalize(type: QualType) -> QualType {
+    let bareType = type.bareType.accept(transformer: self)
+    let quals = type.quals.isEmpty
+      ? [.cst]
+      : type.quals
+    return QualType(bareType: bareType, quals: quals)
   }
 
 }

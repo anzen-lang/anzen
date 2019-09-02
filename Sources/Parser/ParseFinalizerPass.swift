@@ -165,6 +165,13 @@ public struct ParseFinalizerPass {
       }
     }
 
+    func visit(_ node: TypeQualDecl) {
+      if TypeQual.Kind(string: node.name) == nil {
+        node.registerError(message: Issue.invalidTypeQual(value: node.name))
+      }
+      node.traverse(with: self)
+    }
+
     // MARK: Helpers
 
     private func isValidDeclaration(_ node: NamedDecl) -> Bool {

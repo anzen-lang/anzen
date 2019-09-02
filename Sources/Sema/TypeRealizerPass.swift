@@ -42,7 +42,7 @@ public struct TypeRealizerPass {
       if let sign = node.sign {
         node.type = sign.type!
       } else {
-        node.type = context.getTypeVar().cst
+        node.type = context.getTypeVar()[.cst]
       }
     }
 
@@ -53,10 +53,10 @@ public struct TypeRealizerPass {
       // Build the function's type.
       let placeholders = node.genericParams.map { $0.type as! TypePlaceholder }
       let dom = node.params.map { FunType.Param(label: $0.label, type: $0.type!) }
-      let codom = node.codom?.type! ?? context.nothingType.cst
+      let codom = node.codom?.type! ?? context.nothingType[.cst]
 
       if node.kind == .regular {
-        node.type = context.getFunType(placeholders: placeholders, dom: dom, codom: codom).cst
+        node.type = context.getFunType(placeholders: placeholders, dom: dom, codom: codom)[.cst]
         return
       }
 
@@ -72,11 +72,10 @@ public struct TypeRealizerPass {
         selfTypeDecl.accept(visitor: self)
         assert(selfTypeDecl.type != nil)
       }
-      let isMutating = (node.kind != .method) || node.attrs.contains { $0.name == "mutating" }
       let bareSelfTy = selfTypeDecl.type!
-      let qualSelfTy = isMutating
-        ? bareSelfTy.mut
-        : bareSelfTy.cst
+      let qualSelfTy = (node.kind != .method) || node.isMutating
+        ? bareSelfTy[.mut]
+        : bareSelfTy[.cst]
 
       let selfValueDecl = node.decls.first { ($0 as? PropDecl)?.name == "self" }
       assert(selfValueDecl != nil, "missing `self` declaration")
@@ -84,16 +83,16 @@ public struct TypeRealizerPass {
 
       if node.kind == .constructor {
         // A constructor's codomain is always `Self`, so we can ignore the node's codomain.
-        node.type = context.getFunType(dom: dom, codom: qualSelfTy).cst
+        node.type = context.getFunType(dom: dom, codom: qualSelfTy)[.cst]
       } else if node.kind ~= [.method, .destructor] {
         // Methods and constructor have signatures of the form `Self -> Domain -> Codomain`.
         let funTy = context.getFunType(dom: dom, codom: codom)
         let mtdTy = context.getFunType(
           placeholders: placeholders,
           dom: [FunType.Param(label: nil, type: qualSelfTy)],
-          codom: funTy.cst)
+          codom: funTy[.cst])
 
-        node.type = mtdTy.cst
+        node.type = mtdTy[.cst]
       } else {
         assertionFailure("bad function")
       }
@@ -113,7 +112,7 @@ public struct TypeRealizerPass {
       if let sign = node.sign {
         node.type = sign.type!
       } else {
-        node.type = context.getTypeVar().cst
+        node.type = context.getTypeVar()[.cst]
       }
     }
 
@@ -146,7 +145,7 @@ public struct TypeRealizerPass {
       let bareType = node.sign != nil
         ? node.sign!.type!
         : context.getTypeVar()
-      node.type = QualType(bareType: bareType, quals: node.quals)
+      node.type = QualType(bareType: bareType, qualDecls: node.quals)
     }
 
     func visit(_ node: IdentSign) {
@@ -175,10 +174,9 @@ public struct TypeRealizerPass {
       if decl.type!.canBeOpened {
         // Check for superfluous specialization arguments.
         let placeholders = decl.type!.getUnboundPlaceholders()
-        let superfluous = Set(specArgs.keys)
-          .symmetricDifference(placeholders.map({ $0.name }))
+        let superfluous = Set(specArgs.keys).subtracting(placeholders.map({ $0.name }))
         for name in superfluous {
-          node.registerError(message: Issue.superfluousSpecArg(name: name))
+          node.registerWarning(message: Issue.superfluousSpecArg(name: name))
         }
 
         // Preserve the specialization arguments in a bound generic type.
@@ -210,7 +208,7 @@ public struct TypeRealizerPass {
     func visit(_ node: FunSign) {
       node.traverse(with: self)
       let dom = node.params.map { FunType.Param(label: $0.label, type: $0.type!) }
-      let codom = node.codom?.type! ?? context.nothingType.cst
+      let codom = node.codom?.type! ?? context.nothingType[.cst]
       node.type = context.getFunType(dom: dom, codom: codom)
     }
 

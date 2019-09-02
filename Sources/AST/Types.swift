@@ -1,38 +1,61 @@
 /// A type qualifier.
-public struct TypeQual: Hashable, ExpressibleByStringLiteral {
+public struct TypeQual: Hashable {
 
-  public let name: String
+  /// A category of type qualifier.
+  public enum Kind: Int {
+
+    case cst = 0
+    case mut
+    case own
+    case brw
+    case esc
+
+    public init?(string: String) {
+      switch string {
+      case "@cst": self = .cst
+      case "@mut": self = .mut
+      case "@own": self = .own
+      case "@brw": self = .brw
+      case "@esc": self = .esc
+      default: return nil
+      }
+    }
+
+  }
+
+  public let kind: Kind
   public let decl: TypeQualDecl?
 
   public var args: [Expr] {
     return decl?.args ?? []
   }
 
-  public init(decl: TypeQualDecl) {
-    self.name = decl.name
+  public init(kind: Kind) {
+    self.kind = kind
+    self.decl = nil
+  }
+
+  public init?(decl: TypeQualDecl) {
+    guard let kind = Kind(string: decl.name)
+      else { fatalError("bad qualifier name") }
+    self.kind = kind
     self.decl = decl
   }
 
-  public init(name: String) {
-    self.name = name
-    self.decl = nil
-  }
-
-  public init(stringLiteral value: String) {
-    self.name = value
-    self.decl = nil
-  }
-
   public static func == (lhs: TypeQual, rhs: TypeQual) -> Bool {
-    return (lhs.name == rhs.name) && (lhs.decl === rhs.decl)
+    return (lhs.kind == rhs.kind) && (lhs.decl === rhs.decl)
   }
 
   public func hash(into hasher: inout Hasher) {
-    hasher.combine(name)
+    hasher.combine(kind)
     if decl != nil {
       hasher.combine(ObjectIdentifier(decl!))
     }
   }
+
+  public static var cst: TypeQual { return TypeQual(kind: .cst) }
+  public static var mut: TypeQual { return TypeQual(kind: .mut) }
+  public static var own: TypeQual { return TypeQual(kind: .own) }
 
 }
 
@@ -40,10 +63,20 @@ public struct TypeQual: Hashable, ExpressibleByStringLiteral {
 public struct QualType: Hashable {
 
   /// The unqualified type.
-  public let bareType: TypeBase
+  public var bareType: TypeBase
 
   /// The type's qualifieirs.
-  public let quals: Set<TypeQual>
+  public var quals: Set<TypeQual>
+
+  /// Whether this type is qualified by a mutability qualifier (i.e. `@cst` or `@mut`).
+  public var hasMutabilityQual: Bool {
+    return quals.contains { $0.kind == .cst || $0.kind == .mut }
+  }
+
+  /// Whether this type is qualified by a reference qualifier (i.e. `@own` or `@brw`).
+  public var hasReferenceQual: Bool {
+    return quals.contains { $0.kind == .brw || $0.kind == .own }
+  }
 
   public init(bareType: TypeBase, quals: Set<TypeQual>) {
     self.bareType = bareType
@@ -52,9 +85,10 @@ public struct QualType: Hashable {
 
   public init<S>(bareType: TypeBase, qualDecls: S) where S: Sequence, S.Element == TypeQualDecl {
     self.bareType = bareType
-    self.quals = Set(qualDecls.map(TypeQual.init))
+    self.quals = Set(qualDecls.compactMap(TypeQual.init))
   }
 
+  /// Replaces occurences of type placeholders and returns the substituted result.
   fileprivate func subst(_ substitutions: [TypePlaceholder: QualType]) -> QualType {
     if let ty = bareType as? TypePlaceholder {
       return substitutions[ty] ?? self
@@ -138,14 +172,9 @@ public class TypeBase: Hashable {
   /// The type's kind.
   public final var kind: TypeKind { return context.getTypeKind(of: self) }
 
-  /// The type qualified with the `@cst` qualifier.
-  public final var cst: QualType {
-    return QualType(bareType: self, quals: ["@cst"])
-  }
-
-  /// The type qualified with the `@mut` qualifier.
-  public final var mut: QualType {
-    return QualType(bareType: self, quals: ["@mut"])
+  /// This type qualified with the specified qualifiers.
+  public final subscript(quals: TypeQual...) -> QualType {
+    return QualType(bareType: self, quals: Set(quals))
   }
 
   /// Returns the set of unbound generic placeholders occuring in the type.
@@ -153,6 +182,7 @@ public class TypeBase: Hashable {
     return []
   }
 
+  /// Replaces occurences of type placeholders and returns the substituted result.
   fileprivate func subst(_ substitutions: [TypePlaceholder: QualType]) -> TypeBase {
     return self
   }
@@ -184,12 +214,12 @@ public class TypeBase: Hashable {
   /// This method is intended to be overriden by type subclasses and used internally to compute the
   /// type hash values based on their structures rather than on their identity.
   internal func hashContents(into hasher: inout Hasher) {
-    fatalError("call to abstract method 'hashContents(into:)'")
+    fatalError("unimplemented method '\(type(of: self)).hashContents(into:)'")
   }
 
   /// Accepts a type transformer.
   public func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
-    fatalError("call to abstract method 'accept(transformer:)'")
+    fatalError("unimplemented method '\(type(of: self)).accept(transformer:)'")
   }
 
 }
@@ -238,6 +268,10 @@ public final class TypeVar: TypeBase {
 
   internal override func hashContents(into hasher: inout Hasher) {
     hasher.combine(info.typeID)
+  }
+
+  public override func accept<T>(transformer: T) -> T.Result where T: TypeTransformer {
+    return transformer.transform(self)
   }
 
 }

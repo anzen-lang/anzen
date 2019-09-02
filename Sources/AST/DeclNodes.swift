@@ -308,20 +308,39 @@ public final class FunDecl: NamedDecl, LValueDecl, Stmt, DeclContext {
 
   public var type: QualType?
 
+  /// The declaration that are referred in the function's closure.
+  public var capturedDecls: [NamedDecl] = []
+
   /// The function's declaration attributes.
   public var attrs: Set<DeclAttrDecl>
+
   /// The function's declaration modifiers.
   public var modifiers: Set<DeclModifierDecl>
+
   /// The function's kind.
   public var kind: Kind
+
   /// The function's generic parameters.
   public var genericParams: [GenericParamDecl]
+
   /// The function's parameters.
   public var params: [ParamDecl]
+
   /// The function's codomain (i.e. return type).
   public var codom: QualTypeSign?
+
   /// The function's body.
   public var body: Stmt?
+
+  /// Whether the declaration denotes a mutating method.
+  public var isMutating: Bool {
+    return attrs.contains { $0.name == "mutating" }
+  }
+
+  /// Whether the declaration denotes a static method.
+  public var isStatic: Bool {
+    return attrs.contains { $0.name == "static" }
+  }
 
   public init(
     name: String,

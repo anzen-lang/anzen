@@ -4,6 +4,11 @@ struct SubstitutionTable {
 
   var substitutions: [TypeVar: TypeBase]
 
+  /// The canonical form of this substitution table.
+  var canonized: [TypeVar: TypeBase] {
+    return substitutions.mapValues { get(for: $0) }
+  }
+
   init(_ substitutions: [TypeVar: TypeBase] = [:]) {
     self.substitutions = substitutions
   }

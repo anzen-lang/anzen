@@ -126,11 +126,11 @@ public final class CompilerContext {
 
   /// The type of assignment operators.
   public private(set) lazy var assignmentType: QualType = { [unowned self] in
-    let anyTy = self.anythingType.cst
+    let anyTy = self.anythingType[.cst]
     let funTy = self.getFunType(
       dom: [FunType.Param(type: anyTy), FunType.Param(type: anyTy)],
       codom: anyTy)
-    return funTy.cst
+    return funTy[.cst]
   }()
 
   /// The type uniqueness table.
@@ -182,7 +182,9 @@ public final class CompilerContext {
     bindings: [TypePlaceholder: QualType]) -> BoundGenericType
   {
     assert(!bindings.isEmpty)
-    let info = type.info | TypeInfo.hasTypePlaceholder
+    let info = bindings.values.reduce(type.info) { result, type in
+      result | type.bareType.info
+    } | TypeInfo.hasTypePlaceholder
 
     // Make sure to build a canonical representation of the bounds.
     let ty: BoundGenericType

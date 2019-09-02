@@ -20,7 +20,8 @@ final class TypeConstraintExtractor: ASTVisitor {
   }
 
   func visit(_ node: PropDecl) {
-    if let (_, value) = node.initializer {
+    if let (op, value) = node.initializer {
+      op.accept(visitor: self)
       value.accept(visitor: self)
       let loc: ConstraintLocation = .location(node, .initializer)
       let cons: TypeConstraint = node.sign?.sign != nil
@@ -49,7 +50,7 @@ final class TypeConstraintExtractor: ASTVisitor {
   }
 
   func visit(_ node: NullExpr) {
-    node.type = context.anythingType.cst
+    node.type = context.anythingType[.cst]
   }
 
   func visit(_ node: LambdaExpr) {
@@ -57,7 +58,7 @@ final class TypeConstraintExtractor: ASTVisitor {
 
     // Build the function's type.
     let dom = node.params.map { FunType.Param(label: $0.label, type: $0.type!) }
-    let codom = node.codom?.type! ?? context.getTypeVar().cst
+    let codom = node.codom?.type! ?? context.getTypeVar()[.cst]
     let funTy = context.getFunType(dom: dom, codom: codom)
 
     node.type = QualType(bareType: funTy, quals: [])
@@ -75,7 +76,7 @@ final class TypeConstraintExtractor: ASTVisitor {
 
   func visit(_ node: SubtypeTestExpr) {
     node.traverse(with: self)
-    node.type = context.getBuiltinType(.bool).cst
+    node.type = context.getBuiltinType(.bool)[.cst]
   }
 
   func visit(_ node: InfixExpr) {
@@ -88,7 +89,7 @@ final class TypeConstraintExtractor: ASTVisitor {
     node.type = QualType(bareType: context.getTypeVar(), quals: [])
     let rhsTy = QualType(bareType: context.getTypeVar(), quals: [])
     let funTy = context.getFunType(dom: [FunType.Param(type: rhsTy)], codom: node.type!)
-    node.op.type = funTy.cst
+    node.op.type = funTy[.cst]
 
     // The type of the right operand should conform to the argument of the operator's type.
     constraints.append(factory.conformance(
@@ -112,7 +113,7 @@ final class TypeConstraintExtractor: ASTVisitor {
     // the form `() -> T`, where `T` is the type of the prefix expression.
     node.type = QualType(bareType: context.getTypeVar(), quals: [])
     let funTy = context.getFunType(dom: [], codom: node.type!)
-    node.op.type = funTy.cst
+    node.op.type = funTy[.cst]
 
     // The type of the left operand should have a method named after the operator, with the same
     // signature as that of the operator.
@@ -167,7 +168,7 @@ final class TypeConstraintExtractor: ASTVisitor {
     // To resolve overloading, identifiers are typed with fresh variables, and a disjunction of
     // constraints is created for each referred location computed during name binding.
     guard !node.referredDecls.isEmpty else {
-      node.type = context.errorType.cst
+      node.type = context.errorType[.cst]
       return
     }
 
@@ -181,6 +182,8 @@ final class TypeConstraintExtractor: ASTVisitor {
       switch decl {
       case let valueDecl as LValueDecl:
         var valueTy = valueDecl.type!.bareType
+        var penalty = 0
+
         if valueTy.canBeOpened {
           // Preserve the specialization arguments in a bound generic type.
           let placeholders = valueTy.getUnboundPlaceholders()
@@ -189,9 +192,21 @@ final class TypeConstraintExtractor: ASTVisitor {
               ?? QualType(bareType: context.getTypeVar(), quals: []))
           })
           valueTy = context.getBoundGenericType(type: valueTy, bindings: bindings)
+
+          // Compute the choice's penalty as the difference between the declaration's placeholders
+          // and the explicit specialization arguments provided. For instance:
+          //
+          //   fun f<T, U>(x: T, y: U) {}
+          //   f()          // 2 penalties
+          //   f<T=Int>     // 1 penalty
+          //   f<T=A, V=B>  // 1 penalty
+          //
+          penalty = Set(node.specArgs.keys).symmetricDifference(placeholders.map { $0.name }).count
+        } else {
+          penalty = node.specArgs.count
         }
 
-        builder.add(factory.equality(t: identTy, u: valueTy, at: loc))
+        builder.add(factory.equality(t: identTy, u: valueTy, at: loc), weight: penalty)
 
       case let typeDecl as TypeDecl:
         var typeTy = typeDecl.type!
@@ -210,7 +225,7 @@ final class TypeConstraintExtractor: ASTVisitor {
         // the type's kind. Notice that the membership constraint is created first, as identifiers
         // are more likely to represent constructors than first-class types.
         builder.add(factory.valueMember(t: identTy, u: typeTy, memberName: "new", at: loc))
-        builder.add(factory.equality(t: identTy, u: typeTy, at: loc))
+        builder.add(factory.equality(t: identTy, u: typeTy.kind, at: loc))
 
       default:
         assertionFailure("bad declaration")
@@ -259,19 +274,19 @@ final class TypeConstraintExtractor: ASTVisitor {
   }
 
   func visit(_ node: BoolLitExpr) {
-    node.type = context.getBuiltinType(.bool).cst
+    node.type = context.getBuiltinType(.bool)[.cst]
   }
 
   func visit(_ node: IntLitExpr) {
-    node.type = context.getBuiltinType(.int).cst
+    node.type = context.getBuiltinType(.int)[.cst]
   }
 
   func visit(_ node: FloatLitExpr) {
-    node.type = context.getBuiltinType(.float).cst
+    node.type = context.getBuiltinType(.float)[.cst]
   }
 
   func visit(_ node: StrLitExpr) {
-    node.type = context.getBuiltinType(.string).cst
+    node.type = context.getBuiltinType(.string)[.cst]
   }
 
   func visit(_ node: ParenExpr) {
@@ -293,7 +308,8 @@ final class TypeConstraintExtractor: ASTVisitor {
   }
 
   func visit(_ node: ReturnStmt) {
-    if let (_, value) = node.binding {
+    if let (op, value) = node.binding {
+      op.accept(visitor: self)
       value.accept(visitor: self)
       constraints.append(factory.conformance(
         t: value.type!.bareType,
