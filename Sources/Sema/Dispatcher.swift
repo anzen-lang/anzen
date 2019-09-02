@@ -198,11 +198,7 @@ final class Dispatcher: ASTVisitor, TypeTransformer {
       let paramTy = self.finalize(type: param.type)
       return FunType.Param(label: param.label, type: paramTy)
     }
-
-    let codom = QualType(
-      bareType: ty.codom.bareType.accept(transformer: self),
-      quals: ty.codom.quals)
-
+    let codom = finalize(type: ty.codom)
     return context.getFunType(placeholders: ty.placeholders, dom: dom, codom: codom)
   }
 
