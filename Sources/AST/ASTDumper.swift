@@ -249,6 +249,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(type_ident"
     self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
+    self <<< " decl='" <<< node.referredDecl?.qualDebugRepr <<< "'"
     withIndentation {
       for (key, value) in node.specArgs {
         self <<< "\n" <<< indent <<< "(spec_args key='\(key)'\n"
@@ -356,15 +357,14 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
   }
 
   public func visit(_ node: BindingStmt) {
-    self <<< indent <<< "(bind_stmt"
+    self <<< indent <<< "(binding_stmt"
     withIndentation {
-      self <<< "\n" <<< indent <<< "(op\n"
-      withIndentation { node.op.accept(visitor: self) }
-      self <<< ")\n" <<< indent <<< "(lvalue\n"
-      withIndentation { node.lvalue.accept(visitor: self) }
-      self <<< ")\n" <<< indent <<< "(rvalue\n"
-      withIndentation { node.rvalue.accept(visitor: self) }
-      self <<< ")"
+      self <<< "\n"
+      node.op.accept(visitor: self)
+      self <<< "\n"
+      node.lvalue.accept(visitor: self)
+      self <<< "\n"
+      node.rvalue.accept(visitor: self)
     }
     self <<< ")"
   }
@@ -510,6 +510,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(ident_expr"
     self <<< " name='\(node.name)'"
     self <<< " type='" <<< node.type <<< "'"
+    self <<< " decl='" <<< node.referredDecls.first?.qualDebugRepr <<< "'"
     withIndentation {
       for (key, value) in node.specArgs {
         self <<< "\n" <<< indent <<< "(spec_args key='\(key)'\n"
@@ -634,7 +635,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
     self <<< indent <<< "(decl_attr_decl"
     self <<< " name='\(node.name)'"
     if !node.args.isEmpty {
-      self <<< " " + node.args.joined(separator: " ")
+      self <<< " args=[" + node.args.joined(separator: " ") + "]"
     }
     self <<< ")"
   }
@@ -696,7 +697,7 @@ public final class ASTDumper<OutputStream>: ASTVisitor where OutputStream: TextO
 
 }
 
-// MARK: - Helpers
+// MARK: - Helpers and custom string representations
 
 private protocol AnyOptional {
   var value: Any? { get }
@@ -704,6 +705,52 @@ private protocol AnyOptional {
 
 extension Optional: AnyOptional {
   var value: Any? { return self }
+}
+
+extension NamedDecl {
+
+  /// A debug representation of the declaration.
+  public var debugRepr: String {
+    switch self {
+    case let decl as FunDecl:
+      let params = decl.params
+        .map { ($0.label ?? "") + ":" }
+        .joined()
+      return "\(decl.name)(\(params))"
+
+    default:
+      return name
+    }
+  }
+
+  /// A fully qualified debug representation of the declaration.
+  public var qualDebugRepr: String {
+    var result = debugRepr
+    var context = declContext
+    while context != nil {
+      switch context! {
+      case let module as Module:
+        result = module.id + "::" + result
+
+      case is MainCodeDecl:
+        result = "<main_code_decl>::" + result
+
+      case let decl as NamedDecl:
+        result = decl.debugRepr + "::" + result
+
+      case is TypeExtDecl:
+        result = "<ext>::" + result
+
+      default:
+        break
+      }
+
+      context = context!.parent
+    }
+
+    return result
+  }
+
 }
 
 extension DeclAttrDecl: Comparable {

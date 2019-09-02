@@ -7,8 +7,10 @@ public protocol NamedDecl: Decl {
 
   /// This entity's declaration context.
   var declContext: DeclContext? { get set }
+
   /// The declared entity's name.
   var name: String { get }
+
   /// Whether this declaration is overloadable.
   var isOverloadable: Bool { get }
 
