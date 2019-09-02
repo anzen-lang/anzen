@@ -23,6 +23,7 @@ public struct ConcreteModuleLoader: ModuleLoader {
       module.issues.formUnion(issues)
     }
 
+    // Check that the AST is well-formed.
     ParseFinalizerPass(module: module).process()
     module.state = .parsed
 
@@ -31,7 +32,7 @@ public struct ConcreteModuleLoader: ModuleLoader {
     TypeRealizerPass(module: module, context: context).process()
     TypeCheckerPass(module: module, context: context).process()
     CaptureAnalysisPass(module: module, context: context).process()
-
+    module.state = .typeChecked
 
     return module
   }
