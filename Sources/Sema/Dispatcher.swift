@@ -1,12 +1,6 @@
 import AST
 
-final class Dispatcher: ASTVisitor, TypeTransformer {
-
-  /// The compiler context.
-  let context: CompilerContext
-
-  /// The type substitutions.
-  let substitutions: [TypeVar: TypeBase]
+final class Dispatcher: ASTVisitor {
 
   /// The set of visited declaration, used to handle forward declarations.
   ///
@@ -21,15 +15,17 @@ final class Dispatcher: ASTVisitor, TypeTransformer {
   /// not to be inserted in this set.
   private var visitedDecls: Set<ObjectIdentifier> = []
 
-  init(context: CompilerContext, substitutions: SubstitutionTable) {
-    self.context = context
-    self.substitutions = substitutions.canonized
+  /// The type finalizer.
+  private let finalizer: TypeFinalizer
+
+  init(typeFinalizer: TypeFinalizer) {
+    self.finalizer = typeFinalizer
   }
 
   // MARK:- ASTVisitor
 
   func visit(_ node: PropDecl) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
@@ -37,83 +33,83 @@ final class Dispatcher: ASTVisitor, TypeTransformer {
     guard !visitedDecls.contains(ObjectIdentifier(node))
       else { return }
 
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     visitedDecls.insert(ObjectIdentifier(node))
     node.traverse(with: self)
   }
 
   func visit(_ node: ParamDecl) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: QualTypeSign) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: IdentSign) {
-    node.type = node.type?.accept(transformer: self)
+    node.type = node.type?.accept(transformer: finalizer)
     node.traverse(with: self)
   }
 
   func visit(_ node: NestedIdentSign) {
-    node.type = node.type?.accept(transformer: self)
+    node.type = node.type?.accept(transformer: finalizer)
     node.traverse(with: self)
   }
 
   func visit(_ node: ImplicitNestedIdentSign) {
-    node.type = node.type?.accept(transformer: self)
+    node.type = node.type?.accept(transformer: finalizer)
     node.traverse(with: self)
   }
 
   func visit(_ node: FunSign) {
-    node.type = node.type?.accept(transformer: self)
+    node.type = node.type?.accept(transformer: finalizer)
     node.traverse(with: self)
   }
 
   func visit(_ node: ParamSign) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: LambdaExpr) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: UnsafeCastExpr) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: SafeCastExpr) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: InfixExpr) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: PrefixExpr) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: CallExpr) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: CallArgExpr) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
   }
 
   func visit(_ node: IdentExpr) {
-    node.type = finalize(type: node.type!)
+    node.type = finalizer.finalize(type: node.type!)
     node.traverse(with: self)
 
     // We identifying the declaration that corresponds to a given identifier by checking for type
@@ -162,74 +158,6 @@ final class Dispatcher: ASTVisitor, TypeTransformer {
     for name in superfluous {
       node.registerWarning(message: Issue.superfluousSpecArg(name: name))
     }
-  }
-
-  // MARK:- Type transformer
-
-  typealias Result = TypeBase
-
-  func transform(_ ty: TypeKind) -> TypeBase {
-    guard ty.info.check(TypeInfo.hasTypeVar)
-      else { return ty }
-    return ty.type.accept(transformer: self).kind
-  }
-
-  func transform(_ ty: TypeVar) -> TypeBase {
-    if let replacement = substitutions[ty] {
-      return replacement.accept(transformer: self)
-    } else {
-      return ty
-    }
-  }
-
-  func transform(_ ty: TypePlaceholder) -> TypeBase {
-    return ty
-  }
-
-  func transform(_ ty: BoundGenericType) -> TypeBase {
-    let bindings = ty.bindings.mapValues(finalize)
-    return context.getBoundGenericType(
-      type: ty.type.accept(transformer: self),
-      bindings: bindings)
-  }
-
-  func transform(_ ty: FunType) -> TypeBase {
-    let dom = ty.dom.map { param -> FunType.Param in
-      let paramTy = self.finalize(type: param.type)
-      return FunType.Param(label: param.label, type: paramTy)
-    }
-    let codom = finalize(type: ty.codom)
-    return context.getFunType(placeholders: ty.placeholders, dom: dom, codom: codom)
-  }
-
-  func transform(_ ty: InterfaceType) -> TypeBase {
-    return ty
-  }
-
-  func transform(_ ty: StructType) -> TypeBase {
-    return ty
-  }
-
-  func transform(_ ty: UnionType) -> TypeBase {
-    return ty
-  }
-
-  func transform(_ ty: BuiltinType) -> TypeBase {
-    return ty
-  }
-
-  func transform(_ ty: ErrorType) -> TypeBase {
-    return ty
-  }
-
-  // MARK:- Internal helpers
-
-  private func finalize(type: QualType) -> QualType {
-    let bareType = type.bareType.accept(transformer: self)
-    let quals = type.quals.isEmpty
-      ? [.cst]
-      : type.quals
-    return QualType(bareType: bareType, quals: quals)
   }
 
 }

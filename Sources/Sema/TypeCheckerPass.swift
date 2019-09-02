@@ -28,11 +28,6 @@ public struct TypeCheckerPass {
       decl.accept(visitor: extractor)
     }
 
-    for cons in extractor.constraints {
-      print(cons)
-    }
-    print()
-
     // Solve all type constraints.
     var solver = TypeConstraintSolver(
       constraints: extractor.constraints,
@@ -40,14 +35,19 @@ public struct TypeCheckerPass {
       factory: factory,
       assumptions: SubstitutionTable())
     let solution = solver.solve()
-    solution.substitutions.dump()
-    print("weight: \(solution.weight)")
+
+    // Register the type errors.
+    let typeFinalizer = TypeFinalizer(
+      context: context,
+      substitutions: solution.substitutions.canonized)
+    for error in solution.errors {
+      error.register(withTypeFinalizer: typeFinalizer)
+    }
 
     // Dispatch the solution.
-    let dispatcher = Dispatcher(context: context, substitutions: solution.substitutions)
+    let dispatcher = Dispatcher(typeFinalizer: typeFinalizer)
     for decl in module.decls {
       decl.accept(visitor: dispatcher)
-      decl.dump()
     }
   }
 

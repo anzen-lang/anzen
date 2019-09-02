@@ -121,7 +121,7 @@ final class TypeConstraintExtractor: ASTVisitor {
       t: node.op.type!.bareType,
       u: node.operand.type!.bareType,
       memberName: node.op.name,
-      at: .location(node, .infixOp)))
+      at: .location(node, .prefixOp)))
   }
 
   func visit(_ node: CallExpr) {
@@ -147,7 +147,7 @@ final class TypeConstraintExtractor: ASTVisitor {
       constraints.append(factory.conformance(
         t: arg.type!.bareType,
         u: param.type.bareType,
-        at: loc + .parameter(i)))
+        at: loc + .parameter(i) + .binding))
     }
   }
 
@@ -176,8 +176,8 @@ final class TypeConstraintExtractor: ASTVisitor {
     node.type = QualType(bareType: identTy, quals: [])
 
     // Build the set of constraints related to the referred location.
-    var builder = TypeConstraintDisjunctionBuilder(factory: factory)
     let loc: ConstraintLocation = .location(node, .identifier)
+    var builder = TypeConstraintDisjunctionBuilder(factory: factory, at: loc)
     for decl in node.referredDecls {
       switch decl {
       case let valueDecl as LValueDecl:
@@ -296,6 +296,22 @@ final class TypeConstraintExtractor: ASTVisitor {
 
   func visit(_ node: InvalidExpr) {
     node.type = QualType(bareType: context.errorType, quals: [])
+  }
+
+  func visit(_ node: IfStmt) {
+    node.traverse(with: self)
+    constraints.append(factory.equality(
+      t: node.condition.type!.bareType,
+      u: context.getBuiltinType(.bool),
+      at: .location(node, .condition)))
+  }
+
+  func visit(_ node: WhileStmt) {
+    node.traverse(with: self)
+    constraints.append(factory.equality(
+      t: node.condition.type!.bareType,
+      u: context.getBuiltinType(.bool),
+      at: .location(node, .condition)))
   }
 
   func visit(_ node: BindingStmt) {

@@ -139,3 +139,11 @@ extension BuiltinType: CustomStringConvertible {
   }
 
 }
+
+extension ErrorType: CustomStringConvertible {
+
+  public var description: String {
+    return "<error type>"
+  }
+
+}

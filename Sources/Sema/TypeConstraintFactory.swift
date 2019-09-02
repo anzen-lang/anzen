@@ -38,20 +38,12 @@ final class TypeConstraintFactory {
     return TypeValueMemberConstraint(t: t, u: u, memberName: memberName, at: location, id: nextID)
   }
 
-  /// Creates a type member constraint `T ~= U::name`.
-  func typeMember(t: TypeBase, u: TypeBase, memberName: String, at location: ConstraintLocation)
-    -> TypeTypeMemberConstraint
-  {
-    nextID += 1
-    return TypeTypeMemberConstraint(t: t, u: u, memberName: memberName, at: location, id: nextID)
-  }
-
   /// Creates a disjunction of type constraints.
-  func disjunction<S>(choices: S) -> TypeConstraintDisjunction
+  func disjunction<S>(choices: S, at location: ConstraintLocation) -> TypeConstraintDisjunction
     where S: Sequence, S.Element == TypeConstraintDisjunction.Element
   {
     nextID += 1
-    return TypeConstraintDisjunction(choices: choices, id: nextID)
+    return TypeConstraintDisjunction(choices: choices, id: nextID, at: location)
   }
 
 }

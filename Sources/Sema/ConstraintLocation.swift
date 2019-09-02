@@ -17,9 +17,9 @@ public struct ConstraintLocation {
   /// The node at which the constraint is anchored.
   public let anchor: ASTNode
   /// The path from the anchor to the exact entity the constraint is about.
-  public let path: [ConstraintPath]
+  public let path: [ConstraintPathComponent]
 
-  public init(anchor: ASTNode, path: [ConstraintPath]) {
+  public init(anchor: ASTNode, path: [ConstraintPathComponent]) {
     precondition(!path.isEmpty)
     self.anchor = anchor
     self.path = path
@@ -37,23 +37,21 @@ public struct ConstraintLocation {
     return anchor
   }
 
-  public static func location(_ anchor: ASTNode, _ path: ConstraintPath...)
+  public static func location(_ anchor: ASTNode, _ path: ConstraintPathComponent...)
     -> ConstraintLocation
   {
     return ConstraintLocation(anchor: anchor, path: path)
   }
 
-  public static func + (lhs: ConstraintLocation, rhs: ConstraintPath) -> ConstraintLocation {
+  public static func + (lhs: ConstraintLocation, rhs: ConstraintPathComponent) -> ConstraintLocation {
     return ConstraintLocation(anchor: lhs.anchor, path: lhs.path + [rhs])
   }
 
 }
 
 /// Describes a derivation step to reach the exact location of a constraint from an anchor node.
-public enum ConstraintPath: Equatable {
+public enum ConstraintPathComponent: Equatable {
 
-  /// The type annotation of a property or parameter declaration.
-  case annotation
   /// The operator of an infix expression.
   case infixOp
   // The right operand of an infix expression.

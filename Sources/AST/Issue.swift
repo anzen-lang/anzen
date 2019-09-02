@@ -4,11 +4,12 @@ public struct Issue {
   /// Enumeration of issue severity levels.
   public enum SeverityLevel: Int {
 
+    /// Denotes an issue that prevents compilation.
+    case error
+
     /// Denotes an issue that does not prevent compilation, but is indicative of either a possibly
     // erroneous situation, or a discouraged practice.
     case warning
-    /// Denotes an issue that prevents compilation.
-    case error
 
   }
 

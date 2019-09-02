@@ -107,7 +107,8 @@ struct TypeConstraintSolver {
             errors: solutions[0].errors + errors)
         } else {
           // There are multiple equivalent solutions.
-          fatalError("TODO: ambiguous constraint")
+          errors.append(.ambiguousConstraint(disjunction))
+          weight += solutions.map({ $0.weight }).max()!
         }
 
       default:
@@ -125,7 +126,7 @@ struct TypeConstraintSolver {
       } else if !unsolvedIDs.contains(remainingIDs) {
         unsolvedIDs.append(remainingIDs)
       } else {
-        errors.append(.irreducibleConstraints(constraints))
+        errors.append(contentsOf: constraints.map { TypeError.irreducibleConstraint($0) })
         weight += ERROR_WEIGHT
         return SolverResult(substitutions: assumptions, weight: weight, errors: errors)
       }
@@ -169,14 +170,14 @@ struct TypeConstraintSolver {
         // Make sure both parameters have the same label.
         if params.0.label != params.1.label {
           let cons = factory.equality(t: constraint.t, u: constraint.u, at: loc)
-          errors.append(.incompatibleParameterLabels(cons))
+          errors.append(.incorrectParameterLabel(cons))
           weight += ERROR_WEIGHT
         }
 
         constraints.append(factory.equality(
           t: params.0.type.bareType,
           u: params.1.type.bareType,
-          at: constraint.location + .parameter(i)))
+          at: loc + .binding))
       }
 
     // case (let lty as BoundGenericType, _):
@@ -211,7 +212,7 @@ struct TypeConstraintSolver {
       // Otherwise, trying to unify it with `U` might be too broad. Instead, we have to compute the
       // "join" of both types. We do that by successiveky attempting to unify `T` with all types
       // known to be conforming to `U`.
-      var builder = TypeConstraintDisjunctionBuilder(factory: factory)
+      var builder = TypeConstraintDisjunctionBuilder(factory: factory, at: constraint.location)
       builder.add(factory.equality(t: lhs, u: rhs, at: constraint.location))
 
       for ty in context.getTypesConforming(to: rhs) {
@@ -228,10 +229,10 @@ struct TypeConstraintSolver {
         assumptions.set(substitution: lhs, for: var_)
       } else {
         // FIXME: Add conformed interfaces.
-        var builder = TypeConstraintDisjunctionBuilder(factory: factory)
-        builder.add(factory.equality(t: rhs, u: lhs, at: constraint.location))
+        var builder = TypeConstraintDisjunctionBuilder(factory: factory, at: constraint.location)
+        builder.add(factory.equality(t: lhs, u: rhs, at: constraint.location))
         builder.add(
-          factory.equality(t: rhs, u: context.anythingType, at: constraint.location),
+          factory.equality(t: context.anythingType, u: rhs, at: constraint.location),
           weight: 1)
         constraints.append(builder.finalize())
       }
@@ -258,7 +259,7 @@ struct TypeConstraintSolver {
         // Make sure both parameters have the same label.
         if params.0.label != params.1.label {
           let cons = factory.equality(t: constraint.t, u: constraint.u, at: loc)
-          errors.append(.incompatibleParameterLabels(cons))
+          errors.append(.incorrectParameterLabel(cons))
           weight += ERROR_WEIGHT
         }
 
@@ -338,7 +339,7 @@ struct TypeConstraintSolver {
     }
 
     let ownerBindings = (owner as? BoundGenericType)?.bindings ?? [:]
-    var builder = TypeConstraintDisjunctionBuilder(factory: factory)
+    var builder = TypeConstraintDisjunctionBuilder(factory: factory, at: constraint.location)
     for decl in decls {
       let placeholders = decl.type!.bareType.getUnboundPlaceholders()
       let bindings = ownerBindings.filter { placeholders.contains($0.key) }
