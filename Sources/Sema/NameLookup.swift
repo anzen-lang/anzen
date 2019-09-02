@@ -59,29 +59,18 @@ extension DeclContext {
 
         // FIXME: Search in implemented interfaces.
 
-        // If the type is nested in another type, continue the lookup in its enclosing context.
-        if currentContext?.parent?.parent is NominalOrBuiltinTypeDecl {
-          currentContext = currentContext?.parent?.parent
-          continue
-        }
-
-        // Continue the lookup at the module level.
-        currentContext = nominalTypeDecl.module
+        currentContext = currentContext?.parent
         continue
       }
 
       // Handle extension declarations.
       if let extDecl = currentContext as? TypeExtDecl {
         if let extendedDecl = extDecl.resolveExtendedTypeDecl(inCompilerContext: context) {
-          switch extendedDecl {
-          case let declContext as DeclContext:
-            // Continue the lookup in the extended declaration.
+          if let declContext = extendedDecl as? DeclContext {
             currentContext = declContext
             continue
-
-          default:
+          } else {
             assertionFailure("bad extended declaration")
-            break
           }
         }
       }
@@ -152,6 +141,22 @@ extension DeclContext {
 
     default:
       fatalError("bad owner in nested type signature")
+    }
+  }
+
+}
+
+extension NamedDecl {
+
+  func resolveEncolsingTypeDecl(inCompilerContext context: CompilerContext) -> TypeDecl? {
+    let parentContext = (declContext as? BraceStmt)?.parent ?? declContext
+    switch parentContext {
+    case let typeDecl as TypeDecl:
+      return typeDecl
+    case let extDecl as TypeExtDecl:
+      return extDecl.resolveExtendedTypeDecl(inCompilerContext: context)
+    default:
+      return nil
     }
   }
 
@@ -246,7 +251,7 @@ extension NominalOrBuiltinTypeDecl {
 extension TypeExtDecl {
 
   /// Resolves the extended type's declaration node.
-  func resolveExtendedTypeDecl(inCompilerContext context: CompilerContext) -> NamedDecl? {
+  func resolveExtendedTypeDecl(inCompilerContext context: CompilerContext) -> NamedTypeDecl? {
     switch extTypeSign {
     case let ident as IdentSign:
       if ident.referredDecl != nil {
@@ -261,12 +266,13 @@ extension TypeExtDecl {
           return nil
         }
 
-        ident.referredDecl = (decls[0] as! (TypeDecl & NamedDecl))
-        return decls[0]
+        ident.referredDecl = (decls[0] as! NamedTypeDecl)
+        return ident.referredDecl
       }
 
     case let nestedIdent as NestedIdentSign:
-      return module.lookup(qualifiedTypeName: nestedIdent, inCompilerContext: context)
+      let decl = module.lookup(qualifiedTypeName: nestedIdent, inCompilerContext: context)
+      return (decl as! NamedTypeDecl)
 
     default:
       fatalError("bad extension")

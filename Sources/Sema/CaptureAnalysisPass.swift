@@ -4,36 +4,31 @@ import AST
 ///
 /// This pass must take place after type checking, as it requires all identifiers to have been
 /// properly associated with the declaration to which they refer.
+///
+/// Strictly speaking, an identifier is captured if it's declared in a scope that encloses the
+/// function in which it's used. However, some identifiers must be excluded from this definition.
+/// Identifiers referring to types and top-level declarations do not constitute captures, as those
+/// are not context-sensitive. Moreover, identifiers referring to properties within methods do not
+/// constitute captures either, as those actually represent an implicit select expression of the
+/// form `self.identifier`.
 public struct CaptureAnalysisPass {
+
+  /// The compiler context.
+  public let context: CompilerContext
 
   /// The module being processed.
   public let module: Module
 
-  public init(module: Module) {
+  public init(module: Module, context: CompilerContext) {
     assert(module.state == .parsed, "module has not been parsed yet")
+    self.context = context
     self.module = module
   }
 
   public func process() {
-    let analyzer = CaptureAnalyzer()
-    for decl in module.decls where decl is FunDecl {
+    let analyzer = CaptureAnalyzer(context: context)
+    for decl in module.decls {
       decl.accept(visitor: analyzer)
-    }
-
-    for funDecl in analyzer.visitedFunDecls {
-      // Remove functions declarations that do not capture any symbol.
-      funDecl.capturedDecls.removeAll { namedDecl in
-        (namedDecl as? FunDecl)?.capturedDecls.isEmpty ?? false
-      }
-
-      if !funDecl.capturedDecls.isEmpty {
-        if funDecl.declContext === module {
-          // Top-level declarations re not allowed to capture any symbol.
-          for decl in funDecl.capturedDecls {
-            funDecl.registerError(message: Issue.illegalTopLevelCapture(decl: decl))
-          }
-        }
-      }
     }
   }
 
@@ -41,8 +36,8 @@ public struct CaptureAnalysisPass {
 
   private final class CaptureAnalyzer: ASTVisitor {
 
-    /// The inner-most function being visited.
-    private var currentFunDecl: FunDecl?
+    /// The compiler context.
+    let context: CompilerContext
 
     /// An array of all visited functions.
     ///
@@ -51,16 +46,23 @@ public struct CaptureAnalysisPass {
     /// they are defined is not required to emit their code.
     var visitedFunDecls: [FunDecl] = []
 
+    /// The inner-most function being visited.
+    private var currentFunDecl: FunDecl?
+
+    init(context: CompilerContext) {
+      self.context = context
+    }
+
     func visit(_ node: FunDecl) {
       let previousFunDecl = currentFunDecl
       currentFunDecl = node
       node.traverse(with: self)
 
-      // Add to the capture list of the previous function the declarations captured by the current
-      // one, which are not enclosed by the former's declaration context.
+      // Add to the capture list of the previous function the identifiers captured by the current
+      // one, whose declarations are not enclosed by the former's declaration context.
       if let funDecl = previousFunDecl {
-        funDecl.capturedDecls.append(contentsOf: node.capturedDecls.filter { capturedDecl in
-          capturedDecl.declContext!.isEnclosing(funDecl)
+        funDecl.capturedDecls.append(contentsOf: node.capturedDecls.filter { decl in
+          decl.declContext!.isEnclosing(funDecl)
         })
       }
 
@@ -69,22 +71,45 @@ public struct CaptureAnalysisPass {
     }
 
     func visit(_ node: IdentExpr) {
-      // There's nothing to do if the identifier isn't used in a function.
-      guard currentFunDecl != nil
-        else { return }
-
-      // There's nothing to do if the referred decl corresponds to a type declaration, as those are
-      // not flow-sensitive values.
+      // Discard identifiers that could not be associated with any declaration.
       guard let referredDecl = node.referredDecls.first
         else { return }
+
+      // There's nothing to do if the identifier isn't used in the context of a function.
+      guard let currentFunDecl = self.currentFunDecl
+        else { return }
+
+      // Type declarations are not flow-sensitive values, so they shouldn't be included.
       guard !(referredDecl is TypeDecl)
         else { return }
 
+      // Top-level declarations are not flow-sensitive, so they shouldn't be included.
+      guard referredDecl.declContext !== node.module
+        else { return }
 
-      if referredDecl.declContext!.isEnclosing(currentFunDecl!) {
-        // In a firt step, we add any non-type identifier referring to a declaration whose context
-        // encloses the current function in the latter's capture set.
-        currentFunDecl!.capturedDecls.append(referredDecl)
+      if !referredDecl.declContext!.isEnclosed(in: currentFunDecl) {
+        if currentFunDecl.kind == .regular {
+          // Identifiers declared outside of a regular function are considered captured.
+          // WARNING: This is a linear search.
+          if !currentFunDecl.capturedDecls.contains(where: { $0 === referredDecl }) {
+            currentFunDecl.capturedDecls.append(referredDecl)
+          }
+
+          return
+        }
+
+        // If the current function is a method, first determine whether the identifier refers to a
+        // property or method, declared in the same type.
+        let methTypeDecl = currentFunDecl.resolveEncolsingTypeDecl(inCompilerContext: context)
+        let propTypeDecl = referredDecl.resolveEncolsingTypeDecl(inCompilerContext: context)
+
+        // If the method and the property are siblings in the same type context, the identifier is
+        // not captured, but rather refers to an implicit select expression with `self` as owner.
+        guard methTypeDecl !== propTypeDecl
+          else { return }
+
+        // The identifier is captured, unless we can later determine it's flow-insenstivie.
+        node.registerError(message: Issue.illegalCaptureInMethod(ident: node))
       }
     }
 

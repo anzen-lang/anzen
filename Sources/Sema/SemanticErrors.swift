@@ -12,12 +12,8 @@ extension Issue {
     return "'\(name)' is not a type"
   }
 
-  static func illegalTopLevelCapture(decl: NamedDecl) -> String {
-    return "top-level function cannot close over value \(decl.name) defined in an enclosing scope"
-  }
-
-  static func illegalMethodCapture(decl: NamedDecl) -> String {
-    return "method cannot close over value \(decl.name) defined in an enclosing scope"
+  static func illegalCaptureInMethod(ident: IdentExpr) -> String {
+    return "method cannot close over value '\(ident.name)' defined in an enclosing scope"
   }
 
   static func nonExistingNestedType(ownerDecl: NamedDecl, owneeName: String) -> String {

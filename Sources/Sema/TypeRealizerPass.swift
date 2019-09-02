@@ -66,7 +66,10 @@ public struct TypeRealizerPass {
       assert(node.declContext != nil, "member function declared outside of a type declaration")
       let selfTypeDecls = node.declContext!
         .lookup(unqualifiedName: "Self", inCompilerContext: context)
-      let selfTypeDecl = selfTypeDecls[0] as! TypeDecl
+      guard let selfTypeDecl = selfTypeDecls.first as? TypeDecl else {
+        node.type = context.errorType[.cst]
+        return
+      }
 
       if selfTypeDecl.type == nil {
         selfTypeDecl.accept(visitor: self)

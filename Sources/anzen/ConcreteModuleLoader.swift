@@ -26,10 +26,12 @@ public struct ConcreteModuleLoader: ModuleLoader {
     ParseFinalizerPass(module: module).process()
     module.state = .parsed
 
-    // Typecheck the module.
+    // Perform semantic analysis on the module.
     NameBinderPass(module: module, context: context).process()
     TypeRealizerPass(module: module, context: context).process()
     TypeCheckerPass(module: module, context: context).process()
+    CaptureAnalysisPass(module: module, context: context).process()
+
 
     return module
   }

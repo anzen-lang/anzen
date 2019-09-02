@@ -308,7 +308,7 @@ public final class FunDecl: NamedDecl, LValueDecl, Stmt, DeclContext {
 
   public var type: QualType?
 
-  /// The declaration that are referred in the function's closure.
+  /// The declarations brought into the function's closure.
   public var capturedDecls: [NamedDecl] = []
 
   /// The function's declaration attributes.

@@ -33,7 +33,7 @@ final class TypeConstraintExtractor: ASTVisitor {
 
   func visit(_ node: FunDecl) {
     let lastVisitedFunType = visitedFunType
-    visitedFunType = (node.type!.bareType as! FunType)
+    visitedFunType = node.type!.bareType as? FunType
     node.traverse(with: self)
     visitedFunType = lastVisitedFunType
   }
@@ -299,8 +299,7 @@ final class TypeConstraintExtractor: ASTVisitor {
   }
 
   func visit(_ node: BindingStmt) {
-    node.lvalue.accept(visitor: self)
-    node.rvalue.accept(visitor: self)
+    node.traverse(with: self)
     constraints.append(factory.conformance(
       t: node.rvalue.type!.bareType,
       u: node.lvalue.type!.bareType,
@@ -311,10 +310,13 @@ final class TypeConstraintExtractor: ASTVisitor {
     if let (op, value) = node.binding {
       op.accept(visitor: self)
       value.accept(visitor: self)
-      constraints.append(factory.conformance(
-        t: value.type!.bareType,
-        u: visitedFunType!.codom.bareType,
-        at: .location(node, .return)))
+
+      if let codom = visitedFunType?.codom {
+        constraints.append(factory.conformance(
+          t: value.type!.bareType,
+          u: codom.bareType,
+          at: .location(node, .return)))
+      }
     }
   }
 

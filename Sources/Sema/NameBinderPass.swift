@@ -68,6 +68,8 @@ public struct NameBinderPass {
         // identifier can be properly mapped.
         assert(!node.decls.contains(where: { ($0 as? NamedDecl)?.name == "self" }))
         let selfDecl = PropDecl(name: "self", module: node.module, range: node.range)
+        let enclosingTypeDecl = node.resolveEncolsingTypeDecl(inCompilerContext: context)
+        selfDecl.declContext = enclosingTypeDecl as? DeclContext
         node.decls.append(selfDecl)
       }
 
