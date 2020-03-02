@@ -231,9 +231,13 @@ struct TypeConstraintSolver {
         // FIXME: Add conformed interfaces.
         var builder = TypeConstraintDisjunctionBuilder(factory: factory, at: constraint.location)
         builder.add(factory.equality(t: lhs, u: rhs, at: constraint.location))
+
+        // FIXME: Tests with generic functions reveal that unifying with `Anything` leads to
+        // inconsistent type resolutions.
         builder.add(
           factory.equality(t: context.anythingType, u: rhs, at: constraint.location),
           weight: 1)
+
         constraints.append(builder.finalize())
       }
 
