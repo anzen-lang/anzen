@@ -51,7 +51,8 @@ public class Parser {
 
   /// Parses the token stream into a collection of top-level declarations.
   public func parse() -> (decls: [Decl], issues: [Issue]) {
-    var nodes: [ASTNode] = []
+    var decls: [Decl] = []
+    var stmts: [Stmt] = []
     var issues: [Issue] = []
 
     // Parse as many nodes as possible.
@@ -63,11 +64,19 @@ public class Parser {
         else { break }
 
       // Parse the next node.
-      if let node = parseTopLevelNode(issues: &issues) {
-        nodes.append(node)
-      } else {
+      switch parseTopLevelNode(issues: &issues) {
+      case let decl as Decl:
+        decls.append(decl)
+
+      case let stmt as Stmt:
+        stmts.append(stmt)
+
+      case nil:
         // If the next node couldn't be parsed, skip all input until the next statement delimiter.
         recoverAtNextStatementDelimiter()
+
+      default:
+        unreachable()
       }
 
       if peek().kind != .eof {
@@ -83,25 +92,17 @@ public class Parser {
 
     assert(peek().kind == .eof)
 
-    if isMainCodeDecl {
-      // Place all nodes in a `MainCodeDecl` if the parsed stream represents the main unit.
+    // Check that all top-level nodes are declarations, or wrap non-declaration statements into a
+    // main code declaration if the parser was initialized with `isMainCodeDecl`.
+    if isMainCodeDecl && !stmts.isEmpty {
       let decl = MainCodeDecl(
-        stmts: nodes,
+        stmts: stmts,
         module: module,
-        range: nodes.isEmpty
-          ? peek().range
-          : (nodes.first!.range.lowerBound ..< nodes.last!.range.upperBound))
-
-      return ([decl], issues)
-    }
-
-    // Check that all nodes are declarations, unless in main mode.
-    var decls: [Decl] = []
-    for node in nodes {
-      if let decl = node as? Decl {
-        decls.append(decl)
-      } else {
-        issues.append(parseFailure(Issue.invalidTopLevelStmt(node: node), range: node.range))
+        range: stmts.first!.range.lowerBound ..< stmts.last!.range.upperBound)
+      decls.append(decl)
+    } else {
+      for stmt in stmts {
+        issues.append(parseFailure(Issue.invalidTopLevelStmt(node: stmt), range: stmt.range))
       }
     }
 
