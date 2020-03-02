@@ -56,6 +56,12 @@ public struct NameBinderPass {
       self.currentDeclContext = topLevelDeclContext
     }
 
+    func visit(_ node: MainCodeDecl) {
+      inDeclContext(node) {
+        node.traverse(with: self)
+      }
+    }
+
     func visit(_ node: PropDecl) {
       declBeingVisited.insert(ObjectIdentifier(node))
       node.traverse(with: self)
