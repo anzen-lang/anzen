@@ -3,6 +3,7 @@
 
 # Swift PM and Xcode
 /.build
+/.swiftpm
 /Packages
 /Package.resolved
 /*.xcodeproj
