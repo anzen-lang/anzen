@@ -1,27 +1,30 @@
-(module_decl id='inference.call_002' inner_scope='inference.call_002'
-  (function_decl 'mono' type='(x: Anything, y: Anything) -> Anything' symbol='mono' scope='inference.call_002' inner_scope='inference.call_002.mono'
-    (parameters
-      (param_decl 'x' type='Anything' symbol='x' scope='inference.call_002.mono'
-        (type_annotation
-          (qual_type_sign
-            (type_identifier 'Anything' type='Anything.metatype' scope='__builtin'))))
-      (param_decl 'y' type='Anything' symbol='y' scope='inference.call_002.mono'
-        (type_annotation
-          (qual_type_sign
-            (type_identifier 'Anything' type='Anything.metatype' scope='__builtin')))))
-    (codomain
-      (qual_type_sign
-        (type_identifier 'Anything' type='Anything.metatype' scope='__builtin'))))
-  (prop_decl 'a' type='Anything' symbol='a' scope='inference.call_002'
-    (initial_binding
-      (binding_operator :=)
-      (call type='Anything'
-        (callee
-          (identifier 'mono' type='(x: Anything, y: Anything) -> Anything' scope='inference.call_002'))
-        (arguments
-          (call_arg 'x' type='Int'
-            (binding_operator :=)
-            (int_literal 0 type='Int'))
-          (call_arg 'y' type='Bool'
-            (binding_operator :=)
-            (bool_literal true type='Bool')))))))
+(fun_decl regular name='mono' type='@cst (x: @cst Anything, y: @cst Anything) -> @cst Anything'
+  (params
+    (param_decl name='x' type='@cst Anything'
+      (sign
+        (qual_type_sign type='@cst Anything'
+          (type_ident name='Anything' type='Anything' decl='__Builtin::Anything'))))
+    (param_decl name='y' type='@cst Anything'
+      (sign
+        (qual_type_sign type='@cst Anything'
+          (type_ident name='Anything' type='Anything' decl='__Builtin::Anything')))))
+  (codom
+    (qual_type_sign type='@cst Anything'
+      (type_ident name='Anything' type='Anything' decl='__Builtin::Anything'))))
+(prop_decl name='a' type='@cst Anything'
+  (initializer
+    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (call_expr type='@cst Anything'
+      (callee
+        (ident_expr name='mono' type='@cst (x: @cst Anything, y: @cst Anything) -> @cst Anything' decl='call_002::mono(x:y:)'))
+      (args
+        (call_arg_expr 'x' type='@cst Int'
+          (op
+            (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (int_lit_expr value='0' type='@cst Int')))
+        (call_arg_expr 'y' type='@cst Bool'
+          (op
+            (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (bool_lit_expr value='true' type='@cst Bool')))))))

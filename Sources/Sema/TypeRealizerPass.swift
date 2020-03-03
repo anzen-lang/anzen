@@ -34,7 +34,8 @@ public struct TypeRealizerPass {
     }
 
     func visit(_ node: PropDecl) {
-      assert(node.type == nil, "declaration's type already realized")
+      guard node.type == nil
+        else { return }
       node.traverse(with: self)
 
       // If the declaration has an explicit annotation, use it to type the property, otherwise use
@@ -47,7 +48,8 @@ public struct TypeRealizerPass {
     }
 
     func visit(_ node: FunDecl) {
-      assert(node.type == nil, "declaration's type already realized")
+      guard node.type == nil
+        else { return }
       node.traverse(with: self)
 
       // Build the function's type.
@@ -102,12 +104,14 @@ public struct TypeRealizerPass {
     }
 
     func visit(_ node: GenericParamDecl) {
-      assert(node.type == nil, "declaration's type already realized")
+      guard node.type == nil
+        else { return }
       node.type = context.getTypePlaceholder(decl: node)
     }
 
     func visit(_ node: ParamDecl) {
-      assert(node.type == nil, "declaration's type already realized")
+      guard node.type == nil
+        else { return }
       node.traverse(with: self)
 
       // If the declaration has an explicit annotation, use it to type the property, otherwise use
@@ -120,19 +124,25 @@ public struct TypeRealizerPass {
     }
 
     func visit(_ node: InterfaceDecl) {
-      assert(node.type == nil, "declaration's type already realized")
+      guard node.type == nil
+        else { return }
+
       node.type = context.getInterfaceType(decl: node)
       node.traverse(with: self)
     }
 
     func visit(_ node: StructDecl) {
-      assert(node.type == nil, "declaration's type already realized")
+      guard node.type == nil
+        else { return }
+
       node.type = context.getStructType(decl: node)
       node.traverse(with: self)
     }
 
     func visit(_ node: UnionDecl) {
-      assert(node.type == nil, "declaration's type already realized")
+      guard node.type == nil
+        else { return }
+
       node.type = context.getUnionType(decl: node)
       node.traverse(with: self)
     }

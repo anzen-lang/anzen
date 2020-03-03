@@ -1,24 +1,23 @@
-(module_decl id='inference.member_001' inner_scope='inference.member_001'
-  (struct_decl 'Point' type='Point.metatype' symbol='Point' scope='inference.member_001' inner_scope='inference.member_001.Point'
-    (body
-      (block inner_scope='inference.member_001.Point.block'
-          (prop_decl 'x' type='Int' symbol='x' scope='inference.member_001.Point.block'
-            (type_annotation
-              (qual_type_sign
-                (type_identifier 'Int' type='Int.metatype' scope='__builtin'))))
-          (prop_decl 'y' type='Int' symbol='y' scope='inference.member_001.Point.block'
-            (type_annotation
-              (qual_type_sign
-                (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))))
-  (prop_decl 'p' type='Point' symbol='p' scope='inference.member_001'
-    (type_annotation
-      (qual_type_sign
-        (type_identifier 'Point' type='Point.metatype' scope='inference.member_001'))))
-  (prop_decl 'x' type='Int' symbol='x' scope='inference.member_001'
-    (initial_binding
-      (binding_operator :=)
-      (select type='Int'
-        (owner
-          (identifier 'p' type='Point' scope='inference.member_001'))
-        (ownee
-          (identifier 'x' type='Int' scope='inference.member_001.Point.block'))))))
+(struct_decl name='Point' type='Point'
+  (body
+    (brace_stmt
+      (prop_decl name='x' type='@cst Int'
+        (sign
+          (qual_type_sign type='@cst Int'
+            (type_ident name='Int' type='Int' decl='__Builtin::Int'))))
+      (prop_decl name='y' type='@cst Int'
+        (sign
+          (qual_type_sign type='@cst Int'
+            (type_ident name='Int' type='Int' decl='__Builtin::Int')))))))
+(prop_decl name='p' type='@cst Point'
+  (sign
+    (qual_type_sign type='@cst Point'
+      (type_ident name='Point' type='Point' decl='member_001::Point'))))
+(prop_decl name='x' type='@cst Int'
+  (initializer
+    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (select_expr type='@cst Point'
+      (owner
+        (ident_expr name='p' type='@cst Point' decl='member_001::p'))
+      (ownee
+        (ident_expr name='x' type='@cst Int' decl='_')))))

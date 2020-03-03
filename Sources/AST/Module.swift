@@ -1,8 +1,10 @@
+import Utils
+
 /// A module.
 ///
-/// A module (a.k.a. a compilation unit) is an abstraction over multiple source files (a.k.a.
-/// translation units) that are glued together. Hence a module is a collection of top-level
-/// declarations (e.g. types and functions).
+/// A module (a.k.a. a compilation unit in Clang/LLVM's parlance) is an abstraction over multiple
+/// source files (a.k.a. translation units) that are glued together. Hence a module is a collection
+/// of top-level declarations (e.g. types and functions).
 ///
 /// A module may contain a single "main" translation unit (named `main.anzen`, by convention) that
 /// may contain top-level statements. These correspond to the statements of an implicit `main`
@@ -30,7 +32,9 @@ public final class Module: DeclContext {
   public var id: ID
 
   /// The module's generation number.
-  public let generationNumber: Int
+  ///
+  /// This property is used internally during semantic analysis.
+  public let generation: Int
 
   /// The module's compilation state.
   public var state: State
@@ -40,11 +44,13 @@ public final class Module: DeclContext {
 
   /// Creates a new module.
   ///
-  /// Note that this initializer is internal to the AST library, because modules must be created by
-  /// a compiler context before they are loaded.
-  internal init(id: ID, generationNumber: Int, state: State = .created) {
+  /// - Attention:
+  ///   You should not create modules with this initializer directly, unless you know what you are
+  ///   doing. Modules are meant to be created within a compiler context and loaded by going
+  ///   through a specific sequence of compilation passes.
+  public init(id: ID, generation: Int, state: State = .created) {
     self.id = id
-    self.generationNumber = generationNumber
+    self.generation = generation
     self.state = state
   }
 
@@ -52,5 +58,33 @@ public final class Module: DeclContext {
 
   /// The list of issues that resulted from the processing of this module.
   public var issues: Set<Issue> = []
+
+  // MARK: - Debugging
+
+  /// Dumps all module declarations to the standard output.
+  public func dump() {
+    let buffer = StringBuffer()
+    let dumper = ASTDumper(to: buffer)
+
+    for decl in decls {
+      decl.accept(visitor: dumper)
+      buffer.write("\n")
+    }
+
+    print(buffer.value)
+  }
+
+  /// Dumps all module declarations to the given buffer.
+  public func dump<T>(_ stream: inout T) where T: TextOutputStream {
+    let buffer = StringBuffer()
+    let dumper = ASTDumper(to: buffer)
+
+    for decl in decls {
+      decl.accept(visitor: dumper)
+      buffer.write("\n")
+    }
+
+    stream.write(buffer.value)
+  }
 
 }

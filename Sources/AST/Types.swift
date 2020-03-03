@@ -530,6 +530,22 @@ public final class UnionType: NominalType {
 
 // MARK: - Built-ins
 
+/// An enumeration of the built-in types' names.
+public enum BuiltinTypeName: String, CaseIterable {
+
+  case nothing = "Nothing"
+  case anything = "Anything"
+  case bool = "Bool"
+  case int = "Int"
+  case float = "Float"
+  case string = "String"
+
+  public static func contains(_ name: String) -> Bool {
+    return allCases.contains { $0.rawValue == name }
+  }
+
+}
+
 /// A built-in type.
 public final class BuiltinType: TypeBase {
 

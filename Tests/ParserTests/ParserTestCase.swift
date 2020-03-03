@@ -15,7 +15,7 @@ protocol ParserTestCase {
 extension ParserTestCase {
 
   func getParser(for input: String) -> Parser {
-    let module = Module(id: "<test>", generationNumber: 0)
+    let module = Module(id: "<test>", generation: 0)
     let parser = try? Parser(source: SourceRef(name: "<test>", buffer: input), module: module)
     XCTAssertNotNil(parser)
     return parser!

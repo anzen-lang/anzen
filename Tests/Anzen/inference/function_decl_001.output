@@ -1,10 +1,9 @@
-(module_decl id='inference.function_decl_001' inner_scope='inference.function_decl_001'
-  (function_decl 'mono' type='(x: Int) -> Int' symbol='mono' scope='inference.function_decl_001' inner_scope='inference.function_decl_001.mono'
-    (parameters
-      (param_decl 'x' type='Int' symbol='x' scope='inference.function_decl_001.mono'
-        (type_annotation
-          (qual_type_sign
-            (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))
-    (codomain
-      (qual_type_sign
-        (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))
+(fun_decl regular name='mono' type='@cst (x: @cst Int) -> @cst Int'
+  (params
+    (param_decl name='x' type='@cst Int'
+      (sign
+        (qual_type_sign type='@cst Int'
+          (type_ident name='Int' type='Int' decl='__Builtin::Int')))))
+  (codom
+    (qual_type_sign type='@cst Int'
+      (type_ident name='Int' type='Int' decl='__Builtin::Int'))))

@@ -1,34 +1,39 @@
-(module_decl id='inference.member_002' inner_scope='inference.member_002'
-  (struct_decl 'Box' type='Box<T>.metatype' symbol='Box' scope='inference.member_002' inner_scope='inference.member_002.Box'
-    (placeholders
-      (placeholder T))
-    (body
-      (block inner_scope='inference.member_002.Box.block'
-          (prop_decl 'value' type='T' symbol='value' scope='inference.member_002.Box.block'
-            (type_annotation
-              (qual_type_sign
-                (type_identifier 'T' type='T.metatype' scope='inference.member_002.Box')))))))
-  (prop_decl 'box1' type='Box<T=Int>' symbol='box1' scope='inference.member_002'
-    (type_annotation
-      (qual_type_sign
-        (type_identifier 'Box' type='Box<T=Int>.metatype' scope='inference.member_002'))))
-  (prop_decl 'box2' type='Box<T=String>' symbol='box2' scope='inference.member_002'
-    (type_annotation
-      (qual_type_sign
-        (type_identifier 'Box' type='Box<T=String>.metatype' scope='inference.member_002'))))
-  (prop_decl 'val1' type='Int' symbol='val1' scope='inference.member_002'
-    (initial_binding
-      (binding_operator :=)
-      (select type='Int'
-        (owner
-          (identifier 'box1' type='Box<T=Int>' scope='inference.member_002'))
-        (ownee
-          (identifier 'value' type='Int' scope='inference.member_002.Box.block')))))
-  (prop_decl 'val2' type='String' symbol='val2' scope='inference.member_002'
-    (initial_binding
-      (binding_operator :=)
-      (select type='String'
-        (owner
-          (identifier 'box2' type='Box<T=String>' scope='inference.member_002'))
-        (ownee
-          (identifier 'value' type='String' scope='inference.member_002.Box.block'))))))
+(struct_decl name='Box' type='Box<T>'
+  (generic_params
+    (generic_param_decl name='T' type='T'))
+  (body
+    (brace_stmt
+      (prop_decl name='value' type='@cst T'
+        (sign
+          (qual_type_sign type='@cst T'
+            (type_ident name='T' type='T' decl='member_002::Box::T')))))))
+(prop_decl name='box1' type='@cst Box<T=@cst Int>'
+  (sign
+    (qual_type_sign type='@cst Box<T=@cst Int>'
+      (type_ident name='Box' type='Box<T=@cst Int>' decl='member_002::Box'
+        (spec_args key='T'
+          (qual_type_sign type='@cst Int'
+            (type_ident name='Int' type='Int' decl='__Builtin::Int')))))))
+(prop_decl name='box2' type='@cst Box<T=@cst String>'
+  (sign
+    (qual_type_sign type='@cst Box<T=@cst String>'
+      (type_ident name='Box' type='Box<T=@cst String>' decl='member_002::Box'
+        (spec_args key='T'
+          (qual_type_sign type='@cst String'
+            (type_ident name='String' type='String' decl='__Builtin::String')))))))
+(prop_decl name='val1' type='@cst <T=@cst Int>T'
+  (initializer
+    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (select_expr type='@cst Box<T=@cst Int>'
+      (owner
+        (ident_expr name='box1' type='@cst Box<T=@cst Int>' decl='member_002::box1'))
+      (ownee
+        (ident_expr name='value' type='@cst <T=@cst Int>T' decl='_')))))
+(prop_decl name='val2' type='@cst <T=@cst String>T'
+  (initializer
+    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (select_expr type='@cst Box<T=@cst String>'
+      (owner
+        (ident_expr name='box2' type='@cst Box<T=@cst String>' decl='member_002::box2'))
+      (ownee
+        (ident_expr name='value' type='@cst <T=@cst String>T' decl='_')))))

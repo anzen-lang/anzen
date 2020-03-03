@@ -81,8 +81,8 @@ extension DeclContext {
     }
 
     // If no match could be bound, search in built-in types.
-    if matches.isEmpty && CompilerContext.BuiltinTypeName.contains(unqualifiedName) {
-      return [context.builtinModule.firstDecl(named: unqualifiedName)!]
+    if matches.isEmpty && BuiltinTypeName.contains(unqualifiedName) {
+      return [context.builtinModule!.firstDecl(named: unqualifiedName)!]
     } else {
       // Should we ensure uniqueness of each result?
       return matches
@@ -185,11 +185,10 @@ extension NominalOrBuiltinTypeDecl {
     if nameComponents.count == 1 {
       // The type isn't nested, so we can look up its name directly.
       for decl in searchModule.decls {
-        if let extDecl = decl as? TypeExtDecl,
-          let sign = extDecl.extTypeSign as? IdentSign,
-          nameComponents[0] == sign.name
-        {
-          extDecls.append(extDecl)
+        if let extDecl = decl as? TypeExtDecl {
+          if nameComponents[0] == (extDecl.extTypeSign as? IdentSign)?.name {
+            extDecls.append(extDecl)
+          }
         }
       }
     } else {
@@ -215,8 +214,9 @@ extension NominalOrBuiltinTypeDecl {
   func lookup(memberName: String, inCompilerContext context: CompilerContext) -> [NamedDecl] {
     // Initialize the member lookup table as required.
     if memberLookupTable == nil {
-      // Create the lookup table.
-      memberLookupTable = MemberLookupTable(generationNumber: 0)
+      // Create the lookup table. We start with a negative generation number smaller than the
+      // compiler context so that the table gets updated will all visible extensions.
+      memberLookupTable = MemberLookupTable(generation: -1)
 
       // Insert members defined in the context of the declaration's header.
       for member in decls where member is NamedDecl {
@@ -232,15 +232,16 @@ extension NominalOrBuiltinTypeDecl {
     }
 
     // Update the lookup table with this module's extensions.
-    if memberLookupTable!.generationNumber < context.currentGeneration {
+    if memberLookupTable!.generation < context.currentGeneration {
       for searchModule in context.modules.values
-        where searchModule.generationNumber > memberLookupTable!.generationNumber
+        where searchModule.generation > memberLookupTable!.generation
       {
         let extDecls = findExtensions(in: searchModule)
         for decl in extDecls {
           memberLookupTable!.merge(extension: decl)
         }
       }
+      memberLookupTable!.generation = context.currentGeneration
     }
 
     return memberLookupTable![memberName] ?? []
@@ -272,7 +273,7 @@ extension TypeExtDecl {
 
     case let nestedIdent as NestedIdentSign:
       let decl = module.lookup(qualifiedTypeName: nestedIdent, inCompilerContext: context)
-      return (decl as! NamedTypeDecl)
+      return (decl as? NamedTypeDecl)
 
     default:
       fatalError("bad extension")

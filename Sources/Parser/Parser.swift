@@ -71,12 +71,9 @@ public class Parser {
       case let stmt as Stmt:
         stmts.append(stmt)
 
-      case nil:
+      default:
         // If the next node couldn't be parsed, skip all input until the next statement delimiter.
         recoverAtNextStatementDelimiter()
-
-      default:
-        unreachable()
       }
 
       if peek().kind != .eof {

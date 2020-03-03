@@ -36,18 +36,6 @@ public struct Issue {
     self.range = node.range
   }
 
-  public static func < (lhs: Issue, rhs: Issue) -> Bool {
-    if lhs.severity == rhs.severity {
-      if lhs.range.sourceRef.name == rhs.range.sourceRef.name {
-        return lhs.range.lowerBound < rhs.range.lowerBound
-      } else {
-        return lhs.range.sourceRef.name < rhs.range.sourceRef.name
-      }
-    } else {
-      return lhs.severity.rawValue < rhs.severity.rawValue
-    }
-  }
-
 }
 
 extension Issue: Hashable {
@@ -65,6 +53,22 @@ extension Issue: Hashable {
     hasher.combine(range)
     if node != nil {
       hasher.combine(ObjectIdentifier(node!))
+    }
+  }
+
+}
+
+extension Issue: Comparable {
+
+  public static func < (lhs: Issue, rhs: Issue) -> Bool {
+    if lhs.severity == rhs.severity {
+      if lhs.range.sourceRef.name == rhs.range.sourceRef.name {
+        return lhs.range.lowerBound < rhs.range.lowerBound
+      } else {
+        return lhs.range.sourceRef.name < rhs.range.sourceRef.name
+      }
+    } else {
+      return lhs.severity.rawValue < rhs.severity.rawValue
     }
   }
 

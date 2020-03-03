@@ -9,7 +9,7 @@ public enum TokenKind: UInt64, CustomStringConvertible {
 
     /// Denotes a literal.
     case lit          = 256
-    /// Denotes an identifier, underscore (i.e. `_`) or an first-class operator.
+    /// Denotes an identifier, underscore (i.e. `_`) or a first-class operator.
     case name         = 512
     /// Denotes an operator.
     case op           = 1024

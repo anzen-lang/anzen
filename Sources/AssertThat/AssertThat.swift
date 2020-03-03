@@ -1,7 +1,5 @@
 import XCTest
 
-import Utils
-
 /// Asserts that a statement is true.
 ///
 /// This function is inspired by the assertion mechanism proposed in JUnit, which proposes to write

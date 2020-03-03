@@ -1,9 +1,0 @@
-let x <- 42
-var y &- x
-print(x === y)
-print(x !== y)
-
-let z <- 42
-y &- z
-print(x === y)
-print(x !== y)

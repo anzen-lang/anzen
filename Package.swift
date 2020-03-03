@@ -7,23 +7,29 @@ let package = Package(
     .executable(name: "anzen", targets: ["anzen"]),
   ],
   dependencies: [
-    .package(url: "https://github.com/kyouko-taiga/ArgParse.git", from: "1.1.0"),
     .package(url: "https://github.com/anzen-lang/SystemKit", .branch("master")),
   ],
   targets: [
-    .target(name: "anzen", dependencies: ["Parser", "Sema", "ArgParse"]),
-    // .target(name: "AnzenIR", dependencies: ["AST", "Utils"]),
-    // .target(name: "AnzenLib", dependencies: ["Parser", "Interpreter", "Sema"]),
+    // The Anzen compiler CLI.
+    .target(name: "anzen", dependencies: ["AnzenLib"]),
+
+    // The Anzen compiler library, which exposes the compiler driver.
+    .target(name: "AnzenLib", dependencies: ["Parser", "Sema"]),
+
+    // Internal libraries.
     .target(name: "AST", dependencies: ["Utils"]),
-    // .target(name: "Interpreter", dependencies: ["AnzenIR"]),
     .target(name: "Parser", dependencies: ["AST", "Utils"]),
     .target(name: "Sema", dependencies: ["AST", "Parser", "Utils", "SystemKit"]),
     .target(name: "Utils", dependencies: ["SystemKit"]),
+    // .target(name: "AnzenIR", dependencies: ["AST", "Utils"]),
+    // .target(name: "Interpreter", dependencies: ["AnzenIR"]),
 
-    .target(name: "AssertThat", dependencies: ["Utils"]),
+    // Utility targets.
+    .target(name: "AssertThat"),
 
+    // Test targets.
     // .testTarget(name: "AnzenTests", dependencies: ["AnzenLib"]),
     .testTarget(name: "ParserTests", dependencies: ["AssertThat", "Parser"]),
-    .testTarget(name: "SemaTests", dependencies: ["AssertThat", "Parser", "Sema"]),
+    .testTarget(name: "SemaTests", dependencies: ["AssertThat", "AnzenLib"]),
   ]
 )

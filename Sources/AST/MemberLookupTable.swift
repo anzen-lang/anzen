@@ -5,12 +5,12 @@ public struct MemberLookupTable {
   private var lookupTable: [String: [NamedDecl]] = [:]
 
   /// The compiler context's generation with which this lookup table is synchronized.
-  public var generationNumber: Int
+  public var generation: Int
 
   /// Whether all extensions
 
-  public init(generationNumber: Int) {
-    self.generationNumber = generationNumber
+  public init(generation: Int) {
+    self.generation = generation
   }
 
   /// Inserts the given member to the lookup table.

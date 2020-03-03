@@ -1,38 +1,43 @@
-(module_decl id='inference.call_003' inner_scope='inference.call_003'
-  (function_decl 'poly' type='<T> (x: T) -> T' symbol='poly' scope='inference.call_003' inner_scope='inference.call_003.poly'
-    (placeholders
-      (placeholder T))
-    (parameters
-      (param_decl 'x' type='T' symbol='x' scope='inference.call_003.poly'
-        (type_annotation
-          (qual_type_sign
-            (type_identifier 'T' type='T.metatype' scope='inference.call_003.poly')))))
-    (codomain
-      (qual_type_sign
-        (type_identifier 'T' type='T.metatype' scope='inference.call_003.poly'))))
-  (prop_decl 'a' type='Int' symbol='a' scope='inference.call_003'
-    (initial_binding
-      (binding_operator :=)
-      (call type='Int'
-        (callee
-          (identifier 'poly' type='(x: Int) -> Int' scope='inference.call_003'))
-        (arguments
-          (call_arg 'x' type='Int'
-            (binding_operator :=)
-            (int_literal 0 type='Int'))))))
-  (prop_decl 'b' type='Bool' symbol='b' scope='inference.call_003'
-    (initial_binding
-      (binding_operator :=)
-      (call type='Bool'
-        (callee
-          (identifier 'poly' type='(x: Bool) -> Bool' scope='inference.call_003'))
-        (arguments
-          (call_arg 'x' type='Bool'
-            (binding_operator :=)
-            (call type='Bool'
+(fun_decl regular name='poly' type='@cst <T>(x: @cst T) -> @cst T'
+  (generic_params
+    (generic_param_decl name='T' type='T'))
+  (params
+    (param_decl name='x' type='@cst T'
+      (sign
+        (qual_type_sign type='@cst T'
+          (type_ident name='T' type='T' decl='call_003::poly(x:)::T')))))
+  (codom
+    (qual_type_sign type='@cst T'
+      (type_ident name='T' type='T' decl='call_003::poly(x:)::T'))))
+(prop_decl name='a' type='@cst Int'
+  (initializer
+    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (call_expr type='@cst Int'
+      (callee
+        (ident_expr name='poly' type='@cst <T=@cst Int>(x: @cst T) -> @cst T' decl='call_003::poly(x:)'))
+      (args
+        (call_arg_expr 'x' type='@cst Int'
+          (op
+            (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (int_lit_expr value='0' type='@cst Int')))))))
+(prop_decl name='b' type='@cst Bool'
+  (initializer
+    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (call_expr type='@cst Bool'
+      (callee
+        (ident_expr name='poly' type='@cst <T=@cst Bool>(x: @cst T) -> @cst T' decl='call_003::poly(x:)'))
+      (args
+        (call_arg_expr 'x' type='@cst Bool'
+          (op
+            (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (call_expr type='@cst Bool'
               (callee
-                (identifier 'poly' type='(x: Bool) -> Bool' scope='inference.call_003'))
-              (arguments
-                (call_arg 'x' type='Bool'
-                  (binding_operator :=)
-                  (bool_literal true type='Bool'))))))))))
+                (ident_expr name='poly' type='@cst <T=@cst Bool>(x: @cst T) -> @cst T' decl='call_003::poly(x:)'))
+              (args
+                (call_arg_expr 'x' type='@cst Bool'
+                  (op
+                    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+                  (value
+                    (bool_lit_expr value='true' type='@cst Bool')))))))))))

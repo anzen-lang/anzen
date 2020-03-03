@@ -1,8 +1,0 @@
-// Test the creation and application of a function with closure.
-
-let a <- 10
-fun f(b: Int) -> Int {
-  return <- a + b
-}
-
-print(f(b <- 5))

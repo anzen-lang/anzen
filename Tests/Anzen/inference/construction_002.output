@@ -1,34 +1,37 @@
-(module_decl id='inference.construction_002' inner_scope='inference.construction_002'
-  (struct_decl 'Box' type='Box<T>.metatype' symbol='Box' scope='inference.construction_002' inner_scope='inference.construction_002.Box'
-    (placeholders
-      (placeholder T))
-    (body
-      (block inner_scope='inference.construction_002.Box.block'
-          (constructor_decl 'new' type='<T> (value: T) -> Box<T=T>' symbol='new' scope='inference.construction_002.Box.block' inner_scope='inference.construction_002.Box.block.new'
-            (parameters
-              (param_decl 'value' type='T' symbol='value' scope='inference.construction_002.Box.block.new'
-                (type_annotation
-                  (qual_type_sign
-                    (type_identifier 'T' type='T.metatype' scope='inference.construction_002.Box')))))
-            (body
-              (block inner_scope='inference.construction_002.Box.block.new.block'))))))
-  (prop_decl 'int_box' type='Box<T=Int>' symbol='int_box' scope='inference.construction_002'
-    (initial_binding
-      (binding_operator :=)
-      (call type='Box<T=Int>'
-        (callee
-          (identifier 'Box' type='(value: Int) -> Box<T=Int>' scope='inference.construction_002'))
-        (arguments
-          (call_arg 'value' type='Int'
-            (binding_operator :=)
-            (int_literal 0 type='Int'))))))
-  (prop_decl 'string_box' type='Box<T=String>' symbol='string_box' scope='inference.construction_002'
-    (initial_binding
-      (binding_operator :=)
-      (call type='Box<T=String>'
-        (callee
-          (identifier 'Box' type='(value: String) -> Box<T=String>' scope='inference.construction_002'))
-        (arguments
-          (call_arg 'value' type='String'
-            (binding_operator :=)
-            (string_literal "Hello, World!" type='String')))))))
+(struct_decl name='Box' type='Box<T>'
+  (generic_params
+    (generic_param_decl name='T' type='T'))
+  (body
+    (brace_stmt
+      (fun_decl ctor name='new' type='@cst (value: @cst T) -> @mut Box<T>'
+        (params
+          (param_decl name='value' type='@cst T'
+            (sign
+              (qual_type_sign type='@cst T'
+                (type_ident name='T' type='T' decl='construction_002::Box::T')))))
+        (body
+          (brace_stmt))))))
+(prop_decl name='int_box' type='@cst Box<T=@cst Int>'
+  (initializer
+    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (call_expr type='@cst Box<T=@cst Int>'
+      (callee
+        (ident_expr name='Box' type='@cst <T=@cst Int>(value: @cst T) -> @mut Box<T>' decl='construction_002::Box'))
+      (args
+        (call_arg_expr 'value' type='@cst Int'
+          (op
+            (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (int_lit_expr value='0' type='@cst Int')))))))
+(prop_decl name='string_box' type='@cst Box<T=@cst String>'
+  (initializer
+    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (call_expr type='@cst Box<T=@cst String>'
+      (callee
+        (ident_expr name='Box' type='@cst <T=@cst String>(value: @cst T) -> @mut Box<T>' decl='construction_002::Box'))
+      (args
+        (call_arg_expr 'value' type='@cst String'
+          (op
+            (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (str_lit_expr value='"Hello, World!"' type='@cst String')))))))

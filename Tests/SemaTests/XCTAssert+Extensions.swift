@@ -12,7 +12,7 @@ func XCTAssertLinesEqual(_ lhs: String, _ rhs: String, path: Path) {
   }
 
   guard errors.isEmpty else {
-    XCTFail("⚠️  \(path.filename!)")
+    XCTFail("\(path.filename!)")
     for (lineno, ll, rl) in errors {
       print("  L\(lineno) | expected: " + ll.trimmingCharacters(in: [" "]).styled("green"))
       print("  L\(lineno) | obtained: " + rl.trimmingCharacters(in: [" "]).styled("red"))
@@ -21,7 +21,7 @@ func XCTAssertLinesEqual(_ lhs: String, _ rhs: String, path: Path) {
   }
 
   guard lhsLines.count == rhsLines.count else {
-    XCTFail("⚠️  \(path.filename!): different line count")
+    XCTFail("\(path.filename!): different line count")
     return
   }
 }

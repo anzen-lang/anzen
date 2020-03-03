@@ -1,5 +1,4 @@
-(module_decl id='inference.prop_decl_001' inner_scope='inference.prop_decl_001'
-  (prop_decl 'property' type='Int' symbol='property' scope='inference.prop_decl_001'
-    (type_annotation
-      (qual_type_sign
-        (type_identifier 'Int' type='Int.metatype' scope='__builtin')))))
+(prop_decl name='property' type='@cst Int'
+  (sign
+    (qual_type_sign type='@cst Int'
+      (type_ident name='Int' type='Int' decl='__Builtin::Int'))))

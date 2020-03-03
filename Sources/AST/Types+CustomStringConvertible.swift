@@ -81,6 +81,9 @@ extension BoundGenericType: CustomStringConvertible {
       return "\(nominalTy.name)<\(bindings)>"
     case let builtinTy as BuiltinType:
       return "\(builtinTy.name)<\(bindings)>"
+    case let funTy as FunType:
+      let params = funTy.dom.map(String.init).joined(separator: ", ")
+      return "<\(bindings)>(\(params)) -> \(funTy.codom)"
     default:
       return "<\(bindings)>\(type)"
     }
