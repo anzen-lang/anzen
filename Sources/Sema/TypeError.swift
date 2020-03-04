@@ -35,13 +35,15 @@ enum TypeError {
       // Produce the most accurate message possible, based on the constraint's location.
       switch constraint.location.path.last! {
       case .binding, .initializer:
-        node.registerError(message: "cannot assign value of type '\(t)' to r-value of type '\(u)'")
+        node.registerError(
+          message: "cannot assign value of type '\(t)' to a variable of type '\(u)'")
 
       case .infixOp:
         guard let expr = constraint.location.anchor as? InfixExpr
           else { break }
-        node.registerError(message:
-         "operator '\(expr.op.name)' cannot be applied to operands of type '\(u)' and '\(t)'")
+        node.registerError(
+          message: "operator '\(expr.op.name)' " +
+                   "cannot be applied to operands of type '\(u)' and '\(t)'")
 
       default:
         node.registerError(message: "type '\(t)' is not equal to '\(u)'")
@@ -58,8 +60,8 @@ enum TypeError {
       {
         let expected = calleeTy.dom[i].label ?? ""
         let found = arg.label ?? ""
-        node.registerError(message:
-          "incorrect parameter label, expected '\(expected)' but found '\(found)'")
+        node.registerError(
+          message: "incorrect parameter label, expected '\(expected)' but found '\(found)'")
       }
 
       // Fallback on a more generic diganostic.
@@ -74,8 +76,8 @@ enum TypeError {
     case .noSuchValueMember(let constraint):
       let node = resolveLocation(constraint)
       let ownerTy = constraint.u.accept(transformer: finalizer)
-      node.registerError(message:
-        "value of type '\(ownerTy)' has no member '\(constraint.memberName)'")
+      node.registerError(
+        message: "value of type '\(ownerTy)' has no member '\(constraint.memberName)'")
     }
   }
 

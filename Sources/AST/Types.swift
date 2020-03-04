@@ -325,8 +325,21 @@ public final class BoundGenericType: TypeBase {
   }
 
   fileprivate override func subst(_ substitutions: [TypePlaceholder: QualType]) -> TypeBase {
-    let newBindings = Dictionary(
-      uniqueKeysWithValues: bindings.map { ($0, substitutions[$0] ?? $1) })
+    // If the unbound type corresponding to this type is specialized in another generic context
+    // (e.g. a generic funtion specializing a parameter with its own generic placeholder), then
+    // this type's bindings will map placeholders to other placeholders, for which a substitution
+    // might be defined in the given table.
+    var newBindings: [TypePlaceholder: QualType] = [:]
+    for (ph, ty) in bindings {
+      if let substitute = substitutions[ph] {
+        newBindings[ph] = substitute
+      } else if let key = ty.bareType as? TypePlaceholder, let substitute = substitutions[key] {
+        newBindings[ph] = substitute
+      } else {
+        newBindings[ph] = ty
+      }
+    }
+
     return context.getBoundGenericType(type: type, bindings: newBindings)
   }
 

@@ -72,20 +72,31 @@ extension TypePlaceholder: CustomStringConvertible {
 extension BoundGenericType: CustomStringConvertible {
 
   public var description: String {
-    let bindings = self.bindings
+    if let placeholder = type as? TypePlaceholder {
+      if let type = bindings[placeholder] {
+        return String(describing: type.bareType)
+      } else {
+        return "_"
+      }
+    }
+
+    let arguments = bindings.sorted(by: { a, b in a.key.name < b.key.name })
       .map { key, value in "\(key)=\(value)" }
       .joined(separator: ", ")
 
     switch type {
     case let nominalTy as NominalType:
-      return "\(nominalTy.name)<\(bindings)>"
+      return "\(nominalTy.name)<\(arguments)>"
+
     case let builtinTy as BuiltinType:
-      return "\(builtinTy.name)<\(bindings)>"
+      return "\(builtinTy.name)<\(arguments)>"
+
     case let funTy as FunType:
       let params = funTy.dom.map(String.init).joined(separator: ", ")
-      return "<\(bindings)>(\(params)) -> \(funTy.codom)"
+      return "<\(arguments)>(\(params)) -> \(funTy.codom)"
+
     default:
-      return "<\(bindings)>\(type)"
+      return "<\(arguments)>\(type)"
     }
   }
 

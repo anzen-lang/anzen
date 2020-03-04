@@ -83,6 +83,19 @@ final class TypeConstraintExtractor: ASTVisitor {
     node.lhs.accept(visitor: self)
     node.rhs.accept(visitor: self)
 
+    // Reference equality operators (i.e. `===` and `!==`) have a built-in implementation for all
+    // types, which cannot be overridden nor overloaded. Furthermore, they do not impose any
+    // constraint on the operands, since any pair of references can be checked for identity.
+    if (node.op.name == "===") || (node.op.name == "!==") {
+      let anything = context.getBuiltinType(.anything)[.cst]
+      let bool = context.getBuiltinType(.bool)[.cst]
+
+      let param = FunType.Param(type: anything)
+      node.type = bool
+      node.op.type = context.getFunType(dom: [param, param], codom: bool)[.cst]
+      return
+    }
+
     // Infix operators are implemented as methods of the left operand. Hence they have a type of
     // the form `(_: RHS) -> T`, where `RHS` is some type variable, and `T` is the type of the
     // infix expression.

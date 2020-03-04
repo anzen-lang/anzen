@@ -168,7 +168,7 @@ extension Parser {
         if nameToken.isKeyword {
           name = "__error"
           issues.append(
-            parseFailure(Issue.keywordAsIdent(keyword: name), range: nameToken.range))
+            parseFailure(Issue.keywordAsIdent(keyword: nameToken.value!), range: nameToken.range))
         } else {
           name = nameToken.value!
         }

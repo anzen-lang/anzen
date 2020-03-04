@@ -160,4 +160,9 @@ final class TypeDispatcher: ASTVisitor {
     }
   }
 
+  public func visit(_ node: SelectExpr) {
+    node.type = finalizer.finalize(type: node.type!)
+    node.traverse(with: self)
+  }
+
 }

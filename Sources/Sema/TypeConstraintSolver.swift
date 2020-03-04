@@ -180,7 +180,17 @@ struct TypeConstraintSolver {
           at: loc + .binding))
       }
 
-    // case (let lty as BoundGenericType, _):
+    case (let lty as BoundGenericType, let rty as BoundGenericType):
+      // Unify both bindings.
+      for ph in Set(lty.bindings.keys).intersection(rty.bindings.keys) {
+        constraints.append(factory.equality(
+          t: lty.bindings[ph]!.bareType,
+          u: rty.bindings[ph]!.bareType,
+          at: constraint.location))
+      }
+
+      // Unify the unbounded generic types.
+      constraints.append(factory.equality(t: lty.type, u: rty.type, at: constraint.location))
 
     default:
       errors.append(.incompatibleTypes(constraint))
@@ -232,16 +242,13 @@ struct TypeConstraintSolver {
         var builder = TypeConstraintDisjunctionBuilder(factory: factory, at: constraint.location)
         builder.add(factory.equality(t: lhs, u: rhs, at: constraint.location))
 
-        // FIXME: Tests with generic functions reveal that unifying with `Anything` leads to
-        // inconsistent type resolutions.
-        builder.add(
-          factory.equality(t: context.anythingType, u: rhs, at: constraint.location),
-          weight: 1)
+        // Although `Anything` is technically a meet for any pair of type, note that we do not add
+        // it to the disjunction to avoid inferring `Anything` implicitly in situations that might
+        // actually correspond to a type error. This behavior roughly matches the `-noImplicitAny`
+        // option of TypeScript's compiler.
 
         constraints.append(builder.finalize())
       }
-
-      assumptions.set(substitution: lhs, for: var_)
 
     case (let lty as FunType, let rty as FunType):
       // Function types never match if they have different domain lenghts.
@@ -317,9 +324,8 @@ struct TypeConstraintSolver {
 
   /// Solves a value membership constraint.
   private mutating func solve(_ constraint: TypeValueMemberConstraint) {
-    let owner = assumptions.get(for: constraint.u)
-
     // If the owning type is unknown, we can't solve the constraint yet.
+    let owner = assumptions.get(for: constraint.u)
     guard !(owner is TypeVar) else {
       constraints.insert(constraint, at: 0)
       return
@@ -336,7 +342,7 @@ struct TypeConstraintSolver {
     let decls = typeDecl
       .lookup(memberName: constraint.memberName, inCompilerContext: context)
       .compactMap { $0 as? LValueDecl }
-    guard !decls.isEmpty  else {
+    guard !decls.isEmpty else {
       errors.append(.noSuchValueMember(constraint))
       weight += ERROR_WEIGHT
       return
@@ -345,11 +351,20 @@ struct TypeConstraintSolver {
     let ownerBindings = (owner as? BoundGenericType)?.bindings ?? [:]
     var builder = TypeConstraintDisjunctionBuilder(factory: factory, at: constraint.location)
     for decl in decls {
-      let placeholders = decl.type!.bareType.getUnboundPlaceholders()
+      var bareType = decl.type!.bareType
+      if let funDecl = decl as? FunDecl, funDecl.kind == .method {
+        // Method declarations have a type of the form `Owner -> Domain -> Codomain`, where `Owner`
+        // is the type of the method's owner. When part of a value member constraint, this means
+        // that the member's type is actually `Domain -> Codomain`.
+        bareType = (bareType as! FunType).codom.bareType
+      }
+
+      let placeholders = bareType.getUnboundPlaceholders()
       let bindings = ownerBindings.filter { placeholders.contains($0.key) }
       let memberTy = bindings.isEmpty
-        ? decl.type!.bareType
-        : context.getBoundGenericType(type: decl.type!.bareType, bindings: bindings)
+        ? bareType
+        : context.getBoundGenericType(type: bareType, bindings: bindings)
+
       builder.add(factory.equality(t: constraint.t, u: memberTy, at: constraint.location))
     }
     constraints.append(builder.finalize())
