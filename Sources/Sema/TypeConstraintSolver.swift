@@ -212,21 +212,18 @@ struct TypeConstraintSolver {
       constraints.insert(constraint, at: 0)
 
     case (_ as TypeVar, _):
-      // If `T` is unknown and `U` is `Anything`, we postpone the constraint to see if we can
-      // collect more information about `T`.
-      guard rhs != context.anythingType else {
-        constraints.insert(constraint, at: 0)
-        return
-      }
-
-      // Otherwise, trying to unify it with `U` might be too broad. Instead, we have to compute the
-      // "join" of both types. We do that by successiveky attempting to unify `T` with all types
-      // known to be conforming to `U`.
+      // If `T` is unknown, unifying it with `U` might be too broad. Instead, we have to compute
+      // the "join" of both types. We do that by successively attempting to unify `T` with all
+      // types known to be conforming to `U`.
       var builder = TypeConstraintDisjunctionBuilder(factory: factory, at: constraint.location)
       builder.add(factory.equality(t: lhs, u: rhs, at: constraint.location))
 
-      for ty in context.getTypesConforming(to: rhs) {
-        builder.add(factory.equality(t: lhs, u: ty, at: constraint.location), weight: 1)
+      // Since all types conform to anything, conformances constraints of the form `$T <= Anything`
+      // can't be further refined.
+      if (rhs != context.anythingType) {
+        for ty in context.getTypesConforming(to: rhs) {
+          builder.add(factory.equality(t: lhs, u: ty, at: constraint.location), weight: 1)
+        }
       }
 
       constraints.append(builder.finalize())
@@ -249,6 +246,10 @@ struct TypeConstraintSolver {
 
         constraints.append(builder.finalize())
       }
+
+    case (_, context.anythingType):
+      // All types trivially conform to `Anything`.
+      break
 
     case (let lty as FunType, let rty as FunType):
       // Function types never match if they have different domain lenghts.
@@ -280,10 +281,6 @@ struct TypeConstraintSolver {
           at: constraint.location + .parameter(i)))
       }
 
-    case (_, context.anythingType):
-      // All types trivially conform to `Anything`.
-      break
-
     default:
       guard context.getTypesConforming(to: rhs).contains(lhs) else {
         errors.append(.incompatibleTypes(constraint))
@@ -307,8 +304,8 @@ struct TypeConstraintSolver {
       constraints.insert(constraint, at: 0)
 
     case is FunType:
-      // If both `T` and `U` are monomorphic, the constraint can be solved as an equality.
-      constraints.append(factory.equality(t: lhs, u: rhs, at: constraint.location))
+      // If both `T` and `U` are monomorphic, the constraint can be solved as a conformance.
+      constraints.append(factory.conformance(t: lhs, u: rhs, at: constraint.location))
 
     case let rty as BoundGenericType where rty.type is FunType:
       // If `U` is a bound generic function type, the constraint can be solved as an equality
