@@ -1,0 +1,73 @@
+(struct_decl name='Box' type='Box<A>'
+  (generic_params
+    (generic_param_decl name='A' type='A'))
+  (body
+    (brace_stmt
+      (fun_decl ctor name='new' type='@cst (_: @cst A) -> @mut Box<A>'
+        (params
+          (param_decl name='value' type='@cst A'
+            (sign
+              (qual_type_sign type='@cst A'
+                (type_ident name='A' type='A' decl='function_specialization_03::Box::A')))))))))
+(fun_decl regular name='f' type='@cst <T>(x: @cst Box<A=@cst T>) -> @cst T'
+  (generic_params
+    (generic_param_decl name='T' type='T'))
+  (params
+    (param_decl name='x' type='@cst Box<A=@cst T>'
+      (sign
+        (qual_type_sign type='@cst Box<A=@cst T>'
+          (type_ident name='Box' type='Box<A=@cst T>' decl='function_specialization_03::Box'
+            (spec_args key='A'
+              (qual_type_sign type='@cst T'
+                (type_ident name='T' type='T' decl='function_specialization_03::f(x:)::T'))))))))
+  (codom
+    (qual_type_sign type='@cst T'
+      (type_ident name='T' type='T' decl='function_specialization_03::f(x:)::T'))))
+(prop_decl name='a' type='@cst Int'
+  (initializer
+    (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (call_expr type='@cst Int'
+      (callee
+        (ident_expr name='f' type='@cst <T=@cst Int>(x: @cst Box<A=@cst T>) -> @cst T' decl='function_specialization_03::f(x:)'))
+      (args
+        (call_arg_expr 'x' type='@cst Box<A=@cst Int>'
+          (op
+            (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (call_expr type='@cst Box<A=@cst Int>'
+              (callee
+                (ident_expr name='Box' type='@cst <A=@cst Int>(_: @cst A) -> @mut Box<A>' decl='function_specialization_03::Box'))
+              (args
+                (call_arg_expr '_' type='@cst Int'
+                  (op
+                    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+                  (value
+                    (int_lit_expr value='0' type='@cst Int')))))))))))
+(prop_decl name='b' type='@cst Box<A=@cst Int>'
+  (initializer
+    (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (call_expr type='@cst Box<A=@cst Int>'
+      (callee
+        (ident_expr name='f' type='@cst <T=@cst Box<A=@cst Int>>(x: @cst Box<A=@cst T>) -> @cst T' decl='function_specialization_03::f(x:)'))
+      (args
+        (call_arg_expr 'x' type='@cst Box<A=@cst Box<A=@cst Int>>'
+          (op
+            (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (call_expr type='@cst Box<A=@cst Box<A=@cst Int>>'
+              (callee
+                (ident_expr name='Box' type='@cst <A=@cst Box<A=@cst Int>>(_: @cst A) -> @mut Box<A>' decl='function_specialization_03::Box'))
+              (args
+                (call_arg_expr '_' type='@cst Box<A=@cst Int>'
+                  (op
+                    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+                  (value
+                    (call_expr type='@cst Box<A=@cst Int>'
+                      (callee
+                        (ident_expr name='Box' type='@cst <A=@cst Int>(_: @cst A) -> @mut Box<A>' decl='function_specialization_03::Box'))
+                      (args
+                        (call_arg_expr '_' type='@cst Int'
+                          (op
+                            (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+                          (value
+                            (int_lit_expr value='0' type='@cst Int')))))))))))))))

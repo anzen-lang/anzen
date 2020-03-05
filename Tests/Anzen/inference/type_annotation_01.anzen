@@ -1,0 +1,4 @@
+// Test property type inference using an annotation and an initial binding value.
+
+// This property should by typed as `Int`.
+let property: Int <- 0

@@ -1,0 +1,11 @@
+(prop_decl name='x' type='@cst Int'
+  (sign
+    (qual_type_sign type='@cst Int'
+      (type_ident name='Int' type='Int' decl='__Builtin::Int'))))
+(prop_decl name='y' type='@cst Bool'
+  (initializer
+    (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (infix_expr type='@cst Bool'
+      (ident_expr name='===' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Bool' decl='_')
+      (ident_expr name='x' type='@cst Int' decl='reference_equality::x')
+      (null_expr type='@cst Anything'))))

@@ -1,0 +1,19 @@
+// Test property type inference using generic bindings.
+
+struct Box<T> {
+
+  let value: T
+
+}
+
+// This property should by typed as `Box<T = Int>`.
+let box1: Box<T = Int>
+
+// This property should by typed as `Box<T = String>`.
+let box2: Box<T = String>
+
+// This property should by typed as `Int`.
+let val1 <- box1.value
+
+// This property should by typed as `String`.
+let val2 <- box2.value

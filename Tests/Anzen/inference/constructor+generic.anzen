@@ -1,0 +1,17 @@
+// Tests the initialization of an instance using a initializer for a polymorphic type.
+//
+// This test declares a generic type with a simple constructor that must be used to type the
+// property initialized with it.
+
+struct Box<T> {
+
+  new(value: T) {
+  }
+
+}
+
+// This property should by typed as `Box<T = Int>`.
+let int_box <- Box(value <- 0)
+
+// This property should by typed as `Box<T = String>`.
+let string_box <- Box(value <- "Hello, World!")

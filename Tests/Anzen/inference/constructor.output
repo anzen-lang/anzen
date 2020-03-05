@@ -1,0 +1,32 @@
+(struct_decl name='Point' type='Point'
+  (body
+    (brace_stmt
+      (fun_decl ctor name='new' type='@cst (x: @cst Int, y: @cst Int) -> @mut Point'
+        (params
+          (param_decl name='x' type='@cst Int'
+            (sign
+              (qual_type_sign type='@cst Int'
+                (type_ident name='Int' type='Int' decl='__Builtin::Int'))))
+          (param_decl name='y' type='@cst Int'
+            (sign
+              (qual_type_sign type='@cst Int'
+                (type_ident name='Int' type='Int' decl='__Builtin::Int')))))
+        (body
+          (brace_stmt))))))
+(prop_decl name='pt' type='@cst Point'
+  (initializer
+    (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (call_expr type='@cst Point'
+      (callee
+        (ident_expr name='Point' type='@cst (x: @cst Int, y: @cst Int) -> @mut Point' decl='constructor::Point'))
+      (args
+        (call_arg_expr 'x' type='@cst Int'
+          (op
+            (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (int_lit_expr value='0' type='@cst Int')))
+        (call_arg_expr 'y' type='@cst Int'
+          (op
+            (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (int_lit_expr value='0' type='@cst Int')))))))

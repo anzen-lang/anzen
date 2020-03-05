@@ -1,0 +1,36 @@
+(fun_decl regular name='mono' type='@cst (x: @cst Anything, y: @cst Anything) -> @cst Anything'
+  (params
+    (param_decl name='x' type='@cst Anything'
+      (sign
+        (qual_type_sign type='@cst Anything'
+          (type_ident name='Anything' type='Anything' decl='__Builtin::Anything'))))
+    (param_decl name='y' type='@cst Anything'
+      (sign
+        (qual_type_sign type='@cst Anything'
+          (type_ident name='Anything' type='Anything' decl='__Builtin::Anything')))))
+  (codom
+    (qual_type_sign type='@cst Anything'
+      (type_ident name='Anything' type='Anything' decl='__Builtin::Anything')))
+  (body
+    (brace_stmt
+      (return_stmt
+        (binding
+          (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+        (ident_expr name='x' type='@cst Anything' decl='argument_conformance::mono(x:y:)::x'))))))
+(prop_decl name='a' type='@cst Anything'
+  (initializer
+    (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
+    (call_expr type='@cst Anything'
+      (callee
+        (ident_expr name='mono' type='@cst (x: @cst Anything, y: @cst Anything) -> @cst Anything' decl='argument_conformance::mono(x:y:)'))
+      (args
+        (call_arg_expr 'x' type='@cst Int'
+          (op
+            (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (int_lit_expr value='0' type='@cst Int')))
+        (call_arg_expr 'y' type='@cst Bool'
+          (op
+            (ident_expr name='<-' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_'))
+          (value
+            (bool_lit_expr value='true' type='@cst Bool')))))))

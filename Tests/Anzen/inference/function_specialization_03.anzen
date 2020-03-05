@@ -1,0 +1,20 @@
+// Test a call to a polymorphic function with a polymorphic parameter.
+//
+// This test declares a generic function `f` that accepts a argument `x` that is typed with a
+// generic type `Box`. The latter is specialized with `f`'s generic placeholder. The function is
+// then called with a instance of `Box` from which type inference should be able to extract the
+// specialization argument and specialize `f`.
+
+struct Box<A> {
+
+  new(_ value: A)
+
+}
+
+fun f<T>(x: Box<A = T>) -> T
+
+// This property should by typed as `Int`.
+let a <- f(x <- Box(0))
+
+// This property should by typed as `Box<A = Int>`.
+let b <- f(x <- Box(Box(0)))

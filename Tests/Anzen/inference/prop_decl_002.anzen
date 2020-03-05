@@ -1,3 +1,0 @@
-// Test property type inference using an initial binding value.
-
-let property := 0

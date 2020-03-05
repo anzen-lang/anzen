@@ -1,0 +1,7 @@
+// Tests inference for reference equality.
+
+// This property should by typed as `Int`.
+let x: Int
+
+// This property should by typed as `Bool`.
+let y <- x === nullref

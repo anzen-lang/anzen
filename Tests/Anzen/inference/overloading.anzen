@@ -1,0 +1,18 @@
+// Tests overloaded calls to monomorphic functions.
+//
+// This test declares two monomorphic functions which overload the same name. Two properties are
+// then initialized by using this overload with arguments of different type.
+
+fun mono(x: Int) -> Int {
+  return <- x
+}
+
+fun mono(x: Bool) -> Bool {
+  return <- x
+}
+
+// This property should be typed as `Int`.
+let a <- mono(x <- 0)
+
+// This property should be typed as `Bool`.
+let b <- mono(x <- true)

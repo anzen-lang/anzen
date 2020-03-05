@@ -1,0 +1,12 @@
+// Tests argument conformance in function calls.
+//
+// This test declares a single polymorphic function that accepts two arguments of type `Anything`.
+// The function is called to initialize a property, with two arguments of type `Int` and `Bool`
+// respectively, which obviously conform to `Anything`.
+
+fun mono(x: Anything, y: Anything) -> Anything {
+  return <- x
+}
+
+// This property should be typed as `Anything`.
+let a <- mono(x <- 0, y <- true)

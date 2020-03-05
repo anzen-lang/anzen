@@ -1,0 +1,14 @@
+// Tests codomain inference in a polymorphic functions.
+//
+// This test declares a single polymorphic function that accepts two arguments of generic type `T`
+// and `U` respectively. It is called with different combinations of arguments.
+
+fun poly<T, U>(x: T, y: U) -> T {
+  return <- x
+}
+
+// This property should by typed as `Int`.
+let a <- poly(x <- 0, y <- true)
+
+// This property should by typed as `Bool`.
+let b <- poly(x <- true, y <- 0)

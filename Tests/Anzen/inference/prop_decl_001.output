@@ -1,4 +1,0 @@
-(prop_decl name='property' type='@cst Int'
-  (sign
-    (qual_type_sign type='@cst Int'
-      (type_ident name='Int' type='Int' decl='__Builtin::Int'))))

@@ -1,9 +1,0 @@
-(fun_decl regular name='mono' type='@cst (x: @cst Int) -> @cst Int'
-  (params
-    (param_decl name='x' type='@cst Int'
-      (sign
-        (qual_type_sign type='@cst Int'
-          (type_ident name='Int' type='Int' decl='__Builtin::Int')))))
-  (codom
-    (qual_type_sign type='@cst Int'
-      (type_ident name='Int' type='Int' decl='__Builtin::Int'))))

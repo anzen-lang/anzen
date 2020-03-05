@@ -1,0 +1,13 @@
+// Tests property type inference using a generic annotation.
+
+struct Box<T> {
+
+  let value: T
+
+}
+
+// This property should by typed as `Box<T = Int>`.
+let box1: Box<T = Int>
+
+// This property should by typed as `Box<T = Box<T = Int>>`.
+let box2: Box<T = Box<T = Int>>

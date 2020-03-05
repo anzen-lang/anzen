@@ -1,7 +1,0 @@
-(prop_decl name='property' type='@cst Int'
-  (sign
-    (qual_type_sign type='@cst Int'
-      (type_ident name='Int' type='Int' decl='__Builtin::Int')))
-  (initializer
-    (ident_expr name=':=' type='@cst (_: @cst Anything, _: @cst Anything) -> @cst Anything' decl='_')
-    (int_lit_expr value='0' type='@cst Int')))

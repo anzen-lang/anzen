@@ -1,4 +1,0 @@
-let x: Int
-let y <- x === nullref
-
-print(y)

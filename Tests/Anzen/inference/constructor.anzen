@@ -1,0 +1,11 @@
+// Tests the initialization of an instance using a simple initializer.
+
+struct Point {
+
+  new(x: Int, y: Int) {
+  }
+
+}
+
+// This property should by typed as `Point`.
+let pt <- Point(x <- 0, y <- 0)

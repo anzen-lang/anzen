@@ -1,0 +1,28 @@
+// Tests overloaded calls to monomorphic and polymorphic functions.
+//
+// This test declares two monomorphic and one polymorhic functions which overload the same name.
+// Three properties are then initialized by calling these functions.
+
+fun overloaded<T>(x: T) -> T {
+  return <- x
+}
+
+fun overloaded(x: Int) -> Int {
+  return <- x
+}
+
+fun overloaded(x: Bool) -> Bool {
+  return <- x
+}
+
+// This property should by typed as `Int`.
+// The function call should be dispatched to the monomorphic candidate declared at line 10.
+let a <- overloaded(x <- 0)
+
+// This property should by typed as `Bool`.
+// The function call should be dispatched to the monomorphic candidate declared at line 14.
+let b <- overloaded(x <- true)
+
+// This property should by typed as `String`.
+// The function call should be dispatched to the polymorhic candidate declared at line 6.
+let c <- overloaded(x <- "Hello")

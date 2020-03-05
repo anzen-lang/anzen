@@ -1,0 +1,26 @@
+(struct_decl name='Box' type='Box<T>'
+  (generic_params
+    (generic_param_decl name='T' type='T'))
+  (body
+    (brace_stmt
+      (prop_decl name='value' type='@cst T'
+        (sign
+          (qual_type_sign type='@cst T'
+            (type_ident name='T' type='T' decl='type_annotation_02::Box::T')))))))
+(prop_decl name='box1' type='@cst Box<T=@cst Int>'
+  (sign
+    (qual_type_sign type='@cst Box<T=@cst Int>'
+      (type_ident name='Box' type='Box<T=@cst Int>' decl='type_annotation_02::Box'
+        (spec_args key='T'
+          (qual_type_sign type='@cst Int'
+            (type_ident name='Int' type='Int' decl='__Builtin::Int')))))))
+(prop_decl name='box2' type='@cst Box<T=@cst Box<T=@cst Int>>'
+  (sign
+    (qual_type_sign type='@cst Box<T=@cst Box<T=@cst Int>>'
+      (type_ident name='Box' type='Box<T=@cst Box<T=@cst Int>>' decl='type_annotation_02::Box'
+        (spec_args key='T'
+          (qual_type_sign type='@cst Box<T=@cst Int>'
+            (type_ident name='Box' type='Box<T=@cst Int>' decl='type_annotation_02::Box'
+              (spec_args key='T'
+                (qual_type_sign type='@cst Int'
+                  (type_ident name='Int' type='Int' decl='__Builtin::Int'))))))))))

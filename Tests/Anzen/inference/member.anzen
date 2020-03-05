@@ -1,0 +1,14 @@
+// Test explicit membership inference.
+
+struct Point {
+
+  let x: Int
+  let y: Int
+
+}
+
+// This property should by typed as `Point`.
+let p: Point
+
+// This property should by typed as `Int`.
+let x <- p.x

@@ -1,3 +1,0 @@
-// Test polymorphic function type inference.
-
-fun poly<T>(x: T) -> T

@@ -1,9 +1,0 @@
-// Test calling a method on a polymorphic type.
-
-struct Box<T> {
-  let clone: Self
-  fun f(x: Self) -> T
-}
-
-let box: Box<T=Int>
-let val := box.f(x := box)

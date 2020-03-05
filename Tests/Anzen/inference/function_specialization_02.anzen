@@ -1,0 +1,14 @@
+// Tests calls to a polymorphic functions.
+//
+// This test declares a single polymorphic function. Two properties are then initialized by using
+// this function with arguments of different types.
+
+fun poly<T>(x: T) -> T {
+  return <- x
+}
+
+// This property should by typed as `Int`.
+let a <- poly(x <- 0)
+
+// This property should be typed as `Bool`.
+let b <- poly(x <- poly(x <- true))

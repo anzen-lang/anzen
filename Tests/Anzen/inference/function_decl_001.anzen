@@ -1,3 +1,0 @@
-// Test monomorphic function type inference.
-
-fun mono(x: Int) -> Int

@@ -1,0 +1,16 @@
+// Tests calling methods on polymorphic types.
+
+struct Box<T> {
+
+  let clone: Self
+  let value: T
+
+  fun f(x: Self) -> T
+
+}
+
+// This property should by typed as `Box<T = Int>`.
+let box: Box<T = Int>
+
+// This property should by typed as `Int`.
+let val <- box.f(x <- box)
